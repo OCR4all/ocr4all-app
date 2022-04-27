@@ -1,0 +1,404 @@
+{
+	"properties": [
+		{
+			"name": "ocr4all.application.label",
+			"type": "java.lang.String",
+			"description": "ocr4all application label; the default value is 'ocr4all-app'."
+		},
+		{
+			"name": "ocr4all.application.name",
+			"type": "java.lang.String",
+			"description": "ocr4all application name; the default value is 'ocr4all app'."
+		},
+		{
+			"name": "ocr4all.application.charset",
+			"type": "java.lang.String",
+			"description": "ocr4all application charset: ISO_8859_1, US_ASCII, UTF_16 or UTF_8; the default value is UTF_8."
+		},
+		{
+			"name": "ocr4all.application.date.format",
+			"type": "java.lang.String",
+			"description": "ocr4all application date format. It uses the date and time patterns as specified in the Java class java.text.SimpleDateFormat; the default value is 'yyyy-MM-dd HH:mm:ss'."
+		},
+		{
+			"name": "ocr4all.application.locale.language",
+			"type": "java.lang.String",
+			"description": "ocr4all application language that conforms to the IETF BCP 47 syntax; the default value is 'en'."
+		},
+		{
+			"name": "ocr4all.application.locale.region",
+			"type": "java.lang.String",
+			"description": "ocr4all application region that conforms to the IETF BCP 47 syntax."
+		},
+		{
+			"name": "ocr4all.application.locale.script",
+			"type": "java.lang.String",
+			"description": "ocr4all application script that conforms to the IETF BCP 47 syntax."
+		},
+		{
+			"name": "ocr4all.application.view.languages",
+			"type": "java.util.List<java.lang.String>",
+			"description": "ocr4all application comma-separated list of view languages that conforms to the IETF BCP 47 syntax. Can be overridden by a command line switch. This is optional, the default values are 'en' and 'de'."
+		},
+		{
+			"name": "ocr4all.application.monitor.interval",
+			"type": "java.lang.Long",
+			"description": "ocr4all application file monitor interval. This is the amount of time in milliseconds to wait between checks of the file system. Minimun value is 1000. This is optional, the default value is 15000."
+		},
+		{
+			"name": "ocr4all.application.security.groups.administrator",
+			"type": "java.lang.String",
+			"description": "ocr4all application administrator group. This is optional, the default value is admin."
+		},
+		{
+			"name": "ocr4all.application.security.groups.coordinator",
+			"type": "java.lang.String",
+			"description": "ocr4all application coordinator group. This is optional, the default value is coord."
+		},
+		{
+			"name": "ocr4all.system.unix.command.docker",
+			"type": "java.lang.String",
+			"description": "ocr4all unix system command docker; the default value is '/usr/bin/docker'."
+		},
+		{
+			"name": "ocr4all.system.unix.command.convert",
+			"type": "java.lang.String",
+			"description": "ocr4all unix system command convert; the default value is '/usr/bin/convert'."
+		},
+		{
+			"name": "ocr4all.system.unix.command.identify",
+			"type": "java.lang.String",
+			"description": "ocr4all unix system command identify; the default value is '/usr/bin/identify'."
+		},
+		{
+			"name": "ocr4all.system.mac.command.docker",
+			"type": "java.lang.String",
+			"description": "ocr4all mac system command docker; the default value is '/usr/local/bin/docker'."
+		},
+		{
+			"name": "ocr4all.system.mac.command.convert",
+			"type": "java.lang.String",
+			"description": "ocr4all mac system command convert; the default value is '/opt/local/bin/convert'."
+		},
+		{
+			"name": "ocr4all.system.mac.command.identify",
+			"type": "java.lang.String",
+			"description": "ocr4all mac system command identify; the default value is '/opt/local/bin/identify'."
+		},
+		{
+			"name": "ocr4all.system.windows.command.docker",
+			"type": "java.lang.String",
+			"description": "ocr4all windows system command docker; the default value is 'C:/Program Files/Docker/docker.exe'."
+		},
+		{
+			"name": "ocr4all.system.windows.command.convert",
+			"type": "java.lang.String",
+			"description": "ocr4all windows system command convert; the default value is 'C:/Program Files/ImageMagick-7.0.11/convert.exe'."
+		},
+		{
+			"name": "ocr4all.system.windows.command.identify",
+			"type": "java.lang.String",
+			"description": "ocr4all windows system command identify; the default value is 'C:/Program Files/ImageMagick-7.0.11/identify.exe'."
+		},
+		{
+			"name": "ocr4all.exchange.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all exchange directory."
+		},
+		{
+			"name": "ocr4all.workspace.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace directory."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace configuration folder; the default value is '.ocr4all'."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace configuration file; the default value is 'ocr4all'."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.files.user",
+			"type": "java.lang.String",
+			"description": "ocr4all user workspace configuration file; the default value is 'user'. Required in server profile."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.files.group",
+			"type": "java.lang.String",
+			"description": "ocr4all group workspace configuration file; the default value is 'group'. Required in server profile."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.files.password",
+			"type": "java.lang.String",
+			"description": "ocr4all password workspace configuration file; the default value is 'password'. Required in server profile."
+		},
+		{
+			"name": "ocr4all.workspace.models.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace models folder; the default value is 'models'."
+		},
+		{
+			"name": "ocr4all.workspace.models.model.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace model configuration folder; the default value is '.model'."
+		},
+		{
+			"name": "ocr4all.workspace.models.model.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace model configuration file; the default value is 'model'."
+		},
+		{
+			"name": "ocr4all.workspace.models.model.configuration.files.assembly",
+			"type": "java.lang.String",
+			"description": "ocr4all assembly workspace model configuration file; the default value is 'assembly'."
+		},
+		{
+			"name": "ocr4all.workspace.models.model.file",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace model file; the default value is 'model'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace projects folder; the default value is 'projects'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project configuration folder; the default value is '.project'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project configuration file; the default value is 'project'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.configuration.files.security",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project configuration file; the default value is 'security'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.configuration.files.folio",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project configuration file; the default value is 'folio'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.configuration.files.history",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project configuration file; the default value is 'history'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images folder; the default value is 'images'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.folios.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images folios folder; the default value is 'folios'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.derivatives.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images derivatives folder; the default value is 'derivatives'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.derivatives.format",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images derivatives format. The format must be suitable for use on web pages (jpg, png); the default value is 'jpg'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.derivatives.quality.thumbnail.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images derivatives quality thumbnail folder; the default value is 'thumbnail'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.derivatives.quality.detail.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images derivatives quality detail folder; the default value is 'detail'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.derivatives.quality.best.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images derivatives quality best folder; the default value is 'best'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project models folder; the default value is 'models'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project models configuration folder; the default value is '.models'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.configuration.files.security",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project models configuration file; the default value is 'security'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.model.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project model configuration folder; the default value is '.model'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.model.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project model configuration file; the default value is 'model'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.model.configuration.files.assembly",
+			"type": "java.lang.String",
+			"description": "ocr4all assembly workspace project model configuration file; the default value is 'assembly'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.models.model.file",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project model file; the default value is 'model'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflows folder; the default value is 'workflows'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow configuration folder; the default value is '.workflow'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main workspace project workflow configuration main file; the default value is 'workflow'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.files.history",
+			"type": "java.lang.String",
+			"description": "ocr4all history workspace project workflow configuration history file; the default value is 'history'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.mets.file",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow mets file; the default value is 'mets.xml'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.mets.group",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow mets group; the default value is 'ocr4all'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshots folder; the default value is 'snapshots'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshot configuration folder; the default value is '.snapshot'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshot configuration main file; the default value is 'snapshot'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.files.process",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshot configuration process file; the default value is 'process'."
+		},	
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.sandbox.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshot sandbox folder; the default value is 'sandbox'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.derived.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project workflow snapshot derived folder; the default value is 'derived'."
+		},
+		{
+			"name": "ocr4all.opt.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all opt directory."
+		},
+		{
+			"name": "ocr4all.temporary.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all temporary directory."
+		},
+		{
+			"name": "ocr4all.temporary.prefix",
+			"type": "java.lang.String",
+			"description": "ocr4all prefix for temporary files/directories names; the default value is 'ocr4all-'."
+		},
+		{
+			"name": "ocr4all.api.jwt.secret",
+			"type": "java.lang.String",
+			"description": "ocr4all api JWT access token secret. The default value is '--access token secret--'."
+		},
+		{
+			"name": "ocr4all.api.jwt.issuer",
+			"type": "java.lang.String",
+			"description": "ocr4all api JWT access token issuer. The default issuer is 'ocr4all.org'."
+		},
+		{
+			"name": "ocr4all.api.jwt.validity",
+			"type": "java.lang.Long",
+			"description": "ocr4all api JWT access token validity time in milliseconds. The default value is one week (7 × 24 × 60 × 60 × 1000 = 604800000)."
+		},
+		{
+			"name": "ocr4all.api.documentation.source",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation source, this means, the base package name. The default value is 'de.uniwuerzburg.zpd.ocr4all.application.api'."
+		},
+		{
+			"name": "ocr4all.api.documentation.title",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation title. The default value is 'OCR4all RESTful web API'."
+		},
+		{
+			"name": "ocr4all.api.documentation.description",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation description. The default value is 'This is the official RESTful web API for OCR4all, a software for digitization of primarily very early printed documents'."
+		},
+		{
+			"name": "ocr4all.api.documentation.version",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation version. The default value is '1.0'."
+		},
+		{
+			"name": "ocr4all.api.documentation.contact.name",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation contact name. The default value is 'ocr4all'."
+		},
+		{
+			"name": "ocr4all.api.documentation.contact.email",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation contact email. The default value is 'ocr4all@uni-wuerzburg.de'."
+		},
+		{
+			"name": "ocr4all.api.documentation.license",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation license. The default value is 'MIT License'."
+		},
+		{
+			"name": "ocr4all.api.documentation.url.tos",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation terms of service url. The default value is 'https://www.uni-wuerzburg.de/en/sonstiges/imprint-privacy-policy'."
+		},
+		{
+			"name": "ocr4all.api.documentation.url.contact",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation contact url. The default value is 'http://www.ocr4all.org'."
+		},
+		{
+			"name": "ocr4all.api.documentation.url.license",
+			"type": "java.lang.String",
+			"description": "ocr4all api documentation license url. The default value is 'https://opensource.org/licenses/MIT'."
+		}
+	]
+}

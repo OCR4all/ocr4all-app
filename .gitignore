@@ -1,0 +1,76 @@
+#
+# Intentionally untracked files (or patterns) that Git should ignore.
+#
+# Author: Herbert Baier
+# Date: 22.11.2019
+#
+
+#
+# Eclipse
+#
+/.classpath
+/.loadpath
+/.metadata/
+/.project
+/.settings/
+/bin/
+/build/
+
+#
+# Maven
+#
+/target/
+
+#
+# Temporary directories
+#
+tmp/
+
+#
+# Logs
+#
+*.log
+
+# virtual machine crash logs
+hs_err_pid*
+
+#
+# Swaps
+#
+
+# vi
+.*.swp
+
+#
+# Packages
+#
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.tgz
+*.tar.gz
+*.zip
+
+#
+# Databases
+#
+*.sql
+
+#
+# Compiled source
+#
+*.class
+*.o
+*.so
+
+#
+# OS generated files
+#
+.directory
+.Trashes
+Thumbs.db
+.attach_pid*

@@ -1,0 +1,11 @@
+#
+# OCR4all app
+# Bootstrap Properties
+#
+# Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
+# Date:     03.11.2020
+#
+
+spring:
+  application:
+    name: ocr4all-app

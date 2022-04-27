@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mets:mets xmlns:mets="http://www.loc.gov/METS/"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="info:lc/xmlns/premis-v2 http://www.loc.gov/standards/premis/v2/premis-v2-0.xsd
+                               http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-6.xsd 
+                               http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/version17/mets.v1-7.xsd 
+                               http://www.loc.gov/mix/v10 http://www.loc.gov/standards/mix/mix10/mix10.xsd">
+	<mets:metsHdr CREATEDATE="[ocr4all-create_date]">
+		<mets:agent TYPE="OTHER" OTHERTYPE="SOFTWARE" ROLE="CREATOR">
+			<mets:name>[ocr4all-software_creator]</mets:name>
+			<mets:note xmlns:ocrd="https://ocr-d.de" ocrd:option="input-file-grp"/>
+			<mets:note xmlns:ocrd="https://ocr-d.de" ocrd:option="output-file-grp">[ocr4all-file_group]</mets:note>
+			<mets:note xmlns:ocrd="https://ocr-d.de" ocrd:option="parameter">[ocr4all-parameter]</mets:note>
+			<mets:note xmlns:ocrd="https://ocr-d.de" ocrd:option="page-id"/>
+		</mets:agent>
+	</mets:metsHdr>
+	<mets:dmdSec ID="DMDLOG_0001">
+		<mets:mdWrap MDTYPE="MODS">
+			<mets:xmlData>
+				<mods:mods xmlns:mods="http://www.loc.gov/mods/v3">
+					<mods:identifier type="purl">uniqueID</mods:identifier>
+				</mods:mods>
+			</mets:xmlData>
+		</mets:mdWrap>
+	</mets:dmdSec>
+	<mets:amdSec ID="AMD">
+	</mets:amdSec>
+	<mets:fileSec>
+		<mets:fileGrp USE="[ocr4all-file_group]">
+[ocr4all-file_template]		</mets:fileGrp>
+	</mets:fileSec>
+	<mets:structMap TYPE="PHYSICAL">
+		<mets:div TYPE="physSequence">
+[ocr4all-page_template]		</mets:div>
+	</mets:structMap>
+</mets:mets>

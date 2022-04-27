@@ -1,0 +1,219 @@
+#
+# OCR4all app
+# Application Properties
+#
+# Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
+# Date:     03.11.2020
+#
+
+#
+# spring configuration
+#
+spring:
+  profiles:
+    active:
+      - server
+      - api
+      - documentation
+      - development
+  servlet.multipart:
+    max-file-size: 256MB
+    max-request-size: 256MB
+    enabled: true
+    location: ${java.io.tmpdir}
+    
+#
+# server configuration
+#
+server:
+  port: 8080
+
+#
+# context path
+#
+#server.servlet.context-path: /path
+
+#
+# Swagger API documentation
+#
+springfox.documentation:
+  swaggerUi.baseUrl: /api/doc
+  swagger.v2.path: /api/doc/v2/json
+  openApi.v3.path: /api/doc/v3/json
+
+#
+# ocr4all configuration
+#
+ocr4all:
+  application:
+    label: ocr4all-app
+    name: ocr4all app
+    charset: UTF_8
+    date.format: yyyy-MM-dd HH:mm:ss
+    locale:
+      language: en
+      region: US
+    view.languages:
+      - en
+      - de
+    monitor.interval: 15000
+    security.groups:
+      administrator: admin
+      coordinator: coord
+  system:
+    unix:
+      command:
+        docker: /usr/bin/docker
+        convert: /usr/bin/convert
+        identify: /usr/bin/identify
+    mac:
+      command:
+        docker: /usr/local/bin/docker
+        convert: /opt/local/bin/convert
+        identify: /opt/local/bin/identify
+    windows:
+      command:
+        docker: C:/Program Files/Docker/docker.exe
+        convert: C:/Program Files/ImageMagick-7.1.0/convert
+        identify: C:/Program Files/ImageMagick-7.1.0/identify
+  exchange.folder: ${user.home}/ocr4all/exchange
+  workspace:
+    folder: ${user.home}/ocr4all/workspace
+    configuration:
+      folder: .ocr4all
+      files:
+        main: ocr4all
+        user: user
+        group: group
+        password: password
+    models:
+      folder: models
+      model:
+        configuration:
+          folder: .model
+          files:
+            main: model
+            assembly: assembly
+        file: model
+    projects:
+      folder: projects
+      project:
+        configuration:
+          folder: .project
+          files:
+            main: project
+            security: security
+            folio: folio
+            history: history
+        images:
+          folder: images
+          folios.folder: folios
+          derivatives:
+            folder: derivatives
+            format: jpg
+            quality:
+              thumbnail.folder: thumbnail
+              detail.folder: detail
+              best.folder: best
+        models:
+          folder: models
+          configuration:
+            folder: .models
+            files.security: security
+          model:
+            configuration:
+              folder: .model
+              files:
+                main: model
+                assembly: assembly
+            file: model
+        workflows:
+          folder: workflows
+          workflow:
+            configuration:
+              folder: .workflow
+              files:
+                main: workflow
+                history: history
+            mets:
+              file: mets.xml
+              group: ocr4all
+            snapshots:
+              folder: snapshots
+              snapshot:
+                configuration:
+                  folder: .snapshot
+                  files:
+                    main: snapshot
+                    process: process
+                sandbox:
+                  folder: sandbox
+                derived.folder: derived
+  opt.folder: ${user.home}/ocr4all/opt
+  temporary:
+    folder: ${user.home}/ocr4all/tmp
+    prefix: ocr4all-
+  api:
+    jwt:
+      secret: --access token secret--
+      issuer: ocr4all.org
+      validity: 604800000
+    documentation:
+      source: de.uniwuerzburg.zpd.ocr4all.application.api
+      title: OCR4all RESTful web API
+      description: This is the official RESTful web API for OCR4all, a software for digitization of primarily very early printed documents
+      version: 1.0
+      contact:
+        name: ocr4all
+        email: ocr4all@uni-wuerzburg.de
+      license: MIT License
+      url:
+        tos: https://www.uni-wuerzburg.de/en/sonstiges/imprint-privacy-policy
+        contact: http://www.ocr4all.org
+        license: https://opensource.org/licenses/MIT
+---
+spring:
+    profiles: desktop
+
+logging:
+  level:
+    root: WARN
+
+---
+spring:
+    profiles: server
+
+logging:
+  file:
+    path: /var/log/ocr4all
+    name: ocr4all.log
+  level:
+    root: INFO
+
+ocr4all:
+  exchange.folder: /srv/ocr4all/exchange
+  workspace.folder: /srv/ocr4all/workspace
+  opt.folder: /srv/ocr4all/opt
+  temporary.folder: /srv/ocr4all/tmp
+
+---
+spring:
+    profiles: development
+
+server:
+  port: 9090
+  error.include-stacktrace: always
+
+logging:
+  file:
+    path:
+    name:
+  level:
+    org.springframework.security: INFO
+    de.uniwuerzburg.zpd.ocr4all.application: DEBUG
+
+ocr4all:
+  exchange.folder: ${user.home}/ocr4all/exchange
+  workspace.folder: ${user.home}/ocr4all/workspace
+  opt.folder: ${user.home}/ocr4all/opt
+  temporary.folder: ${user.home}/ocr4all/tmp
