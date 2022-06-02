@@ -33,6 +33,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
@@ -232,32 +233,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 */
 	@Override
 	public ProcessServiceProvider.Processor newProcessor() {
-		return new ProcessServiceProvider.Processor() {
-			/**
-			 * True if the processor was canceled.
-			 */
-			private boolean isCanceled = false;
-
-			/**
-			 * The callback interface for processor updates.
-			 */
-			private ProcessServiceProvider.Processor.Callback callback;
-
-			/**
-			 * The framework.
-			 */
-			private Framework framework;
-
-			/**
-			 * The processor standard output.
-			 */
-			private StringBuffer standardOutput = new StringBuffer();
-
-			/**
-			 * The processor standard error.
-			 */
-			private StringBuffer standardError = new StringBuffer();
-
+		return new CoreProcessorServiceProvider() {
 			/**
 			 * The image formats sorted by enumeration order.
 			 */
@@ -272,30 +248,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 * The folio names.
 			 */
 			private final Set<String> folioNames = new HashSet<>();
-
-			/**
-			 * Callback method for updated standard output.
-			 * 
-			 * @param message The message.
-			 * @since 1.8
-			 */
-			private void updatedStandardOutput(String message) {
-				standardOutput.append(framework.formatLogMessage(message));
-
-				callback.updatedStandardOutput(standardOutput.toString());
-			}
-
-			/**
-			 * Callback method for updated standard error.
-			 * 
-			 * @param message The current message.
-			 * @since 1.8
-			 */
-			private void updatedStandardError(String message) {
-				standardError.append(framework.formatLogMessage(message));
-
-				callback.updatedStandardError(standardError.toString());
-			}
 
 			/**
 			 * Returns true if the image should be processed.
@@ -376,7 +328,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 */
 			private ProcessServiceProvider.Processor.State createDerivatives(SystemProcess convertJob, Path target,
 					String resize, int quality) {
-				final String format = framework.getTarget().getProject().getImages().getDerivatives().getFormat()
+				final String format = getFramework().getTarget().getProject().getImages().getDerivatives().getFormat()
 						.name();
 				final String label = target.getFileName().toString();
 
@@ -398,7 +350,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				return isCanceled ? ProcessServiceProvider.Processor.State.canceled : null;
+				return isCanceled() ? ProcessServiceProvider.Processor.State.canceled : null;
 			}
 
 			/**
@@ -450,14 +402,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			@Override
 			public ProcessServiceProvider.Processor.State execute(ProcessServiceProvider.Processor.Callback callback,
 					Framework framework, ModelArgument modelArgument) {
-				this.callback = callback;
-				this.framework = framework;
-
-				callback.updatedProgress(0);
-
-				updatedStandardOutput("Start spi '" + identifier + "'.");
-
-				if (isCanceled)
+				if (!initialize(identifier, callback, framework))
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				// The system commands
@@ -487,7 +432,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -512,7 +457,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -537,7 +482,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				this.imageFormats = new ArrayList<>(formats);
 				Collections.sort(this.imageFormats, (o1, o2) -> o1.ordinal() - o2.ordinal());
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -553,7 +498,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -580,7 +525,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -719,7 +664,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 						return ProcessServiceProvider.Processor.State.interrupted;
 					}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -781,7 +726,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 
 				callback.updatedProgress(0.6F);
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -793,22 +738,22 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				try {
 					move(foliosFiles, folderFolios, images.getFolios());
 					callback.updatedProgress(0.7F);
-					if (isCanceled)
+					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail());
 					callback.updatedProgress(0.75F);
-					if (isCanceled)
+					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail());
 					callback.updatedProgress(0.8F);
-					if (isCanceled)
+					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderBest, images.getDerivatives().getBest());
 					callback.updatedProgress(0.9F);
-					if (isCanceled)
+					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 				} catch (IOException e) {
 					int remain = remove(foliosFiles, images.getFolios());
@@ -838,23 +783,8 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 
 				updatedStandardOutput((foliosFiles.size() == 1 ? "One folio" : foliosFiles.size() + " folios")
 						+ " imported from the project exchange folder '" + source.toString() + "'.");
-				updatedStandardOutput(identifier + " completed.");
 
-				callback.updatedProgress(1);
-
-				return ProcessServiceProvider.Processor.State.completed;
-			}
-
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see
-			 * de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.Processor#
-			 * cancel()
-			 */
-			@Override
-			public void cancel() {
-				isCanceled = true;
+				return complete();
 			}
 		};
 	}
