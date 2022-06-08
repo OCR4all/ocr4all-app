@@ -34,6 +34,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
@@ -503,56 +504,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 */
 	@Override
 	public ProcessServiceProvider.Processor newProcessor() {
-		return new ProcessServiceProvider.Processor() {
-			/**
-			 * True if the processor was canceled.
-			 */
-			private boolean isCanceled = false;
-
-			/**
-			 * The callback interface for processor updates.
-			 */
-			private ProcessServiceProvider.Processor.Callback callback;
-
-			/**
-			 * The framework.
-			 */
-			private Framework framework;
-
-			/**
-			 * The processor standard output.
-			 */
-			private StringBuffer standardOutput = new StringBuffer();
-
-			/**
-			 * The processor standard error.
-			 */
-			private StringBuffer standardError = new StringBuffer();
-
-			/**
-			 * Callback method for updated standard output.
-			 * 
-			 * @param message The message.
-			 * @since 1.8
-			 */
-			private void updatedStandardOutput(String message) {
-				standardOutput.append(framework.formatLogMessage(message));
-
-				callback.updatedStandardOutput(standardOutput.toString());
-			}
-
-			/**
-			 * Callback method for updated standard error.
-			 * 
-			 * @param message The current message.
-			 * @since 1.8
-			 */
-			private void updatedStandardError(String message) {
-				standardError.append(framework.formatLogMessage(message));
-
-				callback.updatedStandardError(standardError.toString());
-			}
-
+		return new CoreProcessorServiceProvider() {
 			/**
 			 * Persists the mets file.
 			 * 
@@ -596,14 +548,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 			 */
 			@Override
 			public State execute(Callback callback, Framework framework, ModelArgument modelArgument) {
-				this.callback = callback;
-				this.framework = framework;
-
-				callback.updatedProgress(0);
-
-				updatedStandardOutput("Start spi '" + identifier + "'.");
-
-				if (isCanceled)
+				if (!initialize(identifier, callback, framework))
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -667,7 +612,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				String convertCommand = framework.getConfiguration().getSystemCommand(SystemCommand.Type.convert)
 						.getCommand().toString();
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -900,7 +845,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 					return ProcessServiceProvider.Processor.State.completed;
 				}
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
@@ -945,7 +890,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 
 				callback.updatedProgress(0.35F);
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				try {
@@ -1010,15 +955,14 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 
 				callback.updatedProgress(0.90F);
 
-				if (isCanceled)
+				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Moves the images to workflow and creates the mets file
 				 */
-				updatedStandardOutput(
-						"Move the images to workflow sandbox " + framework.getOutput().toString() + ".");
-				
+				updatedStandardOutput("Move the images to workflow sandbox " + framework.getOutput().toString() + ".");
+
 				int preprocessedImages = 0;
 				try {
 					final String metsFilePath = processorWorkspaceRelativePath.toString()
@@ -1073,23 +1017,8 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				 */
 				updatedStandardOutput(
 						(preprocessedImages == 1 ? "One image" : preprocessedImages + " images") + " preprocessed.");
-				updatedStandardOutput(identifier + " completed.");
-				
-				callback.updatedProgress(1);
 
-				return ProcessServiceProvider.Processor.State.completed;
-			}
-
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see
-			 * de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.Processor#
-			 * cancel()
-			 */
-			@Override
-			public void cancel() {
-				isCanceled = true;
+				return complete();
 			}
 		};
 	}
