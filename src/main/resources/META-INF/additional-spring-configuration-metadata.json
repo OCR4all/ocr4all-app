@@ -56,6 +56,21 @@
 			"description": "ocr4all application coordinator group. This is optional, the default value is coord."
 		},
 		{
+			"name": "ocr4all.application.security.administrator.create",
+			"type": "java.lang.Boolean",
+			"description": "ocr4all application administrator create flag. True if the administrator user should be created, if it is non available. This is optional, the default value is false."
+		},
+		{
+			"name": "ocr4all.application.security.administrator.login",
+			"type": "java.lang.String",
+			"description": "ocr4all application administrator login. This is optional, the default value is admin."
+		},
+		{
+			"name": "ocr4all.application.security.administrator.password",
+			"type": "java.lang.String",
+			"description": "ocr4all application administrator password. This is optional, the default value is ocr4all."
+		},
+		{
 			"name": "ocr4all.system.unix.command.docker",
 			"type": "java.lang.String",
 			"description": "ocr4all unix system command docker; the default value is '/usr/bin/docker'."

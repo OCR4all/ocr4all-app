@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -146,6 +147,59 @@ public class AccountService extends CoreService implements UserDetailsService {
 			logger.info("Coordinator group " + configurationService.getApplication().getCoordinatorGroup() + ".");
 		else
 			logger.warn("No coordinator group available.");
+
+		if (configurationService.getApplication().getDefaultAdministrator().isCreate()
+				&& configurationService.getApplication().isAdministratorGroupSet())
+			createDefaultAdministrator(configurationService.getApplication().getDefaultAdministrator().getLogin(),
+					configurationService.getApplication().getDefaultAdministrator().getPassword());
+
+	}
+
+	/**
+	 * Creates the default administrator user if not available.
+	 * 
+	 * @since 1.8
+	 */
+	private void createDefaultAdministrator(String login, String password) {
+		User user = null;
+		Group group = groups.get(configurationService.getApplication().getAdministratorGroup());
+
+		boolean isCreateGroup = group == null;
+		if (group == null)
+			group = new Group(configurationService.getApplication().getAdministratorGroup(), "Administrator group",
+					null, null);
+		else
+			for (String administrator : group.getUsers()) {
+				user = users.get(administrator);
+
+				if (user != null)
+					break;
+			}
+
+		if (user == null && users.get(login) == null) {
+			user = new User(login, "Administrator user", null, null);
+			persist(user);
+
+			if (isPasswordAvailable(login))
+				logger.info("Created administrator user '" + user.getLogin() + "'.");
+			else {
+				persist(new Password(login, password));
+
+				logger.info("Created administrator user '" + user.getLogin() + "' with password '" + password + "'.");
+			}
+
+			persist(group);
+			if (isCreateGroup)
+				logger.info("Created administrator group '" + group.getLabel() + "'.");
+
+			Set<String> userGroups = new HashSet<String>(
+					Arrays.asList(configurationService.getApplication().getAdministratorGroup()));
+			for (Group userGroup : groups.values())
+				if (userGroup.getUsers().contains(login))
+					userGroups.add(userGroup.getLabel());
+
+			setGroups(user, userGroups);
+		}
 	}
 
 	/**
