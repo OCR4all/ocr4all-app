@@ -57,9 +57,14 @@ ocr4all:
       - en
       - de
     monitor.interval: 15000
-    security.groups:
-      administrator: admin
-      coordinator: coord
+    security:
+      groups:
+        administrator: admin
+        coordinator: coord
+      administrator:
+        create: false
+        login: admin
+        password: ocr4all
   system:
     unix:
       command:
@@ -213,6 +218,7 @@ logging:
     de.uniwuerzburg.zpd.ocr4all.application: DEBUG
 
 ocr4all:
+  application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/exchange
   workspace.folder: ${user.home}/ocr4all/workspace
   opt.folder: ${user.home}/ocr4all/opt

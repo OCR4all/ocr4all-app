@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.EnvironmentAware;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
@@ -34,7 +34,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
  */
 @Service
 @ApplicationScope
-public class ConfigurationService implements EnvironmentAware {
+public class ConfigurationService {
 	/**
 	 * The logger.
 	 */
@@ -138,14 +138,25 @@ public class ConfigurationService implements EnvironmentAware {
 	private Environment environment;
 
 	/**
+	 * The server properties for a web server (e.g. port and path settings).
+	 */
+	private ServerProperties serverProperties;
+
+	/**
 	 * Creates a configuration service.
 	 * 
-	 * @param properties The ocr4all properties.
+	 * @param environment      The environment that this component runs.
+	 * @param serverProperties The server properties for a web server (e.g. port and
+	 *                         path settings).
+	 * @param properties       The ocr4all properties.
 	 * @since 1.8
 	 */
 	@Autowired
-	public ConfigurationService(Environment environment, OCR4all properties) {
+	public ConfigurationService(Environment environment, ServerProperties serverProperties, OCR4all properties) {
 		super();
+
+		this.environment = environment;
+		this.serverProperties = serverProperties;
 
 		application = new ApplicationConfiguration(properties.getApplication());
 		exchange = new ExchangeConfiguration(properties);
@@ -191,15 +202,14 @@ public class ConfigurationService implements EnvironmentAware {
 		return -1;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Returns the server port.
 	 * 
-	 * @see org.springframework.context.EnvironmentAware#setEnvironment(org.
-	 * springframework.core.env.Environment)
+	 * @return The server port.
+	 * @since 1.8
 	 */
-	@Override
-	public void setEnvironment(final Environment environment) {
-		this.environment = environment;
+	public int getServerPort() {
+		return serverProperties.getPort();
 	}
 
 	/**

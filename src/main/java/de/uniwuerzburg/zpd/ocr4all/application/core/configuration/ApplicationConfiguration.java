@@ -83,6 +83,11 @@ public class ApplicationConfiguration {
 	private final String coordinatorGroup;
 
 	/**
+	 * The default administrator.
+	 */
+	private final DefaultAdministrator defaultAdministrator;
+
+	/**
 	 * Creates a configuration for the application.
 	 * 
 	 * @param properties The application properties.
@@ -162,6 +167,10 @@ public class ApplicationConfiguration {
 
 		securityGroup = properties.getSecurity().getGroups().getCoordinator();
 		coordinatorGroup = securityGroup == null || securityGroup.isBlank() ? null : securityGroup.trim().toLowerCase();
+
+		Application.Administrator administrator = properties.getSecurity().getAdministrator();
+		defaultAdministrator = new DefaultAdministrator(administrator.isCreate(), administrator.getLogin(),
+				administrator.getPassword());
 	}
 
 	/**
@@ -327,4 +336,86 @@ public class ApplicationConfiguration {
 		return coordinatorGroup;
 	}
 
+	/**
+	 * Returns the default administrator.
+	 *
+	 * @return The default administrator.
+	 * @since 1.8
+	 */
+	public DefaultAdministrator getDefaultAdministrator() {
+		return defaultAdministrator;
+	}
+
+	/**
+	 * Defines default administrators.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class DefaultAdministrator {
+		/**
+		 * True if the administrator user should be created, if it is non available.
+		 */
+		private final boolean isCreate;
+
+		/**
+		 * The login.
+		 */
+		private final String login;
+
+		/**
+		 * The password.
+		 */
+		private final String password;
+
+		/**
+		 * Creates a default administrator.
+		 * 
+		 * @param isCreate True if the administrator user should be created, if it is
+		 *                 non available.
+		 * @param login    The login.
+		 * @param password The password.
+		 * @since 1.8
+		 */
+		public DefaultAdministrator(boolean isCreate, String login, String password) {
+			super();
+			this.isCreate = isCreate;
+			this.login = login;
+			this.password = password;
+		}
+
+		/**
+		 * Returns true if the administrator user should be created, if it is non
+		 * available.
+		 *
+		 * @return True if the administrator user should be created, if it is non
+		 *         available.
+		 * @since 1.8
+		 */
+		public boolean isCreate() {
+			return isCreate;
+		}
+
+		/**
+		 * Returns the login.
+		 *
+		 * @return The login.
+		 * @since 1.8
+		 */
+		public String getLogin() {
+			return login;
+		}
+
+		/**
+		 * Returns the password.
+		 *
+		 * @return The password.
+		 * @since 1.8
+		 */
+		public String getPassword() {
+			return password;
+		}
+
+	}
 }

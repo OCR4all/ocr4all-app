@@ -450,6 +450,11 @@ public class Application {
 		private Groups groups = new Groups();
 
 		/**
+		 * The default administrator.
+		 */
+		private Administrator administrator = new Administrator();
+
+		/**
 		 * Returns the groups.
 		 *
 		 * @return The groups.
@@ -469,6 +474,25 @@ public class Application {
 			this.groups = groups;
 		}
 
+		/**
+		 * Returns the default administrator.
+		 *
+		 * @return The default administrator.
+		 * @since 1.8
+		 */
+		public Administrator getAdministrator() {
+			return administrator;
+		}
+
+		/**
+		 * Set the default administrator.
+		 *
+		 * @param administrator The default administrator to set.
+		 * @since 1.8
+		 */
+		public void setAdministrator(Administrator administrator) {
+			this.administrator = administrator;
+		}
 	}
 
 	/**
@@ -527,6 +551,94 @@ public class Application {
 		 */
 		public void setCoordinator(String group) {
 			coordinator = group;
+		}
+
+	}
+
+	/**
+	 * Defines administrator properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class Administrator {
+		/**
+		 * True if the administrator user should be created, if it is non available.
+		 */
+		private boolean isCreate = false;
+
+		/**
+		 * The login. The default value is admin.
+		 */
+		private String login = "admin";
+
+		/**
+		 * The password. The default value is ocr4all.
+		 */
+		private String password = "ocr4all";
+
+		/**
+		 * Returns true if the administrator user should be created, if it is non
+		 * available.
+		 *
+		 * @return True if the administrator user should be created, if it is non
+		 *         available.
+		 * @since 1.8
+		 */
+		public boolean isCreate() {
+			return isCreate;
+		}
+
+		/**
+		 * Set to true if the administrator user should be created, if it is non
+		 * available.
+		 *
+		 * @param isCreate The create flag to set.
+		 * @since 1.8
+		 */
+		public void setCreate(boolean isCreate) {
+			this.isCreate = isCreate;
+		}
+
+		/**
+		 * Returns the login.
+		 *
+		 * @return The login.
+		 * @since 1.8
+		 */
+		public String getLogin() {
+			return login;
+		}
+
+		/**
+		 * Set the login.
+		 *
+		 * @param login The login to set.
+		 * @since 1.8
+		 */
+		public void setLogin(String login) {
+			this.login = login;
+		}
+
+		/**
+		 * Returns the password.
+		 *
+		 * @return The password.
+		 * @since 1.8
+		 */
+		public String getPassword() {
+			return password;
+		}
+
+		/**
+		 * Set the password.
+		 *
+		 * @param password The password to set.
+		 * @since 1.8
+		 */
+		public void setPassword(String password) {
+			this.password = password;
 		}
 
 	}

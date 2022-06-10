@@ -77,8 +77,7 @@ public class User extends SecurityEntity<User> {
 	 * Creates a user account.
 	 * 
 	 * @param login The login.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty.
 	 * @since 1.8
 	 */
 	public User(String login) throws IllegalArgumentException {
@@ -92,8 +91,7 @@ public class User extends SecurityEntity<User> {
 	 * @param name  The name.
 	 * @param email The email.
 	 * @param state The state.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty.
 	 * @since 1.8
 	 */
 	public User(String login, String name, String email, State state) throws IllegalArgumentException {

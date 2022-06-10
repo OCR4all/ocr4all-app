@@ -61,11 +61,10 @@ public class Password extends SecurityEntity<Password> {
 	}
 
 	/**
-	 * Creates a password.
+	 * Creates an empty password.
 	 * 
 	 * @param login The login.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty.
 	 * @since 1.8
 	 */
 	public Password(String login) throws IllegalArgumentException {
@@ -77,8 +76,7 @@ public class Password extends SecurityEntity<Password> {
 	 * 
 	 * @param login The login.
 	 * @param hash  The hash.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty..
 	 * @since 1.8
 	 */
 	public Password(String login, String hash) throws IllegalArgumentException {

@@ -88,8 +88,7 @@ public class Group extends SecurityEntity<Group> {
 	 * Creates a group.
 	 * 
 	 * @param label The label.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the label is null or empty.
 	 * @since 1.8
 	 */
 	public Group(String label) {
@@ -103,8 +102,7 @@ public class Group extends SecurityEntity<Group> {
 	 * @param name  The name.
 	 * @param users The users.
 	 * @param state The state.
-	 * @throws IllegalArgumentException Thrown to indicate that the entry is an
-	 *                                  inappropriate argument.
+	 * @throws IllegalArgumentException Thrown if the label is null or empty.
 	 * @since 1.8
 	 */
 	public Group(String label, String name, Collection<String> users, State state) {

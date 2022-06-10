@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -146,6 +147,71 @@ public class AccountService extends CoreService implements UserDetailsService {
 			logger.info("Coordinator group " + configurationService.getApplication().getCoordinatorGroup() + ".");
 		else
 			logger.warn("No coordinator group available.");
+
+		/*
+		 * Default administrator user
+		 */
+		if (configurationService.getApplication().getDefaultAdministrator().isCreate()
+				&& configurationService.getApplication().isAdministratorGroupSet())
+			try {
+				createDefaultAdministrator(configurationService.getApplication().getDefaultAdministrator().getLogin(),
+						configurationService.getApplication().getDefaultAdministrator().getPassword());
+			} catch (Exception e) {
+				logger.warn("The default administrator cannot be created because his login is not available.");
+			}
+	}
+
+	/**
+	 * Creates the default administrator user if not available.
+	 * 
+	 * @param login    The login.
+	 * @param password The password.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty.
+	 * @since 1.8
+	 */
+	private void createDefaultAdministrator(String login, String password) throws IllegalArgumentException {
+		final String administratorGroup = SecurityEntity
+				.filter(configurationService.getApplication().getAdministratorGroup());
+
+		User user = null;
+		Group group = getGroup(administratorGroup);
+
+		boolean isPersistGroup = group == null;
+		if (group == null)
+			group = new Group(administratorGroup, "Administrator group", null, null);
+		else
+			for (String administrator : group.getUsers()) {
+				user = users.get(administrator);
+
+				if (user != null)
+					break;
+			}
+
+		if (user == null && getUser(login) == null) {
+			user = new User(login, "Administrator user", null, null);
+			persist(user);
+
+			if (isPasswordAvailable(login))
+				logger.info("Created default administrator user '" + user.getLogin() + "'.");
+			else {
+				persist(new Password(login, password));
+
+				logger.info("Created default administrator user '" + user.getLogin() + "' with password '"
+						+ (password == null ? "" : password) + "'.");
+			}
+
+			Set<String> userGroups = new HashSet<>(Arrays.asList(administratorGroup));
+			if (isPersistGroup) {
+				persist(group);
+
+				logger.info("Created administrator group '" + group.getLabel() + "'.");
+			} else
+				for (Group userGroup : groups.values())
+					if (userGroup.getUsers().contains(user.getLogin()))
+						userGroups.add(userGroup.getLabel());
+
+			setGroups(user, userGroups);
+		}
 	}
 
 	/**
