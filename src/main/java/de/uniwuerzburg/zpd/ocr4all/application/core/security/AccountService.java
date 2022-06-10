@@ -148,26 +148,37 @@ public class AccountService extends CoreService implements UserDetailsService {
 		else
 			logger.warn("No coordinator group available.");
 
+		/*
+		 * Default administrator user
+		 */
 		if (configurationService.getApplication().getDefaultAdministrator().isCreate()
 				&& configurationService.getApplication().isAdministratorGroupSet())
-			createDefaultAdministrator(configurationService.getApplication().getDefaultAdministrator().getLogin(),
-					configurationService.getApplication().getDefaultAdministrator().getPassword());
-
+			try {
+				createDefaultAdministrator(configurationService.getApplication().getDefaultAdministrator().getLogin(),
+						configurationService.getApplication().getDefaultAdministrator().getPassword());
+			} catch (Exception e) {
+				logger.warn("The default administrator cannot be created because his login is not available.");
+			}
 	}
 
 	/**
 	 * Creates the default administrator user if not available.
 	 * 
+	 * @param login    The login.
+	 * @param password The password.
+	 * @throws IllegalArgumentException Thrown if the login is null or empty.
 	 * @since 1.8
 	 */
-	private void createDefaultAdministrator(String login, String password) {
-		User user = null;
-		Group group = groups.get(configurationService.getApplication().getAdministratorGroup());
+	private void createDefaultAdministrator(String login, String password) throws IllegalArgumentException {
+		final String administratorGroup = SecurityEntity
+				.filter(configurationService.getApplication().getAdministratorGroup());
 
-		boolean isCreateGroup = group == null;
+		User user = null;
+		Group group = getGroup(administratorGroup);
+
+		boolean isPersistGroup = group == null;
 		if (group == null)
-			group = new Group(configurationService.getApplication().getAdministratorGroup(), "Administrator group",
-					null, null);
+			group = new Group(administratorGroup, "Administrator group", null, null);
 		else
 			for (String administrator : group.getUsers()) {
 				user = users.get(administrator);
@@ -176,27 +187,28 @@ public class AccountService extends CoreService implements UserDetailsService {
 					break;
 			}
 
-		if (user == null && users.get(login) == null) {
+		if (user == null && getUser(login) == null) {
 			user = new User(login, "Administrator user", null, null);
 			persist(user);
 
 			if (isPasswordAvailable(login))
-				logger.info("Created administrator user '" + user.getLogin() + "'.");
+				logger.info("Created default administrator user '" + user.getLogin() + "'.");
 			else {
 				persist(new Password(login, password));
 
-				logger.info("Created administrator user '" + user.getLogin() + "' with password '" + password + "'.");
+				logger.info("Created default administrator user '" + user.getLogin() + "' with password '"
+						+ (password == null ? "" : password) + "'.");
 			}
 
-			persist(group);
-			if (isCreateGroup)
-				logger.info("Created administrator group '" + group.getLabel() + "'.");
+			Set<String> userGroups = new HashSet<>(Arrays.asList(administratorGroup));
+			if (isPersistGroup) {
+				persist(group);
 
-			Set<String> userGroups = new HashSet<String>(
-					Arrays.asList(configurationService.getApplication().getAdministratorGroup()));
-			for (Group userGroup : groups.values())
-				if (userGroup.getUsers().contains(login))
-					userGroups.add(userGroup.getLabel());
+				logger.info("Created administrator group '" + group.getLabel() + "'.");
+			} else
+				for (Group userGroup : groups.values())
+					if (userGroup.getUsers().contains(user.getLogin()))
+						userGroups.add(userGroup.getLabel());
 
 			setGroups(user, userGroups);
 		}
