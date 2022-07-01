@@ -81,25 +81,16 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					this.logger.debug("Loaded provider for service " + service.getName() + ": " + key + ".");
 
 					// Initializes the service provider in a new thread
-					new Thread() {
-						/*
-						 * (non-Javadoc)
-						 * 
-						 * @see java.lang.Thread#run()
-						 */
-						@Override
-						public void run() {
-							try {
-								provider.initialize(configuration);
-
-								CoreServiceProvider.this.logger.debug(
-										"Initialized provider for service " + service.getName() + ": " + key + ".");
-							} catch (Exception e) {
-								CoreServiceProvider.this.logger.warn("Could not initialize provider for service "
-										+ service.getName() + ": " + key + " - " + e.getMessage() + ".");
-							}
+					taskExecutor.execute(() -> {
+						try {
+							provider.initialize(configuration);
+							
+							CoreServiceProvider.this.logger.debug("Initialized provider: " + key + ".");
+						} catch (Exception e) {
+							CoreServiceProvider.this.logger
+									.warn("Could not initialize provider: " + key + " - " + e.getMessage() + ".");
 						}
-					};
+					});
 				}
 			}
 

@@ -141,7 +141,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	private enum MetsPattern implements ConfigurationServiceProvider.ServiceProviderCollectionKey {
+	private enum MetsPattern implements ConfigurationServiceProvider.CollectionKey {
 		create_date, software_creator, parameter, file_group, file_template, page_template,
 
 		file_mime_type, file_id("ocr4all"), file_name,
