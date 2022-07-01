@@ -57,6 +57,9 @@ ocr4all:
       - en
       - de
     monitor.interval: 15000
+    task.executor.pool.size:
+      core: 5
+      max: 10
     security:
       groups:
         administrator: admin

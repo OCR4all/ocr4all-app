@@ -365,6 +365,12 @@ public class AdministrationApiController extends CoreApiController {
 			private long monitorInterval;
 
 			/**
+			 * The task executor.
+			 */
+			@JsonProperty("task-executor")
+			private TaskExecutor taskExecutor;
+
+			/**
 			 * Default constructor for an application response for the api.
 			 * 
 			 * @since 1.8
@@ -383,6 +389,8 @@ public class AdministrationApiController extends CoreApiController {
 				locale = configuration.getLocale();
 				viewLanguages = configuration.getViewLanguages();
 				monitorInterval = configuration.getMonitorInterval();
+				taskExecutor = new TaskExecutor(configuration.getTaskExecutorProperties().getCorePoolSize(),
+						configuration.getTaskExecutorProperties().getMaxPoolSize());
 			}
 
 			/**
@@ -545,6 +553,102 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setMonitorInterval(long monitorInterval) {
 				this.monitorInterval = monitorInterval;
+			}
+
+			/**
+			 * Returns the task executor.
+			 *
+			 * @return The task executor.
+			 * @since 1.8
+			 */
+			public TaskExecutor getTaskExecutor() {
+				return taskExecutor;
+			}
+
+			/**
+			 * Set the task executor.
+			 *
+			 * @param taskExecutor The task executor to set.
+			 * @since 1.8
+			 */
+			public void setTaskExecutor(TaskExecutor taskExecutor) {
+				this.taskExecutor = taskExecutor;
+			}
+
+			/**
+			 * Defines task executor.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public class TaskExecutor {
+				/**
+				 * The task executor core pool size.
+				 */
+				@JsonProperty("core-pool-size")
+				private int corePoolSize;
+
+				/**
+				 * The task executor max pool size.
+				 */
+				@JsonProperty("max-pool-size")
+				private int maxPoolSize;
+
+				/**
+				 * Creates a task executor.
+				 * 
+				 * @param corePoolSize The task executor core pool size.
+				 * @param maxPoolSize  The task executor max pool size.
+				 * @since 1.8
+				 */
+				public TaskExecutor(int corePoolSize, int maxPoolSize) {
+					super();
+
+					this.corePoolSize = corePoolSize;
+					this.maxPoolSize = maxPoolSize;
+				}
+
+				/**
+				 * Returns the task executor core pool size.
+				 *
+				 * @return The task executor core pool size.
+				 * @since 1.8
+				 */
+				public int getCorePoolSize() {
+					return corePoolSize;
+				}
+
+				/**
+				 * Set the task executor core pool size.
+				 *
+				 * @param corePoolSize The core pool size to set.
+				 * @since 1.8
+				 */
+				public void setCorePoolSize(int corePoolSize) {
+					this.corePoolSize = corePoolSize;
+				}
+
+				/**
+				 * Returns the task executor max pool size.
+				 *
+				 * @return The task executor max pool size.
+				 * @since 1.8
+				 */
+				public int getMaxPoolSize() {
+					return maxPoolSize;
+				}
+
+				/**
+				 * Set the task executor max pool size.
+				 *
+				 * @param maxPoolSize The max pool size to set.
+				 * @since 1.8
+				 */
+				public void setMaxPoolSize(int maxPoolSize) {
+					this.maxPoolSize = maxPoolSize;
+				}
+
 			}
 		}
 

@@ -35,7 +35,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
@@ -186,12 +185,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.ServiceProvider#getPremise(de.
-	 * uniwuerzburg.zpd.ocr4all.application.spi.ConfigurationServiceProvider,
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.Target)
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getPremise(
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target)
 	 */
 	@Override
-	public Premise getPremise(ConfigurationServiceProvider configuration, Target target) {
+	public Premise getPremise(Target target) {
 		if (!configuration.isSystemCommandAvailable(SystemCommand.Type.convert)
 				&& !configuration.isSystemCommandAvailable(SystemCommand.Type.identify))
 			return new Premise(Premise.State.block, locale -> getString(locale, "image.no.command.convert.identify"));
@@ -211,12 +209,12 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.ServiceProvider#getModel(de.
-	 * uniwuerzburg.zpd.ocr4all.application.spi.ConfigurationServiceProvider,
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.Target)
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getModel(de.
+	 * uniwuerzburg.zpd.ocr4all.application.spi.env.Target)
 	 */
 	@Override
-	public Model getModel(ConfigurationServiceProvider configuration, Target target) {
+	public Model getModel(Target target) {
 		return new Model(
 				new StringField(Field.sourceFolder.getName(), "images",
 						locale -> getString(locale, "source.folder.description"),
@@ -406,10 +404,10 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				// The system commands
-				String convertCommand = framework.getConfiguration().getSystemCommand(SystemCommand.Type.convert)
-						.getCommand().toString();
-				String identifyCommand = framework.getConfiguration().getSystemCommand(SystemCommand.Type.identify)
-						.getCommand().toString();
+				String convertCommand = configuration.getSystemCommand(SystemCommand.Type.convert).getCommand()
+						.toString();
+				String identifyCommand = configuration.getSystemCommand(SystemCommand.Type.identify).getCommand()
+						.toString();
 
 				/*
 				 * Test for missed arguments

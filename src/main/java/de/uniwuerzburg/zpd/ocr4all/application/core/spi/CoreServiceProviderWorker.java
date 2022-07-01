@@ -15,6 +15,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
+
 /**
  * Defines core service provider workers.
  *
@@ -22,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @version 1.0
  * @since 1.8
  */
-public class CoreServiceProviderWorker {
+public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	/**
 	 * The base name of the service provider resource bundle.
 	 */
@@ -50,6 +53,11 @@ public class CoreServiceProviderWorker {
 	protected final String resourceBundleKeyPrefix;
 
 	/**
+	 * The configuration.
+	 */
+	protected ConfigurationServiceProvider configuration;
+
+	/**
 	 * Default constructor for a core service provider worker.
 	 * 
 	 * @since 1.8
@@ -68,6 +76,18 @@ public class CoreServiceProviderWorker {
 		super();
 
 		this.resourceBundleKeyPrefix = resourceBundleKeyPrefix == null ? "" : resourceBundleKeyPrefix.trim();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#initialize(
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider)
+	 */
+	@Override
+	public void initialize(ConfigurationServiceProvider configuration) {
+		this.configuration = configuration;
 	}
 
 	/**

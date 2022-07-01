@@ -141,7 +141,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	private enum MetsPattern implements Framework.ServiceProviderCollectionKey {
+	private enum MetsPattern implements ConfigurationServiceProvider.ServiceProviderCollectionKey {
 		create_date, software_creator, parameter, file_group, file_template, page_template,
 
 		file_mime_type, file_id("ocr4all"), file_name,
@@ -425,12 +425,11 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.ServiceProvider#getPremise(de.
-	 * uniwuerzburg.zpd.ocr4all.application.spi.ConfigurationServiceProvider,
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.Target)
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getPremise(
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target)
 	 */
 	@Override
-	public Premise getPremise(ConfigurationServiceProvider configuration, Target target) {
+	public Premise getPremise(Target target) {
 		return target.getWorkflow().isLaunched()
 				? new Premise(Premise.State.block, locale -> getString(locale, "already.launched"))
 				: (configuration.isSystemCommandAvailable(SystemCommand.Type.convert) ? new Premise()
@@ -440,12 +439,12 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.ServiceProvider#getModel(de.
-	 * uniwuerzburg.zpd.ocr4all.application.spi.ConfigurationServiceProvider,
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.Target)
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getModel(de.
+	 * uniwuerzburg.zpd.ocr4all.application.spi.env.Target)
 	 */
 	@Override
-	public Model getModel(ConfigurationServiceProvider configuration, Target target) {
+	public Model getModel(Target target) {
 		// Use launcher argument to set the default values
 		LauncherArgumentMethodThreshold argument = new LauncherArgumentMethodThreshold();
 
@@ -609,8 +608,8 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				}
 
 				// Convert system command
-				String convertCommand = framework.getConfiguration().getSystemCommand(SystemCommand.Type.convert)
-						.getCommand().toString();
+				String convertCommand = configuration.getSystemCommand(SystemCommand.Type.convert).getCommand()
+						.toString();
 
 				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
@@ -967,8 +966,8 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				try {
 					final String metsFilePath = processorWorkspaceRelativePath.toString()
 							+ (processorWorkspaceRelativePath.equals(Paths.get("")) ? "" : "/");
-					final String fileIdPrefix = framework.getValue(MetsPattern.file_id);
-					final String pageIdPrefix = framework.getValue(MetsPattern.page_id);
+					final String fileIdPrefix = configuration.getValue(MetsPattern.file_id);
+					final String pageIdPrefix = configuration.getValue(MetsPattern.page_id);
 
 					final StringBuffer metsFileBuffer = new StringBuffer();
 					final StringBuffer metsPageBuffer = new StringBuffer();

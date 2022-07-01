@@ -13,9 +13,12 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 
 /**
  * Defines core service providers.
@@ -53,11 +56,15 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @param configurationService The configuration service.
 	 * @param service              The interface or abstract class representing the
 	 *                             service.
+	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	protected CoreServiceProvider(Class<? extends CoreServiceProvider<P>> logger,
-			ConfigurationService configurationService, Class<P> service) {
+			ConfigurationService configurationService, Class<P> service, ThreadPoolTaskExecutor taskExecutor) {
 		super(logger, configurationService);
+
+		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
+				.getConfigurationServiceProvider();
 
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
@@ -72,6 +79,27 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					providers.add(new Provider(key, provider));
 
 					this.logger.debug("Loaded provider for service " + service.getName() + ": " + key + ".");
+
+					// Initializes the service provider in a new thread
+					new Thread() {
+						/*
+						 * (non-Javadoc)
+						 * 
+						 * @see java.lang.Thread#run()
+						 */
+						@Override
+						public void run() {
+							try {
+								provider.initialize(configuration);
+
+								CoreServiceProvider.this.logger.debug(
+										"Initialized provider for service " + service.getName() + ": " + key + ".");
+							} catch (Exception e) {
+								CoreServiceProvider.this.logger.warn("Could not initialize provider for service "
+										+ service.getName() + ": " + key + " - " + e.getMessage() + ".");
+							}
+						}
+					};
 				}
 			}
 
@@ -96,6 +124,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 			this.logger.info("Loaded " + providers.size() + " providers for " + service.getName() + ": "
 					+ buffer.toString() + ".");
 		}
+
 	}
 
 	/**

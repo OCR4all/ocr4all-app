@@ -247,7 +247,6 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 			final List<ServiceProviderResponse> providers = new ArrayList<>();
 			for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getProviders())
 				providers.add(new ServiceProviderResponse(locale, type, provider.getId(), provider.getServiceProvider(),
-						configurationService.getWorkspace().getConfiguration().getConfigurationServiceProvider(),
 						target));
 
 			Collections.sort(providers, new Comparator<ServiceProviderResponse>() {
