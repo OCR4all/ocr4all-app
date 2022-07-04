@@ -7,6 +7,8 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.spi;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.context.NoSuchMessageException;
@@ -15,6 +17,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 
@@ -58,6 +61,21 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	protected ConfigurationServiceProvider configuration;
 
 	/**
+	 * The status.
+	 */
+	protected ServiceProvider.Status status = ServiceProvider.Status.loaded;
+
+	/**
+	 * True if the service provider is enabled.
+	 */
+	protected boolean isEnabled = false;
+
+	/**
+	 * The journal.
+	 */
+	protected List<JournalEntryServiceProvider> journal = new ArrayList<>();
+
+	/**
 	 * Default constructor for a core service provider worker.
 	 * 
 	 * @since 1.8
@@ -76,6 +94,8 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 		super();
 
 		this.resourceBundleKeyPrefix = resourceBundleKeyPrefix == null ? "" : resourceBundleKeyPrefix.trim();
+
+		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, null, status));
 	}
 
 	/*
@@ -83,11 +103,123 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * 
 	 * @see
 	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#initialize(
+	 * boolean,
 	 * de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider)
 	 */
 	@Override
-	public void initialize(ConfigurationServiceProvider configuration) {
+	public void initialize(boolean isEnabled, ConfigurationServiceProvider configuration) {
+		this.isEnabled = isEnabled;
 		this.configuration = configuration;
+
+		ServiceProvider.Status sourceState = status;
+		status = ServiceProvider.Status.initialized;
+
+		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, sourceState,
+				status));
+
+		sourceState = status;
+		status = isEnabled ? ServiceProvider.Status.active : ServiceProvider.Status.inactive;
+
+		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, sourceState,
+				status));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#isEnabled()
+	 */
+	@Override
+	public boolean isEnabled() {
+		return isEnabled;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#setEnabled(
+	 * java.lang.String, java.lang.Boolean)
+	 */
+	@Override
+	public void setEnabled(String user, Boolean isEnabled) {
+		if (this.isEnabled != isEnabled) {
+			this.isEnabled = isEnabled;
+
+			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info,
+					(isEnabled ? "enabled" : "disabled") + " service provider", status, status));
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getStatus()
+	 */
+	@Override
+	public Status getStatus() {
+		return status;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#start(java.
+	 * lang.String)
+	 */
+	@Override
+	public void start(String user) {
+		if (ServiceProvider.Status.inactive.equals(status)) {
+			status = ServiceProvider.Status.active;
+
+			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null,
+					ServiceProvider.Status.inactive, status));
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#restart(java
+	 * .lang.String)
+	 */
+	@Override
+	public void restart(String user) {
+		if (ServiceProvider.Status.active.equals(status))
+			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, status,
+					status));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#stop(java.
+	 * lang.String)
+	 */
+	@Override
+	public void stop(String user) {
+		if (ServiceProvider.Status.active.equals(status)) {
+			status = ServiceProvider.Status.inactive;
+
+			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null,
+					ServiceProvider.Status.active, status));
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getJournal()
+	 */
+	@Override
+	public List<JournalEntryServiceProvider> getJournal() {
+		return new ArrayList<>(journal);
 	}
 
 	/**

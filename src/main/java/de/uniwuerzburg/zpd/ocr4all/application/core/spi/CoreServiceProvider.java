@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -65,6 +66,8 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
 				.getConfigurationServiceProvider();
+		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
+				.getDisabledServiceProviders();
 
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
@@ -83,8 +86,8 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					// Initializes the service provider in a new thread
 					taskExecutor.execute(() -> {
 						try {
-							provider.initialize(configuration);
-							
+							provider.initialize(!disabledServiceProviders.contains(key), configuration);
+
 							CoreServiceProvider.this.logger.debug("Initialized provider: " + key + ".");
 						} catch (Exception e) {
 							CoreServiceProvider.this.logger

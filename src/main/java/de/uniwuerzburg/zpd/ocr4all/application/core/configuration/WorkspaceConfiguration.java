@@ -15,11 +15,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Workspace;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.DisabledServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -504,6 +508,16 @@ public class WorkspaceConfiguration extends CoreFolder {
 		private String systemCommandIdentify = null;
 
 		/**
+		 * The service provider configuration persistence manager.
+		 */
+		private final PersistenceManager serviceProviderConfigurationManager;
+
+		/**
+		 * The disabled service providers.
+		 */
+		private final Hashtable<String, DisabledServiceProvider> disabledServiceProviders = new Hashtable<>();
+
+		/**
 		 * Creates a configuration for the workspace.
 		 * 
 		 * @param properties       The configuration properties for the workspace.
@@ -529,6 +543,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 			// Loads the main configuration file
 			loadMainConfiguration(Paths.get(folder.toString(), properties.getFiles().getMain()));
+
+			// Loads the service provider configuration file
+			serviceProviderConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getProvider()),
+					Type.service_provider_disabled_v1);
+			loadServiceProviderConfiguration();
 		}
 
 		/**
@@ -784,6 +803,80 @@ public class WorkspaceConfiguration extends CoreFolder {
 					MainConfigurationField.systemCommandConvert.getLabel() + ": " + getPropertySystemCommandConvert(),
 					MainConfigurationField.systemCommandIdentify.getLabel() + ": " + getPropertySystemCommandIdentify(),
 					MainConfigurationField.serviceProvider.getLabel() + "{collection.key}: [value]" };
+		}
+
+		/**
+		 * Loads the service provider configuration.
+		 * 
+		 * @since 1.8
+		 */
+		private void loadServiceProviderConfiguration() {
+			try {
+				for (DisabledServiceProvider disabledServiceProvider : serviceProviderConfigurationManager
+						.getEntities(DisabledServiceProvider.class))
+					if (disabledServiceProvider.getId() != null && !disabledServiceProvider.getId().isBlank()) {
+						disabledServiceProvider.setId(disabledServiceProvider.getId().trim());
+
+						disabledServiceProviders.put(disabledServiceProvider.getId().trim(), disabledServiceProvider);
+					}
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+		}
+
+		/**
+		 * Persist the service provider configuration.
+		 * 
+		 * @since 1.8
+		 */
+		private void persistServiceProviderConfiguration() {
+			try {
+				serviceProviderConfigurationManager.persist(disabledServiceProviders.values());
+
+				logger.info("Persisted service provider configuration file.");
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+		}
+
+		/**
+		 * Returns the disabled service providers.
+		 * 
+		 * @return The disabled service providers.
+		 * @since 1.8
+		 */
+		public Set<String> getDisabledServiceProviders() {
+			return new HashSet<>(disabledServiceProviders.keySet());
+		}
+
+		/**
+		 * Enables the service provider.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void enableServiceProvider(String id) {
+			if (id != null && !id.isBlank() && disabledServiceProviders.remove(id.trim()) != null)
+				persistServiceProviderConfiguration();
+		}
+
+		/**
+		 * Disables the service provider.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void disableServiceProvider(String id, String user) {
+			if (id != null && !id.isBlank()) {
+				id = id.trim();
+				
+				if (!disabledServiceProviders.containsKey(id)) {
+					disabledServiceProviders.put(id, new DisabledServiceProvider(user, id));
+
+					persistServiceProviderConfiguration();
+				}
+			}
+
 		}
 
 		/**

@@ -161,6 +161,11 @@
 			"description": "ocr4all password workspace configuration file; the default value is 'password'. Required in server profile."
 		},
 		{
+			"name": "ocr4all.workspace.configuration.files.provider",
+			"type": "java.lang.String",
+			"description": "ocr4all service provider workspace configuration file; the default value is 'service-provider'."
+		},
+		{
 			"name": "ocr4all.workspace.models.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all workspace models folder; the default value is 'models'."

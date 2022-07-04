@@ -94,6 +94,7 @@ ocr4all:
         user: user
         group: group
         password: password
+        provider: service-provider
     models:
       folder: models
       model:
