@@ -130,8 +130,8 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 				// administration
 				.antMatchers(HttpMethod.GET,
 						AdministrationApiController.contextPath + CoreApiController.overviewRequestMapping,
-						AdministrationApiController.contextPath + CoreApiController.overviewRequestMapping
-								+ CoreApiController.providersRequestMapping,
+						AdministrationApiController.contextPath + CoreApiController.providersRequestMapping
+								+ CoreApiController.overviewRequestMapping,
 						AdministrationSecurityApiController.contextPath
 								+ AdministrationSecurityApiController.userRequestMapping
 								+ CoreApiController.entityRequestMapping,
