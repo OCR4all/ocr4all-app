@@ -130,34 +130,51 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	public abstract CoreData getCoreData();
 
 	/**
-	 * Returns the service provider with given key.
+	 * Returns the active provider with given key.
 	 *
-	 * @param key The service provider key.
-	 * @return The service provider with given key.
+	 * @param key The provider key.
+	 * @return The active provider with given key. Null if unknown or inactive.
 	 * @since 1.8
 	 */
-	public P getServiceProviders(String key) {
-		return key == null ? null : serviceProviders.get(key);
+	public P getActiveProvider(String key) {
+		if (key == null)
+			return null;
+		else {
+			P provider = serviceProviders.get(key);
+
+			return provider == null || !ServiceProvider.Status.active.equals(provider.getStatus()) ? null
+					: serviceProviders.get(key);
+		}
 	}
 
 	/**
-	 * Returns true if there are registered providers.
+	 * Returns true if there are registered active providers.
 	 * 
-	 * @return True if there are registered providers.
+	 * @return True if there are registered active providers.
 	 * @since 1.8
 	 */
-	public boolean isProviderAvailable() {
-		return !providers.isEmpty();
+	public boolean isActiveProviderAvailable() {
+		for (Provider provider : providers)
+			if (ServiceProvider.Status.active.equals(provider.getServiceProvider().getStatus()))
+				return true;
+
+		return false;
 	}
 
 	/**
-	 * Returns the number of registered providers.
+	 * Returns the registered active providers sorted by name.
 	 * 
-	 * @return The number of registered providers.
+	 * @return The registered active providers sorted by name.
 	 * @since 1.8
 	 */
-	public int getProviderNumber() {
-		return providers.size();
+	public List<Provider> getActiveProviders() {
+		List<Provider> active = new ArrayList<>();
+
+		for (Provider provider : providers)
+			if (ServiceProvider.Status.active.equals(provider.getServiceProvider().getStatus()))
+				active.add(provider);
+
+		return active;
 	}
 
 	/**

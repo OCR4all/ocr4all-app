@@ -95,7 +95,8 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 
 		this.resourceBundleKeyPrefix = resourceBundleKeyPrefix == null ? "" : resourceBundleKeyPrefix.trim();
 
-		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, null, status));
+		journal.add(new JournalEntryServiceProvider(true, JournalEntryServiceProvider.Level.info,
+				"loaded service provider", null, status));
 	}
 
 	/*
@@ -114,14 +115,14 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 		ServiceProvider.Status sourceState = status;
 		status = ServiceProvider.Status.initialized;
 
-		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, sourceState,
-				status));
+		journal.add(new JournalEntryServiceProvider(true, JournalEntryServiceProvider.Level.info,
+				"initialized service provider", sourceState, status));
 
 		sourceState = status;
 		status = isEnabled ? ServiceProvider.Status.active : ServiceProvider.Status.inactive;
 
-		journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, sourceState,
-				status));
+		journal.add(new JournalEntryServiceProvider(true, JournalEntryServiceProvider.Level.info,
+				isEnabled ? "started service provider" : "stopped service provider", sourceState, status));
 	}
 
 	/*
@@ -147,7 +148,7 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 		if (this.isEnabled != isEnabled) {
 			this.isEnabled = isEnabled;
 
-			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info,
+			journal.add(new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
 					(isEnabled ? "enabled" : "disabled") + " service provider", status, status));
 		}
 	}
@@ -171,13 +172,20 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * lang.String)
 	 */
 	@Override
-	public void start(String user) {
+	public JournalEntryServiceProvider start(String user) {
+		JournalEntryServiceProvider journalEntry;
 		if (ServiceProvider.Status.inactive.equals(status)) {
 			status = ServiceProvider.Status.active;
 
-			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null,
-					ServiceProvider.Status.inactive, status));
-		}
+			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
+					"started service provider", ServiceProvider.Status.inactive, status);
+
+			journal.add(journalEntry);
+		} else
+			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
+					"the service provider can oly be started in 'inactive' status ", status, status);
+
+		return journalEntry;
 	}
 
 	/*
@@ -188,10 +196,18 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * .lang.String)
 	 */
 	@Override
-	public void restart(String user) {
-		if (ServiceProvider.Status.active.equals(status))
-			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null, status,
-					status));
+	public JournalEntryServiceProvider restart(String user) {
+		JournalEntryServiceProvider journalEntry;
+		if (ServiceProvider.Status.active.equals(status)) {
+			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
+					"restarted service provider", status, status);
+
+			journal.add(journalEntry);
+		} else
+			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
+					"the service provider can oly be restarted in 'active' status ", status, status);
+
+		return journalEntry;
 	}
 
 	/*
@@ -202,13 +218,21 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * lang.String)
 	 */
 	@Override
-	public void stop(String user) {
+	public JournalEntryServiceProvider stop(String user) {
+		JournalEntryServiceProvider journalEntry;
 		if (ServiceProvider.Status.active.equals(status)) {
 			status = ServiceProvider.Status.inactive;
 
-			journal.add(new JournalEntryServiceProvider(null, JournalEntryServiceProvider.Level.info, null,
-					ServiceProvider.Status.active, status));
-		}
+			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
+					"stopped service provider", ServiceProvider.Status.active, status);
+
+			journal.add(journalEntry);
+		} else
+			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
+					"the service provider can oly be stopped in 'active' status ", status, status);
+
+		return journalEntry;
+
 	}
 
 	/*

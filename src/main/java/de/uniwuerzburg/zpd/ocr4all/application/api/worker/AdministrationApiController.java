@@ -23,8 +23,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
@@ -32,6 +34,20 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -52,15 +68,55 @@ public class AdministrationApiController extends CoreApiController {
 	public static final String contextPath = apiContextPathVersion_1_0 + "/administration";
 
 	/**
+	 * The registered import service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<ImportServiceProvider>.Provider> importProviders;
+
+	/**
+	 * The registered launcher service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<LauncherServiceProvider>.Provider> launcherProviders;
+
+	/**
+	 * The registered preprocessing service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<PreprocessingServiceProvider>.Provider> preprocessingProviders;
+
+	/**
+	 * The registered optical layout recognition (OLR) service providers sorted by
+	 * name.
+	 */
+	private final List<CoreServiceProvider<OpticalLayoutRecognitionServiceProvider>.Provider> olrProviders;
+
+	/**
+	 * The registered optical character recognition (OCR) service providers sorted
+	 * by name.
+	 */
+	private final List<CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider> ocrProviders;
+
+	/**
 	 * Creates an administration controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param importService        The import service.
+	 * @param launcherService      The launcher service.
+	 * @param preprocessingService The preprocessing service.
+	 * @param olrService           The optical layout recognition (OLR) service.
+	 * @param ocrService           The optical character recognition (OCR) service.
 	 * @since 1.8
 	 */
 	@Autowired
-	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService) {
+	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
+			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
+			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService) {
 		super(AdministrationApiController.class, configurationService, securityService);
+
+		importProviders = importService.getProviders();
+		launcherProviders = launcherService.getProviders();
+		preprocessingProviders = preprocessingService.getProviders();
+		olrProviders = olrService.getProviders();
+		ocrProviders = ocrService.getProviders();
 	}
 
 	/**
@@ -77,6 +133,710 @@ public class AdministrationApiController extends CoreApiController {
 			log(ex);
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the administration service providers overview in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The administration service providers overview in the response body.
+	 * @since 1.8
+	 */
+	@GetMapping(overviewRequestMapping + providersRequestMapping)
+	public ResponseEntity<ProviderContainerResponse> providers(@RequestParam(required = false) String lang) {
+		try {
+			return ResponseEntity.ok().body(new ProviderContainerResponse(getLocale(lang)));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Defines provider container responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public class ProviderContainerResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The registered import service providers sorted by name.
+		 */
+		@JsonProperty("import-providers")
+		private List<ProviderResponse> importProviders;
+
+		/**
+		 * The registered launcher service providers sorted by name.
+		 */
+		@JsonProperty("launcher-providers")
+		private List<ProviderResponse> launcherProviders;
+
+		/**
+		 * The registered preprocessing service providers sorted by name.
+		 */
+		@JsonProperty("preprocessing-providers")
+		private List<ProviderResponse> preprocessingProviders;
+
+		/**
+		 * The registered optical layout recognition (OLR) service providers sorted by
+		 * name.
+		 */
+		@JsonProperty("olr-providers")
+		private List<ProviderResponse> olrProviders;
+
+		/**
+		 * The registered optical character recognition (OCR) service providers sorted
+		 * by name.
+		 */
+		@JsonProperty("ocr-providers")
+		private List<ProviderResponse> ocrProviders;
+
+		/**
+		 * Default constructor for a provider container response for the api.
+		 * 
+		 * @since 1.8
+		 */
+		public ProviderContainerResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a provider container response for the api.
+		 * 
+		 * @param locale The locale.
+		 * @since 1.8
+		 */
+		public ProviderContainerResponse(Locale locale) {
+			super();
+
+			importProviders = new ArrayList<>();
+			for (CoreServiceProvider<ImportServiceProvider>.Provider provider : AdministrationApiController.this.importProviders)
+				importProviders.add(new ProviderResponse(locale, provider));
+
+			launcherProviders = new ArrayList<>();
+			for (CoreServiceProvider<LauncherServiceProvider>.Provider provider : AdministrationApiController.this.launcherProviders)
+				launcherProviders.add(new ProviderResponse(locale, provider));
+
+			preprocessingProviders = new ArrayList<>();
+			for (CoreServiceProvider<PreprocessingServiceProvider>.Provider provider : AdministrationApiController.this.preprocessingProviders)
+				preprocessingProviders.add(new ProviderResponse(locale, provider));
+
+			olrProviders = new ArrayList<>();
+			for (CoreServiceProvider<OpticalLayoutRecognitionServiceProvider>.Provider provider : AdministrationApiController.this.olrProviders)
+				olrProviders.add(new ProviderResponse(locale, provider));
+
+			ocrProviders = new ArrayList<>();
+			for (CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider provider : AdministrationApiController.this.ocrProviders)
+				ocrProviders.add(new ProviderResponse(locale, provider));
+		}
+
+		/**
+		 * Returns the registered import service providers sorted by name.
+		 *
+		 * @return The registered import service providers sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getImportProviders() {
+			return importProviders;
+		}
+
+		/**
+		 * Set the registered import service providers sorted by name.
+		 *
+		 * @param importProviders The providers to set.
+		 * @since 1.8
+		 */
+		public void setImportProviders(List<ProviderResponse> importProviders) {
+			this.importProviders = importProviders;
+		}
+
+		/**
+		 * Returns the registered launcher service providers sorted by name.
+		 *
+		 * @return The registered launcher service providers sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getLauncherProviders() {
+			return launcherProviders;
+		}
+
+		/**
+		 * Set the registered launcher service providers sorted by name.
+		 *
+		 * @param launcherProviders The providers to set.
+		 * @since 1.8
+		 */
+		public void setLauncherProviders(List<ProviderResponse> launcherProviders) {
+			this.launcherProviders = launcherProviders;
+		}
+
+		/**
+		 * Returns the registered preprocessing service providers sorted by name.
+		 *
+		 * @return The registered preprocessing service providers sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getPreprocessingProviders() {
+			return preprocessingProviders;
+		}
+
+		/**
+		 * Set the registered preprocessing service providers sorted by name.
+		 *
+		 * @param preprocessingProviders The providers to set.
+		 * @since 1.8
+		 */
+		public void setPreprocessingProviders(List<ProviderResponse> preprocessingProviders) {
+			this.preprocessingProviders = preprocessingProviders;
+		}
+
+		/**
+		 * Returns the registered optical layout recognition (OLR) service providers
+		 * sorted by name.
+		 *
+		 * @return The registered optical layout recognition (OLR) service providers
+		 *         sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getOlrProviders() {
+			return olrProviders;
+		}
+
+		/**
+		 * Set the registered optical layout recognition (OLR) service providers sorted
+		 * by name.
+		 *
+		 * @param olrProviders The providers to set.
+		 * @since 1.8
+		 */
+		public void setOlrProviders(List<ProviderResponse> olrProviders) {
+			this.olrProviders = olrProviders;
+		}
+
+		/**
+		 * Returns the registered optical character recognition (OCR) service providers
+		 * sorted by name.
+		 *
+		 * @return The registered optical character recognition (OCR) service providers
+		 *         sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getOcrProviders() {
+			return ocrProviders;
+		}
+
+		/**
+		 * Set the registered optical character recognition (OCR) service providers
+		 * sorted by name.
+		 *
+		 * @param ocrProviders The providers to set.
+		 * @since 1.8
+		 */
+		public void setOcrProviders(List<ProviderResponse> ocrProviders) {
+			this.ocrProviders = ocrProviders;
+		}
+
+		/**
+		 * Defines provider responses for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class ProviderResponse implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The id.
+			 */
+			private String id;
+
+			/**
+			 * The status.
+			 */
+			private ServiceProvider.Status status;
+
+			/**
+			 * True if the service provider is enabled.
+			 */
+			@JsonProperty("enabled")
+			private boolean isEnabled;
+
+			/**
+			 * The name.
+			 */
+			private String name;
+
+			/**
+			 * The version.
+			 */
+			private float version;
+
+			/**
+			 * The description.
+			 */
+			private String description;
+
+			/**
+			 * The icon.
+			 */
+			private String icon;
+
+			/**
+			 * The index.
+			 */
+			private int index;
+
+			/**
+			 * The journal.
+			 */
+			private List<JournalEntryResponse> journal;
+
+			/**
+			 * Default constructor for a provider responses for the api.
+			 * 
+			 * @since 1.8
+			 */
+			public ProviderResponse() {
+				super();
+			}
+
+			/**
+			 * Creates a provider responses for the api.
+			 * 
+			 * @param locale   The locale.
+			 * @param provider The provider
+			 * @since 1.8
+			 */
+			public ProviderResponse(Locale locale, CoreServiceProvider<?>.Provider provider) {
+				super();
+
+				id = provider.getId();
+				status = provider.getServiceProvider().getStatus();
+				isEnabled = provider.getServiceProvider().isEnabled();
+				name = provider.getServiceProvider().getName(locale);
+				version = provider.getServiceProvider().getVersion();
+				description = provider.getServiceProvider().getDescription(locale).orElse(null);
+				icon = provider.getServiceProvider().getIcon().orElse(null);
+				index = provider.getServiceProvider().getIndex();
+
+				journal = new ArrayList<>();
+				for (JournalEntryServiceProvider entry : provider.getServiceProvider().getJournal())
+					journal.add(new JournalEntryResponse(entry));
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 1.8
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 1.8
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the status.
+			 *
+			 * @return The status.
+			 * @since 1.8
+			 */
+			public ServiceProvider.Status getStatus() {
+				return status;
+			}
+
+			/**
+			 * Set the status.
+			 *
+			 * @param status The status to set.
+			 * @since 1.8
+			 */
+			public void setStatus(ServiceProvider.Status status) {
+				this.status = status;
+			}
+
+			/**
+			 * Returns true if the service provider is enabled.
+			 *
+			 * @return True if the service provider is enabled.
+			 * @since 1.8
+			 */
+			@JsonGetter("enabled")
+			public boolean isEnabled() {
+				return isEnabled;
+			}
+
+			/**
+			 * Set to true if the service provider is enabled.
+			 *
+			 * @param isEnabled The enabled flag to set.
+			 * @since 1.8
+			 */
+			public void setEnabled(boolean isEnabled) {
+				this.isEnabled = isEnabled;
+			}
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 1.8
+			 */
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			/**
+			 * Returns the version.
+			 *
+			 * @return The version.
+			 * @since 1.8
+			 */
+			public float getVersion() {
+				return version;
+			}
+
+			/**
+			 * Set the version.
+			 *
+			 * @param version The version to set.
+			 * @since 1.8
+			 */
+			public void setVersion(float version) {
+				this.version = version;
+			}
+
+			/**
+			 * Returns the description.
+			 *
+			 * @return The description.
+			 * @since 1.8
+			 */
+			public String getDescription() {
+				return description;
+			}
+
+			/**
+			 * Set the description.
+			 *
+			 * @param description The description to set.
+			 * @since 1.8
+			 */
+			public void setDescription(String description) {
+				this.description = description;
+			}
+
+			/**
+			 * Returns the icon.
+			 *
+			 * @return The icon.
+			 * @since 1.8
+			 */
+			public String getIcon() {
+				return icon;
+			}
+
+			/**
+			 * Set the icon.
+			 *
+			 * @param icon The icon to set.
+			 * @since 1.8
+			 */
+			public void setIcon(String icon) {
+				this.icon = icon;
+			}
+
+			/**
+			 * Returns the index.
+			 *
+			 * @return The index.
+			 * @since 1.8
+			 */
+			public int getIndex() {
+				return index;
+			}
+
+			/**
+			 * Set the index.
+			 *
+			 * @param index The index to set.
+			 * @since 1.8
+			 */
+			public void setIndex(int index) {
+				this.index = index;
+			}
+
+			/**
+			 * Returns the journal.
+			 *
+			 * @return The journal.
+			 * @since 1.8
+			 */
+			public List<JournalEntryResponse> getJournal() {
+				return journal;
+			}
+
+			/**
+			 * Set the journal.
+			 *
+			 * @param journal The journal to set.
+			 * @since 1.8
+			 */
+			public void setJournal(List<JournalEntryResponse> journal) {
+				this.journal = journal;
+			}
+
+			/**
+			 * Defines provider journal entry responses for the api.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public class JournalEntryResponse implements Serializable {
+				/**
+				 * The serial version UID.
+				 */
+				private static final long serialVersionUID = 1L;
+
+				/**
+				 * The date.
+				 */
+				private Date date;
+
+				/**
+				 * The user.
+				 */
+				private String user;
+
+				/**
+				 * True if the action succeeds.
+				 */
+				@JsonProperty("succeed")
+				private boolean isSucceed;
+
+				/**
+				 * The level.
+				 */
+				private Level level;
+
+				/**
+				 * The message.
+				 */
+				private String message;
+
+				/**
+				 * The source status.
+				 */
+				@JsonProperty("source-status")
+				private ServiceProvider.Status sourceStatus;
+
+				/**
+				 * The target status.
+				 */
+				@JsonProperty("target-status")
+				private ServiceProvider.Status targetStatus;
+
+				/**
+				 * Default constructor for a provider journal entry responses for the api.
+				 * 
+				 * @since 1.8
+				 */
+				public JournalEntryResponse() {
+					super();
+				}
+
+				/**
+				 * Creates a provider journal entry responses for the api.
+				 * 
+				 * @param entry The journal entry.
+				 * @since 1.8
+				 */
+				public JournalEntryResponse(JournalEntryServiceProvider entry) {
+					super();
+
+					date = entry.getDate();
+					user = entry.getUser();
+					isSucceed = entry.isSucceed();
+					level = entry.getLevel();
+					message = entry.getMessage();
+					sourceStatus = entry.getSourceStatus();
+					targetStatus = entry.getTargetStatus();
+				}
+
+				/**
+				 * Returns the date.
+				 *
+				 * @return The date.
+				 * @since 1.8
+				 */
+				public Date getDate() {
+					return date;
+				}
+
+				/**
+				 * Set the date.
+				 *
+				 * @param date The date to set.
+				 * @since 1.8
+				 */
+				public void setDate(Date date) {
+					this.date = date;
+				}
+
+				/**
+				 * Returns the user.
+				 *
+				 * @return The user.
+				 * @since 1.8
+				 */
+				public String getUser() {
+					return user;
+				}
+
+				/**
+				 * Set the user.
+				 *
+				 * @param user The user to set.
+				 * @since 1.8
+				 */
+				public void setUser(String user) {
+					this.user = user;
+				}
+
+				/**
+				 * Returns true if the action succeeds.
+				 *
+				 * @return True if the action succeeds.
+				 * @since 1.8
+				 */
+				@JsonGetter("succeed")
+				public boolean isSucceed() {
+					return isSucceed;
+				}
+
+				/**
+				 * Set true if the action succeeds.
+				 *
+				 * @param isSucceed The succeed flag to set.
+				 * @since 1.8
+				 */
+				public void setSucceed(boolean isSucceed) {
+					this.isSucceed = isSucceed;
+				}
+
+				/**
+				 * Returns the level.
+				 *
+				 * @return The level.
+				 * @since 1.8
+				 */
+				public Level getLevel() {
+					return level;
+				}
+
+				/**
+				 * Set the level.
+				 *
+				 * @param level The level to set.
+				 * @since 1.8
+				 */
+				public void setLevel(Level level) {
+					this.level = level;
+				}
+
+				/**
+				 * Returns the message.
+				 *
+				 * @return The message.
+				 * @since 1.8
+				 */
+				public String getMessage() {
+					return message;
+				}
+
+				/**
+				 * Set the message.
+				 *
+				 * @param message The message to set.
+				 * @since 1.8
+				 */
+				public void setMessage(String message) {
+					this.message = message;
+				}
+
+				/**
+				 * Returns the source status.
+				 *
+				 * @return The source status.
+				 * @since 1.8
+				 */
+				public ServiceProvider.Status getSourceStatus() {
+					return sourceStatus;
+				}
+
+				/**
+				 * Set the source ttatus.
+				 *
+				 * @param sourceStatus The status to set.
+				 * @since 1.8
+				 */
+				public void setSourceStatus(ServiceProvider.Status sourceStatus) {
+					this.sourceStatus = sourceStatus;
+				}
+
+				/**
+				 * Returns the target status.
+				 *
+				 * @return The target status.
+				 * @since 1.8
+				 */
+				public ServiceProvider.Status getTargetStatus() {
+					return targetStatus;
+				}
+
+				/**
+				 * Set the target status.
+				 *
+				 * @param targetStatus The status to set.
+				 * @since 1.8
+				 */
+				public void setTargetStatus(ServiceProvider.Status targetStatus) {
+					this.targetStatus = targetStatus;
+				}
+
+			}
 		}
 	}
 
