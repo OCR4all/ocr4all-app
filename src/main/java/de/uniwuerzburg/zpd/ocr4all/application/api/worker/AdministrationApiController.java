@@ -13,15 +13,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +41,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AuthenticationApiController.AuthenticationRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AuthenticationApiController.AuthenticationResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
@@ -95,6 +109,11 @@ public class AdministrationApiController extends CoreApiController {
 	private final List<CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider> ocrProviders;
 
 	/**
+	 * The registered service providers. The key is the id.
+	 */
+	private final Hashtable<String, CoreServiceProvider<?>.Provider> providers = new Hashtable<>();
+
+	/**
 	 * Creates an administration controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
@@ -117,6 +136,21 @@ public class AdministrationApiController extends CoreApiController {
 		preprocessingProviders = preprocessingService.getProviders();
 		olrProviders = olrService.getProviders();
 		ocrProviders = ocrService.getProviders();
+
+		for (CoreServiceProvider<?>.Provider provider : importProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : launcherProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : preprocessingProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : olrProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : ocrProviders)
+			providers.put(provider.getId(), provider);
 	}
 
 	/**
@@ -137,16 +171,77 @@ public class AdministrationApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the administration service providers overview in the response body.
+	 * Returns the administration service overview for the providers in the response
+	 * body.
 	 * 
 	 * @param lang The language. if null, then use the application preferred locale.
-	 * @return The administration service providers overview in the response body.
+	 * @return The administration service overview for the providers in the response
+	 *         body.
 	 * @since 1.8
 	 */
-	@GetMapping(providersRequestMapping + overviewRequestMapping)
-	public ResponseEntity<ProviderContainerResponse> providersOverview(@RequestParam(required = false) String lang) {
+	@GetMapping(providerRequestMapping + overviewRequestMapping)
+	public ResponseEntity<ProviderContainerResponse> providerOverview(@RequestParam(required = false) String lang) {
 		try {
 			return ResponseEntity.ok().body(new ProviderContainerResponse(getLocale(lang)));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Authenticates the user and returns the authorization header of the response
+	 * with the JWT access token along with the user identity information in the
+	 * response body.
+	 * 
+	 * @param request The authentication request.
+	 * @return The authorization header of the response with the JWT access token
+	 *         along with the user identity information in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(providerRequestMapping + actionRequestMapping)
+	public ResponseEntity<JournalEntryResponse> providerAction(@RequestBody @Valid ProviderRequest request) {
+		try {
+			CoreServiceProvider<?>.Provider provider = providers.get(request.getId());
+
+			if (provider == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				final String user = securityService.getUser();
+
+				JournalEntryServiceProvider entry;
+
+				switch (request.getAction()) {
+				case enable:
+					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
+					entry = provider.getServiceProvider().enable(user);
+					break;
+				case disable:
+					configurationService.getWorkspace().getConfiguration().disableServiceProvider(request.getId(),
+							user);
+					entry = provider.getServiceProvider().disable(user);
+					break;
+				case start:
+					entry = provider.getServiceProvider().start(user);
+					break;
+				case restart:
+					entry = provider.getServiceProvider().restart(user);
+					break;
+				case stop:
+					entry = provider.getServiceProvider().stop(user);
+					break;
+				default:
+					return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+				}
+
+				return entry.isFail()
+						? ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new JournalEntryResponse(entry))
+						: ResponseEntity.ok().body(new JournalEntryResponse(entry));
+
+			}
+		} catch (ResponseStatusException ex) {
+			throw ex;
 		} catch (Exception ex) {
 			log(ex);
 
@@ -1743,6 +1838,11 @@ public class AdministrationApiController extends CoreApiController {
 			private String id;
 
 			/**
+			 * The provider.
+			 */
+			private String provider;
+
+			/**
 			 * The status.
 			 */
 			private ServiceProvider.Status status;
@@ -1752,6 +1852,14 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			@JsonProperty("enabled")
 			private boolean isEnabled;
+
+			/**
+			 * True if the initialization of the service provider is deferred and will be
+			 * performed in a new thread. Otherwise, initialization is performed as soon as
+			 * the provider is loaded.
+			 */
+			@JsonProperty("lazy-initialization")
+			private boolean isLazyInitialization;
 
 			/**
 			 * The name.
@@ -1803,8 +1911,11 @@ public class AdministrationApiController extends CoreApiController {
 				super();
 
 				id = provider.getId();
+
+				this.provider = provider.getServiceProvider().getProvider();
 				status = provider.getServiceProvider().getStatus();
 				isEnabled = provider.getServiceProvider().isEnabled();
+				isLazyInitialization = provider.getServiceProvider().isLazyInitialization();
 				name = provider.getServiceProvider().getName(locale);
 				version = provider.getServiceProvider().getVersion();
 				description = provider.getServiceProvider().getDescription(locale).orElse(null);
@@ -1824,6 +1935,26 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public String getId() {
 				return id;
+			}
+
+			/**
+			 * Returns the provider.
+			 *
+			 * @return The provider.
+			 * @since 1.8
+			 */
+			public String getProvider() {
+				return provider;
+			}
+
+			/**
+			 * Set the provider.
+			 *
+			 * @param provider The provider to set.
+			 * @since 1.8
+			 */
+			public void setProvider(String provider) {
+				this.provider = provider;
 			}
 
 			/**
@@ -1875,6 +2006,33 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setEnabled(boolean isEnabled) {
 				this.isEnabled = isEnabled;
+			}
+
+			/**
+			 * Returns true if the initialization of the service provider is deferred and
+			 * will be performed in a new thread. Otherwise, initialization is performed as
+			 * soon as the provider is loaded.
+			 *
+			 * @return True if the initialization of the service provider is deferred and
+			 *         will be performed in a new thread. Otherwise, initialization is
+			 *         performed as soon as the provider is loaded.
+			 * @since 1.8
+			 */
+			@JsonGetter("lazy-initialization")
+			public boolean isLazyInitialization() {
+				return isLazyInitialization;
+			}
+
+			/**
+			 * Set to true if the initialization of the service provider is deferred and
+			 * will be performed in a new thread. Otherwise, initialization is performed as
+			 * soon as the provider is loaded.
+			 *
+			 * @param isLazyInitialization The lazy initialization flag to set.
+			 * @since 1.8
+			 */
+			public void setLazyInitialization(boolean isLazyInitialization) {
+				this.isLazyInitialization = isLazyInitialization;
 			}
 
 			/**
@@ -1997,226 +2155,315 @@ public class AdministrationApiController extends CoreApiController {
 				this.journal = journal;
 			}
 
-			/**
-			 * Defines provider journal entry responses for the api.
-			 *
-			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-			 * @version 1.0
-			 * @since 1.8
-			 */
-			public class JournalEntryResponse implements Serializable {
-				/**
-				 * The serial version UID.
-				 */
-				private static final long serialVersionUID = 1L;
-
-				/**
-				 * The date.
-				 */
-				private Date date;
-
-				/**
-				 * The user.
-				 */
-				private String user;
-
-				/**
-				 * True if the action succeeds.
-				 */
-				@JsonProperty("succeed")
-				private boolean isSucceed;
-
-				/**
-				 * The level.
-				 */
-				private Level level;
-
-				/**
-				 * The message.
-				 */
-				private String message;
-
-				/**
-				 * The source status.
-				 */
-				@JsonProperty("source-status")
-				private ServiceProvider.Status sourceStatus;
-
-				/**
-				 * The target status.
-				 */
-				@JsonProperty("target-status")
-				private ServiceProvider.Status targetStatus;
-
-				/**
-				 * Default constructor for a provider journal entry responses for the api.
-				 * 
-				 * @since 1.8
-				 */
-				public JournalEntryResponse() {
-					super();
-				}
-
-				/**
-				 * Creates a provider journal entry responses for the api.
-				 * 
-				 * @param entry The journal entry.
-				 * @since 1.8
-				 */
-				public JournalEntryResponse(JournalEntryServiceProvider entry) {
-					super();
-
-					date = entry.getDate();
-					user = entry.getUser();
-					isSucceed = entry.isSucceed();
-					level = entry.getLevel();
-					message = entry.getMessage();
-					sourceStatus = entry.getSourceStatus();
-					targetStatus = entry.getTargetStatus();
-				}
-
-				/**
-				 * Returns the date.
-				 *
-				 * @return The date.
-				 * @since 1.8
-				 */
-				public Date getDate() {
-					return date;
-				}
-
-				/**
-				 * Set the date.
-				 *
-				 * @param date The date to set.
-				 * @since 1.8
-				 */
-				public void setDate(Date date) {
-					this.date = date;
-				}
-
-				/**
-				 * Returns the user.
-				 *
-				 * @return The user.
-				 * @since 1.8
-				 */
-				public String getUser() {
-					return user;
-				}
-
-				/**
-				 * Set the user.
-				 *
-				 * @param user The user to set.
-				 * @since 1.8
-				 */
-				public void setUser(String user) {
-					this.user = user;
-				}
-
-				/**
-				 * Returns true if the action succeeds.
-				 *
-				 * @return True if the action succeeds.
-				 * @since 1.8
-				 */
-				@JsonGetter("succeed")
-				public boolean isSucceed() {
-					return isSucceed;
-				}
-
-				/**
-				 * Set true if the action succeeds.
-				 *
-				 * @param isSucceed The succeed flag to set.
-				 * @since 1.8
-				 */
-				public void setSucceed(boolean isSucceed) {
-					this.isSucceed = isSucceed;
-				}
-
-				/**
-				 * Returns the level.
-				 *
-				 * @return The level.
-				 * @since 1.8
-				 */
-				public Level getLevel() {
-					return level;
-				}
-
-				/**
-				 * Set the level.
-				 *
-				 * @param level The level to set.
-				 * @since 1.8
-				 */
-				public void setLevel(Level level) {
-					this.level = level;
-				}
-
-				/**
-				 * Returns the message.
-				 *
-				 * @return The message.
-				 * @since 1.8
-				 */
-				public String getMessage() {
-					return message;
-				}
-
-				/**
-				 * Set the message.
-				 *
-				 * @param message The message to set.
-				 * @since 1.8
-				 */
-				public void setMessage(String message) {
-					this.message = message;
-				}
-
-				/**
-				 * Returns the source status.
-				 *
-				 * @return The source status.
-				 * @since 1.8
-				 */
-				public ServiceProvider.Status getSourceStatus() {
-					return sourceStatus;
-				}
-
-				/**
-				 * Set the source ttatus.
-				 *
-				 * @param sourceStatus The status to set.
-				 * @since 1.8
-				 */
-				public void setSourceStatus(ServiceProvider.Status sourceStatus) {
-					this.sourceStatus = sourceStatus;
-				}
-
-				/**
-				 * Returns the target status.
-				 *
-				 * @return The target status.
-				 * @since 1.8
-				 */
-				public ServiceProvider.Status getTargetStatus() {
-					return targetStatus;
-				}
-
-				/**
-				 * Set the target status.
-				 *
-				 * @param targetStatus The status to set.
-				 * @since 1.8
-				 */
-				public void setTargetStatus(ServiceProvider.Status targetStatus) {
-					this.targetStatus = targetStatus;
-				}
-
-			}
 		}
 	}
+
+	/**
+	 * Defines provider journal entry responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class JournalEntryResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The date.
+		 */
+		private Date date;
+
+		/**
+		 * The user.
+		 */
+		private String user;
+
+		/**
+		 * True if the action succeeds.
+		 */
+		@JsonProperty("succeed")
+		private boolean isSucceed;
+
+		/**
+		 * The level.
+		 */
+		private Level level;
+
+		/**
+		 * The message.
+		 */
+		private String message;
+
+		/**
+		 * The source status.
+		 */
+		@JsonProperty("source-status")
+		private ServiceProvider.Status sourceStatus;
+
+		/**
+		 * The target status.
+		 */
+		@JsonProperty("target-status")
+		private ServiceProvider.Status targetStatus;
+
+		/**
+		 * Default constructor for a provider journal entry responses for the api.
+		 * 
+		 * @since 1.8
+		 */
+		public JournalEntryResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a provider journal entry responses for the api.
+		 * 
+		 * @param entry The journal entry.
+		 * @since 1.8
+		 */
+		public JournalEntryResponse(JournalEntryServiceProvider entry) {
+			super();
+
+			date = entry.getDate();
+			user = entry.getUser();
+			isSucceed = entry.isSucceed();
+			level = entry.getLevel();
+			message = entry.getMessage();
+			sourceStatus = entry.getSourceStatus();
+			targetStatus = entry.getTargetStatus();
+		}
+
+		/**
+		 * Returns the date.
+		 *
+		 * @return The date.
+		 * @since 1.8
+		 */
+		public Date getDate() {
+			return date;
+		}
+
+		/**
+		 * Set the date.
+		 *
+		 * @param date The date to set.
+		 * @since 1.8
+		 */
+		public void setDate(Date date) {
+			this.date = date;
+		}
+
+		/**
+		 * Returns the user.
+		 *
+		 * @return The user.
+		 * @since 1.8
+		 */
+		public String getUser() {
+			return user;
+		}
+
+		/**
+		 * Set the user.
+		 *
+		 * @param user The user to set.
+		 * @since 1.8
+		 */
+		public void setUser(String user) {
+			this.user = user;
+		}
+
+		/**
+		 * Returns true if the action succeeds.
+		 *
+		 * @return True if the action succeeds.
+		 * @since 1.8
+		 */
+		@JsonGetter("succeed")
+		public boolean isSucceed() {
+			return isSucceed;
+		}
+
+		/**
+		 * Set true if the action succeeds.
+		 *
+		 * @param isSucceed The succeed flag to set.
+		 * @since 1.8
+		 */
+		public void setSucceed(boolean isSucceed) {
+			this.isSucceed = isSucceed;
+		}
+
+		/**
+		 * Returns the level.
+		 *
+		 * @return The level.
+		 * @since 1.8
+		 */
+		public Level getLevel() {
+			return level;
+		}
+
+		/**
+		 * Set the level.
+		 *
+		 * @param level The level to set.
+		 * @since 1.8
+		 */
+		public void setLevel(Level level) {
+			this.level = level;
+		}
+
+		/**
+		 * Returns the message.
+		 *
+		 * @return The message.
+		 * @since 1.8
+		 */
+		public String getMessage() {
+			return message;
+		}
+
+		/**
+		 * Set the message.
+		 *
+		 * @param message The message to set.
+		 * @since 1.8
+		 */
+		public void setMessage(String message) {
+			this.message = message;
+		}
+
+		/**
+		 * Returns the source status.
+		 *
+		 * @return The source status.
+		 * @since 1.8
+		 */
+		public ServiceProvider.Status getSourceStatus() {
+			return sourceStatus;
+		}
+
+		/**
+		 * Set the source ttatus.
+		 *
+		 * @param sourceStatus The status to set.
+		 * @since 1.8
+		 */
+		public void setSourceStatus(ServiceProvider.Status sourceStatus) {
+			this.sourceStatus = sourceStatus;
+		}
+
+		/**
+		 * Returns the target status.
+		 *
+		 * @return The target status.
+		 * @since 1.8
+		 */
+		public ServiceProvider.Status getTargetStatus() {
+			return targetStatus;
+		}
+
+		/**
+		 * Set the target status.
+		 *
+		 * @param targetStatus The status to set.
+		 * @since 1.8
+		 */
+		public void setTargetStatus(ServiceProvider.Status targetStatus) {
+			this.targetStatus = targetStatus;
+		}
+
+	}
+
+	/**
+	 * Defines provider requests.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ProviderRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * Defines actions.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public enum Action {
+			enable, disable, start, restart, stop
+		}
+
+		/**
+		 * The id.
+		 */
+		@NotBlank
+		private String id;
+
+		/**
+		 * The action.
+		 */
+		@NotNull
+		private Action action;
+
+		/**
+		 * Default constructor for an authentication request.
+		 * 
+		 * @since 1.8
+		 */
+		public ProviderRequest() {
+			super();
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 1.8
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Set the id.
+		 *
+		 * @param id The id to set.
+		 * @since 1.8
+		 */
+		public void setId(String id) {
+			this.id = id;
+		}
+
+		/**
+		 * Returns the action.
+		 *
+		 * @return The action.
+		 * @since 1.8
+		 */
+		public Action getAction() {
+			return action;
+		}
+
+		/**
+		 * Set the action.
+		 *
+		 * @param action The action to set.
+		 * @since 1.8
+		 */
+		public void setAction(Action action) {
+			this.action = action;
+		}
+
+	}
+
 }

@@ -79,9 +79,9 @@ public class CoreApiController {
 	public static final String overviewRequestMapping = "/overview";
 
 	/**
-	 * The providers request mapping.
+	 * The provider request mapping.
 	 */
-	public static final String providersRequestMapping = "/providers";
+	public static final String providerRequestMapping = "/provider";
 
 	/**
 	 * The create request mapping.

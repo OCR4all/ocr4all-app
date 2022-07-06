@@ -51,6 +51,11 @@ public class ServiceProviderResponse implements Serializable {
 	private String id;
 
 	/**
+	 * The provider.
+	 */
+	private String provider;
+
+	/**
 	 * The language.
 	 */
 	private String language;
@@ -110,6 +115,8 @@ public class ServiceProviderResponse implements Serializable {
 
 			this.type = type;
 			this.id = id;
+			provider = serviceProvider.getProvider();
+
 			String name = serviceProvider.getName(locale);
 			this.name = name == null || name.isBlank() ? serviceProvider.getName(null) : name;
 
@@ -202,6 +209,26 @@ public class ServiceProviderResponse implements Serializable {
 	 */
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	/**
+	 * Returns the provider.
+	 *
+	 * @return The provider.
+	 * @since 1.8
+	 */
+	public String getProvider() {
+		return provider;
+	}
+
+	/**
+	 * Set the provider.
+	 *
+	 * @param provider The provider to set.
+	 * @since 1.8
+	 */
+	public void setProvider(String provider) {
+		this.provider = provider;
 	}
 
 	/**

@@ -103,6 +103,18 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * (non-Javadoc)
 	 * 
 	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getProvider(
+	 * )
+	 */
+	@Override
+	public String getProvider() {
+		return "ocr4all/core";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
 	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#initialize(
 	 * boolean,
 	 * de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider)
@@ -140,28 +152,59 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#setEnabled(
-	 * java.lang.String, java.lang.Boolean)
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getStatus()
 	 */
 	@Override
-	public void setEnabled(String user, Boolean isEnabled) {
-		if (this.isEnabled != isEnabled) {
-			this.isEnabled = isEnabled;
-
-			journal.add(new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
-					(isEnabled ? "enabled" : "disabled") + " service provider", status, status));
-		}
+	public Status getStatus() {
+		return status;
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getStatus()
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#enable(java.
+	 * lang.String)
 	 */
 	@Override
-	public Status getStatus() {
-		return status;
+	public JournalEntryServiceProvider enable(String user) {
+		JournalEntryServiceProvider journalEntry;
+		if (!isEnabled) {
+			isEnabled = true;
+
+			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
+					"enabled service provider", status, status);
+
+			journal.add(journalEntry);
+		} else
+			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
+					"the service provider is already enabled", status, status);
+
+		return journalEntry;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#disable(java
+	 * .lang.String)
+	 */
+	@Override
+	public JournalEntryServiceProvider disable(String user) {
+		JournalEntryServiceProvider journalEntry;
+		if (isEnabled) {
+			isEnabled = false;
+
+			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
+					"disabled service provider", status, status);
+
+			journal.add(journalEntry);
+		} else
+			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
+					"the service provider is already disabled", status, status);
+
+		return journalEntry;
 	}
 
 	/*
@@ -183,7 +226,7 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 			journal.add(journalEntry);
 		} else
 			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
-					"the service provider can oly be started in 'inactive' status ", status, status);
+					"the service provider can only be started in 'inactive' status", status, status);
 
 		return journalEntry;
 	}
@@ -198,14 +241,17 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 	@Override
 	public JournalEntryServiceProvider restart(String user) {
 		JournalEntryServiceProvider journalEntry;
-		if (ServiceProvider.Status.active.equals(status)) {
+		if (ServiceProvider.Status.active.equals(status) || ServiceProvider.Status.inactive.equals(status)) {
+			final ServiceProvider.Status sourceStatus = status;
+			status = ServiceProvider.Status.active;
+
 			journalEntry = new JournalEntryServiceProvider(user, true, JournalEntryServiceProvider.Level.info,
-					"restarted service provider", status, status);
+					"restarted service provider", sourceStatus, status);
 
 			journal.add(journalEntry);
 		} else
 			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
-					"the service provider can oly be restarted in 'active' status ", status, status);
+					"the service provider can only be restarted in 'active' or 'inactive' status", status, status);
 
 		return journalEntry;
 	}
@@ -229,7 +275,7 @@ public abstract class CoreServiceProviderWorker implements ServiceProvider {
 			journal.add(journalEntry);
 		} else
 			journalEntry = new JournalEntryServiceProvider(user, false, JournalEntryServiceProvider.Level.warn,
-					"the service provider can oly be stopped in 'active' status ", status, status);
+					"the service provider can only be stopped in 'active' status", status, status);
 
 		return journalEntry;
 

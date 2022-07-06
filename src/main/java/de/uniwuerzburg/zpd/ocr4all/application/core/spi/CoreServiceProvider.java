@@ -9,6 +9,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -72,28 +73,27 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
 					&& !provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty()) {
-				String key = provider.getClass().getName();
+				String id = provider.getClass().getName();
 
-				if (serviceProviders.containsKey(key))
+				if (serviceProviders.containsKey(id))
 					this.logger.warn("Ignored provider for service " + service.getName() + " with duplicated key "
 							+ service.getName() + ".");
 				else {
-					serviceProviders.put(key, provider);
-					providers.add(new Provider(key, provider));
+					serviceProviders.put(id, provider);
+					providers.add(new Provider(id, provider));
 
-					this.logger.debug("Loaded provider for service " + service.getName() + ": " + key + ".");
+					this.logger.debug("Loaded provider for service " + service.getName() + ": " + id + ".");
 
-					// Initializes the service provider in a new thread
-					taskExecutor.execute(() -> {
-						try {
-							provider.initialize(!disabledServiceProviders.contains(key), configuration);
-
-							CoreServiceProvider.this.logger.debug("Initialized provider: " + key + ".");
-						} catch (Exception e) {
-							CoreServiceProvider.this.logger
-									.warn("Could not initialize provider: " + key + " - " + e.getMessage() + ".");
-						}
-					});
+					/*
+					 * If lazy initialization, then initializes the service provider in a new
+					 * thread.
+					 */
+					if (provider.isLazyInitialization())
+						taskExecutor.execute(() -> {
+							initialize(provider, id, disabledServiceProviders, configuration);
+						});
+					else
+						initialize(provider, id, disabledServiceProviders, configuration);
 				}
 			}
 
@@ -119,6 +119,31 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					+ buffer.toString() + ".");
 		}
 
+	}
+
+	/**
+	 * Initializes the service provider.
+	 * 
+	 * @param provider                 The provider.
+	 * @param id                       The provider id.
+	 * @param disabledServiceProviders The disabled service providers.
+	 * @param configuration            The configuration.
+	 * @since 1.8
+	 */
+	private void initialize(P provider, String id, Set<String> disabledServiceProviders,
+			ConfigurationServiceProvider configuration) {
+		try {
+			Date begin = new Date();
+			provider.initialize(!disabledServiceProviders.contains(id), configuration);
+
+			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
+					+ (provider.isLazyInitialization()
+							? " (lazy / launched on " + configurationService.getApplication().format(begin) + ")"
+							: "")
+					+ ": " + id + ".");
+		} catch (Exception e) {
+			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
+		}
 	}
 
 	/**

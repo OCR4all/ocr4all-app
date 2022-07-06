@@ -61,6 +61,11 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	public static final String spiContextPathVersion_1_0 = apiContextPathVersion_1_0 + spiContextPath;
 
 	/**
+	 * The providers request mapping.
+	 */
+	public static final String providersRequestMapping = "/providers";
+
+	/**
 	 * The schedule request mapping.
 	 */
 	public static final String scheduleRequestMapping = "/schedule";
