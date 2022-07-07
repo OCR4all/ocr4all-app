@@ -23,13 +23,8 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,8 +36,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AuthenticationApiController.AuthenticationRequest;
-import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AuthenticationApiController.AuthenticationResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
@@ -213,6 +206,16 @@ public class AdministrationApiController extends CoreApiController {
 				JournalEntryServiceProvider entry;
 
 				switch (request.getAction()) {
+				case eager:
+					configurationService.getWorkspace().getConfiguration()
+							.eagerInitializeServiceProvider(request.getId());
+					entry = provider.getServiceProvider().eager(user);
+					break;
+				case lazy:
+					configurationService.getWorkspace().getConfiguration()
+							.lazyInitializeServiceProvider(request.getId(), user);
+					entry = provider.getServiceProvider().lazy(user);
+					break;
 				case enable:
 					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
 					entry = provider.getServiceProvider().enable(user);
@@ -1854,12 +1857,12 @@ public class AdministrationApiController extends CoreApiController {
 			private boolean isEnabled;
 
 			/**
-			 * True if the initialization of the service provider is deferred and will be
-			 * performed in a new thread. Otherwise, initialization is performed as soon as
-			 * the provider is loaded.
+			 * True if the service provider is initialized as soon as the provider is
+			 * loaded. Otherwise, its initialization is deferred and will be performed in a
+			 * new thread.
 			 */
-			@JsonProperty("lazy-initialization")
-			private boolean isLazyInitialization;
+			@JsonProperty("eager-initialized")
+			private boolean isEagerInitialized;
 
 			/**
 			 * The name.
@@ -1915,7 +1918,7 @@ public class AdministrationApiController extends CoreApiController {
 				this.provider = provider.getServiceProvider().getProvider();
 				status = provider.getServiceProvider().getStatus();
 				isEnabled = provider.getServiceProvider().isEnabled();
-				isLazyInitialization = provider.getServiceProvider().isLazyInitialization();
+				isEagerInitialized = provider.getServiceProvider().isEagerInitialized();
 				name = provider.getServiceProvider().getName(locale);
 				version = provider.getServiceProvider().getVersion();
 				description = provider.getServiceProvider().getDescription(locale).orElse(null);
@@ -2009,30 +2012,30 @@ public class AdministrationApiController extends CoreApiController {
 			}
 
 			/**
-			 * Returns true if the initialization of the service provider is deferred and
-			 * will be performed in a new thread. Otherwise, initialization is performed as
-			 * soon as the provider is loaded.
+			 * Returns true if the service provider is initialized as soon as the provider
+			 * is loaded. Otherwise, its initialization is deferred and will be performed in
+			 * a new thread.
 			 *
-			 * @return True if the initialization of the service provider is deferred and
-			 *         will be performed in a new thread. Otherwise, initialization is
-			 *         performed as soon as the provider is loaded.
+			 * @return True if the service provider is initialized as soon as the provider
+			 *         is loaded. Otherwise, its initialization is deferred and will be
+			 *         performed in a new thread.
 			 * @since 1.8
 			 */
-			@JsonGetter("lazy-initialization")
-			public boolean isLazyInitialization() {
-				return isLazyInitialization;
+			@JsonGetter("eager-initialized")
+			public boolean isEagerInitialized() {
+				return isEagerInitialized;
 			}
 
 			/**
-			 * Set to true if the initialization of the service provider is deferred and
-			 * will be performed in a new thread. Otherwise, initialization is performed as
-			 * soon as the provider is loaded.
+			 * Set to true if the service provider is initialized as soon as the provider is
+			 * loaded. Otherwise, its initialization is deferred and will be performed in a
+			 * new thread.
 			 *
-			 * @param isLazyInitialization The lazy initialization flag to set.
+			 * @param isEagerInitialized The eager flag to set.
 			 * @since 1.8
 			 */
-			public void setLazyInitialization(boolean isLazyInitialization) {
-				this.isLazyInitialization = isLazyInitialization;
+			public void setEagerInitialized(boolean isEagerInitialized) {
+				this.isEagerInitialized = isEagerInitialized;
 			}
 
 			/**
@@ -2400,7 +2403,7 @@ public class AdministrationApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public enum Action {
-			enable, disable, start, restart, stop
+			eager, lazy, enable, disable, start, restart, stop
 		}
 
 		/**

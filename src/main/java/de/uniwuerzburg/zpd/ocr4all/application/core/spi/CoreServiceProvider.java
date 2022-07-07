@@ -70,6 +70,9 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
 				.getDisabledServiceProviders();
 
+		final Set<String> lazyInitializedServiceProviders = configurationService.getWorkspace().getConfiguration()
+				.getLazyInitializedServiceProviders();
+
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
 					&& !provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty()) {
@@ -79,6 +82,9 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					this.logger.warn("Ignored provider for service " + service.getName() + " with duplicated key "
 							+ service.getName() + ".");
 				else {
+					provider.configure(!lazyInitializedServiceProviders.contains(id),
+							!disabledServiceProviders.contains(id), configuration);
+
 					serviceProviders.put(id, provider);
 					providers.add(new Provider(id, provider));
 
@@ -88,12 +94,14 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					 * If lazy initialization, then initializes the service provider in a new
 					 * thread.
 					 */
-					if (provider.isLazyInitialization())
-						taskExecutor.execute(() -> {
-							initialize(provider, id, disabledServiceProviders, configuration);
-						});
+					if (provider.isEagerInitialized())
+						initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
+								configuration);
 					else
-						initialize(provider, id, disabledServiceProviders, configuration);
+						taskExecutor.execute(() -> {
+							initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
+									configuration);
+						});
 				}
 			}
 
@@ -124,22 +132,23 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	/**
 	 * Initializes the service provider.
 	 * 
-	 * @param provider                 The provider.
-	 * @param id                       The provider id.
-	 * @param disabledServiceProviders The disabled service providers.
-	 * @param configuration            The configuration.
+	 * @param provider                        The provider.
+	 * @param id                              The provider id.
+	 * @param lazyInitializedServiceProviders The lazy initialized service
+	 *                                        providers.
+	 * @param disabledServiceProviders        The disabled service providers.
+	 * @param configuration                   The configuration.
 	 * @since 1.8
 	 */
-	private void initialize(P provider, String id, Set<String> disabledServiceProviders,
-			ConfigurationServiceProvider configuration) {
+	private void initialize(P provider, String id, Set<String> lazyInitializedServiceProviders,
+			Set<String> disabledServiceProviders, ConfigurationServiceProvider configuration) {
 		try {
 			Date begin = new Date();
-			provider.initialize(!disabledServiceProviders.contains(id), configuration);
+			provider.initialize();
 
 			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
-					+ (provider.isLazyInitialization()
-							? " (lazy / launched on " + configurationService.getApplication().format(begin) + ")"
-							: "")
+					+ (provider.isEagerInitialized() ? ""
+							: " (lazy / launched on " + configurationService.getApplication().format(begin) + ")")
 					+ ": " + id + ".");
 		} catch (Exception e) {
 			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
