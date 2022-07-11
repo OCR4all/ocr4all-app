@@ -13,8 +13,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -22,9 +27,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
@@ -32,6 +41,20 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -52,15 +75,75 @@ public class AdministrationApiController extends CoreApiController {
 	public static final String contextPath = apiContextPathVersion_1_0 + "/administration";
 
 	/**
+	 * The registered import service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<ImportServiceProvider>.Provider> importProviders;
+
+	/**
+	 * The registered launcher service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<LauncherServiceProvider>.Provider> launcherProviders;
+
+	/**
+	 * The registered preprocessing service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<PreprocessingServiceProvider>.Provider> preprocessingProviders;
+
+	/**
+	 * The registered optical layout recognition (OLR) service providers sorted by
+	 * name.
+	 */
+	private final List<CoreServiceProvider<OpticalLayoutRecognitionServiceProvider>.Provider> olrProviders;
+
+	/**
+	 * The registered optical character recognition (OCR) service providers sorted
+	 * by name.
+	 */
+	private final List<CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider> ocrProviders;
+
+	/**
+	 * The registered service providers. The key is the id.
+	 */
+	private final Hashtable<String, CoreServiceProvider<?>.Provider> providers = new Hashtable<>();
+
+	/**
 	 * Creates an administration controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param importService        The import service.
+	 * @param launcherService      The launcher service.
+	 * @param preprocessingService The preprocessing service.
+	 * @param olrService           The optical layout recognition (OLR) service.
+	 * @param ocrService           The optical character recognition (OCR) service.
 	 * @since 1.8
 	 */
 	@Autowired
-	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService) {
+	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
+			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
+			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService) {
 		super(AdministrationApiController.class, configurationService, securityService);
+
+		importProviders = importService.getProviders();
+		launcherProviders = launcherService.getProviders();
+		preprocessingProviders = preprocessingService.getProviders();
+		olrProviders = olrService.getProviders();
+		ocrProviders = ocrService.getProviders();
+
+		for (CoreServiceProvider<?>.Provider provider : importProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : launcherProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : preprocessingProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : olrProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : ocrProviders)
+			providers.put(provider.getId(), provider);
 	}
 
 	/**
@@ -73,6 +156,95 @@ public class AdministrationApiController extends CoreApiController {
 	public ResponseEntity<AdministrationResponse> overview() {
 		try {
 			return ResponseEntity.ok().body(new AdministrationResponse());
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the administration service overview for the providers in the response
+	 * body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The administration service overview for the providers in the response
+	 *         body.
+	 * @since 1.8
+	 */
+	@GetMapping(providerRequestMapping + overviewRequestMapping)
+	public ResponseEntity<ProviderContainerResponse> providerOverview(@RequestParam(required = false) String lang) {
+		try {
+			return ResponseEntity.ok().body(new ProviderContainerResponse(getLocale(lang)));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Authenticates the user and returns the authorization header of the response
+	 * with the JWT access token along with the user identity information in the
+	 * response body.
+	 * 
+	 * @param request The authentication request.
+	 * @return The authorization header of the response with the JWT access token
+	 *         along with the user identity information in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(providerRequestMapping + actionRequestMapping)
+	public ResponseEntity<JournalEntryResponse> providerAction(@RequestBody @Valid ProviderRequest request) {
+		try {
+			CoreServiceProvider<?>.Provider provider = providers.get(request.getId());
+
+			if (provider == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				final String user = securityService.getUser();
+
+				JournalEntryServiceProvider entry;
+
+				switch (request.getAction()) {
+				case eager:
+					configurationService.getWorkspace().getConfiguration()
+							.eagerInitializeServiceProvider(request.getId());
+					entry = provider.getServiceProvider().eager(user);
+					break;
+				case lazy:
+					configurationService.getWorkspace().getConfiguration()
+							.lazyInitializeServiceProvider(request.getId(), user);
+					entry = provider.getServiceProvider().lazy(user);
+					break;
+				case enable:
+					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
+					entry = provider.getServiceProvider().enable(user);
+					break;
+				case disable:
+					configurationService.getWorkspace().getConfiguration().disableServiceProvider(request.getId(),
+							user);
+					entry = provider.getServiceProvider().disable(user);
+					break;
+				case start:
+					entry = provider.getServiceProvider().start(user);
+					break;
+				case restart:
+					entry = provider.getServiceProvider().restart(user);
+					break;
+				case stop:
+					entry = provider.getServiceProvider().stop(user);
+					break;
+				default:
+					return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+				}
+
+				return entry.isFail()
+						? ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new JournalEntryResponse(entry))
+						: ResponseEntity.ok().body(new JournalEntryResponse(entry));
+
+			}
+		} catch (ResponseStatusException ex) {
+			throw ex;
 		} catch (Exception ex) {
 			log(ex);
 
@@ -365,6 +537,12 @@ public class AdministrationApiController extends CoreApiController {
 			private long monitorInterval;
 
 			/**
+			 * The task executor.
+			 */
+			@JsonProperty("task-executor")
+			private TaskExecutor taskExecutor;
+
+			/**
 			 * Default constructor for an application response for the api.
 			 * 
 			 * @since 1.8
@@ -383,6 +561,8 @@ public class AdministrationApiController extends CoreApiController {
 				locale = configuration.getLocale();
 				viewLanguages = configuration.getViewLanguages();
 				monitorInterval = configuration.getMonitorInterval();
+				taskExecutor = new TaskExecutor(configuration.getTaskExecutorProperties().getCorePoolSize(),
+						configuration.getTaskExecutorProperties().getMaxPoolSize());
 			}
 
 			/**
@@ -545,6 +725,102 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setMonitorInterval(long monitorInterval) {
 				this.monitorInterval = monitorInterval;
+			}
+
+			/**
+			 * Returns the task executor.
+			 *
+			 * @return The task executor.
+			 * @since 1.8
+			 */
+			public TaskExecutor getTaskExecutor() {
+				return taskExecutor;
+			}
+
+			/**
+			 * Set the task executor.
+			 *
+			 * @param taskExecutor The task executor to set.
+			 * @since 1.8
+			 */
+			public void setTaskExecutor(TaskExecutor taskExecutor) {
+				this.taskExecutor = taskExecutor;
+			}
+
+			/**
+			 * Defines task executor.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public class TaskExecutor {
+				/**
+				 * The task executor core pool size.
+				 */
+				@JsonProperty("core-pool-size")
+				private int corePoolSize;
+
+				/**
+				 * The task executor max pool size.
+				 */
+				@JsonProperty("max-pool-size")
+				private int maxPoolSize;
+
+				/**
+				 * Creates a task executor.
+				 * 
+				 * @param corePoolSize The task executor core pool size.
+				 * @param maxPoolSize  The task executor max pool size.
+				 * @since 1.8
+				 */
+				public TaskExecutor(int corePoolSize, int maxPoolSize) {
+					super();
+
+					this.corePoolSize = corePoolSize;
+					this.maxPoolSize = maxPoolSize;
+				}
+
+				/**
+				 * Returns the task executor core pool size.
+				 *
+				 * @return The task executor core pool size.
+				 * @since 1.8
+				 */
+				public int getCorePoolSize() {
+					return corePoolSize;
+				}
+
+				/**
+				 * Set the task executor core pool size.
+				 *
+				 * @param corePoolSize The core pool size to set.
+				 * @since 1.8
+				 */
+				public void setCorePoolSize(int corePoolSize) {
+					this.corePoolSize = corePoolSize;
+				}
+
+				/**
+				 * Returns the task executor max pool size.
+				 *
+				 * @return The task executor max pool size.
+				 * @since 1.8
+				 */
+				public int getMaxPoolSize() {
+					return maxPoolSize;
+				}
+
+				/**
+				 * Set the task executor max pool size.
+				 *
+				 * @param maxPoolSize The max pool size to set.
+				 * @since 1.8
+				 */
+				public void setMaxPoolSize(int maxPoolSize) {
+					this.maxPoolSize = maxPoolSize;
+				}
+
 			}
 		}
 
@@ -1362,6 +1638,861 @@ public class AdministrationApiController extends CoreApiController {
 			public void setValue(String value) {
 				this.value = value;
 			}
+		}
+
+	}
+
+	/**
+	 * Defines provider container responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public class ProviderContainerResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The registered import service providers sorted by name.
+		 */
+		@JsonProperty("import")
+		private List<ProviderResponse> imp;
+
+		/**
+		 * The registered launcher service providers sorted by name.
+		 */
+		private List<ProviderResponse> launcher;
+
+		/**
+		 * The registered preprocessing service providers sorted by name.
+		 */
+		private List<ProviderResponse> preprocessing;
+
+		/**
+		 * The registered optical layout recognition (OLR) service providers sorted by
+		 * name.
+		 */
+		private List<ProviderResponse> olr;
+
+		/**
+		 * The registered optical character recognition (OCR) service providers sorted
+		 * by name.
+		 */
+		private List<ProviderResponse> ocr;
+
+		/**
+		 * Default constructor for a provider container response for the api.
+		 * 
+		 * @since 1.8
+		 */
+		public ProviderContainerResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a provider container response for the api.
+		 * 
+		 * @param locale The locale.
+		 * @since 1.8
+		 */
+		public ProviderContainerResponse(Locale locale) {
+			super();
+
+			imp = new ArrayList<>();
+			for (CoreServiceProvider<ImportServiceProvider>.Provider provider : importProviders)
+				imp.add(new ProviderResponse(locale, provider));
+
+			launcher = new ArrayList<>();
+			for (CoreServiceProvider<LauncherServiceProvider>.Provider provider : launcherProviders)
+				launcher.add(new ProviderResponse(locale, provider));
+
+			preprocessing = new ArrayList<>();
+			for (CoreServiceProvider<PreprocessingServiceProvider>.Provider provider : preprocessingProviders)
+				preprocessing.add(new ProviderResponse(locale, provider));
+
+			olr = new ArrayList<>();
+			for (CoreServiceProvider<OpticalLayoutRecognitionServiceProvider>.Provider provider : olrProviders)
+				olr.add(new ProviderResponse(locale, provider));
+
+			ocr = new ArrayList<>();
+			for (CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider provider : ocrProviders)
+				ocr.add(new ProviderResponse(locale, provider));
+		}
+
+		/**
+		 * Returns the registered import service providers sorted by name.
+		 *
+		 * @return The registered import service providers sorted by name.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getImp() {
+			return imp;
+		}
+
+		/**
+		 * Set the registered import service providers sorted by name.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setImp(List<ProviderResponse> providers) {
+			imp = providers;
+		}
+
+		/**
+		 * Returns the launcher.
+		 *
+		 * @return The launcher.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getLauncher() {
+			return launcher;
+		}
+
+		/**
+		 * Set the launcher.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setLauncher(List<ProviderResponse> providers) {
+			launcher = providers;
+		}
+
+		/**
+		 * Returns the preprocessing.
+		 *
+		 * @return The preprocessing.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getPreprocessing() {
+			return preprocessing;
+		}
+
+		/**
+		 * Set the preprocessing.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setPreprocessing(List<ProviderResponse> providers) {
+			preprocessing = providers;
+		}
+
+		/**
+		 * Returns the olr.
+		 *
+		 * @return The olr.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getOlr() {
+			return olr;
+		}
+
+		/**
+		 * Set the olr.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setOlr(List<ProviderResponse> providers) {
+			olr = providers;
+		}
+
+		/**
+		 * Returns the ocr.
+		 *
+		 * @return The ocr.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getOcr() {
+			return ocr;
+		}
+
+		/**
+		 * Set the ocr.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setOcr(List<ProviderResponse> providers) {
+			ocr = providers;
+		}
+
+		/**
+		 * Defines provider responses for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class ProviderResponse implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The id.
+			 */
+			private String id;
+
+			/**
+			 * The provider.
+			 */
+			private String provider;
+
+			/**
+			 * The status.
+			 */
+			private ServiceProvider.Status status;
+
+			/**
+			 * True if the service provider is enabled.
+			 */
+			@JsonProperty("enabled")
+			private boolean isEnabled;
+
+			/**
+			 * True if the service provider is initialized as soon as the provider is
+			 * loaded. Otherwise, its initialization is deferred and will be performed in a
+			 * new thread.
+			 */
+			@JsonProperty("eager-initialized")
+			private boolean isEagerInitialized;
+
+			/**
+			 * The name.
+			 */
+			private String name;
+
+			/**
+			 * The version.
+			 */
+			private float version;
+
+			/**
+			 * The description.
+			 */
+			private String description;
+
+			/**
+			 * The icon.
+			 */
+			private String icon;
+
+			/**
+			 * The index.
+			 */
+			private int index;
+
+			/**
+			 * An advice.
+			 */
+			private String advice;
+
+			/**
+			 * The journal.
+			 */
+			private List<JournalEntryResponse> journal;
+
+			/**
+			 * Default constructor for a provider responses for the api.
+			 * 
+			 * @since 1.8
+			 */
+			public ProviderResponse() {
+				super();
+			}
+
+			/**
+			 * Creates a provider responses for the api.
+			 * 
+			 * @param locale   The locale.
+			 * @param provider The provider
+			 * @since 1.8
+			 */
+			public ProviderResponse(Locale locale, CoreServiceProvider<?>.Provider provider) {
+				super();
+
+				id = provider.getId();
+
+				final ServiceProvider serviceProvider = provider.getServiceProvider();
+
+				this.provider = serviceProvider.getProvider();
+				status = serviceProvider.getStatus();
+				isEnabled = serviceProvider.isEnabled();
+				isEagerInitialized = serviceProvider.isEagerInitialized();
+				name = serviceProvider.getName(locale);
+				version = serviceProvider.getVersion();
+				description = serviceProvider.getDescription(locale).orElse(null);
+				icon = serviceProvider.getIcon().orElse(null);
+				index = serviceProvider.getIndex();
+				advice = serviceProvider.getAdvice();
+
+				journal = new ArrayList<>();
+				for (JournalEntryServiceProvider entry : serviceProvider.getJournal())
+					journal.add(new JournalEntryResponse(entry));
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 1.8
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Returns the provider.
+			 *
+			 * @return The provider.
+			 * @since 1.8
+			 */
+			public String getProvider() {
+				return provider;
+			}
+
+			/**
+			 * Set the provider.
+			 *
+			 * @param provider The provider to set.
+			 * @since 1.8
+			 */
+			public void setProvider(String provider) {
+				this.provider = provider;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 1.8
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the status.
+			 *
+			 * @return The status.
+			 * @since 1.8
+			 */
+			public ServiceProvider.Status getStatus() {
+				return status;
+			}
+
+			/**
+			 * Set the status.
+			 *
+			 * @param status The status to set.
+			 * @since 1.8
+			 */
+			public void setStatus(ServiceProvider.Status status) {
+				this.status = status;
+			}
+
+			/**
+			 * Returns true if the service provider is enabled.
+			 *
+			 * @return True if the service provider is enabled.
+			 * @since 1.8
+			 */
+			@JsonGetter("enabled")
+			public boolean isEnabled() {
+				return isEnabled;
+			}
+
+			/**
+			 * Set to true if the service provider is enabled.
+			 *
+			 * @param isEnabled The enabled flag to set.
+			 * @since 1.8
+			 */
+			public void setEnabled(boolean isEnabled) {
+				this.isEnabled = isEnabled;
+			}
+
+			/**
+			 * Returns true if the service provider is initialized as soon as the provider
+			 * is loaded. Otherwise, its initialization is deferred and will be performed in
+			 * a new thread.
+			 *
+			 * @return True if the service provider is initialized as soon as the provider
+			 *         is loaded. Otherwise, its initialization is deferred and will be
+			 *         performed in a new thread.
+			 * @since 1.8
+			 */
+			@JsonGetter("eager-initialized")
+			public boolean isEagerInitialized() {
+				return isEagerInitialized;
+			}
+
+			/**
+			 * Set to true if the service provider is initialized as soon as the provider is
+			 * loaded. Otherwise, its initialization is deferred and will be performed in a
+			 * new thread.
+			 *
+			 * @param isEagerInitialized The eager flag to set.
+			 * @since 1.8
+			 */
+			public void setEagerInitialized(boolean isEagerInitialized) {
+				this.isEagerInitialized = isEagerInitialized;
+			}
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 1.8
+			 */
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			/**
+			 * Returns the version.
+			 *
+			 * @return The version.
+			 * @since 1.8
+			 */
+			public float getVersion() {
+				return version;
+			}
+
+			/**
+			 * Set the version.
+			 *
+			 * @param version The version to set.
+			 * @since 1.8
+			 */
+			public void setVersion(float version) {
+				this.version = version;
+			}
+
+			/**
+			 * Returns the description.
+			 *
+			 * @return The description.
+			 * @since 1.8
+			 */
+			public String getDescription() {
+				return description;
+			}
+
+			/**
+			 * Set the description.
+			 *
+			 * @param description The description to set.
+			 * @since 1.8
+			 */
+			public void setDescription(String description) {
+				this.description = description;
+			}
+
+			/**
+			 * Returns the icon.
+			 *
+			 * @return The icon.
+			 * @since 1.8
+			 */
+			public String getIcon() {
+				return icon;
+			}
+
+			/**
+			 * Set the icon.
+			 *
+			 * @param icon The icon to set.
+			 * @since 1.8
+			 */
+			public void setIcon(String icon) {
+				this.icon = icon;
+			}
+
+			/**
+			 * Returns the index.
+			 *
+			 * @return The index.
+			 * @since 1.8
+			 */
+			public int getIndex() {
+				return index;
+			}
+
+			/**
+			 * Set the index.
+			 *
+			 * @param index The index to set.
+			 * @since 1.8
+			 */
+			public void setIndex(int index) {
+				this.index = index;
+			}
+
+			/**
+			 * Returns an advice.
+			 *
+			 * @return An advice.
+			 * @since 1.8
+			 */
+			public String getAdvice() {
+				return advice;
+			}
+
+			/**
+			 * Set an advice.
+			 *
+			 * @param advice The advice to set.
+			 * @since 1.8
+			 */
+			public void setAdvice(String advice) {
+				this.advice = advice;
+			}
+
+			/**
+			 * Returns the journal.
+			 *
+			 * @return The journal.
+			 * @since 1.8
+			 */
+			public List<JournalEntryResponse> getJournal() {
+				return journal;
+			}
+
+			/**
+			 * Set the journal.
+			 *
+			 * @param journal The journal to set.
+			 * @since 1.8
+			 */
+			public void setJournal(List<JournalEntryResponse> journal) {
+				this.journal = journal;
+			}
+
+		}
+	}
+
+	/**
+	 * Defines provider journal entry responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class JournalEntryResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The date.
+		 */
+		private Date date;
+
+		/**
+		 * The user.
+		 */
+		private String user;
+
+		/**
+		 * True if the action succeeds.
+		 */
+		@JsonProperty("succeed")
+		private boolean isSucceed;
+
+		/**
+		 * The level.
+		 */
+		private Level level;
+
+		/**
+		 * The message.
+		 */
+		private String message;
+
+		/**
+		 * The source status.
+		 */
+		@JsonProperty("source-status")
+		private ServiceProvider.Status sourceStatus;
+
+		/**
+		 * The target status.
+		 */
+		@JsonProperty("target-status")
+		private ServiceProvider.Status targetStatus;
+
+		/**
+		 * Default constructor for a provider journal entry responses for the api.
+		 * 
+		 * @since 1.8
+		 */
+		public JournalEntryResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a provider journal entry responses for the api.
+		 * 
+		 * @param entry The journal entry.
+		 * @since 1.8
+		 */
+		public JournalEntryResponse(JournalEntryServiceProvider entry) {
+			super();
+
+			date = entry.getDate();
+			user = entry.getUser();
+			isSucceed = entry.isSucceed();
+			level = entry.getLevel();
+			message = entry.getMessage();
+			sourceStatus = entry.getSourceStatus();
+			targetStatus = entry.getTargetStatus();
+		}
+
+		/**
+		 * Returns the date.
+		 *
+		 * @return The date.
+		 * @since 1.8
+		 */
+		public Date getDate() {
+			return date;
+		}
+
+		/**
+		 * Set the date.
+		 *
+		 * @param date The date to set.
+		 * @since 1.8
+		 */
+		public void setDate(Date date) {
+			this.date = date;
+		}
+
+		/**
+		 * Returns the user.
+		 *
+		 * @return The user.
+		 * @since 1.8
+		 */
+		public String getUser() {
+			return user;
+		}
+
+		/**
+		 * Set the user.
+		 *
+		 * @param user The user to set.
+		 * @since 1.8
+		 */
+		public void setUser(String user) {
+			this.user = user;
+		}
+
+		/**
+		 * Returns true if the action succeeds.
+		 *
+		 * @return True if the action succeeds.
+		 * @since 1.8
+		 */
+		@JsonGetter("succeed")
+		public boolean isSucceed() {
+			return isSucceed;
+		}
+
+		/**
+		 * Set true if the action succeeds.
+		 *
+		 * @param isSucceed The succeed flag to set.
+		 * @since 1.8
+		 */
+		public void setSucceed(boolean isSucceed) {
+			this.isSucceed = isSucceed;
+		}
+
+		/**
+		 * Returns the level.
+		 *
+		 * @return The level.
+		 * @since 1.8
+		 */
+		public Level getLevel() {
+			return level;
+		}
+
+		/**
+		 * Set the level.
+		 *
+		 * @param level The level to set.
+		 * @since 1.8
+		 */
+		public void setLevel(Level level) {
+			this.level = level;
+		}
+
+		/**
+		 * Returns the message.
+		 *
+		 * @return The message.
+		 * @since 1.8
+		 */
+		public String getMessage() {
+			return message;
+		}
+
+		/**
+		 * Set the message.
+		 *
+		 * @param message The message to set.
+		 * @since 1.8
+		 */
+		public void setMessage(String message) {
+			this.message = message;
+		}
+
+		/**
+		 * Returns the source status.
+		 *
+		 * @return The source status.
+		 * @since 1.8
+		 */
+		public ServiceProvider.Status getSourceStatus() {
+			return sourceStatus;
+		}
+
+		/**
+		 * Set the source ttatus.
+		 *
+		 * @param sourceStatus The status to set.
+		 * @since 1.8
+		 */
+		public void setSourceStatus(ServiceProvider.Status sourceStatus) {
+			this.sourceStatus = sourceStatus;
+		}
+
+		/**
+		 * Returns the target status.
+		 *
+		 * @return The target status.
+		 * @since 1.8
+		 */
+		public ServiceProvider.Status getTargetStatus() {
+			return targetStatus;
+		}
+
+		/**
+		 * Set the target status.
+		 *
+		 * @param targetStatus The status to set.
+		 * @since 1.8
+		 */
+		public void setTargetStatus(ServiceProvider.Status targetStatus) {
+			this.targetStatus = targetStatus;
+		}
+
+	}
+
+	/**
+	 * Defines provider requests.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ProviderRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * Defines actions.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public enum Action {
+			eager, lazy, enable, disable, start, restart, stop
+		}
+
+		/**
+		 * The id.
+		 */
+		@NotBlank
+		private String id;
+
+		/**
+		 * The action.
+		 */
+		@NotNull
+		private Action action;
+
+		/**
+		 * Default constructor for an authentication request.
+		 * 
+		 * @since 1.8
+		 */
+		public ProviderRequest() {
+			super();
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 1.8
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Set the id.
+		 *
+		 * @param id The id to set.
+		 * @since 1.8
+		 */
+		public void setId(String id) {
+			this.id = id;
+		}
+
+		/**
+		 * Returns the action.
+		 *
+		 * @return The action.
+		 * @since 1.8
+		 */
+		public Action getAction() {
+			return action;
+		}
+
+		/**
+		 * Set the action.
+		 *
+		 * @param action The action to set.
+		 * @since 1.8
+		 */
+		public void setAction(Action action) {
+			this.action = action;
 		}
 
 	}

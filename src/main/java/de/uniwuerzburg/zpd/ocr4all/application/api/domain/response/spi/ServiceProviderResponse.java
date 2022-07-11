@@ -15,7 +15,6 @@ import java.util.Locale;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.ServiceProviderCoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.BooleanField;
@@ -50,6 +49,11 @@ public class ServiceProviderResponse implements Serializable {
 	 * The id.
 	 */
 	private String id;
+
+	/**
+	 * The provider.
+	 */
+	private String provider;
 
 	/**
 	 * The language.
@@ -98,14 +102,12 @@ public class ServiceProviderResponse implements Serializable {
 	 * @param type            The type.
 	 * @param id              The id.
 	 * @param serviceProvider The service provider.
-	 * @param configuration   The configurations for the service provider.
 	 * @param target          The target for the service provider.
 	 * @throws ServiceProviderException Throws on service provider exceptions.
 	 * @since 1.8
 	 */
 	public ServiceProviderResponse(Locale locale, ServiceProviderCoreApiController.Type type, String id,
-			ServiceProvider serviceProvider, ConfigurationServiceProvider configuration, Target target)
-			throws ServiceProviderException {
+			ServiceProvider serviceProvider, Target target) throws ServiceProviderException {
 		super();
 
 		try {
@@ -113,6 +115,8 @@ public class ServiceProviderResponse implements Serializable {
 
 			this.type = type;
 			this.id = id;
+			provider = serviceProvider.getProvider();
+
 			String name = serviceProvider.getName(locale);
 			this.name = name == null || name.isBlank() ? serviceProvider.getName(null) : name;
 
@@ -122,9 +126,9 @@ public class ServiceProviderResponse implements Serializable {
 			icon = serviceProvider.getIcon().orElse(null);
 			index = serviceProvider.getIndex();
 
-			premise = new PremiseResponse(serviceProvider.getPremise(configuration, target), locale);
+			premise = new PremiseResponse(serviceProvider.getPremise(target), locale);
 
-			entries = getEntryResponses(locale, serviceProvider.getModel(configuration, target).getEntries());
+			entries = getEntryResponses(locale, serviceProvider.getModel(target).getEntries());
 		} catch (Exception e) {
 			throw new ServiceProviderException(e);
 		}
@@ -205,6 +209,26 @@ public class ServiceProviderResponse implements Serializable {
 	 */
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	/**
+	 * Returns the provider.
+	 *
+	 * @return The provider.
+	 * @since 1.8
+	 */
+	public String getProvider() {
+		return provider;
+	}
+
+	/**
+	 * Set the provider.
+	 *
+	 * @param provider The provider to set.
+	 * @since 1.8
+	 */
+	public void setProvider(String provider) {
+		this.provider = provider;
 	}
 
 	/**

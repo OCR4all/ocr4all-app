@@ -9,13 +9,18 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
+
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 
 /**
  * Defines core service providers.
@@ -53,25 +58,50 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @param configurationService The configuration service.
 	 * @param service              The interface or abstract class representing the
 	 *                             service.
+	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	protected CoreServiceProvider(Class<? extends CoreServiceProvider<P>> logger,
-			ConfigurationService configurationService, Class<P> service) {
+			ConfigurationService configurationService, Class<P> service, ThreadPoolTaskExecutor taskExecutor) {
 		super(logger, configurationService);
+
+		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
+				.getConfigurationServiceProvider();
+		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
+				.getDisabledServiceProviders();
+
+		final Set<String> lazyInitializedServiceProviders = configurationService.getWorkspace().getConfiguration()
+				.getLazyInitializedServiceProviders();
 
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
 					&& !provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty()) {
-				String key = provider.getClass().getName();
+				String id = provider.getClass().getName();
 
-				if (serviceProviders.containsKey(key))
+				if (serviceProviders.containsKey(id))
 					this.logger.warn("Ignored provider for service " + service.getName() + " with duplicated key "
 							+ service.getName() + ".");
 				else {
-					serviceProviders.put(key, provider);
-					providers.add(new Provider(key, provider));
+					provider.configure(!lazyInitializedServiceProviders.contains(id),
+							!disabledServiceProviders.contains(id), configuration);
 
-					this.logger.debug("Loaded provider for service " + service.getName() + ": " + key + ".");
+					serviceProviders.put(id, provider);
+					providers.add(new Provider(id, provider));
+
+					this.logger.debug("Loaded provider for service " + service.getName() + ": " + id + ".");
+
+					/*
+					 * If lazy initialization or disabled, then initializes the service provider in
+					 * a new thread.
+					 */
+					if (provider.isEagerInitialized() && provider.isEnabled())
+						initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
+								configuration);
+					else
+						taskExecutor.execute(() -> {
+							initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
+									configuration);
+						});
 				}
 			}
 
@@ -96,6 +126,33 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 			this.logger.info("Loaded " + providers.size() + " providers for " + service.getName() + ": "
 					+ buffer.toString() + ".");
 		}
+
+	}
+
+	/**
+	 * Initializes the service provider.
+	 * 
+	 * @param provider                        The provider.
+	 * @param id                              The provider id.
+	 * @param lazyInitializedServiceProviders The lazy initialized service
+	 *                                        providers.
+	 * @param disabledServiceProviders        The disabled service providers.
+	 * @param configuration                   The configuration.
+	 * @since 1.8
+	 */
+	private void initialize(P provider, String id, Set<String> lazyInitializedServiceProviders,
+			Set<String> disabledServiceProviders, ConfigurationServiceProvider configuration) {
+		try {
+			Date begin = new Date();
+			provider.initialize();
+
+			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
+					+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
+							: " (lazy / launched on " + configurationService.getApplication().format(begin) + ")")
+					+ ": " + id + ".");
+		} catch (Exception e) {
+			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
+		}
 	}
 
 	/**
@@ -107,34 +164,51 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	public abstract CoreData getCoreData();
 
 	/**
-	 * Returns the service provider with given key.
+	 * Returns the active provider with given key.
 	 *
-	 * @param key The service provider key.
-	 * @return The service provider with given key.
+	 * @param key The provider key.
+	 * @return The active provider with given key. Null if unknown or inactive.
 	 * @since 1.8
 	 */
-	public P getServiceProviders(String key) {
-		return key == null ? null : serviceProviders.get(key);
+	public P getActiveProvider(String key) {
+		if (key == null)
+			return null;
+		else {
+			P provider = serviceProviders.get(key);
+
+			return provider == null || !ServiceProvider.Status.active.equals(provider.getStatus()) ? null
+					: serviceProviders.get(key);
+		}
 	}
 
 	/**
-	 * Returns true if there are registered providers.
+	 * Returns true if there are registered active providers.
 	 * 
-	 * @return True if there are registered providers.
+	 * @return True if there are registered active providers.
 	 * @since 1.8
 	 */
-	public boolean isProviderAvailable() {
-		return !providers.isEmpty();
+	public boolean isActiveProviderAvailable() {
+		for (Provider provider : providers)
+			if (ServiceProvider.Status.active.equals(provider.getServiceProvider().getStatus()))
+				return true;
+
+		return false;
 	}
 
 	/**
-	 * Returns the number of registered providers.
+	 * Returns the registered active providers sorted by name.
 	 * 
-	 * @return The number of registered providers.
+	 * @return The registered active providers sorted by name.
 	 * @since 1.8
 	 */
-	public int getProviderNumber() {
-		return providers.size();
+	public List<Provider> getActiveProviders() {
+		List<Provider> active = new ArrayList<>();
+
+		for (Provider provider : providers)
+			if (ServiceProvider.Status.active.equals(provider.getServiceProvider().getStatus()))
+				active.add(provider);
+
+		return active;
 	}
 
 	/**

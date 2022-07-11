@@ -66,6 +66,11 @@ public class Application {
 	private Monitor monitor = new Monitor();
 
 	/**
+	 * The task properties.
+	 */
+	private Task task = new Task();
+
+	/**
 	 * The security properties.
 	 */
 	private Security security = new Security();
@@ -208,6 +213,26 @@ public class Application {
 	 */
 	public void setMonitor(Monitor monitor) {
 		this.monitor = monitor;
+	}
+
+	/**
+	 * Returns the task properties.
+	 *
+	 * @return The task properties.
+	 * @since 1.8
+	 */
+	public Task getTask() {
+		return task;
+	}
+
+	/**
+	 * Set the task properties.
+	 *
+	 * @param task The task properties to set.
+	 * @since 1.8
+	 */
+	public void setTask(Task task) {
+		this.task = task;
 	}
 
 	/**
@@ -433,6 +458,169 @@ public class Application {
 		 */
 		public void setInterval(long interval) {
 			this.interval = interval;
+		}
+	}
+
+	/**
+	 * Defines task properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class Task {
+		/**
+		 * The task executor.
+		 */
+		private Executor executor = new Executor();
+
+		/**
+		 * Returns the task executor.
+		 *
+		 * @return The task executor.
+		 * @since 1.8
+		 */
+		public Executor getExecutor() {
+			return executor;
+		}
+
+		/**
+		 * Set the task executor.
+		 *
+		 * @param executor The executor to set.
+		 * @since 1.8
+		 */
+		public void setExecutor(Executor executor) {
+			this.executor = executor;
+		}
+
+		/**
+		 * Defines task executor properties.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class Executor {
+			/**
+			 * The task executor pool.
+			 */
+			private Pool pool = new Pool();
+
+			/**
+			 * Returns the task executor pool.
+			 *
+			 * @return The task executor pool.
+			 * @since 1.8
+			 */
+			public Pool getPool() {
+				return pool;
+			}
+
+			/**
+			 * Set the task executor pool.
+			 *
+			 * @param pool The pool to set.
+			 * @since 1.8
+			 */
+			public void setPool(Pool pool) {
+				this.pool = pool;
+			}
+
+			/**
+			 * Defines task executor pool properties.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public static class Pool {
+				/**
+				 * The task executor pool size.
+				 */
+				private Size size = new Size();
+
+				/**
+				 * Returns the task executor pool size.
+				 *
+				 * @return The task executor pool size.
+				 * @since 1.8
+				 */
+				public Size getSize() {
+					return size;
+				}
+
+				/**
+				 * Set the task executor pool size.
+				 *
+				 * @param size The size to set.
+				 * @since 1.8
+				 */
+				public void setSize(Size size) {
+					this.size = size;
+				}
+
+				/**
+				 * Defines task executor pool size properties.
+				 *
+				 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+				 * @version 1.0
+				 * @since 1.8
+				 */
+				public static class Size {
+					/**
+					 * The task executor core pool size. The default value is 5.
+					 */
+					@Min(value = 1, message = "The task executor core pool size should not be less than 1")
+					private int core = 5;
+
+					/**
+					 * The task executor max pool size. The default value is 10.
+					 */
+					@Min(value = 1, message = "The task executor max pool size should not be less than 1")
+					private int max = 10;
+
+					/**
+					 * Returns the task executor core pool size.
+					 *
+					 * @return The task executor core pool size.
+					 * @since 1.8
+					 */
+					public int getCore() {
+						return core;
+					}
+
+					/**
+					 * Set the task executor core pool size.
+					 *
+					 * @param core The core pool size to set.
+					 * @since 1.8
+					 */
+					public void setCore(int core) {
+						this.core = core;
+					}
+
+					/**
+					 * Returns the task executor max pool size.
+					 *
+					 * @return The task executor max pool size.
+					 * @since 1.8
+					 */
+					public int getMax() {
+						return max;
+					}
+
+					/**
+					 * Set the task executor max pool size.
+					 *
+					 * @param max The max pool size to set.
+					 * @since 1.8
+					 */
+					public void setMax(int max) {
+						this.max = max;
+					}
+				}
+			}
 		}
 	}
 

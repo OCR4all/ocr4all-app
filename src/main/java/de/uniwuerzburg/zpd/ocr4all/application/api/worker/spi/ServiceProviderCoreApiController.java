@@ -149,43 +149,6 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	}
 
 	/**
-	 * Returns the application preferred locale.
-	 * 
-	 * @return The application preferred locale.
-	 * @since 1.8
-	 */
-	protected Locale getLocale() {
-		return getLocale(null);
-	}
-
-	/**
-	 * Returns the locale.
-	 * 
-	 * @param language The desired language for the locale.
-	 * @return The locale. If the given language is not defined or not supported,
-	 *         then returns the application preferred locale.
-	 * @since 1.8
-	 */
-	protected Locale getLocale(String language) {
-		Locale locale = null;
-		if (language != null && !language.isBlank()) {
-			language = language.trim().toLowerCase();
-
-			for (String view : configurationService.getApplication().getViewLanguages())
-				if (view.equals(language)) {
-					locale = new Locale(language);
-
-					break;
-				}
-		}
-
-		return locale != null ? locale
-				: (configurationService.getApplication().getViewLanguages().isEmpty()
-						? configurationService.getApplication().getLocale()
-						: new Locale(configurationService.getApplication().getViewLanguages().get(0)));
-	}
-
-	/**
 	 * Returns true if the service is available.
 	 * 
 	 * @param project  The project.
@@ -197,7 +160,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 */
 	protected boolean isAvailable(Project project, Workflow workflow) {
 		// A selected project with required rights is always required
-		if (!service.isProviderAvailable() || project == null
+		if (!service.isActiveProviderAvailable() || project == null
 				|| !project.getConfiguration().getConfiguration().isStateActive()
 				|| !project.isRights(requiredProjectRights))
 			return false;
@@ -245,9 +208,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 							: authorization.workflow.getSnapshot(snapshotTrack).getConfiguration());
 
 			final List<ServiceProviderResponse> providers = new ArrayList<>();
-			for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getProviders())
+			for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders())
 				providers.add(new ServiceProviderResponse(locale, type, provider.getId(), provider.getServiceProvider(),
-						configurationService.getWorkspace().getConfiguration().getConfigurationServiceProvider(),
 						target));
 
 			Collections.sort(providers, new Comparator<ServiceProviderResponse>() {
@@ -306,7 +268,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
-			final ServiceProvider provider = service.getServiceProviders(request.getId());
+			final ServiceProvider provider = service.getActiveProvider(request.getId());
 
 			if (provider == null || !(provider instanceof ProcessServiceProvider))
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

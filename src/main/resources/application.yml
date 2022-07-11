@@ -57,6 +57,9 @@ ocr4all:
       - en
       - de
     monitor.interval: 15000
+    task.executor.pool.size:
+      core: 5
+      max: 10
     security:
       groups:
         administrator: admin
@@ -91,6 +94,7 @@ ocr4all:
         user: user
         group: group
         password: password
+        provider: service-provider
     models:
       folder: models
       model:

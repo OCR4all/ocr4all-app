@@ -8,6 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -27,11 +28,12 @@ public class ImportService extends CoreServiceProvider<ImportServiceProvider> {
 	 * Creates an import service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	@Autowired
-	public ImportService(ConfigurationService configurationService) {
-		super(ImportService.class, configurationService, ImportServiceProvider.class);
+	public ImportService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
+		super(ImportService.class, configurationService, ImportServiceProvider.class, taskExecutor);
 	}
 
 	/*

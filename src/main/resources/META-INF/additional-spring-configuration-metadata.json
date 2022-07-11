@@ -51,6 +51,16 @@
 			"description": "ocr4all application administrator group. This is optional, the default value is admin."
 		},
 		{
+			"name": "ocr4all.application.task.executor.pool.size.core",
+			"type": "java.lang.Integer",
+			"description": "ocr4all application task executor core pool size. This is optional, the default value is 5."
+		},
+		{
+			"name": "ocr4all.application.task.executor.pool.size.max",
+			"type": "java.lang.Integer",
+			"description": "ocr4all application task executor max pool size. This is optional, the default value is 10."
+		},
+		{
 			"name": "ocr4all.application.security.groups.coordinator",
 			"type": "java.lang.String",
 			"description": "ocr4all application coordinator group. This is optional, the default value is coord."
@@ -149,6 +159,11 @@
 			"name": "ocr4all.workspace.configuration.files.password",
 			"type": "java.lang.String",
 			"description": "ocr4all password workspace configuration file; the default value is 'password'. Required in server profile."
+		},
+		{
+			"name": "ocr4all.workspace.configuration.files.provider",
+			"type": "java.lang.String",
+			"description": "ocr4all service provider workspace configuration file; the default value is 'service-provider'."
 		},
 		{
 			"name": "ocr4all.workspace.models.folder",

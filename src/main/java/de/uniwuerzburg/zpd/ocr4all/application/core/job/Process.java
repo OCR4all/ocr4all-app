@@ -532,7 +532,6 @@ public abstract class Process extends Job {
 							configurationService.getApplication().getName(),
 							configurationService.getApplication().getDateFormat()),
 					project.getUser(),
-					configurationService.getWorkspace().getConfiguration().getConfigurationServiceProvider(),
 					project.getTarget(workflow,
 							snapshot == null || snapshot.getConfiguration().isRoot() ? null
 									: snapshot.getConfiguration().getParent()),

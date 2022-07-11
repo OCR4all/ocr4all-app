@@ -73,6 +73,11 @@ public class ApplicationConfiguration {
 	private final long monitorInterval;
 
 	/**
+	 * The task executor properties.
+	 */
+	private final TaskExecutorProperties taskExecutorProperties;
+
+	/**
 	 * The administrator group.
 	 */
 	private final String administratorGroup;
@@ -159,6 +164,10 @@ public class ApplicationConfiguration {
 
 		// The monitor interval
 		monitorInterval = properties.getMonitor().getInterval();
+
+		taskExecutorProperties = new TaskExecutorProperties(
+				properties.getTask().getExecutor().getPool().getSize().getCore(),
+				properties.getTask().getExecutor().getPool().getSize().getMax());
 
 		// The security groups group
 		String securityGroup = properties.getSecurity().getGroups().getAdministrator();
@@ -297,6 +306,16 @@ public class ApplicationConfiguration {
 	}
 
 	/**
+	 * Returns the task executor properties.
+	 *
+	 * @return The task executor properties.
+	 * @since 1.8
+	 */
+	public TaskExecutorProperties getTaskExecutorProperties() {
+		return taskExecutorProperties;
+	}
+
+	/**
 	 * Returns true if the administrator group is set.
 	 * 
 	 * @return True if the administrator group is set.
@@ -344,6 +363,60 @@ public class ApplicationConfiguration {
 	 */
 	public DefaultAdministrator getDefaultAdministrator() {
 		return defaultAdministrator;
+	}
+
+	/**
+	 * Defines task executor properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class TaskExecutorProperties {
+		/**
+		 * The task executor core pool size.
+		 */
+		private final int corePoolSize;
+
+		/**
+		 * The task executor max pool size.
+		 */
+		private final int maxPoolSize;
+
+		/**
+		 * Creates properties for the task executor.
+		 * 
+		 * @param corePoolSize The task executor core pool size.
+		 * @param maxPoolSize  The task executor max pool size.
+		 * @since 1.8
+		 */
+		public TaskExecutorProperties(int corePoolSize, int maxPoolSize) {
+			super();
+
+			this.corePoolSize = corePoolSize;
+			this.maxPoolSize = maxPoolSize;
+		}
+
+		/**
+		 * Returns the task executor core pool size.
+		 *
+		 * @return The task executor core pool size.
+		 * @since 1.8
+		 */
+		public int getCorePoolSize() {
+			return corePoolSize;
+		}
+
+		/**
+		 * Returns the task executor max pool size.
+		 *
+		 * @return The task executor max pool size.
+		 * @since 1.8
+		 */
+		public int getMaxPoolSize() {
+			return maxPoolSize;
+		}
+
 	}
 
 	/**

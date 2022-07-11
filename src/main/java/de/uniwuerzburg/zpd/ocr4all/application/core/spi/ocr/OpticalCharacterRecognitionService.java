@@ -8,6 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -28,12 +29,14 @@ public class OpticalCharacterRecognitionService
 	 * Creates an optical character recognition (OCR) service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	@Autowired
-	public OpticalCharacterRecognitionService(ConfigurationService configurationService) {
+	public OpticalCharacterRecognitionService(ConfigurationService configurationService,
+			ThreadPoolTaskExecutor taskExecutor) {
 		super(OpticalCharacterRecognitionService.class, configurationService,
-				OpticalCharacterRecognitionServiceProvider.class);
+				OpticalCharacterRecognitionServiceProvider.class, taskExecutor);
 	}
 
 	/*

@@ -214,6 +214,11 @@ public class Workspace {
 		private static final String defaultPasswordFileName = "password";
 
 		/**
+		 * The default service provider file name.
+		 */
+		private static final String defaultProviderFileName = "service-provider";
+
+		/**
 		 * The main file name. The default value is ocr4all.
 		 */
 		private String main = defaultMainFileName;
@@ -232,6 +237,11 @@ public class Workspace {
 		 * The password file name. The default value is password.
 		 */
 		private String password = defaultPasswordFileName;
+
+		/**
+		 * The service provider file name. The default value is service-provider.
+		 */
+		private String provider = defaultProviderFileName;
 
 		/**
 		 * Returns the main file name.
@@ -312,6 +322,27 @@ public class Workspace {
 		public void setPassword(String fileName) {
 			password = fileName;
 		}
+
+		/**
+		 * Returns the service provider file name.
+		 *
+		 * @return The service provider file name.
+		 * @since 1.8
+		 */
+		public String getProvider() {
+			return OCR4all.getNotEmpty(provider, defaultProviderFileName);
+		}
+
+		/**
+		 * Set the service provider file name.
+		 *
+		 * @param provider The file name to set.
+		 * @since 1.8
+		 */
+		public void setProvider(String provider) {
+			this.provider = provider;
+		}
+
 	}
 
 	/**

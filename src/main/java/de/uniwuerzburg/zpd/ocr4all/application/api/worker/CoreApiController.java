@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -76,6 +77,11 @@ public class CoreApiController {
 	 * The overview request mapping.
 	 */
 	public static final String overviewRequestMapping = "/overview";
+
+	/**
+	 * The provider request mapping.
+	 */
+	public static final String providerRequestMapping = "/provider";
 
 	/**
 	 * The create request mapping.
@@ -260,6 +266,43 @@ public class CoreApiController {
 	 */
 	protected void log(Exception exception) {
 		logger.error("throws exception " + exception.getClass().getName(), exception);
+	}
+
+	/**
+	 * Returns the application preferred locale.
+	 * 
+	 * @return The application preferred locale.
+	 * @since 1.8
+	 */
+	protected Locale getLocale() {
+		return getLocale(null);
+	}
+
+	/**
+	 * Returns the locale.
+	 * 
+	 * @param language The desired language for the locale.
+	 * @return The locale. If the given language is not defined or not supported,
+	 *         then returns the application preferred locale.
+	 * @since 1.8
+	 */
+	protected Locale getLocale(String language) {
+		Locale locale = null;
+		if (language != null && !language.isBlank()) {
+			language = language.trim().toLowerCase();
+
+			for (String view : configurationService.getApplication().getViewLanguages())
+				if (view.equals(language)) {
+					locale = new Locale(language);
+
+					break;
+				}
+		}
+
+		return locale != null ? locale
+				: (configurationService.getApplication().getViewLanguages().isEmpty()
+						? configurationService.getApplication().getLocale()
+						: new Locale(configurationService.getApplication().getViewLanguages().get(0)));
 	}
 
 	/**

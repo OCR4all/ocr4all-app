@@ -15,11 +15,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Workspace;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.Entity;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.Identifier;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.DisabledServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.LazyInitializedServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -504,6 +511,24 @@ public class WorkspaceConfiguration extends CoreFolder {
 		private String systemCommandIdentify = null;
 
 		/**
+		 * The service provider configuration persistence manager.
+		 */
+		private final PersistenceManager serviceProviderConfigurationManager;
+
+		/**
+		 * The disabled service providers, this means, they are inactive when the
+		 * application is launched.
+		 */
+		private final Hashtable<String, DisabledServiceProvider> disabledServiceProviders = new Hashtable<>();
+
+		/**
+		 * The lazy initialized service providers, this means, their initialization are
+		 * deferred and will be performed in a new thread. Otherwise, initialization are
+		 * performed as soon as the provider is loaded.
+		 */
+		private final Hashtable<String, LazyInitializedServiceProvider> lazyInitializedServiceProviders = new Hashtable<>();
+
+		/**
 		 * Creates a configuration for the workspace.
 		 * 
 		 * @param properties       The configuration properties for the workspace.
@@ -529,6 +554,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 			// Loads the main configuration file
 			loadMainConfiguration(Paths.get(folder.toString(), properties.getFiles().getMain()));
+
+			// Loads the service provider configuration file
+			serviceProviderConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getProvider()),
+					Type.service_provider_disabled_v1, Type.service_provider_lazy_initialized_v1);
+			loadServiceProviderConfiguration();
 		}
 
 		/**
@@ -784,6 +814,137 @@ public class WorkspaceConfiguration extends CoreFolder {
 					MainConfigurationField.systemCommandConvert.getLabel() + ": " + getPropertySystemCommandConvert(),
 					MainConfigurationField.systemCommandIdentify.getLabel() + ": " + getPropertySystemCommandIdentify(),
 					MainConfigurationField.serviceProvider.getLabel() + "{collection.key}: [value]" };
+		}
+
+		/**
+		 * Loads the service provider configuration.
+		 * 
+		 * @since 1.8
+		 */
+		private void loadServiceProviderConfiguration() {
+			try {
+				for (Entity entity : serviceProviderConfigurationManager.getEntities()) {
+					Identifier identifier = (Identifier) entity;
+					if (identifier.getId() != null && !identifier.getId().isBlank()) {
+						identifier.setId(identifier.getId().trim());
+
+						if (identifier instanceof DisabledServiceProvider)
+							disabledServiceProviders.put(identifier.getId(), (DisabledServiceProvider) identifier);
+						else if (identifier instanceof LazyInitializedServiceProvider)
+							lazyInitializedServiceProviders.put(identifier.getId(),
+									(LazyInitializedServiceProvider) identifier);
+						else
+							logger.warn("The class type '" + identifier.getClass().getName()
+									+ "' is not implemented for service provider configuration.");
+					}
+				}
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+		}
+
+		/**
+		 * Persist the service provider configuration.
+		 * 
+		 * @since 1.8
+		 */
+		private void persistServiceProviderConfiguration() {
+			try {
+				List<Entity> entities = new ArrayList<>(disabledServiceProviders.values());
+				entities.addAll(lazyInitializedServiceProviders.values());
+
+				serviceProviderConfigurationManager.persist(entities);
+
+				logger.info("Persisted service provider configuration file.");
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+		}
+
+		/**
+		 * Returns the disabled service providers, this means, the service providers
+		 * that are inactive when the application is launched.
+		 * 
+		 * @return The disabled service providers.
+		 * @since 1.8
+		 */
+		public Set<String> getDisabledServiceProviders() {
+			return new HashSet<>(disabledServiceProviders.keySet());
+		}
+
+		/**
+		 * Enables the service provider, this means, the service provider will be active
+		 * when the application is launched.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void enableServiceProvider(String id) {
+			if (id != null && !id.isBlank() && disabledServiceProviders.remove(id.trim()) != null)
+				persistServiceProviderConfiguration();
+		}
+
+		/**
+		 * Disables the service provider, this means, the service provider will be
+		 * inactive when the application is launched.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void disableServiceProvider(String id, String user) {
+			if (id != null && !id.isBlank()) {
+				id = id.trim();
+
+				if (!disabledServiceProviders.containsKey(id)) {
+					disabledServiceProviders.put(id, new DisabledServiceProvider(user, id));
+
+					persistServiceProviderConfiguration();
+				}
+			}
+		}
+
+		/**
+		 * Returns the lazy initialized service providers, this means, the service
+		 * providers whose initialization are deferred and will be performed in a new
+		 * thread. The initialization of the remainder service providers are performed
+		 * as soon as their are loaded.
+		 * 
+		 * @return The lazy initialized service providers.
+		 * @since 1.8
+		 */
+		public Set<String> getLazyInitializedServiceProviders() {
+			return new HashSet<>(lazyInitializedServiceProviders.keySet());
+		}
+
+		/**
+		 * Eager initializes the service provider, this means, the service provider
+		 * initialization is performed as soon as the provider is loaded.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void eagerInitializeServiceProvider(String id) {
+			if (id != null && !id.isBlank() && lazyInitializedServiceProviders.remove(id.trim()) != null)
+				persistServiceProviderConfiguration();
+		}
+
+		/**
+		 * Lazy initializes the service provider, this means, the service provider
+		 * initialization is deferred and will be performed in a new thread.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void lazyInitializeServiceProvider(String id, String user) {
+			if (id != null && !id.isBlank()) {
+				id = id.trim();
+
+				if (!lazyInitializedServiceProviders.containsKey(id)) {
+					lazyInitializedServiceProviders.put(id, new LazyInitializedServiceProvider(user, id));
+
+					persistServiceProviderConfiguration();
+				}
+			}
 		}
 
 		/**
