@@ -91,10 +91,10 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					this.logger.debug("Loaded provider for service " + service.getName() + ": " + id + ".");
 
 					/*
-					 * If lazy initialization, then initializes the service provider in a new
-					 * thread.
+					 * If lazy initialization or disabled, then initializes the service provider in
+					 * a new thread.
 					 */
-					if (provider.isEagerInitialized())
+					if (provider.isEagerInitialized() && provider.isEnabled())
 						initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
 								configuration);
 					else
@@ -147,7 +147,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 			provider.initialize();
 
 			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
-					+ (provider.isEagerInitialized() ? ""
+					+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
 							: " (lazy / launched on " + configurationService.getApplication().format(begin) + ")")
 					+ ": " + id + ".");
 		} catch (Exception e) {

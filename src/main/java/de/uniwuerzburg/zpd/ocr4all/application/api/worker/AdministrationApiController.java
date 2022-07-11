@@ -1890,6 +1890,11 @@ public class AdministrationApiController extends CoreApiController {
 			private int index;
 
 			/**
+			 * An advice.
+			 */
+			private String advice;
+
+			/**
 			 * The journal.
 			 */
 			private List<JournalEntryResponse> journal;
@@ -1915,18 +1920,21 @@ public class AdministrationApiController extends CoreApiController {
 
 				id = provider.getId();
 
-				this.provider = provider.getServiceProvider().getProvider();
-				status = provider.getServiceProvider().getStatus();
-				isEnabled = provider.getServiceProvider().isEnabled();
-				isEagerInitialized = provider.getServiceProvider().isEagerInitialized();
-				name = provider.getServiceProvider().getName(locale);
-				version = provider.getServiceProvider().getVersion();
-				description = provider.getServiceProvider().getDescription(locale).orElse(null);
-				icon = provider.getServiceProvider().getIcon().orElse(null);
-				index = provider.getServiceProvider().getIndex();
+				final ServiceProvider serviceProvider = provider.getServiceProvider();
+
+				this.provider = serviceProvider.getProvider();
+				status = serviceProvider.getStatus();
+				isEnabled = serviceProvider.isEnabled();
+				isEagerInitialized = serviceProvider.isEagerInitialized();
+				name = serviceProvider.getName(locale);
+				version = serviceProvider.getVersion();
+				description = serviceProvider.getDescription(locale).orElse(null);
+				icon = serviceProvider.getIcon().orElse(null);
+				index = serviceProvider.getIndex();
+				advice = serviceProvider.getAdvice();
 
 				journal = new ArrayList<>();
-				for (JournalEntryServiceProvider entry : provider.getServiceProvider().getJournal())
+				for (JournalEntryServiceProvider entry : serviceProvider.getJournal())
 					journal.add(new JournalEntryResponse(entry));
 			}
 
@@ -2136,6 +2144,26 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setIndex(int index) {
 				this.index = index;
+			}
+
+			/**
+			 * Returns an advice.
+			 *
+			 * @return An advice.
+			 * @since 1.8
+			 */
+			public String getAdvice() {
+				return advice;
+			}
+
+			/**
+			 * Set an advice.
+			 *
+			 * @param advice The advice to set.
+			 * @since 1.8
+			 */
+			public void setAdvice(String advice) {
+				this.advice = advice;
 			}
 
 			/**
