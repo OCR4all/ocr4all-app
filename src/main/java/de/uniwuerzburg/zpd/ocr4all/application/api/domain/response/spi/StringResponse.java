@@ -9,6 +9,8 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi;
 
 import java.util.Locale;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
 
 /**
@@ -25,6 +27,12 @@ public class StringResponse extends FieldResponse<String, StringField> {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * The content type.
+	 */
+	@JsonProperty("content-type")
+	private String contentType;
+
+	/**
 	 * Creates a string response for the api.
 	 * 
 	 * @param locale      The locale.
@@ -33,5 +41,28 @@ public class StringResponse extends FieldResponse<String, StringField> {
 	 */
 	public StringResponse(Locale locale, StringField stringField) {
 		super(locale, Type.string, stringField);
+
+		contentType = stringField.getContentType().orElse(null);
 	}
+
+	/**
+	 * Returns the content type.
+	 *
+	 * @return The content type.
+	 * @since 1.8
+	 */
+	public String getContentType() {
+		return contentType;
+	}
+
+	/**
+	 * Set the content type.
+	 *
+	 * @param contentType The content type to set.
+	 * @since 1.8
+	 */
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+
 }
