@@ -1,5 +1,5 @@
 /**
- * File:     OpticalCharactertRecognitionServiceProviderApiController.java
+ * File:     OpticalCharacterRecognitionServiceProviderApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -43,8 +43,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterReco
  */
 @Profile("api")
 @Controller
-@RequestMapping(path = OpticalCharactertRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class OpticalCharactertRecognitionServiceProviderApiController
+@RequestMapping(path = OpticalCharacterRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
+public class OpticalCharacterRecognitionServiceProviderApiController
 		extends ServiceProviderCoreApiController<OpticalCharacterRecognitionService> {
 	/**
 	 * The context path.
@@ -64,10 +64,10 @@ public class OpticalCharactertRecognitionServiceProviderApiController
 	 * @since 1.8
 	 */
 	@Autowired
-	public OpticalCharactertRecognitionServiceProviderApiController(ConfigurationService configurationService,
+	public OpticalCharacterRecognitionServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, ProjectService projectService, WorkflowService workflowService,
 			SchedulerService schedulerService, OpticalCharacterRecognitionService service) {
-		super(OpticalCharactertRecognitionServiceProviderApiController.class, configurationService, securityService,
+		super(OpticalCharacterRecognitionServiceProviderApiController.class, configurationService, securityService,
 				projectService, workflowService, schedulerService, Type.ocr, service, Project.Right.execute);
 	}
 
