@@ -76,9 +76,9 @@ public class EntryResponse implements Serializable {
 	private String type;
 
 	/**
-	 * The description.
+	 * The label.
 	 */
-	private String description;
+	private String label;
 
 	/**
 	 * True if the field is disabled.
@@ -97,8 +97,8 @@ public class EntryResponse implements Serializable {
 		super();
 
 		this.type = type.getLabel();
-		
-		description = entry.getDescription(locale);
+
+		label = entry.getLabel(locale);
 		isDisabled = entry.isDisabled();
 	}
 
@@ -123,23 +123,23 @@ public class EntryResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the description.
+	 * Returns the label.
 	 *
-	 * @return The description.
+	 * @return The label.
 	 * @since 1.8
 	 */
-	public String getDescription() {
-		return description;
+	public String getLabel() {
+		return label;
 	}
 
 	/**
-	 * Set the description.
+	 * Set the label.
 	 *
-	 * @param description The description to set.
+	 * @param label The label to set.
 	 * @since 1.8
 	 */
-	public void setDescription(String description) {
-		this.description = description;
+	public void setLabel(String label) {
+		this.label = label;
 	}
 
 	/**

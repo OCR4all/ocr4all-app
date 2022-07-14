@@ -35,9 +35,9 @@ public class FieldResponse<T, F extends Field<T>> extends EntryResponse {
 	private T value;
 
 	/**
-	 * The warning. Null if no warning is required.
+	 * The description. Null if no description is required.
 	 */
-	private String warning;
+	private String description;
 
 	/**
 	 * The placeholder. Null if no placeholder is required.
@@ -58,7 +58,7 @@ public class FieldResponse<T, F extends Field<T>> extends EntryResponse {
 		argument = field.getArgument();
 		value = field.getValue().orElse(null);
 
-		warning = field.getWarning(locale).orElse(null);
+		description = field.getDescription(locale).orElse(null);
 		placeholder = field.getPlaceholder(locale).orElse(null);
 	}
 
@@ -103,23 +103,23 @@ public class FieldResponse<T, F extends Field<T>> extends EntryResponse {
 	}
 
 	/**
-	 * Returns the warning.
+	 * Returns the description.
 	 *
-	 * @return The warning. Null if no warning is required.
+	 * @return The description. Null if no description is required.
 	 * @since 1.8
 	 */
-	public String getWarning() {
-		return warning;
+	public String getDescription() {
+		return description;
 	}
 
 	/**
-	 * Set the warning. Null if no warning is required.
+	 * Set the description. Null if no description is required.
 	 *
-	 * @param warning The warning to set.
+	 * @param description The description to set.
 	 * @since 1.8
 	 */
-	public void setWarning(String warning) {
-		this.warning = warning;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	/**
