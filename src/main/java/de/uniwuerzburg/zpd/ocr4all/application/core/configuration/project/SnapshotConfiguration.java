@@ -761,9 +761,9 @@ public class SnapshotConfiguration extends CoreFolder {
 					snapshot.setLabel(label.trim());
 					snapshot.setDescription(description == null || description.isBlank() ? null : description.trim());
 
-					process.setUpdated(new Date());
+					snapshot.setUpdated(new Date());
 
-					processConfigurationManager.persist(process);
+					processConfigurationManager.persist(snapshot);
 
 					logger.info("Updated the process configuration of the snapshot '" + getLoggerIdentifier() + "'.");
 
