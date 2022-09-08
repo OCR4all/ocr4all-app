@@ -765,7 +765,7 @@ public class SnapshotConfiguration extends CoreFolder {
 
 					processConfigurationManager.persist(snapshot);
 
-					logger.info("Updated the process configuration of the snapshot '" + getLoggerIdentifier() + "'.");
+					logger.info("Updated the main configuration of the snapshot '" + getLoggerIdentifier() + "'.");
 
 					return true;
 				} catch (IOException e) {
