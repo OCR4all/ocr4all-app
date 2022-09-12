@@ -12,10 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -29,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -522,8 +521,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 			private void persistMets(Path path, String coreTemplate, LauncherArgument launcherArgument, String group,
 					String file, String page) throws JsonProcessingException, IOException {
 				Files.write(path, coreTemplate
-						.replace(MetsPattern.create_date.getPattern(),
-								(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")).format(new Date()))
+						.replace(MetsPattern.create_date.getPattern(), MetsUtils.getFormattedDate())
 
 						.replace(MetsPattern.software_creator.getPattern(), identifier + " v" + getVersion())
 
