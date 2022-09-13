@@ -8,12 +8,17 @@
 package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response;
 
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.MetsUtils;
 
 /**
  * Defines workflow responses for the api.
@@ -80,6 +85,12 @@ public class WorkflowResponse implements Serializable {
 	private boolean isSnapshotAvailable;
 
 	/**
+	 * The sandbox synopsis.
+	 */
+	@JsonProperty("sandbox-synopsis")
+	private SandboxSynopsisResponse sandboxSynopsis;
+
+	/**
 	 * Creates a workflow response for the api.
 	 * 
 	 * @param workflow The workflow.
@@ -104,6 +115,7 @@ public class WorkflowResponse implements Serializable {
 
 		isSnapshotAccess = workflow.isSnapshotAccess();
 		isSnapshotAvailable = isSnapshotAccess && workflow.isSnapshotAvailable();
+		sandboxSynopsis = isSnapshotAvailable ? new SandboxSynopsisResponse(workflow) : null;
 	}
 
 	/**
@@ -306,4 +318,114 @@ public class WorkflowResponse implements Serializable {
 		this.isSnapshotAvailable = isSnapshotAvailable;
 	}
 
+	/**
+	 * Returns the sandbox synopsis.
+	 *
+	 * @return The sandbox synopsis.
+	 * @since 1.8
+	 */
+	public SandboxSynopsisResponse getSandboxSynopsis() {
+		return sandboxSynopsis;
+	}
+
+	/**
+	 * Set the sandbox synopsis.
+	 *
+	 * @param sandboxSynopsis The sandbox synopsis to set.
+	 * @since 1.8
+	 */
+	public void setSandboxSynopsis(SandboxSynopsisResponse sandboxSynopsis) {
+		this.sandboxSynopsis = sandboxSynopsis;
+	}
+
+	/**
+	 * Defines sandbox synopsis responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SandboxSynopsisResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The home directory.
+		 */
+		private String home;
+
+		/**
+		 * The mets creation time.
+		 */
+		@JsonProperty("mets-created")
+		private Date metsCreated = null;
+
+		/**
+		 * Insert your text here
+		 * 
+		 * @since 1.8
+		 */
+		public SandboxSynopsisResponse(Workflow workflow) {
+			super();
+
+			home = workflow.getConfiguration().getSnapshots().getRoot().getFolder().toString();
+
+			Path mets = Paths.get(home, workflow.getConfiguration().getMetsFileName());
+			if (Files.exists(mets))
+				try {
+					MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+
+					try {
+						metsCreated = MetsUtils.getDate(root.getHeader().getCreated());
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+		}
+
+		/**
+		 * Returns the home directory.
+		 *
+		 * @return The home directory.
+		 * @since 1.8
+		 */
+		public String getHome() {
+			return home;
+		}
+
+		/**
+		 * Set the home directory.
+		 *
+		 * @param home The home directory to set.
+		 * @since 1.8
+		 */
+		public void setHome(String home) {
+			this.home = home;
+		}
+
+		/**
+		 * Returns the mets creation time.
+		 *
+		 * @return The mets creation time.
+		 * @since 1.8
+		 */
+		public Date getMetsCreated() {
+			return metsCreated;
+		}
+
+		/**
+		 * Set the mets creation time.
+		 *
+		 * @param metsCreated The mets creation time to set.
+		 * @since 1.8
+		 */
+		public void setMetsCreated(Date metsCreated) {
+			this.metsCreated = metsCreated;
+		}
+
+	}
 }

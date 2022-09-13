@@ -46,6 +46,11 @@ public class WorkflowConfiguration extends CoreFolder {
 	private final SnapshotsConfiguration snapshots;
 
 	/**
+	 * The configuration properties for the workflow.
+	 */
+	private final Workflows.Workflow properties;
+
+	/**
 	 * Creates a configuration for a workflow.
 	 * 
 	 * @param properties The configuration properties for the workflow.
@@ -56,9 +61,31 @@ public class WorkflowConfiguration extends CoreFolder {
 	WorkflowConfiguration(Workflows.Workflow properties, Path folder, String user) {
 		super(folder);
 
+		this.properties = properties;
+
 		snapshots = new SnapshotsConfiguration(properties.getSnapshots(), folder, user);
 
 		configuration = new Configuration(properties.getConfiguration(), user);
+	}
+
+	/**
+	 * Returns the mets file name.
+	 *
+	 * @return The mets file name.
+	 * @since 1.8
+	 */
+	public String getMetsFileName() {
+		return properties.getMets().getFile();
+	}
+
+	/**
+	 * Returns the mets group.
+	 *
+	 * @return The mets group.
+	 * @since 1.8
+	 */
+	public String getMetsGroup() {
+		return properties.getMets().getGroup();
 	}
 
 	/**
