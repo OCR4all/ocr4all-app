@@ -352,19 +352,32 @@ public class WorkflowResponse implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		/**
+		 * The standard error message.
+		 */
+		@JsonProperty("standard-error")
+		private String standardError = null;
+
+		/**
 		 * The home directory.
 		 */
 		private String home;
 
 		/**
-		 * The mets creation time.
+		 * The mets XML file.
 		 */
-		@JsonProperty("mets-created")
-		private Date metsCreated = null;
+		@JsonProperty("mets-file")
+		private String metsFile;
 
 		/**
-		 * Insert your text here
+		 * The creation time of the mets XML file.
+		 */
+		@JsonProperty("mets-creation-time")
+		private Date metsCreationTime = null;
+
+		/**
+		 * Creates a sandbox synopsis response for the api.
 		 * 
+		 * @param workflow The workflow.
 		 * @since 1.8
 		 */
 		public SandboxSynopsisResponse(Workflow workflow) {
@@ -375,16 +388,54 @@ public class WorkflowResponse implements Serializable {
 			Path mets = Paths.get(home, workflow.getConfiguration().getMetsFileName());
 			if (Files.exists(mets))
 				try {
+					metsFile = mets.toString();
+
 					MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
 
 					try {
-						metsCreated = MetsUtils.getDate(root.getHeader().getCreated());
+						metsCreationTime = MetsUtils.getDate(root.getHeader().getCreated());
 					} catch (Exception e) {
-						// TODO: handle exception
+						standardError = addMessage(standardError,
+								"Trouble parsing creation time of the mets XML file - " + e.getMessage() + ".");
 					}
 				} catch (Exception e) {
-					// TODO: handle exception
+					standardError = addMessage(standardError,
+							"Trouble parsing mets XML file - " + e.getMessage() + ".");
 				}
+			else
+				standardError = addMessage(standardError, "The mets XML file does not exist.");
+		}
+
+		/**
+		 * Adds the message to the source message adn returns it.
+		 * 
+		 * @param source  The source.
+		 * @param message The message to add.
+		 * @return The new message.
+		 * @since 1.8
+		 */
+		private String addMessage(String source, String message) {
+			return (source == null ? "" : source + "\n") + message;
+		}
+
+		/**
+		 * Returns the standard error message.
+		 *
+		 * @return The standard error message.
+		 * @since 1.8
+		 */
+		public String getStandardError() {
+			return standardError;
+		}
+
+		/**
+		 * Set the standard error message.
+		 *
+		 * @param message The message to set.
+		 * @since 1.8
+		 */
+		public void setStandardError(String message) {
+			standardError = message;
 		}
 
 		/**
@@ -408,23 +459,43 @@ public class WorkflowResponse implements Serializable {
 		}
 
 		/**
-		 * Returns the mets creation time.
+		 * Returns the mets XML file.
 		 *
-		 * @return The mets creation time.
+		 * @return The mets XML file.
 		 * @since 1.8
 		 */
-		public Date getMetsCreated() {
-			return metsCreated;
+		public String getMetsFile() {
+			return metsFile;
 		}
 
 		/**
-		 * Set the mets creation time.
+		 * Set the mets XML file.
 		 *
-		 * @param metsCreated The mets creation time to set.
+		 * @param metsFile The mets XML file to set.
 		 * @since 1.8
 		 */
-		public void setMetsCreated(Date metsCreated) {
-			this.metsCreated = metsCreated;
+		public void setMetsFile(String metsFile) {
+			this.metsFile = metsFile;
+		}
+
+		/**
+		 * Returns the creation time of the mets XML file.
+		 *
+		 * @return The creation time of the mets XML file.
+		 * @since 1.8
+		 */
+		public Date getMetsCreationTime() {
+			return metsCreationTime;
+		}
+
+		/**
+		 * Set the creation time of the mets XML file.
+		 *
+		 * @param metsCreationTime The creation time of the mets XML file.
+		 * @since 1.8
+		 */
+		public void setMetsCreationTime(Date metsCreationTime) {
+			this.metsCreationTime = metsCreationTime;
 		}
 
 	}
