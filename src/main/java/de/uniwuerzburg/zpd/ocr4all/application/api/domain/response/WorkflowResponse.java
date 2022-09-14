@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 
 /**
  * Defines workflow responses for the api.

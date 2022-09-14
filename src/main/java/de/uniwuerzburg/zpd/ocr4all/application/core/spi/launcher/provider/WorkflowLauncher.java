@@ -27,7 +27,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -49,6 +48,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ImageArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.IntegerArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.SelectArgument;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
