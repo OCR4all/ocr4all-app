@@ -11,9 +11,13 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
@@ -82,6 +86,7 @@ public class WorkflowResponse implements Serializable {
 	/**
 	 * True if there are snapshots.
 	 */
+	@JsonProperty("snapshot-available")
 	private boolean isSnapshotAvailable;
 
 	/**
@@ -284,6 +289,7 @@ public class WorkflowResponse implements Serializable {
 	 * @return True if the user can access the snapshots.
 	 * @since 1.8
 	 */
+	@JsonGetter("snapshot-access")
 	public boolean isSnapshotAccess() {
 		return isSnapshotAccess;
 	}
@@ -304,6 +310,7 @@ public class WorkflowResponse implements Serializable {
 	 * @return True if there are snapshots.
 	 * @since 1.8
 	 */
+	@JsonGetter("snapshot-available")
 	public boolean isSnapshotAvailable() {
 		return isSnapshotAvailable;
 	}
@@ -363,18 +370,6 @@ public class WorkflowResponse implements Serializable {
 		private String home;
 
 		/**
-		 * The mets XML file.
-		 */
-		@JsonProperty("mets-file")
-		private String metsFile;
-
-		/**
-		 * The creation time of the mets XML file.
-		 */
-		@JsonProperty("mets-creation-time")
-		private Date metsCreationTime = null;
-
-		/**
 		 * Creates a sandbox synopsis response for the api.
 		 * 
 		 * @param workflow The workflow.
@@ -388,16 +383,35 @@ public class WorkflowResponse implements Serializable {
 			Path mets = Paths.get(home, workflow.getConfiguration().getMetsFileName());
 			if (Files.exists(mets))
 				try {
-					metsFile = mets.toString();
+					final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
 
-					MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+					// File groups
+					final Hashtable<String, MetsParser.Root.FileGroup> fileGroups = new Hashtable<>();
 
-					try {
-						metsCreationTime = MetsUtils.getDate(root.getHeader().getCreated());
-					} catch (Exception e) {
-						standardError = addMessage(standardError,
-								"Trouble parsing creation time of the mets XML file - " + e.getMessage() + ".");
-					}
+					for (MetsParser.Root.FileGroup fileGroup : root.getFileGroups())
+						fileGroups.put(fileGroup.getId(), fileGroup);
+
+					// Pages
+					final Hashtable<String, Integer> images = new Hashtable<>();
+
+					MetsUtils.Page metsPageUtils = MetsUtils.getPage(workflow.getConfiguration().getMetsGroup());
+					for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
+							.getPhysicalSequence().getPages())
+						try {
+							int id = Integer.parseInt(metsPageUtils.getGroupId(page.getId()));
+							for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+								images.put(fieldId.getId(), id);
+						} catch (Exception e) {
+							// Ignore malformed mets page
+						}
+
+					// Agents
+					List<Processor> processors = new ArrayList<>();
+					for (MetsParser.Root.Header.Agent agent : root.getHeader().getAgents())
+						processors.add(new Processor(agent, fileGroups, images));
+
+					// TODO: build processor tree and set root processor
+
 				} catch (Exception e) {
 					standardError = addMessage(standardError,
 							"Trouble parsing mets XML file - " + e.getMessage() + ".");
@@ -459,43 +473,30 @@ public class WorkflowResponse implements Serializable {
 		}
 
 		/**
-		 * Returns the mets XML file.
+		 * Defines processor responses for the api.
 		 *
-		 * @return The mets XML file.
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
 		 * @since 1.8
 		 */
-		public String getMetsFile() {
-			return metsFile;
-		}
+		public static class Processor implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
 
-		/**
-		 * Set the mets XML file.
-		 *
-		 * @param metsFile The mets XML file to set.
-		 * @since 1.8
-		 */
-		public void setMetsFile(String metsFile) {
-			this.metsFile = metsFile;
-		}
+			/**
+			 * Creates a processor response for the api.
+			 * 
+			 * @since 1.8
+			 */
+			public Processor(MetsParser.Root.Header.Agent agent,
+					Hashtable<String, MetsParser.Root.FileGroup> fileGroups, Hashtable<String, Integer> images) {
+				super();
+				// TODO role, track, derived (processor child), files [mime type, path, image id
+				// from parameter "images"
+			}
 
-		/**
-		 * Returns the creation time of the mets XML file.
-		 *
-		 * @return The creation time of the mets XML file.
-		 * @since 1.8
-		 */
-		public Date getMetsCreationTime() {
-			return metsCreationTime;
-		}
-
-		/**
-		 * Set the creation time of the mets XML file.
-		 *
-		 * @param metsCreationTime The creation time of the mets XML file.
-		 * @since 1.8
-		 */
-		public void setMetsCreationTime(Date metsCreationTime) {
-			this.metsCreationTime = metsCreationTime;
 		}
 
 	}
