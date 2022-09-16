@@ -260,71 +260,6 @@ public class MetsResponse implements Serializable {
 		}
 
 		/**
-		 * Defines roles.
-		 *
-		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-		 * @version 1.0
-		 * @since 1.8
-		 */
-		public enum Role {
-			creator, other
-		}
-
-		/**
-		 * Defines notes.
-		 *
-		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-		 * @version 1.0
-		 * @since 1.8
-		 */
-		public enum Note {
-			inputFileGroup("input-file-grp"), outputFileGroup("output-file-grp"), parameter, pageId("page-id");
-
-			/**
-			 * The label.
-			 */
-			private final String label;
-
-			/**
-			 * Default constructor for a note.
-			 * 
-			 * @since 1.8
-			 */
-			private Note() {
-				label = this.name();
-			}
-
-			/**
-			 * Creates a note.
-			 * 
-			 * @param label The label.
-			 * @since 1.8
-			 */
-			private Note(String label) {
-				this.label = label;
-			}
-
-			/**
-			 * Returns the note with given label.
-			 * 
-			 * @param label The label.
-			 * @return The note with given label.
-			 * @since 1.8
-			 */
-			public static Note getNote(String label) {
-				if (label != null && !label.isBlank()) {
-					label = label.trim().toLowerCase();
-
-					for (Note note : Note.values())
-						if (note.label.equals(label))
-							return note;
-				}
-
-				return null;
-			}
-		}
-
-		/**
 		 * The type.
 		 */
 		private Type type;
@@ -377,17 +312,11 @@ public class MetsResponse implements Serializable {
 				type = Type.unknown;
 			}
 
-			if (Role.creator.name().equalsIgnoreCase(agent.getRole()))
-				role = "creator";
-			else if (Role.other.name().equalsIgnoreCase(agent.getRole()))
-				role = agent.getOtherRole();
-			else
-				role = null;
-
+			role = MetsUtils.getAgentRole(agent.getRole(), agent.getOtherRole());
 			name = agent.getName();
 
 			for (MetsParser.Root.Header.Agent.Note note : agent.getNotes()) {
-				Note noteType = Note.getNote(note.getOption());
+				MetsUtils.Note noteType = MetsUtils.Note.getNote(note.getOption());
 				if (noteType != null)
 					switch (noteType) {
 					case inputFileGroup:

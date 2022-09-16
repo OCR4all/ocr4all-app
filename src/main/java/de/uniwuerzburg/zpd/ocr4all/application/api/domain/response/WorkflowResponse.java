@@ -370,6 +370,12 @@ public class WorkflowResponse implements Serializable {
 		private String home;
 
 		/**
+		 * The root processor.
+		 */
+		@JsonProperty("root-processor")
+		private Processor rootProcessor;
+
+		/**
 		 * Creates a sandbox synopsis response for the api.
 		 * 
 		 * @param workflow The workflow.
@@ -384,17 +390,18 @@ public class WorkflowResponse implements Serializable {
 			if (Files.exists(mets))
 				try {
 					final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+					final String metsGroup = workflow.getConfiguration().getMetsGroup();
 
-					// File groups
+					// mets file groups
 					final Hashtable<String, MetsParser.Root.FileGroup> fileGroups = new Hashtable<>();
 
 					for (MetsParser.Root.FileGroup fileGroup : root.getFileGroups())
 						fileGroups.put(fileGroup.getId(), fileGroup);
 
-					// Pages
+					// mets pages
 					final Hashtable<String, Integer> images = new Hashtable<>();
 
-					MetsUtils.Page metsPageUtils = MetsUtils.getPage(workflow.getConfiguration().getMetsGroup());
+					MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
 					for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
 							.getPhysicalSequence().getPages())
 						try {
@@ -405,13 +412,17 @@ public class WorkflowResponse implements Serializable {
 							// Ignore malformed mets page
 						}
 
-					// Agents
+					// mets agents
+					final MetsUtils.FileGroup fileGroup = MetsUtils.getFileGroup(metsGroup);
+
 					List<Processor> processors = new ArrayList<>();
-					for (MetsParser.Root.Header.Agent agent : root.getHeader().getAgents())
-						processors.add(new Processor(agent, fileGroups, images));
+					for (MetsParser.Root.Header.Agent agent : root.getHeader().getAgents()) {
+						// TODO: use hashtable to search the processor by track
 
-					// TODO: build processor tree and set root processor
+						processors.add(new Processor(agent, fileGroup, fileGroups, images));
+					}
 
+					// TODO: rootProcessor -> build processor tree and set root processor
 				} catch (Exception e) {
 					standardError = addMessage(standardError,
 							"Trouble parsing mets XML file - " + e.getMessage() + ".");
@@ -473,6 +484,26 @@ public class WorkflowResponse implements Serializable {
 		}
 
 		/**
+		 * Returns the root processor.
+		 *
+		 * @return The root processor.
+		 * @since 1.8
+		 */
+		public Processor getRootProcessor() {
+			return rootProcessor;
+		}
+
+		/**
+		 * Set the root processor.
+		 *
+		 * @param rootProcessor The root processor to set.
+		 * @since 1.8
+		 */
+		public void setRootProcessor(Processor rootProcessor) {
+			this.rootProcessor = rootProcessor;
+		}
+
+		/**
 		 * Defines processor responses for the api.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -486,18 +517,249 @@ public class WorkflowResponse implements Serializable {
 			private static final long serialVersionUID = 1L;
 
 			/**
+			 * The name.
+			 */
+			private String name;
+
+			/**
+			 * The role.
+			 */
+			private String role;
+
+			/**
+			 * The track.
+			 */
+			private List<Integer> track = null;
+
+			/**
+			 * The derived processors.
+			 */
+			@JsonProperty("derived-processors")
+			private List<Processor> derived = new ArrayList<>();
+
+			/**
+			 * The files.
+			 */
+			private List<File> files = new ArrayList<>();
+
+			/**
 			 * Creates a processor response for the api.
 			 * 
+			 * @param agent      The mets agent.
+			 * @param fileGroup  The file group utility.
+			 * @param fileGroups The mets file groups. The key is the group id.
+			 * @param images     The mets image id map to the ocr4all image id.
 			 * @since 1.8
 			 */
-			public Processor(MetsParser.Root.Header.Agent agent,
+			public Processor(MetsParser.Root.Header.Agent agent, MetsUtils.FileGroup fileGroup,
 					Hashtable<String, MetsParser.Root.FileGroup> fileGroups, Hashtable<String, Integer> images) {
 				super();
-				// TODO role, track, derived (processor child), files [mime type, path, image id
-				// from parameter "images"
+
+				name = agent.getName();
+				role = MetsUtils.getAgentRole(agent.getRole(), agent.getOtherRole());
+
+				for (MetsParser.Root.Header.Agent.Note note : agent.getNotes()) {
+					MetsUtils.Note noteType = MetsUtils.Note.getNote(note.getOption());
+
+					if (noteType != null && MetsUtils.Note.outputFileGroup.equals(noteType)) {
+						track = fileGroup.getTrack(note.getValue());
+
+						if (fileGroups.containsKey(note.getValue()))
+							for (MetsParser.Root.FileGroup.File file : fileGroups.get(note.getValue()).getFiles())
+								files.add(new File(file, images));
+
+						break;
+					}
+				}
+
 			}
 
-		}
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
 
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 1.8
+			 */
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			/**
+			 * Returns the role.
+			 *
+			 * @return The role.
+			 * @since 1.8
+			 */
+			public String getRole() {
+				return role;
+			}
+
+			/**
+			 * Set the role.
+			 *
+			 * @param role The role to set.
+			 * @since 1.8
+			 */
+			public void setRole(String role) {
+				this.role = role;
+			}
+
+			/**
+			 * Returns the track.
+			 *
+			 * @return The track.
+			 * @since 1.8
+			 */
+			public List<Integer> getTrack() {
+				return track;
+			}
+
+			/**
+			 * Set the track.
+			 *
+			 * @param track The track to set.
+			 * @since 1.8
+			 */
+			public void setTrack(List<Integer> track) {
+				this.track = track;
+			}
+
+			/**
+			 * Returns the derived processors.
+			 *
+			 * @return The derived processors.
+			 * @since 1.8
+			 */
+			public List<Processor> getDerived() {
+				return derived;
+			}
+
+			/**
+			 * Set the derived processors.
+			 *
+			 * @param derived The derived processors to set.
+			 * @since 1.8
+			 */
+			public void setDerived(List<Processor> derived) {
+				this.derived = derived;
+			}
+
+			/**
+			 * Defines file responses for the api.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public static class File implements Serializable {
+				/**
+				 * The serial version UID.
+				 */
+				private static final long serialVersionUID = 1L;
+
+				/**
+				 * The mime type.
+				 */
+				@JsonProperty("mime-type")
+				private String mimeType;
+
+				/**
+				 * The path.
+				 */
+				private String path;
+
+				/**
+				 * The image.
+				 */
+				private int image;
+
+				/**
+				 * Creates a file response for the api.
+				 * 
+				 * @param file   The mets file.
+				 * @param images The mets image id map to the ocr4all image id.
+				 * @since 1.8
+				 */
+				public File(MetsParser.Root.FileGroup.File file, Hashtable<String, Integer> images) {
+					super();
+
+					mimeType = file.getMimeType();
+					path = file.getLocation().getPath();
+					image = images.containsKey(file.getId()) ? images.get(file.getId()) : 0;
+				}
+
+				/**
+				 * Returns the mimeType.
+				 *
+				 * @return The mimeType.
+				 * @since 1.8
+				 */
+				public String getMimeType() {
+					return mimeType;
+				}
+
+				/**
+				 * Set the mimeType.
+				 *
+				 * @param mimeType The mimeType to set.
+				 * @since 1.8
+				 */
+				public void setMimeType(String mimeType) {
+					this.mimeType = mimeType;
+				}
+
+				/**
+				 * Returns the path.
+				 *
+				 * @return The path.
+				 * @since 1.8
+				 */
+				public String getPath() {
+					return path;
+				}
+
+				/**
+				 * Set the path.
+				 *
+				 * @param path The path to set.
+				 * @since 1.8
+				 */
+				public void setPath(String path) {
+					this.path = path;
+				}
+
+				/**
+				 * Returns the image.
+				 *
+				 * @return The image.
+				 * @since 1.8
+				 */
+				public int getImage() {
+					return image;
+				}
+
+				/**
+				 * Set the image.
+				 *
+				 * @param image The image to set.
+				 * @since 1.8
+				 */
+				public void setImage(int image) {
+					this.image = image;
+				}
+
+			}
+		}
 	}
+
 }
