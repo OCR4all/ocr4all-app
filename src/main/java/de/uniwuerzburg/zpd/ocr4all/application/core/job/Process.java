@@ -511,6 +511,16 @@ public abstract class Process extends Job {
 		}
 
 		/**
+		 * Returns the snapshot track.
+		 * 
+		 * @return The snapshot track. Null if not available
+		 * @since 1.8
+		 */
+		public List<Integer> getSnapshotTrack() {
+			return snapshot == null ? null : snapshot.getConfiguration().getTrack();
+		}
+
+		/**
 		 * Returns the framework for the service provider.
 		 * 
 		 * @return The framework for the service provider.
@@ -535,8 +545,8 @@ public abstract class Process extends Job {
 					project.getTarget(workflow,
 							snapshot == null || snapshot.getConfiguration().isRoot() ? null
 									: snapshot.getConfiguration().getParent()),
-					snapshot == null ? null : snapshot.getConfiguration().getSandbox().getFolder(),
-					snapshot == null ? null : snapshot.getConfiguration().getTrack(), temporaryDirectory);
+					snapshot == null ? null : snapshot.getConfiguration().getSandbox().getFolder(), getSnapshotTrack(),
+					temporaryDirectory);
 		}
 
 		/**

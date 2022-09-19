@@ -7,6 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.job;
 
+import java.util.List;
 import java.util.Locale;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -165,4 +166,13 @@ public final class Task extends Process {
 		instance.cancel();
 	}
 
+	/**
+	 * Returns the snapshot track.
+	 * 
+	 * @return The snapshot track. Null if not available
+	 * @since 1.8
+	 */
+	public List<Integer> getSnapshotTrack() {
+		return instance.getSnapshotTrack();
+	}
 }
