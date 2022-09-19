@@ -12,12 +12,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
@@ -90,18 +92,30 @@ public class WorkflowResponse implements Serializable {
 	private boolean isSnapshotAvailable;
 
 	/**
-	 * The sandbox synopsis.
+	 * The snapshot synopsis.
 	 */
-	@JsonProperty("sandbox-synopsis")
-	private SandboxSynopsisResponse sandboxSynopsis;
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonProperty("snapshot-synopsis")
+	private SnapshotSynopsisResponse snapshotSynopsis;
 
 	/**
-	 * Creates a workflow response for the api.
+	 * Creates a workflow response for the api without sandbox synopsis.
 	 * 
 	 * @param workflow The workflow.
 	 * @since 1.8
 	 */
 	public WorkflowResponse(Workflow workflow) {
+		this(workflow, false);
+	}
+
+	/**
+	 * Creates a workflow response for the api.
+	 * 
+	 * @param workflow          The workflow.
+	 * @param isSandboxSynopsis True if the sandbox synopsis is required.
+	 * @since 1.8
+	 */
+	public WorkflowResponse(Workflow workflow, boolean isSandboxSynopsis) {
 		super();
 
 		projectId = workflow.getProject().getId();
@@ -120,7 +134,7 @@ public class WorkflowResponse implements Serializable {
 
 		isSnapshotAccess = workflow.isSnapshotAccess();
 		isSnapshotAvailable = isSnapshotAccess && workflow.isSnapshotAvailable();
-		sandboxSynopsis = isSnapshotAvailable ? new SandboxSynopsisResponse(workflow) : null;
+		snapshotSynopsis = isSandboxSynopsis && isSnapshotAvailable ? new SnapshotSynopsisResponse(workflow) : null;
 	}
 
 	/**
@@ -326,23 +340,23 @@ public class WorkflowResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the sandbox synopsis.
+	 * Returns the snapshot synopsis.
 	 *
-	 * @return The sandbox synopsis.
+	 * @return The snapshot synopsis.
 	 * @since 1.8
 	 */
-	public SandboxSynopsisResponse getSandboxSynopsis() {
-		return sandboxSynopsis;
+	public SnapshotSynopsisResponse getSnapshotSynopsis() {
+		return snapshotSynopsis;
 	}
 
 	/**
-	 * Set the sandbox synopsis.
+	 * Set the snapshot synopsis.
 	 *
-	 * @param sandboxSynopsis The sandbox synopsis to set.
+	 * @param snapshotSynopsis The snapshot synopsis to set.
 	 * @since 1.8
 	 */
-	public void setSandboxSynopsis(SandboxSynopsisResponse sandboxSynopsis) {
-		this.sandboxSynopsis = sandboxSynopsis;
+	public void setSnapshotSynopsis(SnapshotSynopsisResponse snapshotSynopsis) {
+		this.snapshotSynopsis = snapshotSynopsis;
 	}
 
 	/**
@@ -352,7 +366,7 @@ public class WorkflowResponse implements Serializable {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class SandboxSynopsisResponse implements Serializable {
+	public static class SnapshotSynopsisResponse implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -361,6 +375,7 @@ public class WorkflowResponse implements Serializable {
 		/**
 		 * The standard error message.
 		 */
+		@JsonInclude(JsonInclude.Include.NON_NULL)
 		@JsonProperty("standard-error")
 		private String standardError = null;
 
@@ -376,12 +391,12 @@ public class WorkflowResponse implements Serializable {
 		private Processor rootProcessor;
 
 		/**
-		 * Creates a sandbox synopsis response for the api.
+		 * Creates a snapshot synopsis response for the api.
 		 * 
 		 * @param workflow The workflow.
 		 * @since 1.8
 		 */
-		public SandboxSynopsisResponse(Workflow workflow) {
+		public SnapshotSynopsisResponse(Workflow workflow) {
 			super();
 
 			home = workflow.getConfiguration().getSnapshots().getRoot().getFolder().toString();
@@ -415,20 +430,79 @@ public class WorkflowResponse implements Serializable {
 					// mets agents
 					final MetsUtils.FileGroup fileGroup = MetsUtils.getFileGroup(metsGroup);
 
-					List<Processor> processors = new ArrayList<>();
+					Hashtable<String, Processor> processors = new Hashtable<>();
 					for (MetsParser.Root.Header.Agent agent : root.getHeader().getAgents()) {
-						// TODO: use hashtable to search the processor by track
+						Processor processor = new Processor(agent, fileGroup, fileGroups, images);
 
-						processors.add(new Processor(agent, fileGroup, fileGroups, images));
+						if (processor.getTrack() != null)
+							processors.put(getTrackId(processor.getTrack()), processor);
 					}
 
-					// TODO: rootProcessor -> build processor tree and set root processor
+					// build the processor tree and sort the derived processors
+					for (Processor processor : processors.values())
+						if (processor.getTrack().isEmpty())
+							rootProcessor = processor;
+						else {
+							Processor parent = processors.get(getTrackId(true, processor.getTrack()));
+
+							if (parent != null)
+								parent.getDerived().add(processor);
+						}
+
+					for (Processor processor : processors.values())
+						sortDerived(processor);
 				} catch (Exception e) {
 					standardError = addMessage(standardError,
-							"Trouble parsing mets XML file - " + e.getMessage() + ".");
+							"Trouble parsing mets XML file '" + mets.toString() + "' - " + e.getMessage() + ".");
 				}
-			else
-				standardError = addMessage(standardError, "The mets XML file does not exist.");
+		}
+
+		/**
+		 * Returns the sandbox track id.
+		 * 
+		 * @param track The track.
+		 * @return The sandbox track id.
+		 * @since 1.8
+		 */
+		private String getTrackId(List<Integer> track) {
+			return getTrackId(false, track);
+		}
+
+		/**
+		 * Returns the sandbox track id.
+		 * 
+		 * @param isParent True if determine the sandbox track id of parent sandbox.
+		 * @param track    The track.
+		 * @return The sandbox track id.
+		 * @since 1.8
+		 */
+		private String getTrackId(boolean isParent, List<Integer> track) {
+			int size = track.size() - (isParent ? 1 : 0);
+
+			if (size < 0)
+				return null;
+			else {
+				StringBuffer buffer = new StringBuffer();
+				for (int index = 0; index < size; index++) {
+					if (buffer.length() > 0)
+						buffer.append("#");
+
+					buffer.append(track.get(index));
+				}
+
+				return buffer.toString();
+			}
+		}
+
+		/**
+		 * Sort the derived processors by snapshot id.
+		 * 
+		 * @param processor The processor to sort the derived processors.
+		 * @since 1.8
+		 */
+		private void sortDerived(Processor processor) {
+			Collections.sort(processor.getDerived(), (p1, p2) -> p1.getTrack().get(p1.getTrack().size() - 1)
+					- p2.getTrack().get(p2.getTrack().size() - 1));
 		}
 
 		/**
@@ -517,14 +591,19 @@ public class WorkflowResponse implements Serializable {
 			private static final long serialVersionUID = 1L;
 
 			/**
+			 * The role.
+			 */
+			private String role;
+
+			/**
 			 * The name.
 			 */
 			private String name;
 
 			/**
-			 * The role.
+			 * The parameter.
 			 */
-			private String role;
+			private String parameter = null;
 
 			/**
 			 * The track.
@@ -555,23 +634,51 @@ public class WorkflowResponse implements Serializable {
 					Hashtable<String, MetsParser.Root.FileGroup> fileGroups, Hashtable<String, Integer> images) {
 				super();
 
-				name = agent.getName();
 				role = MetsUtils.getAgentRole(agent.getRole(), agent.getOtherRole());
+				name = agent.getName();
 
 				for (MetsParser.Root.Header.Agent.Note note : agent.getNotes()) {
 					MetsUtils.Note noteType = MetsUtils.Note.getNote(note.getOption());
 
-					if (noteType != null && MetsUtils.Note.outputFileGroup.equals(noteType)) {
-						track = fileGroup.getTrack(note.getValue());
+					if (noteType != null)
+						switch (noteType) {
+						case outputFileGroup:
+							track = fileGroup.getTrack(note.getValue());
 
-						if (fileGroups.containsKey(note.getValue()))
-							for (MetsParser.Root.FileGroup.File file : fileGroups.get(note.getValue()).getFiles())
-								files.add(new File(file, images));
+							if (fileGroups.containsKey(note.getValue()))
+								for (MetsParser.Root.FileGroup.File file : fileGroups.get(note.getValue()).getFiles())
+									files.add(new File(file, images));
 
-						break;
-					}
+							break;
+						case parameter:
+							parameter = note.getValue();
+
+							break;
+						default:
+							break;
+						}
 				}
 
+			}
+
+			/**
+			 * Returns the role.
+			 *
+			 * @return The role.
+			 * @since 1.8
+			 */
+			public String getRole() {
+				return role;
+			}
+
+			/**
+			 * Set the role.
+			 *
+			 * @param role The role to set.
+			 * @since 1.8
+			 */
+			public void setRole(String role) {
+				this.role = role;
 			}
 
 			/**
@@ -595,23 +702,23 @@ public class WorkflowResponse implements Serializable {
 			}
 
 			/**
-			 * Returns the role.
+			 * Returns the parameter.
 			 *
-			 * @return The role.
+			 * @return The parameter.
 			 * @since 1.8
 			 */
-			public String getRole() {
-				return role;
+			public String getParameter() {
+				return parameter;
 			}
 
 			/**
-			 * Set the role.
+			 * Set the parameter.
 			 *
-			 * @param role The role to set.
+			 * @param parameter The parameter to set.
 			 * @since 1.8
 			 */
-			public void setRole(String role) {
-				this.role = role;
+			public void setParameter(String parameter) {
+				this.parameter = parameter;
 			}
 
 			/**
@@ -655,6 +762,26 @@ public class WorkflowResponse implements Serializable {
 			}
 
 			/**
+			 * Returns the files.
+			 *
+			 * @return The files.
+			 * @since 1.8
+			 */
+			public List<File> getFiles() {
+				return files;
+			}
+
+			/**
+			 * Set the files.
+			 *
+			 * @param files The files to set.
+			 * @since 1.8
+			 */
+			public void setFiles(List<File> files) {
+				this.files = files;
+			}
+
+			/**
 			 * Defines file responses for the api.
 			 *
 			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -679,9 +806,10 @@ public class WorkflowResponse implements Serializable {
 				private String path;
 
 				/**
-				 * The image.
+				 * The image id.
 				 */
-				private int image;
+				@JsonProperty("image-id")
+				private int imageId;
 
 				/**
 				 * Creates a file response for the api.
@@ -695,7 +823,7 @@ public class WorkflowResponse implements Serializable {
 
 					mimeType = file.getMimeType();
 					path = file.getLocation().getPath();
-					image = images.containsKey(file.getId()) ? images.get(file.getId()) : 0;
+					imageId = images.containsKey(file.getId()) ? images.get(file.getId()) : 0;
 				}
 
 				/**
@@ -739,23 +867,23 @@ public class WorkflowResponse implements Serializable {
 				}
 
 				/**
-				 * Returns the image.
+				 * Returns the image id.
 				 *
-				 * @return The image.
+				 * @return The image id.
 				 * @since 1.8
 				 */
-				public int getImage() {
-					return image;
+				public int getImageId() {
+					return imageId;
 				}
 
 				/**
-				 * Set the image.
+				 * Set the image id.
 				 *
-				 * @param image The image to set.
+				 * @param imageId The image id to set.
 				 * @since 1.8
 				 */
-				public void setImage(int image) {
-					this.image = image;
+				public void setImageId(int imageId) {
+					this.imageId = imageId;
 				}
 
 			}

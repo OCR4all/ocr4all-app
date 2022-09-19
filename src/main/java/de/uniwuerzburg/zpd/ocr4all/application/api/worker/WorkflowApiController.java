@@ -94,7 +94,7 @@ public class WorkflowApiController extends CoreApiController {
 	public ResponseEntity<WorkflowResponse> entity(@PathVariable String projectId, @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id);
 		try {
-			return ResponseEntity.ok().body(new WorkflowResponse(authorization.workflow));
+			return ResponseEntity.ok().body(new WorkflowResponse(authorization.workflow, true));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -142,7 +142,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow workflow = service.authorize(authorization.project, id);
 
 				return workflow == null ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-						: ResponseEntity.status(HttpStatus.CONFLICT).body(new WorkflowResponse(workflow));
+						: ResponseEntity.status(HttpStatus.CONFLICT).body(new WorkflowResponse(workflow, true));
 			}
 
 			Path path = authorization.project.getConfiguration().getWorkflowsConfiguration().create(id, getUser());
@@ -188,7 +188,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow updatedWorkflow = service.authorize(authorization.project, request.getId());
 
 				return updatedWorkflow == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new WorkflowResponse(updatedWorkflow));
+						: ResponseEntity.ok().body(new WorkflowResponse(updatedWorkflow, true));
 			} else
 				return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
 		} catch (Exception ex) {
@@ -260,7 +260,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow workflow = service.authorize(authorization.project, id);
 
 				return workflow == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new WorkflowResponse(workflow));
+						: ResponseEntity.ok().body(new WorkflowResponse(workflow, false));
 			} else
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		} catch (Exception ex) {
@@ -312,7 +312,7 @@ public class WorkflowApiController extends CoreApiController {
 		} catch (Exception ex) {
 			log(ex);
 
-			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
 		}
 	}
 
