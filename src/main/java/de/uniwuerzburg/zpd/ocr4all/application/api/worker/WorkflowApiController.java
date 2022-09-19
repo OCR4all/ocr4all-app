@@ -31,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.BasicRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.HistoryResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.MetsResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.WorkflowResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
@@ -53,6 +54,11 @@ public class WorkflowApiController extends CoreApiController {
 	 * The context path.
 	 */
 	public static final String contextPath = apiContextPathVersion_1_0 + "/workflow";
+
+	/**
+	 * The mets request mapping.
+	 */
+	public static final String metsRequestMapping = "/mets";
 
 	/**
 	 * The workflow service.
@@ -88,7 +94,7 @@ public class WorkflowApiController extends CoreApiController {
 	public ResponseEntity<WorkflowResponse> entity(@PathVariable String projectId, @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id);
 		try {
-			return ResponseEntity.ok().body(new WorkflowResponse(authorization.workflow));
+			return ResponseEntity.ok().body(new WorkflowResponse(authorization.workflow, true));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -136,7 +142,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow workflow = service.authorize(authorization.project, id);
 
 				return workflow == null ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-						: ResponseEntity.status(HttpStatus.CONFLICT).body(new WorkflowResponse(workflow));
+						: ResponseEntity.status(HttpStatus.CONFLICT).body(new WorkflowResponse(workflow, true));
 			}
 
 			Path path = authorization.project.getConfiguration().getWorkflowsConfiguration().create(id, getUser());
@@ -182,7 +188,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow updatedWorkflow = service.authorize(authorization.project, request.getId());
 
 				return updatedWorkflow == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new WorkflowResponse(updatedWorkflow));
+						: ResponseEntity.ok().body(new WorkflowResponse(updatedWorkflow, true));
 			} else
 				return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
 		} catch (Exception ex) {
@@ -254,7 +260,7 @@ public class WorkflowApiController extends CoreApiController {
 				Workflow workflow = service.authorize(authorization.project, id);
 
 				return workflow == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new WorkflowResponse(workflow));
+						: ResponseEntity.ok().body(new WorkflowResponse(workflow, false));
 			} else
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		} catch (Exception ex) {
@@ -284,6 +290,29 @@ public class WorkflowApiController extends CoreApiController {
 			log(ex);
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the information contained in the mets (Metadata Encoding and
+	 * Transmission Standard) XML file in the specified workflow in the response
+	 * body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The workflow id. This is the folder name.
+	 * @return The mets (Metadata Encoding and Transmission Standard) information in
+	 *         the response body.
+	 * @since 1.8
+	 */
+	@GetMapping(metsRequestMapping + projectPathVariable)
+	public ResponseEntity<MetsResponse> mets(@PathVariable String projectId, @RequestParam String id) {
+		Authorization authorization = authorizationFactory.authorize(projectId, id);
+		try {
+			return ResponseEntity.ok().body(new MetsResponse(authorization.workflow));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
 		}
 	}
 

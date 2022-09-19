@@ -12,10 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -50,16 +48,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ImageArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.IntegerArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.SelectArgument;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
- * Defines service providers for workflow launchers. The following properties of
- * the service provider collection <b>ocr4all-workflow-launcher</b> override the
- * local default settings (<b>key</b>: <i>default value</i>):
- * <ul>
- * <li>file_id: ocr4all</li>
- * <li>page_id: ocr4all-id</li>
- * </ul>
+ * Defines service providers for workflow launchers.
  * 
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
@@ -144,9 +137,9 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	private enum MetsPattern implements ConfigurationServiceProvider.CollectionKey {
 		create_date, software_creator, parameter, file_group, file_template, page_template,
 
-		file_mime_type, file_id("ocr4all"), file_name,
+		file_mime_type, file_id, file_name,
 
-		page_id("ocr4all-id");
+		page_id;
 
 		/**
 		 * The default value.
@@ -522,8 +515,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 			private void persistMets(Path path, String coreTemplate, LauncherArgument launcherArgument, String group,
 					String file, String page) throws JsonProcessingException, IOException {
 				Files.write(path, coreTemplate
-						.replace(MetsPattern.create_date.getPattern(),
-								(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")).format(new Date()))
+						.replace(MetsPattern.create_date.getPattern(), MetsUtils.getFormattedDate())
 
 						.replace(MetsPattern.software_creator.getPattern(), identifier + " v" + getVersion())
 
@@ -966,28 +958,30 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				try {
 					final String metsFilePath = processorWorkspaceRelativePath.toString()
 							+ (processorWorkspaceRelativePath.equals(Paths.get("")) ? "" : "/");
-					final String fileIdPrefix = configuration.getValue(MetsPattern.file_id);
-					final String pageIdPrefix = configuration.getValue(MetsPattern.page_id);
+					final String fileIdPrefix = framework.getMetsGroup();
+
+					MetsUtils.Page metsPage = MetsUtils.getPage(framework.getMetsGroup());
 
 					final StringBuffer metsFileBuffer = new StringBuffer();
 					final StringBuffer metsPageBuffer = new StringBuffer();
 
 					for (Path image : Files.list(folderWorkflowFolios).collect(Collectors.toList())) {
 						String fileName = image.getFileName().toString();
-						String metsFileId = "_" + OCR4allUtils.getNameWithoutExtension(fileName);
+						String metsFileId = OCR4allUtils.getNameWithoutExtension(fileName);
+						String fileId = fileIdPrefix + "_" + metsFileId;
 
 						Path target = Paths.get(framework.getOutput().toString(), fileName);
 
 						metsFileBuffer.append(metsFileTemplate
 								.replace(MetsPattern.file_mime_type.getPattern(), imageFormat.getMimeType())
 
-								.replace(MetsPattern.file_id.getPattern(), fileIdPrefix + metsFileId)
+								.replace(MetsPattern.file_id.getPattern(), fileId)
 
 								.replace(MetsPattern.file_name.getPattern(), metsFilePath + fileName));
 						metsPageBuffer.append(
-								metsPageTemplate.replace(MetsPattern.page_id.getPattern(), pageIdPrefix + metsFileId)
+								metsPageTemplate.replace(MetsPattern.page_id.getPattern(), metsPage.getId(metsFileId))
 
-										.replace(MetsPattern.file_id.getPattern(), fileIdPrefix + metsFileId));
+										.replace(MetsPattern.file_id.getPattern(), fileId));
 
 						Files.move(image, target, StandardCopyOption.REPLACE_EXISTING);
 
