@@ -81,7 +81,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @since 1.8
 	 */
 	public enum Type {
-		imp, launcher, preprocessing, olr, ocr;
+		imp, launcher, preprocessing, olr, ocr, postcorrection;
 
 		/**
 		 * Returns the respective persistence snapshot type.
@@ -99,6 +99,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.olr;
 			case ocr:
 				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.ocr;
+			case postcorrection:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.postcorrection;
 			case imp:
 			default:
 				return null;
