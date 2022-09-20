@@ -294,7 +294,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 								: null;
 
 						Snapshot snapshot = authorization.workflow.createSnapshot(type.getSnapshotType(), track,
-								snapshotRequest.getName(), snapshotRequest.getDescription(), request,
+								snapshotRequest.getLabel(), snapshotRequest.getDescription(), request,
 								configurationService.getInstance());
 
 						task = new Task(configurationService, locale, Job.Processing.parallel, snapshot,
@@ -467,10 +467,10 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * The name.
+		 * The label.
 		 */
 		@NotNull
-		private String name;
+		private String label;
 
 		/**
 		 * The description.
@@ -478,23 +478,23 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		private String description;
 
 		/**
-		 * Returns the name.
+		 * Returns the label.
 		 *
-		 * @return The name.
+		 * @return The label.
 		 * @since 1.8
 		 */
-		public String getName() {
-			return name;
+		public String getLabel() {
+			return label;
 		}
 
 		/**
-		 * Set the name.
+		 * Set the label.
 		 *
-		 * @param name The name to set.
+		 * @param label The label to set.
 		 * @since 1.8
 		 */
-		public void setName(String name) {
-			this.name = name;
+		public void setLabel(String label) {
+			this.label = label;
 		}
 
 		/**
