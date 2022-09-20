@@ -309,14 +309,14 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 				break;
 			}
 
-			schedulerService.schedule(task);
+			Job.State jobState = schedulerService.schedule(task);
 
 			ObjectMapper objectMapper = new ObjectMapper();
 
 			response.setStatus(HttpServletResponse.SC_OK);
 			response.setContentType(applicationJson);
-			response.getWriter()
-					.write(objectMapper.writeValueAsString(new JobJsonResponse(task.getId(), task.getSnapshotTrack())));
+			response.getWriter().write(objectMapper
+					.writeValueAsString(new JobJsonResponse(task.getId(), jobState, task.getSnapshotTrack())));
 			response.getWriter().flush();
 		} catch (ResponseStatusException ex) {
 			throw ex;
@@ -347,6 +347,12 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		private int jobId;
 
 		/**
+		 * The job state.
+		 */
+		@JsonProperty("job-state")
+		private Job.State jobState;
+
+		/**
 		 * The snapshot track.
 		 */
 		@JsonInclude(JsonInclude.Include.NON_NULL)
@@ -357,13 +363,16 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Creates a JSON object for a scheduled job to send responses to clients.
 		 * 
 		 * @param jobId         The job id.
+		 * @param jobState      The job state.
 		 * @param snapshotTrack The snapshot track.
 		 * @since 1.8
 		 */
-		public JobJsonResponse(int jobId, List<Integer> snapshotTrack) {
+		public JobJsonResponse(int jobId, Job.State jobState, List<Integer> snapshotTrack) {
 			super();
 
 			this.jobId = jobId;
+			this.jobState = jobState;
+
 			this.snapshotTrack = snapshotTrack;
 		}
 
@@ -385,6 +394,26 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 */
 		public void setJobId(int jobId) {
 			this.jobId = jobId;
+		}
+
+		/**
+		 * Returns the job state.
+		 *
+		 * @return The job state.
+		 * @since 1.8
+		 */
+		public Job.State getJobState() {
+			return jobState;
+		}
+
+		/**
+		 * Set the job state.
+		 *
+		 * @param jobState The job state to set.
+		 * @since 1.8
+		 */
+		public void setJobState(Job.State jobState) {
+			this.jobState = jobState;
 		}
 
 		/**
