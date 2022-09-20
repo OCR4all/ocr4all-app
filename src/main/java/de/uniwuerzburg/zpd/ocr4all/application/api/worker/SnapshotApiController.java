@@ -153,7 +153,7 @@ public class SnapshotApiController extends CoreApiController {
 	 */
 	@PostMapping(pathRequestMapping + projectPathVariable + workflowPathVariable)
 	public ResponseEntity<List<SnapshotResponse>> path(@PathVariable String projectId, @PathVariable String workflowId,
-			@RequestBody  @Valid SnapshotRequest request) {
+			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, workflowId);
 		try {
 			List<Snapshot> snapshots = authorization.workflow.getSnapshots(request.getTrack());
@@ -204,6 +204,66 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Locks the leaf snapshot in the track of the request and returns it in the
+	 * response body.
+	 * 
+	 * @param projectId  The project id. This is the folder name.
+	 * @param workflowId The workflow id. This is the folder name.
+	 * @param request    The snapshot lock request.
+	 * @return The updated snapshot in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(lockRequestMapping + projectPathVariable + workflowPathVariable)
+	public ResponseEntity<SnapshotResponse> lock(@PathVariable String projectId, @PathVariable String workflowId,
+			@RequestBody @Valid SnapshotLockRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, workflowId,
+				ProjectRight.execute);
+		try {
+			Snapshot snapshot = authorization.workflow.getSnapshot(request.getTrack());
+
+			return snapshot.getConfiguration().getConfiguration().lockSnapshot(request.getSource(),
+					request.getComment()) ? ResponseEntity.ok().body(new SnapshotResponse(snapshot))
+							: ResponseEntity.status(HttpStatus.CONFLICT).build();
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Unlocks the leaf snapshot in the track of the request and returns it in the
+	 * response body.
+	 * 
+	 * @param projectId  The project id. This is the folder name.
+	 * @param workflowId The workflow id. This is the folder name.
+	 * @param request    The snapshot request.
+	 * @return The updated snapshot in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(unlockRequestMapping + projectPathVariable + workflowPathVariable)
+	public ResponseEntity<SnapshotResponse> unlock(@PathVariable String projectId, @PathVariable String workflowId,
+			@RequestBody @Valid SnapshotRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, workflowId,
+				ProjectRight.execute);
+		try {
+			Snapshot snapshot = authorization.workflow.getSnapshot(request.getTrack());
+
+			return snapshot.getConfiguration().getConfiguration().unlockSnapshot()
+					? ResponseEntity.ok().body(new SnapshotResponse(snapshot))
+					: ResponseEntity.status(HttpStatus.CONFLICT).build();
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Removes the leaf snapshot in the track of the request and returns it in the
 	 * response body.
 	 * 
@@ -215,7 +275,7 @@ public class SnapshotApiController extends CoreApiController {
 	 */
 	@PostMapping(removeRequestMapping + projectPathVariable + workflowPathVariable)
 	public ResponseEntity<SnapshotResponse> remove(@PathVariable String projectId, @PathVariable String workflowId,
-			@RequestBody  @Valid SnapshotRequest request) {
+			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, workflowId,
 				ProjectRight.execute);
 		try {
@@ -249,7 +309,7 @@ public class SnapshotApiController extends CoreApiController {
 	 */
 	@PostMapping(sandboxRequestMapping + fileRequestMapping + projectPathVariable + workflowPathVariable)
 	public ResponseEntity<SandboxResponse> sandboxFile(@PathVariable String projectId, @PathVariable String workflowId,
-			@RequestBody  @Valid SnapshotRequest request) {
+			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, workflowId);
 		try {
 			return ResponseEntity.ok().body(new SandboxResponse(authorization.workflow.getSnapshot(request.getTrack())
@@ -365,6 +425,72 @@ public class SnapshotApiController extends CoreApiController {
 		 */
 		public void setDescription(String description) {
 			this.description = description;
+		}
+
+	}
+
+	/**
+	 * Defines snapshot lock requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotLockRequest extends SnapshotRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The source.
+		 */
+		@NotBlank
+		private String source;
+
+		/**
+		 * The comment.
+		 */
+		private String comment;
+
+		/**
+		 * Returns the source.
+		 *
+		 * @return The source.
+		 * @since 1.8
+		 */
+		public String getSource() {
+			return source;
+		}
+
+		/**
+		 * Set the source.
+		 *
+		 * @param source The source to set.
+		 * @since 1.8
+		 */
+		public void setSource(String source) {
+			this.source = source;
+		}
+
+		/**
+		 * Returns the comment.
+		 *
+		 * @return The comment.
+		 * @since 1.8
+		 */
+		public String getComment() {
+			return comment;
+		}
+
+		/**
+		 * Set the comment.
+		 *
+		 * @param comment The comment to set.
+		 * @since 1.8
+		 */
+		public void setComment(String comment) {
+			this.comment = comment;
 		}
 
 	}

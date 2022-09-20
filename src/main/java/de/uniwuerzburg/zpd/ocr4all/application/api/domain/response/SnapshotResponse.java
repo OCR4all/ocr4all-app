@@ -232,7 +232,8 @@ public class SnapshotResponse implements Serializable {
 		public SnapshotConfigurationResponse(
 				de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot snapshot) {
 			super(snapshot.getType(), snapshot.getLabel(), snapshot.getDescription(), snapshot.getServiceProvider(),
-					snapshot.getInstance(), snapshot.getDate(), snapshot.getUpdated(), snapshot.getUser());
+					snapshot.getInstance(), snapshot.getDate(), snapshot.getUpdated(), snapshot.getUser(),
+					snapshot.getLock());
 		}
 	}
 

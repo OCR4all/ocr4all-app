@@ -237,6 +237,11 @@ public abstract class Process extends Job {
 		private Date end = null;
 
 		/**
+		 * The snapshot lock.
+		 */
+		private SnapshotLock snapshotLock = null;
+
+		/**
 		 * Creates a process instance with initialized state.
 		 * 
 		 * @param serviceProvider         The service provider.
@@ -656,6 +661,18 @@ public abstract class Process extends Job {
 							public void updatedStandardError(String message) {
 								journal.setStandardError(message);
 							}
+
+							/*
+							 * (non-Javadoc)
+							 * 
+							 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider.
+							 * Processor.Callback#lockSnapshot(java.lang.String)
+							 */
+							@Override
+							public void lockSnapshot(String comment) {
+								if (snapshot != null)
+									snapshotLock = new SnapshotLock(comment);
+							}
 						}, framework, getModelArgument());
 					} catch (Exception e) {
 						journal.setNote(OCR4allUtils.getStackTrace(e));
@@ -681,9 +698,14 @@ public abstract class Process extends Job {
 				}
 
 				// Persist the snapshot core data
-				if (snapshot != null)
+				if (snapshot != null) {
 					snapshot.getConfiguration().getConfiguration().updateProcess(state, journal.getProgress(),
 							journal.getStandardOutput(), journal.getStandardError(), journal.getNote());
+
+					if (snapshotLock != null)
+						snapshot.getConfiguration().getConfiguration().lockSnapshot(serviceProviderArgument.getId(),
+								snapshotLock.getComment());
+				}
 			}
 
 			return state;
@@ -725,6 +747,43 @@ public abstract class Process extends Job {
 			}
 
 			return state;
+		}
+
+		/**
+		 * SnapshotLock is an immutable class that defines snapshot locks.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		private class SnapshotLock {
+			/**
+			 * The comment.
+			 */
+			private final String comment;
+
+			/**
+			 * Creates a snapshot lock.
+			 * 
+			 * @param comment The comment.
+			 * @since 1.8
+			 */
+			public SnapshotLock(String comment) {
+				super();
+
+				this.comment = comment;
+			}
+
+			/**
+			 * Returns the comment.
+			 *
+			 * @return The comment.
+			 * @since 1.8
+			 */
+			public String getComment() {
+				return comment;
+			}
+
 		}
 	}
 }

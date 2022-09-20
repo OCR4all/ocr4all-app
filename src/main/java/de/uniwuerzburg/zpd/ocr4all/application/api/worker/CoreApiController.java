@@ -94,6 +94,16 @@ public class CoreApiController {
 	public static final String updateRequestMapping = "/update";
 
 	/**
+	 * The lock request mapping.
+	 */
+	public static final String lockRequestMapping = "/lock";
+
+	/**
+	 * The unlock request mapping.
+	 */
+	public static final String unlockRequestMapping = "/unlock";
+
+	/**
 	 * The download request mapping.
 	 */
 	public static final String downloadRequestMapping = "/download";
