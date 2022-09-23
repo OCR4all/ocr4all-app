@@ -261,7 +261,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * @since 1.8
 	 */
 	private enum Field {
-		mimeType("mime-type");
+		mimeTypeFilter("mime-type-filter");
 
 		/**
 		 * The name.
@@ -392,9 +392,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	public Model getModel(Target target) {
 		LauncherArgument argument = new LauncherArgument();
 
-		return new Model(new StringField(Field.mimeType.getName(), argument.getMimeType(),
-				locale -> getString(locale, "mimeType.description"),
-				locale -> getString(locale, "mimeType.placeholder")));
+		return new Model(new StringField(Field.mimeTypeFilter.getName(), argument.getMimeTypeFilter(),
+				locale -> getString(locale, "mime.type.filter.description"),
+				locale -> getString(locale, "mime.type.filter.placeholder")));
 	}
 
 	/*
@@ -430,12 +430,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				LauncherArgument argument = new LauncherArgument();
 				try {
 					StringArgument mimeTypeArgument = modelArgument.getArgument(StringArgument.class,
-							Field.mimeType.getName());
+							Field.mimeTypeFilter.getName());
 
 					if (mimeTypeArgument != null)
-						argument.setMimeType(mimeTypeArgument.getValue().orElse(null));
+						argument.setMimeTypeFilter(mimeTypeArgument.getValue().orElse(null));
 				} catch (ClassCastException e) {
-					updatedStandardError("The argument '" + Field.mimeType.getName() + "' is not of string type.");
+					updatedStandardError(
+							"The argument '" + Field.mimeTypeFilter.getName() + "' is not of string type.");
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
@@ -548,10 +549,12 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 
 				List<LarexFile> larexFiles = new ArrayList<>();
 				int index = 0;
+				final String mimeTypeFilter = argument.getMimeTypeFilter() == null
+						|| argument.getMimeTypeFilter().isEmpty() ? null : argument.getMimeTypeFilter();
 				for (MetsParser.Root.FileGroup.File file : inputFileGroup.getFiles()) {
 					callback.updatedProgress(0.05F + (0.75F * (++index) / inputFileGroup.getFiles().size()));
 
-					if (argument.getMimeType().isEmpty() || argument.getMimeType().equals(file.getMimeType())) {
+					if (mimeTypeFilter == null || mimeTypeFilter.equals(file.getMimeType())) {
 						if (!file.getId().startsWith(metsFrameworkFileGroup.getInput())) {
 							updatedStandardError("Wrong input file id '" + file.getId()
 									+ "', since it is not a prefix of file group id '"
@@ -626,14 +629,14 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					for (LarexFile larexFile : larexFiles) {
 						targetPages.put(larexFile.getSourceFile().getId(), larexFile.getTargetFileID());
 
-						metsFileBuffer.append(metsFileTemplate
-								.replace(MetsPattern.file_id.getPattern(), larexFile.getTargetFileID())
+						metsFileBuffer.append(
+								metsFileTemplate.replace(MetsPattern.file_id.getPattern(), larexFile.getTargetFileID())
 
-								.replace(MetsPattern.file_mime_type.getPattern(),
-										larexFile.getSourceFile().getMimeType())
+										.replace(MetsPattern.file_mime_type.getPattern(),
+												larexFile.getSourceFile().getMimeType())
 
-								.replace(MetsPattern.file_name.getPattern(),
-										sandboxRelativePath + "/" + larexFile.getTargetFilename()));
+										.replace(MetsPattern.file_name.getPattern(),
+												sandboxRelativePath + "/" + larexFile.getTargetFilename()));
 					}
 
 					// update mets file
@@ -759,29 +762,29 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		private static final String pageXmlMimeType = "application/vnd.prima.page+xml";
 
 		/**
-		 * The mime type.
+		 * The mime type filter.
 		 */
-		@JsonProperty("mime-type")
-		private String mimeType = pageXmlMimeType;
+		@JsonProperty("mime-type-filter")
+		private String mimeTypeFilter = pageXmlMimeType;
 
 		/**
-		 * Returns the mime type.
+		 * Returns the mime type filter.
 		 *
-		 * @return The mime type.
+		 * @return The mime type filter.
 		 * @since 1.8
 		 */
-		public String getMimeType() {
-			return mimeType;
+		public String getMimeTypeFilter() {
+			return mimeTypeFilter;
 		}
 
 		/**
-		 * Set the mime type.
+		 * Set the mime type filter.
 		 *
-		 * @param mimeType The mime type to set.
+		 * @param mimeTypeFilter The mime type filter to set.
 		 * @since 1.8
 		 */
-		public void setMimeType(String mimeType) {
-			this.mimeType = mimeType == null || mimeType.isBlank() ? "" : mimeType.trim();
+		public void setMimeTypeFilter(String mimeTypeFilter) {
+			this.mimeTypeFilter = mimeTypeFilter == null ? null : mimeTypeFilter.trim();
 		}
 
 	}
