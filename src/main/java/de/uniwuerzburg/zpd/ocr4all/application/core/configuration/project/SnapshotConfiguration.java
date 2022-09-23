@@ -309,6 +309,16 @@ public class SnapshotConfiguration extends CoreFolder {
 	}
 
 	/**
+	 * Returns true if the snapshot allows derived snapshots.
+	 * 
+	 * @return True if the snapshot allows derived snapshots.
+	 * @since 1.8
+	 */
+	public boolean isAllowDerivedSnapshots() {
+		return isProcessCompleted() && configuration.snapshot.getLock() == null;
+	}
+
+	/**
 	 * Returns true if the given path matches a derived snapshot name.
 	 * 
 	 * @param path The derived snapshot.
@@ -427,7 +437,7 @@ public class SnapshotConfiguration extends CoreFolder {
 
 	/**
 	 * Creates a derived snapshot. A derived can be created only when a process has
-	 * been executed and completed on the snapshot.
+	 * been executed and completed on the snapshot and the snapshot is not locked.
 	 * 
 	 * @param type            The type.
 	 * @param label           The label. It can not be null nor blank.
@@ -440,7 +450,7 @@ public class SnapshotConfiguration extends CoreFolder {
 	 */
 	public SnapshotConfiguration createDerived(Snapshot.Type type, String label, String description,
 			ServiceProvider serviceProvider, Instance instance) {
-		if (isProcessCompleted())
+		if (isAllowDerivedSnapshots())
 			try (Stream<Path> stream = Files.list(derivedContainer.getFolder())) {
 				int id = 0;
 				for (String number : stream.filter(path -> isDerivedSnapshot(path)).map(Path::getFileName)
@@ -771,6 +781,63 @@ public class SnapshotConfiguration extends CoreFolder {
 				} catch (IOException e) {
 					logger.warn("Could not update the main configuration of the snapshot '" + getLoggerIdentifier()
 							+ "' - " + e.getMessage());
+
+					loadMainConfiguration();
+				}
+
+			return false;
+		}
+
+		/**
+		 * Locks the snapshot with current created time.
+		 * 
+		 * @param source  The source. The source can not be null or empty.
+		 * @param comment The comment.
+		 * @return True if the main configuration was updated.
+		 * @since 1.8
+		 */
+		public boolean lockSnapshot(String source, String comment) {
+			if (source != null && !source.isBlank() && reloadMainConfiguration())
+				try {
+					snapshot.setLock(new Snapshot.Lock(source, comment));
+
+					snapshot.setUpdated(new Date());
+
+					mainConfigurationManager.persist(snapshot);
+
+					logger.info("Locked snapshot '" + getLoggerIdentifier() + "'.");
+
+					return true;
+				} catch (IOException e) {
+					logger.warn("Could not lock snapshot '" + getLoggerIdentifier() + "' - " + e.getMessage());
+
+					loadMainConfiguration();
+				}
+
+			return false;
+		}
+
+		/**
+		 * Unlocks the snapshot.
+		 * 
+		 * @return True if the snapshot was locked and the main configuration was
+		 *         updated.
+		 * @since 1.8
+		 */
+		public boolean unlockSnapshot() {
+			if (reloadMainConfiguration() && snapshot.getLock() != null)
+				try {
+					snapshot.setLock(null);
+
+					snapshot.setUpdated(new Date());
+
+					mainConfigurationManager.persist(snapshot);
+
+					logger.info("unlocked snapshot '" + getLoggerIdentifier() + "'.");
+
+					return true;
+				} catch (IOException e) {
+					logger.warn("Could not unlock snapshot '" + getLoggerIdentifier() + "' - " + e.getMessage());
 
 					loadMainConfiguration();
 				}

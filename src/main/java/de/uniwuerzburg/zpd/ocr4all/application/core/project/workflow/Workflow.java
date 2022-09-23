@@ -350,13 +350,13 @@ public class Workflow {
 					serviceProvider, instance);
 		else {
 			final Snapshot snapshot = getSnapshot(trackParent);
-			if (snapshot.getConfiguration().isProcessCompleted())
+			if (snapshot.getConfiguration().isAllowDerivedSnapshots())
 				snapshotConfiguration = snapshot.getConfiguration().createDerived(type, label, description,
 						serviceProvider, instance);
 		}
 
 		if (snapshotConfiguration == null)
-			throw new IllegalArgumentException("could not create snapshot");
+			throw new IllegalArgumentException("the snapshot could not be created");
 		else
 			return new Snapshot(snapshotConfiguration, this);
 	}

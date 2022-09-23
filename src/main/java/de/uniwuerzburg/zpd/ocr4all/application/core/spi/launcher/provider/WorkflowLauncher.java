@@ -34,7 +34,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
@@ -134,69 +133,12 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	private enum MetsPattern implements ConfigurationServiceProvider.CollectionKey {
+	private enum MetsPattern {
 		create_date, software_creator, parameter, file_group, file_template, page_template,
 
 		file_mime_type, file_id, file_name,
 
 		page_id;
-
-		/**
-		 * The default value.
-		 */
-		private final String value;
-
-		/**
-		 * Default constructor for a pattern for mets templates.
-		 * 
-		 * @since 1.8
-		 */
-		private MetsPattern() {
-			value = null;
-		}
-
-		/**
-		 * Creates a pattern for mets templates.
-		 * 
-		 * @param value The default value.
-		 * @since 1.8
-		 */
-		private MetsPattern(String value) {
-			this.value = value;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework.
-		 * ServiceProviderCollectionKey#getName()
-		 */
-		@Override
-		public String getName() {
-			return identifier;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework.
-		 * ServiceProviderCollectionKey#getKey()
-		 */
-		@Override
-		public String getKey() {
-			return name();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework.
-		 * ServiceProviderCollectionKey#getDefaultValue()
-		 */
-		@Override
-		public String getDefaultValue() {
-			return value;
-		}
 
 		/**
 		 * Returns the pattern.
