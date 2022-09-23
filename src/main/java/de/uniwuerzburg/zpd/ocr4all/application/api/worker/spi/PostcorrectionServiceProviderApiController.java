@@ -3,7 +3,7 @@
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     4.02.2022
+ * Date:     20.09.2022
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 
