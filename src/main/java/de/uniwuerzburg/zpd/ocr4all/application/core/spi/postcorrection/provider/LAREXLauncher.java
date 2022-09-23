@@ -13,13 +13,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
@@ -51,9 +57,201 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	private static final String identifier = "ocr4all-LAREX-launcher";
 
 	/**
-	 * The default page xml mime type.
+	 * Defines templates.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
 	 */
-	private static final String pageXmlMimeType = "application/vnd.prima.page+xml";
+	private enum Template {
+		mets_agent("mets-agent"), mets_file_group("mets-file-group"), mets_file("mets-file"), mets_page("mets-page");
+
+		/**
+		 * The folder.
+		 */
+		private static final String folder = "templates/spi/postcorrection/larex-launcher/";
+
+		/**
+		 * The suffix.
+		 */
+		private static final String suffix = ".template";
+
+		/**
+		 * The name.
+		 */
+		private final String name;
+
+		/**
+		 * Creates a template.
+		 * 
+		 * @param name The name.
+		 * @since 1.8
+		 */
+		private Template(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * Returns the resource name.
+		 * 
+		 * @return The resource name.
+		 * @since 1.8
+		 */
+		public String getResourceName() {
+			return folder + name + suffix;
+		}
+
+		/**
+		 * Returns the template content.
+		 * 
+		 * @return The template content
+		 * @throws IllegalArgumentException Throws if the resource could not be found.
+		 * @throws IOException              If an I/O error occurs.
+		 * @since 1.8
+		 */
+		public String getResourceAsText() throws IllegalArgumentException, IOException {
+			return OCR4allUtils.getResourceAsText(getResourceName());
+		}
+	}
+
+	/**
+	 * Define patterns for mets templates.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	private enum MetsPattern {
+		other_role, software_name, input_file_group, output_file_group, parameter,
+
+		file_group, file_template,
+
+		file_id, file_mime_type, file_name,
+
+		page_id;
+
+		/**
+		 * The other role value.
+		 */
+		private static final String otherRoleValue = "postcorrection/larex";
+
+		/**
+		 * Returns the pattern.
+		 * 
+		 * @return The pattern.
+		 * @since 1.8
+		 */
+		public String getPattern() {
+			return "[ocr4all-" + name() + "]";
+		}
+	}
+
+	/**
+	 * Defines mets xml tags.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	private enum MetsTag {
+		header("metsHdr"),
+
+		fileSection("fileSec"),
+
+		structureMap("structMap"), physicalSequence(false, "div"), pages(false, "div"), fileId(false, "fptr");
+
+		/**
+		 * True if it is a main tag.
+		 */
+		private final boolean isMainTag;
+
+		/**
+		 * The name.
+		 */
+		private final String name;
+
+		/**
+		 * Creates a main mets xml tag.
+		 * 
+		 * @param name The name.
+		 * @since 1.8
+		 */
+		private MetsTag(String name) {
+			this.isMainTag = true;
+			this.name = name;
+		}
+
+		/**
+		 * Creates a mets xml tag.
+		 * 
+		 * @param isMainTag True if it is a main tag.
+		 * @param name      The name.
+		 * @since 1.8
+		 */
+		private MetsTag(boolean isMainTag, String name) {
+			this.isMainTag = isMainTag;
+			this.name = name;
+		}
+
+		/**
+		 * Returns true if it is a main tag.
+		 *
+		 * @return True if it is a main tag.
+		 * @since 1.8
+		 */
+		public boolean isMainTag() {
+			return isMainTag;
+		}
+
+		/**
+		 * Returns the tag.
+		 * 
+		 * @return The tag.
+		 * @since 1.8
+		 */
+		public String getTag() {
+			return "mets:" + name;
+		}
+
+		/**
+		 * Returns true if the given line contains the open tag.
+		 * 
+		 * @param line The line.
+		 * @return True if the given line contains the open tag.
+		 * @since 1.8
+		 */
+		public boolean isOpenTag(String line) {
+			return line != null && line.contains("<" + getTag());
+		}
+
+		/**
+		 * Returns true if the given line contains the close tag.
+		 * 
+		 * @param line The line.
+		 * @return True if the given line contains the close tag.
+		 * @since 1.8
+		 */
+		public boolean isCloseTag(String line) {
+			return line != null && line.contains("</" + getTag() + ">");
+		}
+
+		/**
+		 * Returns the main mets xml tag in the given line.
+		 * 
+		 * @param isOpen True if it is an open tag. Otherwise it is a close tag.
+		 * @param line   The line to search for the tag.
+		 * @return The main mets xml tag. Null if no tag is found.
+		 * @since 1.8
+		 */
+		public static MetsTag getMainOpenTag(String line) {
+			if (line != null)
+				for (MetsTag tag : MetsTag.values())
+					if (tag.isMainTag() && tag.isOpenTag(line))
+						return tag;
+
+			return null;
+		}
+	}
 
 	/**
 	 * Defines fields.
@@ -192,7 +390,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 */
 	@Override
 	public Model getModel(Target target) {
-		return new Model(new StringField(Field.mimeType.getName(), pageXmlMimeType,
+		LauncherArgument argument = new LauncherArgument();
+
+		return new Model(new StringField(Field.mimeType.getName(), argument.getMimeType(),
 				locale -> getString(locale, "mimeType.description"),
 				locale -> getString(locale, "mimeType.placeholder")));
 	}
@@ -227,16 +427,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				// mime type argument
 				updatedStandardOutput("Parse parameter.");
 
-				String mimeType = null;
+				LauncherArgument argument = new LauncherArgument();
 				try {
 					StringArgument mimeTypeArgument = modelArgument.getArgument(StringArgument.class,
 							Field.mimeType.getName());
 
-					if (mimeTypeArgument != null) {
-						mimeType = mimeTypeArgument.getValue().orElse(null);
-
-						mimeType = mimeType == null || mimeType.isBlank() ? null : mimeType.trim();
-					}
+					if (mimeTypeArgument != null)
+						argument.setMimeType(mimeTypeArgument.getValue().orElse(null));
 				} catch (ClassCastException e) {
 					updatedStandardError("The argument '" + Field.mimeType.getName() + "' is not of string type.");
 
@@ -281,10 +478,55 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
+				// mets templates
+				final String metsAgentTemplate;
+				try {
+					metsAgentTemplate = Template.mets_agent.getResourceAsText();
+				} catch (Exception e) {
+					updatedStandardError("Internal error: missed mets agent resource '"
+							+ Template.mets_agent.getResourceName() + ".");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
+				final String metsFileGroupTemplate;
+				try {
+					metsFileGroupTemplate = Template.mets_file_group.getResourceAsText();
+				} catch (Exception e) {
+					updatedStandardError("Internal error: missed mets file group resource '"
+							+ Template.mets_file_group.getResourceName() + ".");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
+				final String metsFileTemplate;
+				try {
+					metsFileTemplate = Template.mets_file.getResourceAsText();
+				} catch (Exception e) {
+					updatedStandardError(
+							"Internal error: missed mets file resource '" + Template.mets_file.getResourceName() + ".");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
+				final String metsPageTemplate;
+				try {
+					metsPageTemplate = Template.mets_page.getResourceAsText();
+				} catch (Exception e) {
+					updatedStandardError(
+							"Internal error: missed page file resource '" + Template.mets_page.getResourceName() + ".");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
 				callback.updatedProgress(0.05F);
 
 				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
+
+				/*
+				 * Select required files and copy then to temporary directory
+				 */
 
 				// search for input file group
 				MetsParser.Root.FileGroup inputFileGroup = null;
@@ -302,7 +544,6 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
-				// Select required files and copy then to temporary directory
 				final Path processorWorkspace = framework.getProcessorWorkspace();
 
 				List<LarexFile> larexFiles = new ArrayList<>();
@@ -310,7 +551,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				for (MetsParser.Root.FileGroup.File file : inputFileGroup.getFiles()) {
 					callback.updatedProgress(0.05F + (0.75F * (++index) / inputFileGroup.getFiles().size()));
 
-					if (mimeType == null || mimeType.equals(file.getMimeType())) {
+					if (argument.getMimeType().isEmpty() || argument.getMimeType().equals(file.getMimeType())) {
 						if (!file.getId().startsWith(metsFrameworkFileGroup.getInput())) {
 							updatedStandardError("Wrong input file id '" + file.getId()
 									+ "', since it is not a prefix of file group id '"
@@ -352,7 +593,6 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				/*
 				 * Moves the images to workflow
 				 */
-				int numberFiles = 0;
 				try {
 					updatedStandardOutput(
 							"Move the images to workflow sandbox " + framework.getOutput().toString() + ".");
@@ -378,21 +618,172 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				 */
 				try {
 					updatedStandardOutput("Update mets xml file.");
-					// TODO: Updates mets file
+
+					// build mets sections
+					final StringBuffer metsFileBuffer = new StringBuffer();
+					final String sandboxRelativePath = framework.getOutputRelativeProcessorWorkspace().toString();
+					final Hashtable<String, String> targetPages = new Hashtable<>();
+					for (LarexFile larexFile : larexFiles) {
+						targetPages.put(larexFile.getSourceFile().getId(), larexFile.getTargetFileID());
+
+						metsFileBuffer.append(metsFileTemplate
+								.replace(MetsPattern.file_id.getPattern(), larexFile.getTargetFileID())
+
+								.replace(MetsPattern.file_mime_type.getPattern(),
+										larexFile.getSourceFile().getMimeType())
+
+								.replace(MetsPattern.file_name.getPattern(),
+										sandboxRelativePath + "/" + larexFile.getTargetFilename()));
+					}
+
+					// update mets file
+					final StringBuffer buffer = new StringBuffer();
+					MetsTag handlingTag = null;
+					final Set<MetsTag> handledMainTags = new HashSet<>();
+					final List<String> pageFileIds = new ArrayList<>();
+					for (String line : Files.readAllLines(metsPath)) {
+						if (handlingTag == null) {
+							handlingTag = MetsTag.getMainOpenTag(line);
+
+							if (handlingTag != null && !handledMainTags.add(handlingTag)) {
+								updatedStandardError("Duplicated main Mets XML tag '" + handlingTag.getTag()
+										+ "', file '" + metsPath.toString() + ".");
+
+								return ProcessServiceProvider.Processor.State.interrupted;
+							}
+						} else {
+							final boolean isCloseTag = handlingTag.isCloseTag(line);
+
+							switch (handlingTag) {
+							case header:
+								if (isCloseTag) {
+									buffer.append(metsAgentTemplate
+											.replace(MetsPattern.other_role.getPattern(), MetsPattern.otherRoleValue)
+											.replace(MetsPattern.software_name.getPattern(),
+													identifier + " v" + getVersion())
+											.replace(MetsPattern.input_file_group.getPattern(),
+													metsFrameworkFileGroup.getInput())
+											.replace(MetsPattern.output_file_group.getPattern(),
+													metsFrameworkFileGroup.getOutput())
+											.replace(MetsPattern.parameter.getPattern(),
+													objectMapper.writeValueAsString(argument)));
+
+									handlingTag = null;
+								}
+
+								break;
+							case fileSection:
+								if (isCloseTag) {
+									buffer.append(metsFileGroupTemplate
+											.replace(MetsPattern.file_group.getPattern(),
+													metsFrameworkFileGroup.getOutput())
+											.replace(MetsPattern.file_template.getPattern(),
+													metsFileBuffer.toString()));
+
+									handlingTag = null;
+								}
+
+								break;
+							case structureMap:
+								if (isCloseTag)
+									handlingTag = null;
+								else if (MetsTag.physicalSequence.isOpenTag(line))
+									handlingTag = MetsTag.physicalSequence;
+
+								break;
+							case physicalSequence:
+								if (isCloseTag)
+									handlingTag = null;
+								else if (MetsTag.pages.isOpenTag(line))
+									handlingTag = MetsTag.pages;
+
+								break;
+							case pages:
+								if (isCloseTag) {
+									for (String fileGroup : pageFileIds)
+										buffer.append(
+												metsPageTemplate.replace(MetsPattern.file_id.getPattern(), fileGroup));
+
+									pageFileIds.clear();
+									handlingTag = MetsTag.physicalSequence;
+								} else if (MetsTag.fileId.isOpenTag(line))
+									for (String fileGroup : targetPages.keySet())
+										if (line.contains("FILEID=\"" + fileGroup + "\""))
+											pageFileIds.add(targetPages.get(fileGroup));
+
+								break;
+							case fileId:
+							default:
+								break;
+							}
+						}
+
+						buffer.append(line + "\n");
+					}
+
+					// persist mets file
+					Files.write(metsPath, buffer.toString().getBytes());
 				} catch (Exception e) {
+					e.printStackTrace();
 					updatedStandardError("Can not update mets file - " + e.getMessage() + ".");
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
 
+				callback.lockSnapshot(
+						(framework.isUserSet() ? framework.getUser() + " has locked the snapshot" : "Snapshot locked")
+								+ " for LAREX post-correction.");
+
 				/*
 				 * Ends the process
 				 */
-				updatedStandardOutput((numberFiles == 1 ? "One file" : numberFiles + " files") + " available.");
+				updatedStandardOutput((larexFiles.isEmpty() ? "No file"
+						: (larexFiles.size() == 1 ? "One file" : larexFiles.size() + " files")) + " available.");
 
 				return complete();
 			}
 		};
+	}
+
+	/**
+	 * Defines launcher arguments with default values.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class LauncherArgument {
+		/**
+		 * The default page xml mime type.
+		 */
+		private static final String pageXmlMimeType = "application/vnd.prima.page+xml";
+
+		/**
+		 * The mime type.
+		 */
+		@JsonProperty("mime-type")
+		private String mimeType = pageXmlMimeType;
+
+		/**
+		 * Returns the mime type.
+		 *
+		 * @return The mime type.
+		 * @since 1.8
+		 */
+		public String getMimeType() {
+			return mimeType;
+		}
+
+		/**
+		 * Set the mime type.
+		 *
+		 * @param mimeType The mime type to set.
+		 * @since 1.8
+		 */
+		public void setMimeType(String mimeType) {
+			this.mimeType = mimeType == null || mimeType.isBlank() ? "" : mimeType.trim();
+		}
+
 	}
 
 	/**
@@ -404,17 +795,27 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 */
 	private static class LarexFile {
 		/**
-		 * The mets framework file group.
+		 * The next file index.
 		 */
-		private final MetsUtils.FrameworkFileGroup metsFrameworkFileGroup;
+		private static int nextFileIndex = 0;
 
 		/**
-		 * The mets file.
+		 * The file index.
 		 */
-		private final MetsParser.Root.FileGroup.File file;
+		private final int fileIndex;
 
 		/**
-		 * The file name in the target snapshot.
+		 * The source mets file.
+		 */
+		private final MetsParser.Root.FileGroup.File sourceFile;
+
+		/**
+		 * The target file id.
+		 */
+		private final String targetFileID;
+
+		/**
+		 * The target file name.
 		 */
 		private final String targetFilename;
 
@@ -422,17 +823,22 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		 * Creates a LAREX file.
 		 * 
 		 * @param metsFrameworkFileGroup The mets framework file group.
-		 * @param file                   The mets file.
+		 * @param sourceFile             The source mets file.
 		 * @since 1.8
 		 */
-		public LarexFile(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup, File file) {
+		public LarexFile(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup, File sourceFile) {
 			super();
 
-			this.metsFrameworkFileGroup = metsFrameworkFileGroup;
-			this.file = file;
+			fileIndex = ++nextFileIndex;
 
-			String sourceFilename = Paths.get(file.getLocation().getPath()).getFileName().toString();
+			this.sourceFile = sourceFile;
 
+			targetFileID = metsFrameworkFileGroup.getOutput()
+					+ (sourceFile.getId().startsWith(metsFrameworkFileGroup.getInput())
+							? sourceFile.getId().substring(metsFrameworkFileGroup.getInput().length())
+							: "_" + fileIndex);
+
+			final String sourceFilename = Paths.get(sourceFile.getLocation().getPath()).getFileName().toString();
 			targetFilename = sourceFilename.startsWith(metsFrameworkFileGroup.getInput())
 					? metsFrameworkFileGroup.getOutput()
 							+ sourceFilename.substring(metsFrameworkFileGroup.getInput().length())
@@ -440,9 +846,29 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		}
 
 		/**
-		 * Returns the file name in the target snapshot.
+		 * Returns the source mets file.
+		 *
+		 * @return The source mets file.
+		 * @since 1.8
+		 */
+		public MetsParser.Root.FileGroup.File getSourceFile() {
+			return sourceFile;
+		}
+
+		/**
+		 * Returns the target file id.
+		 *
+		 * @return The target file id.
+		 * @since 1.8
+		 */
+		public String getTargetFileID() {
+			return targetFileID;
+		}
+
+		/**
+		 * Returns the target file name.
 		 * 
-		 * @return The file name in the target snapshot.
+		 * @return The target file name.
 		 * @since 1.8
 		 */
 		public String getTargetFilename() {
