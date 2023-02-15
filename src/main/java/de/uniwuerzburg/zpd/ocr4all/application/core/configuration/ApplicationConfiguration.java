@@ -183,9 +183,9 @@ public class ApplicationConfiguration {
 	}
 
 	/**
-	 * Returns
+	 * Returns the id.
 	 * 
-	 * @return
+	 * @return The id.
 	 * @since 1.8
 	 */
 	public long getId() {

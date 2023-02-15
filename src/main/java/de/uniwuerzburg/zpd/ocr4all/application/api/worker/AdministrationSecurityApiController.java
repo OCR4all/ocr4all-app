@@ -580,6 +580,7 @@ public class AdministrationSecurityApiController extends CoreApiController {
 		 * Creates a user response for the api.
 		 * 
 		 * @param user The user.
+		 * @param groups The groups.
 		 * @since 1.8
 		 */
 		public UserGroupResponse(User user, List<Group> groups) {

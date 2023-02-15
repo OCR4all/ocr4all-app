@@ -417,6 +417,8 @@ public class ServiceProviderResponse implements Serializable {
 		/**
 		 * Creates a premise response for the api.
 		 * 
+		 * @param premise The premise.
+		 * @param locale The locale.
 		 * @since 1.8
 		 */
 		public PremiseResponse(Premise premise, Locale locale) {

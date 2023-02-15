@@ -81,6 +81,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		/**
 		 * Returns true if the given label matches the version label.
 		 *
+		 * @param label The label.
 		 * @return True if the given label matches the version label.
 		 * @since 1.8
 		 */
@@ -889,6 +890,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * inactive when the application is launched.
 		 * 
 		 * @param id The service provider id.
+		 * @param user The user.
 		 * @since 1.8
 		 */
 		public void disableServiceProvider(String id, String user) {
@@ -933,6 +935,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * initialization is deferred and will be performed in a new thread.
 		 * 
 		 * @param id The service provider id.
+		 * @param user The user.
 		 * @since 1.8
 		 */
 		public void lazyInitializeServiceProvider(String id, String user) {
@@ -980,6 +983,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		/**
 		 * Returns true if the system command is registered and available.
 		 *
+		 * @param type The system command type.
 		 * @return True if the system command is registered and available.
 		 * @since 1.8
 		 */
@@ -990,6 +994,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		/**
 		 * Returns the system command.
 		 *
+		 * @param type The system command type.
 		 * @return The system command. Null if not registered.
 		 * @since 1.8
 		 */

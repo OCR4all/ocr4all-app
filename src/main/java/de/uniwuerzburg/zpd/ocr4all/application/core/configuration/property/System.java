@@ -244,7 +244,7 @@ public class System {
 		/**
 		 * Creates a command property.
 		 * 
-		 * @param operatingSystem
+		 * @param operatingSystem The operating system.
 		 * @since 1.8
 		 */
 		public Command(OperatingSystem operatingSystem) {

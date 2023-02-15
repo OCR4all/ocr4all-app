@@ -77,6 +77,7 @@ public class Project implements Job.Cluster {
 		/**
 		 * Returns true if the given label matches the version label.
 		 *
+		 * @param label The label.
 		 * @return True if the given label matches the version label.
 		 * @since 1.8
 		 */

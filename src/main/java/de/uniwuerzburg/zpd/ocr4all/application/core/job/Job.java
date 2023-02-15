@@ -808,6 +808,7 @@ public abstract class Job {
 			/**
 			 * Returns true if the standard error message is set.
 			 *
+			 * @return True if the standard error message is set.
 			 * @since 1.8
 			 */
 			public boolean isStandardErrorSet() {

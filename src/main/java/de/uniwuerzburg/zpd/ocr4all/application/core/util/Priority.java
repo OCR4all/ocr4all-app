@@ -43,6 +43,7 @@ public enum Priority {
 	 * Sorts the priorities with the higher priority at the top. Null priorities are
 	 * at the end.
 	 * 
+	 * @param <T>        The entity type.
 	 * @param priorities The priorities to sort.
 	 * @since 1.8
 	 */
@@ -53,6 +54,7 @@ public enum Priority {
 	/**
 	 * Sorts the priorities. Null priorities are at the end.
 	 * 
+	 * @param <T>         The entity type.
 	 * @param priorities  The priorities to sort.
 	 * @param isAscending True if the sort order is ascending, i.e. the higher
 	 *                    priorities come first. Otherwise, the sort order is
