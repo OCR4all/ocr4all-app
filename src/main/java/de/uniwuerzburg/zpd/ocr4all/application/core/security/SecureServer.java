@@ -53,7 +53,6 @@ public interface SecureServer extends Priority.Entity {
 	 * 
 	 * @param authorize The {@link ExpressionUrlAuthorizationConfigurer} for the
 	 *                  customization.
-	 * @see {@link HttpSecurity#authorizeRequests}
 	 * @since 1.8
 	 */
 	public void authorizeRequests(
