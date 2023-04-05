@@ -365,10 +365,11 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 */
 	@Override
 	public Premise getPremise(Target target) {
-		return target.getWorkflow().isLaunched()
-				? new Premise(Premise.State.block, locale -> getString(locale, "already.launched"))
-				: (configuration.isSystemCommandAvailable(SystemCommand.Type.convert) ? new Premise()
-						: new Premise(Premise.State.block, locale -> getString(locale, "no.command.convert")));
+		return target.getWorkflow() == null ? null
+				: (target.getWorkflow().isLaunched()
+						? new Premise(Premise.State.block, locale -> getString(locale, "already.launched"))
+						: (configuration.isSystemCommandAvailable(SystemCommand.Type.convert) ? new Premise()
+								: new Premise(Premise.State.block, locale -> getString(locale, "no.command.convert"))));
 	}
 
 	/*

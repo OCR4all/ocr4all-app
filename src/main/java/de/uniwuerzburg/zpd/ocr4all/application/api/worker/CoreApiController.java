@@ -169,6 +169,11 @@ public class CoreApiController {
 	public static final String securityRequestMapping = "/security";
 
 	/**
+	 * The spi id path variable.
+	 */
+	public static final String spiPathVariable = "/{spiId}";
+
+	/**
 	 * The project id path variable.
 	 */
 	public static final String projectPathVariable = "/{projectId}";
