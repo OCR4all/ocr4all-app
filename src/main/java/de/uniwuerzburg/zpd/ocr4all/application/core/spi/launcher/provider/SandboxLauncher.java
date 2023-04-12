@@ -1,5 +1,5 @@
 /**
- * File:     WorkflowLauncher.java
+ * File:     SandboxLauncher.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.provider
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -51,22 +51,22 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
- * Defines service providers for workflow launchers.
+ * Defines service providers for sandbox launchers.
  * 
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class WorkflowLauncher extends CoreServiceProviderWorker implements LauncherServiceProvider {
+public class SandboxLauncher extends CoreServiceProviderWorker implements LauncherServiceProvider {
 	/**
 	 * The prefix of the message keys in the resource bundle.
 	 */
-	private static final String messageKeyPrefix = "launcher.workflow.launcher.";
+	private static final String messageKeyPrefix = "launcher.sandbox.launcher.";
 
 	/**
 	 * The service provider identifier.
 	 */
-	private static final String identifier = "ocr4all-workflow-launcher";
+	private static final String identifier = "ocr4all-sandbox-launcher";
 
 	/**
 	 * Defines templates.
@@ -81,7 +81,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 		/**
 		 * The folder.
 		 */
-		private static final String folder = "templates/spi/launcher/workflow-launcher/";
+		private static final String folder = "templates/spi/launcher/sandbox-launcher/";
 
 		/**
 		 * The suffix.
@@ -288,11 +288,11 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	}
 
 	/**
-	 * Default constructor for a service provider for workflow launcher.
+	 * Default constructor for a service provider for sandbox launcher.
 	 * 
 	 * @since 1.8
 	 */
-	public WorkflowLauncher() {
+	public SandboxLauncher() {
 		super(messageKeyPrefix);
 	}
 
@@ -365,8 +365,8 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 	 */
 	@Override
 	public Premise getPremise(Target target) {
-		return target.getWorkflow() == null ? null
-				: (target.getWorkflow().isLaunched()
+		return target.getSandbox() == null ? null
+				: (target.getSandbox().isLaunched()
 						? new Premise(Premise.State.block, locale -> getString(locale, "already.launched"))
 						: (configuration.isSystemCommandAvailable(SystemCommand.Type.convert) ? new Premise()
 								: new Premise(Premise.State.block, locale -> getString(locale, "no.command.convert"))));
@@ -749,14 +749,14 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 				}
 
 				if (folios.isEmpty()) {
-					updatedStandardOutput("There are no project images for workflow launcher.");
+					updatedStandardOutput("There are no project images for sandbox launcher.");
 
 					callback.updatedProgress(1);
 					return ProcessServiceProvider.Processor.State.completed;
 				}
 
 				// The images
-				updatedStandardOutput("Determine workflow launcher images.");
+				updatedStandardOutput("Determine sandbox launcher images.");
 
 				Set<Integer> images = new HashSet<>();
 				for (int id : launcherArgument.getImages())
@@ -764,7 +764,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 						images.add(id);
 
 				if (images.isEmpty()) {
-					updatedStandardOutput("There are no images for workflow launcher.");
+					updatedStandardOutput("There are no images for sandbox launcher.");
 
 					// Persist mets file
 					try {
@@ -789,10 +789,10 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 						"Process images in temporary directory (" + framework.getTemporary().toString() + ").");
 
 				Path folderProjectFolios = Paths.get(framework.getTemporary().toString(), "project");
-				Path folderWorkflowFolios = Paths.get(framework.getTemporary().toString(), "workflow");
+				Path folderSandboxFolios = Paths.get(framework.getTemporary().toString(), "sandbox");
 				try {
 					Files.createDirectory(folderProjectFolios);
-					Files.createDirectory(folderWorkflowFolios);
+					Files.createDirectory(folderSandboxFolios);
 				} catch (IOException e) {
 					updatedStandardError("could not create required temporary directory - " + e.getMessage() + ".");
 
@@ -869,7 +869,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 										+ ">"));
 
 					arguments.addAll(Arrays.asList("-set", "filename:t", "%t", "+adjoin",
-							folderWorkflowFolios.toString() + "/%[filename:t]." + imageFormat.name()));
+							folderSandboxFolios.toString() + "/%[filename:t]." + imageFormat.name()));
 
 					updatedStandardOutput("Preprocess images.");
 					preprocessJob.execute(arguments);
@@ -882,7 +882,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 						return ProcessServiceProvider.Processor.State.interrupted;
 					}
 				} catch (IOException e) {
-					updatedStandardError("Workflow images cannot be created - " + e.getMessage() + ".");
+					updatedStandardError("Sandbox images cannot be created - " + e.getMessage() + ".");
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
@@ -893,9 +893,9 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
-				 * Moves the images to workflow and creates the mets file
+				 * Moves the images to snapshot and creates the mets file
 				 */
-				updatedStandardOutput("Move the images to workflow sandbox " + framework.getOutput().toString() + ".");
+				updatedStandardOutput("Move the images to sandbox snapshot " + framework.getOutput().toString() + ".");
 
 				int preprocessedImages = 0;
 				try {
@@ -908,7 +908,7 @@ public class WorkflowLauncher extends CoreServiceProviderWorker implements Launc
 					final StringBuffer metsFileBuffer = new StringBuffer();
 					final StringBuffer metsPageBuffer = new StringBuffer();
 
-					for (Path image : Files.list(folderWorkflowFolios).collect(Collectors.toList())) {
+					for (Path image : Files.list(folderSandboxFolios).collect(Collectors.toList())) {
 						String fileName = image.getFileName().toString();
 						String metsFileId = OCR4allUtils.getNameWithoutExtension(fileName);
 						String fileId = fileIdPrefix + "_" + metsFileId;

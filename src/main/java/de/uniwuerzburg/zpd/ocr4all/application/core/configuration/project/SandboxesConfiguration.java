@@ -1,5 +1,5 @@
 /**
- * File:     WorkflowsConfiguration.java
+ * File:     SandboxesConfiguration.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -15,46 +15,46 @@ import java.util.Comparator;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Workflows;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Sandboxes;
 
 /**
- * Defines configurations for the workflow containers.
+ * Defines configurations for the sandbox containers.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class WorkflowsConfiguration extends CoreFolder {
+public class SandboxesConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(WorkflowsConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SandboxesConfiguration.class);
 
 	/**
-	 * The workflow properties.
+	 * The sandbox properties.
 	 */
-	private final Workflows properties;
+	private final Sandboxes properties;
 
 	/**
-	 * Creates a configuration for a workflow container.
+	 * Creates a configuration for a sandbox container.
 	 * 
-	 * @param properties           The workflow properties.
+	 * @param properties           The sandbox properties.
 	 * @param projectConfiguration The configuration for the project.
 	 * @since 1.8
 	 */
-	WorkflowsConfiguration(Workflows properties, ProjectConfiguration projectConfiguration) {
+	SandboxesConfiguration(Sandboxes properties, ProjectConfiguration projectConfiguration) {
 		super(Paths.get(projectConfiguration.getFolder().toString(), properties.getFolder()));
 
 		this.properties = properties;
 
-		ConfigurationService.initializeFolder(true, folder, "workflows");
+		ConfigurationService.initializeFolder(true, folder, "sandboxes");
 	}
 
 	/**
-	 * Returns true if the given folder is a valid workflow folder.
+	 * Returns true if the given folder is a valid sandbox folder.
 	 * 
-	 * @param folder The workflow folder.
-	 * @return True if the given folder is a valid workflow folder.
+	 * @param folder The sandbox folder.
+	 * @return True if the given folder is a valid sandbox folder.
 	 * @since 1.8
 	 */
 	private boolean isValid(Path folder) {
@@ -62,25 +62,25 @@ public class WorkflowsConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Returns the workflow configuration.
+	 * Returns the sandbox configuration.
 	 * 
-	 * @param folder The workflow folder.
+	 * @param folder The sandbox folder.
 	 * @param user   The user.
-	 * @return The workflow configuration. Null if the given folder is a valid
-	 *         workflow folder.
+	 * @return The sandbox configuration. Null if the given folder is a valid
+	 *         sandbox folder.
 	 * @since 1.8
 	 */
-	public WorkflowConfiguration getWorkflow(Path folder, String user) {
+	public SandboxConfiguration getSandbox(Path folder, String user) {
 		return isValid(folder) && Files.isDirectory(folder)
-				? new WorkflowConfiguration(properties.getWorkflow(), folder, user)
+				? new SandboxConfiguration(properties.getSandbox(), folder, user)
 				: null;
 	}
 
 	/**
-	 * Returns true if the workflow is available.
+	 * Returns true if the sandbox is available.
 	 * 
-	 * @param folderName The workflow folder name.
-	 * @return True if the workflow is available.
+	 * @param folderName The sandbox folder name.
+	 * @return True if the sandbox is available.
 	 * @since 1.8
 	 */
 	public boolean isAvailable(String folderName) {
@@ -93,17 +93,17 @@ public class WorkflowsConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Creates the workflow.
+	 * Creates the sandbox.
 	 * 
-	 * @param folderName The workflow folder name to create.
+	 * @param folderName The sandbox folder name to create.
 	 * @param user       The user.
-	 * @return The workflow path. Null if it cannot be created.
+	 * @return The sandbox path. Null if it cannot be created.
 	 * @since 1.8
 	 */
 	public Path create(String folderName, String user) {
 		if (folderName == null || folderName.isBlank()) {
 			logger.warn(
-					"Cannot create workflow" + (user == null ? "" : ", user=" + user) + " - the directory is empty.");
+					"Cannot create sandbox" + (user == null ? "" : ", user=" + user) + " - the directory is empty.");
 
 			return null;
 		}
@@ -112,8 +112,8 @@ public class WorkflowsConfiguration extends CoreFolder {
 
 		if (isValid(folder)) {
 			if (Files.exists(folder)) {
-				logger.warn("Cannot create workflow '" + folder.toString() + "'"
-						+ (user == null ? "" : ", user=" + user) + " - the workflow is already available.");
+				logger.warn("Cannot create sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+						+ " - the sandbox is already available.");
 
 				return null;
 			}
@@ -121,27 +121,27 @@ public class WorkflowsConfiguration extends CoreFolder {
 			try {
 				Files.createDirectory(folder);
 
-				logger.info("Created workflow folder '" + folder.toString() + "'"
+				logger.info("Created sandbox folder '" + folder.toString() + "'"
 						+ (user == null ? "" : ", user=" + user) + ".");
 
 				return folder;
 			} catch (Exception e) {
-				logger.warn("Cannot create workflow '" + folder.toString() + "'"
-						+ (user == null ? "" : ", user=" + user) + " - " + e.getMessage() + ".");
+				logger.warn("Cannot create sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+						+ " - " + e.getMessage() + ".");
 			}
 		} else
-			logger.warn("Cannot create workflow '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
-					+ " - not a valid workflow folder.");
+			logger.warn("Cannot create sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+					+ " - not a valid sandbox folder.");
 
 		return null;
 	}
 
 	/**
-	 * Removes the workflow.
+	 * Removes the sandbox.
 	 * 
-	 * @param folder The workflow folder to remove.
+	 * @param folder The sandbox folder to remove.
 	 * @param user   The user.
-	 * @return True if the workflow could be removed.
+	 * @return True if the sandbox could be removed.
 	 * @since 1.8
 	 */
 	public boolean remove(Path folder, String user) {
@@ -152,20 +152,20 @@ public class WorkflowsConfiguration extends CoreFolder {
 
 				isRemoved = !Files.exists(folder);
 				if (isRemoved)
-					logger.info("Removed workflow '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+					logger.info("Removed sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
 							+ ".");
 				else
-					logger.warn("Cannot remove the complete workflow '" + folder.toString() + "'"
+					logger.warn("Cannot remove the complete sandbox '" + folder.toString() + "'"
 							+ (user == null ? "" : ", user=" + user) + ".");
 			} catch (Exception e) {
-				logger.warn("Cannot remove workflow '" + folder.toString() + "'"
-						+ (user == null ? "" : ", user=" + user) + " - " + e.getMessage() + ".");
+				logger.warn("Cannot remove sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+						+ " - " + e.getMessage() + ".");
 			}
 
 			return isRemoved;
 		} else {
-			logger.warn("Cannot remove workflow '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
-					+ " - not a valid workflow folder.");
+			logger.warn("Cannot remove sandbox '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+					+ " - not a valid sandbox folder.");
 
 			return false;
 		}
@@ -173,9 +173,9 @@ public class WorkflowsConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Resets the workflows.
+	 * Resets the sandboxes.
 	 *
-	 * @return True if the workflows could be reset.
+	 * @return True if the sandboxes could be reset.
 	 * 
 	 * @since 1.8
 	 */
@@ -190,7 +190,7 @@ public class WorkflowsConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public String getMetsFileName() {
-		return properties.getWorkflow().getMets().getFile();
+		return properties.getSandbox().getMets().getFile();
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class WorkflowsConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public String getMetsGroup() {
-		return properties.getWorkflow().getMets().getGroup();
+		return properties.getSandbox().getMets().getGroup();
 	}
 
 }

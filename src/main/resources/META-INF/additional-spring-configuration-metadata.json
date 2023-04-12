@@ -291,64 +291,64 @@
 			"description": "ocr4all workspace project model file; the default value is 'model'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflows folder; the default value is 'workflows'."
+			"description": "ocr4all workspace project sandboxes folder; the default value is 'sandboxes'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.configuration.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow configuration folder; the default value is '.workflow'."
+			"description": "ocr4all workspace project sandbox configuration folder; the default value is '.sandbox'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.files.main",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.configuration.files.main",
 			"type": "java.lang.String",
-			"description": "ocr4all main workspace project workflow configuration main file; the default value is 'workflow'."
+			"description": "ocr4all main workspace project sandbox configuration main file; the default value is 'sandbox'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.configuration.files.history",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.configuration.files.history",
 			"type": "java.lang.String",
-			"description": "ocr4all history workspace project workflow configuration history file; the default value is 'history'."
+			"description": "ocr4all history workspace project sandbox configuration history file; the default value is 'history'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.mets.file",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.mets.file",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow mets file; the default value is 'mets.xml'."
+			"description": "ocr4all workspace project sandbox mets file; the default value is 'mets.xml'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.mets.group",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.mets.group",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow mets group; the default value is 'ocr4all'."
+			"description": "ocr4all workspace project sandbox mets group; the default value is 'ocr4all'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshots folder; the default value is 'snapshots'."
+			"description": "ocr4all workspace project sandbox snapshots folder; the default value is 'snapshots'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.snapshot.configuration.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshot configuration folder; the default value is '.snapshot'."
+			"description": "ocr4all workspace project sandbox snapshot configuration folder; the default value is '.snapshot'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.files.main",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.snapshot.configuration.files.main",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshot configuration main file; the default value is 'snapshot'."
+			"description": "ocr4all workspace project sandbox snapshot configuration main file; the default value is 'snapshot'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.configuration.files.process",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.snapshot.configuration.files.process",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshot configuration process file; the default value is 'process'."
+			"description": "ocr4all workspace project sandbox snapshot configuration process file; the default value is 'process'."
 		},	
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.sandbox.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.snapshot.sandbox.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshot sandbox folder; the default value is 'sandbox'."
+			"description": "ocr4all workspace project sandbox snapshot sandbox folder; the default value is 'sandbox'."
 		},
 		{
-			"name": "ocr4all.workspace.projects.project.workflows.workflow.snapshots.snapshot.derived.folder",
+			"name": "ocr4all.workspace.projects.project.sandboxes.sandbox.snapshots.snapshot.derived.folder",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace project workflow snapshot derived folder; the default value is 'derived'."
+			"description": "ocr4all workspace project sandbox snapshot derived folder; the default value is 'derived'."
 		},
 		{
 			"name": "ocr4all.opt.folder",

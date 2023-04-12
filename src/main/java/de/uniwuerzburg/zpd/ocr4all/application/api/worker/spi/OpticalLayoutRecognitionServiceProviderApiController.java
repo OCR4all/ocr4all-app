@@ -29,7 +29,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.WorkflowService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
 
@@ -58,56 +58,56 @@ public class OpticalLayoutRecognitionServiceProviderApiController
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
-	 * @param workflowService      The workflow service.
+	 * @param sandboxService       The sandbox service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The service.
 	 * @since 1.8
 	 */
 	@Autowired
 	public OpticalLayoutRecognitionServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, WorkflowService workflowService,
+			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, OpticalLayoutRecognitionService service) {
 		super(OpticalLayoutRecognitionServiceProviderApiController.class, configurationService, securityService,
-				projectService, workflowService, schedulerService, Type.olr, service, Project.Right.execute);
+				projectService, sandboxService, schedulerService, Type.olr, service, Project.Right.execute);
 	}
 
 	/**
 	 * Returns the service providers in the response body.
 	 * 
-	 * @param projectId  The project id. This is the folder name.
-	 * @param workflowId The workflow id. This is the folder name.
-	 * @param request    The snapshot request. The track can not be null.
-	 * @param lang       The language. if null, then use the application preferred
-	 *                   locale.
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot request. The track can not be null.
+	 * @param lang      The language. if null, then use the application preferred
+	 *                  locale.
 	 * @return The service providers in the response body.
 	 * @since 1.8
 	 */
-	@PostMapping(providersRequestMapping + projectPathVariable + workflowPathVariable)
+	@PostMapping(providersRequestMapping + projectPathVariable + sandboxPathVariable)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@PathVariable String projectId,
-			@PathVariable String workflowId, @RequestBody @Valid SnapshotRequest request,
+			@PathVariable String sandboxId, @RequestBody @Valid SnapshotRequest request,
 			@RequestParam(required = false) String lang) {
-		return serviceProviders(authorizationFactory.authorizeSnapshot(projectId, workflowId, ProjectRight.execute),
+		return serviceProviders(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.execute),
 				request.getTrack(), lang);
 	}
 
 	/**
 	 * Schedules a process to execute the service provider.
 	 * 
-	 * @param projectId  The project id. This is the folder name.
-	 * @param workflowId The workflow id. This is the folder name.
-	 * @param request    The service provider snapshot request. The track of the
-	 *                   parent snapshot can not be null.
-	 * @param lang       The language. if null, then use the application preferred
-	 *                   locale.
-	 * @param response   The HTTP-specific functionality in sending a response to
-	 *                   the client.
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The service provider snapshot request. The track of the
+	 *                  parent snapshot can not be null.
+	 * @param lang      The language. if null, then use the application preferred
+	 *                  locale.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
 	 * @since 1.8
 	 */
-	@PostMapping(scheduleRequestMapping + projectPathVariable + workflowPathVariable)
-	public void schedule(@PathVariable String projectId, @PathVariable String workflowId,
+	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void schedule(@PathVariable String projectId, @PathVariable String sandboxId,
 			@RequestBody @Valid ServiceProviderSnapshotRequest request, @RequestParam(required = false) String lang,
 			HttpServletResponse response) {
-		schedule(authorizationFactory.authorizeSnapshot(projectId, workflowId, ProjectRight.execute), request, lang,
+		schedule(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.execute), request, lang,
 				response);
 	}
 }

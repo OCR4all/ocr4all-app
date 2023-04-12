@@ -12,7 +12,7 @@ import java.util.Locale;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Snapshot;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 
@@ -62,7 +62,7 @@ public final class Task extends Process {
 	 */
 	public Task(ConfigurationService configurationService, Locale locale, Processing processing, Snapshot snapshot,
 			ProcessServiceProvider serviceProvider) throws IllegalArgumentException {
-		this(configurationService, locale, processing, snapshot.getWorkflow().getProject(), snapshot, serviceProvider,
+		this(configurationService, locale, processing, snapshot.getSandbox().getProject(), snapshot, serviceProvider,
 				null);
 	}
 
@@ -83,7 +83,7 @@ public final class Task extends Process {
 	private Task(ConfigurationService configurationService, Locale locale, Processing processing, Project project,
 			Snapshot snapshot, ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
 			throws IllegalArgumentException {
-		super(configurationService, locale, processing, 1, project, snapshot == null ? null : snapshot.getWorkflow());
+		super(configurationService, locale, processing, 1, project, snapshot == null ? null : snapshot.getSandbox());
 
 		instance = snapshot == null ? new Instance(serviceProvider, serviceProviderArgument, getJournal().getStep())
 				: new Instance(serviceProvider, snapshot, getJournal().getStep());
@@ -97,7 +97,7 @@ public final class Task extends Process {
 	@Override
 	public String getTargetName() {
 		return getProject().getName()
-				+ (isWorkflowType() ? " (" + getWorkflow().getConfiguration().getConfiguration().getName() + ")" : "");
+				+ (isSandboxType() ? " (" + getSandbox().getConfiguration().getConfiguration().getName() + ")" : "");
 	}
 
 	/*

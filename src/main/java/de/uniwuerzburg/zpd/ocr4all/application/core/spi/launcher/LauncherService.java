@@ -44,7 +44,7 @@ public class LauncherService extends CoreServiceProvider<LauncherServiceProvider
 	 */
 	@Override
 	public CoreData getCoreData() {
-		return CoreData.workflow;
+		return CoreData.sandbox;
 	}
 
 }

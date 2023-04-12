@@ -301,7 +301,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	}
 
 	/**
-	 * Default constructor for a service provider for workflow launcher.
+	 * Default constructor for a service provider for LAREX launcher.
 	 * 
 	 * @since 1.8
 	 */
@@ -594,11 +594,11 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
-				 * Moves the images to workflow
+				 * Moves the images to snapshot
 				 */
 				try {
 					updatedStandardOutput(
-							"Move the images to workflow sandbox " + framework.getOutput().toString() + ".");
+							"Move the images to sandbox snapshot " + framework.getOutput().toString() + ".");
 
 					for (LarexFile larexFile : larexFiles)
 						Files.move(Paths.get(framework.getTemporary().toString(), larexFile.getTargetFilename()),

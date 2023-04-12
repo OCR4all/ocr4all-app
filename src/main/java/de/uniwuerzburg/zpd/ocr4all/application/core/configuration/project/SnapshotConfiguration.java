@@ -27,7 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 
 /**
@@ -588,7 +588,7 @@ public class SnapshotConfiguration extends CoreFolder {
 			processFile = getPath(properties.getFiles().getProcess());
 
 			// configuration managers
-			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_workflow_snapshot_v1);
+			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_sandbox_snapshot_v1);
 			processConfigurationManager = new PersistenceManager(processFile, Type.project_process_v1);
 
 			if (isInitialize) {

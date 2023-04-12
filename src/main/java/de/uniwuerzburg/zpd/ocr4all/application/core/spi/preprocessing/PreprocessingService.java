@@ -44,7 +44,7 @@ public class PreprocessingService extends CoreServiceProvider<PreprocessingServi
 	 */
 	@Override
 	public CoreData getCoreData() {
-		return CoreData.workflow;
+		return CoreData.sandbox;
 	}
 
 }

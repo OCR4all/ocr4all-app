@@ -34,9 +34,9 @@ public class Project {
 	private Models models = new Models();
 
 	/**
-	 * The workflows.
+	 * The sandboxes.
 	 */
-	private Workflows workflows = new Workflows();
+	private Sandboxes sandboxes = new Sandboxes();
 
 	/**
 	 * Returns the configuration.
@@ -99,23 +99,23 @@ public class Project {
 	}
 
 	/**
-	 * Returns the workflows.
+	 * Returns the sandboxes.
 	 *
-	 * @return The workflows.
+	 * @return The sandboxes.
 	 * @since 1.8
 	 */
-	public Workflows getWorkflows() {
-		return workflows;
+	public Sandboxes getSandboxes() {
+		return sandboxes;
 	}
 
 	/**
-	 * Set the workflows.
+	 * Set the sandboxes.
 	 *
-	 * @param workflows The workflows to set.
+	 * @param sandboxes The sandboxes to set.
 	 * @since 1.8
 	 */
-	public void setWorkflows(Workflows workflows) {
-		this.workflows = workflows;
+	public void setSandboxes(Sandboxes sandboxes) {
+		this.sandboxes = sandboxes;
 	}
 
 	/**
