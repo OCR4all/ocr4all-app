@@ -55,9 +55,9 @@ public class ProjectConfiguration extends CoreFolder {
 	private final Images images;
 
 	/**
-	 * The configuration for the workflow container.
+	 * The configuration for the sandbox container.
 	 */
-	private final WorkflowsConfiguration workflowsConfiguration;
+	private final SandboxesConfiguration sandboxesConfiguration;
 
 	/**
 	 * Creates a configuration for a project.
@@ -75,7 +75,7 @@ public class ProjectConfiguration extends CoreFolder {
 
 		configuration = new Configuration(properties.getConfiguration(), exchangeConfiguration, optConfiguration, user);
 		images = new Images(properties.getImages());
-		workflowsConfiguration = new WorkflowsConfiguration(properties.getWorkflows(), this);
+		sandboxesConfiguration = new SandboxesConfiguration(properties.getSandboxes(), this);
 	}
 
 	/**
@@ -99,13 +99,13 @@ public class ProjectConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Returns the configuration for the workflow container.
+	 * Returns the configuration for the sandbox container.
 	 *
-	 * @return The configuration for the workflow container.
+	 * @return The configuration for the sandbox container.
 	 * @since 1.8
 	 */
-	public WorkflowsConfiguration getWorkflowsConfiguration() {
-		return workflowsConfiguration;
+	public SandboxesConfiguration getSandboxesConfiguration() {
+		return sandboxesConfiguration;
 	}
 
 	/**
@@ -787,7 +787,7 @@ public class ProjectConfiguration extends CoreFolder {
 		 * updated. The project can only be canceled if the current state is either
 		 * active or closed.
 		 * 
-		 * @return True if the workflow is available and could be closed.
+		 * @return True if the sandbox is available and could be closed.
 		 * @since 1.8
 		 */
 		public boolean cancel() {

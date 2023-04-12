@@ -24,7 +24,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.Projec
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Process;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
@@ -332,13 +332,13 @@ public class Project implements Job.Cluster {
 	/**
 	 * Returns the service provider target.
 	 * 
-	 * @param workflow              The workflow. Null no workflow is selected.
+	 * @param sandbox               The sandbox. Null no sandbox is selected.
 	 * @param snapshotConfiguration The configuration of the selected snapshot. Null
 	 *                              if no snapshot is selected.
 	 * @return The service provider target.
 	 * @since 1.8
 	 */
-	public Target getTarget(Workflow workflow, SnapshotConfiguration snapshotConfiguration) {
+	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
 						configuration.getImages().getDerivatives().getThumbnail(),
@@ -348,14 +348,14 @@ public class Project implements Job.Cluster {
 		return new Target(configuration.getConfiguration().getExchange(), configuration.getConfiguration().getOpt(),
 				new Target.Project(configuration.getConfiguration().getFolder(),
 						configuration.getConfiguration().getFolioFile(), images),
-				workflow == null && snapshotConfiguration == null ? null
-						: new Target.Workflow(workflow == null ? null : workflow.getConfiguration().getFolder(),
-								workflow == null ? null : workflow.getConfiguration().getSnapshots().getFolder(),
-								workflow == null ? false : workflow.isLaunched(),
+				sandbox == null && snapshotConfiguration == null ? null
+						: new Target.Sandbox(sandbox == null ? null : sandbox.getConfiguration().getFolder(),
+								sandbox == null ? null : sandbox.getConfiguration().getSnapshots().getFolder(),
+								sandbox == null ? false : sandbox.isLaunched(),
 								snapshotConfiguration == null ? null : snapshotConfiguration.getSandbox().getFolder(),
 								snapshotConfiguration == null ? null : snapshotConfiguration.getTrack(),
-								new Target.Workflow.Mets(configuration.getWorkflowsConfiguration().getMetsFileName(),
-										configuration.getWorkflowsConfiguration().getMetsGroup())));
+								new Target.Sandbox.Mets(configuration.getSandboxesConfiguration().getMetsFileName(),
+										configuration.getSandboxesConfiguration().getMetsGroup())));
 	}
 
 	/**
@@ -690,25 +690,26 @@ public class Project implements Job.Cluster {
 	}
 
 	/**
-	 * Reset the project. The workflow are deleted.
+	 * Reset the project. The sandboxes are deleted.
 	 * 
 	 * @return True if the project could be reseted.
 	 * @since 1.8
 	 */
 	public boolean reset() {
-		if (configuration.getWorkflowsConfiguration().reset()) {
-			add(new ActionHistory("reset workflow", null, null));
+		if (configuration.getSandboxesConfiguration().reset()) {
+			add(new ActionHistory("reset sandboxes", null, null));
 
 			return true;
 		} else
-			add(new ActionHistory(History.Level.error, "reset workflow", "problems resetting the project workflow",
+			add(new ActionHistory(History.Level.error, "reset sandboxes", "problems resetting the project sandboxes",
 					null));
 
 		return false;
 	}
 
 	/**
-	 * Initializes the project, this means, the folios and the workflow are deleted.
+	 * Initializes the project, this means, the folios and the sandboxes are
+	 * deleted.
 	 * 
 	 * @return True if the project could be initialized.
 	 * @since 1.8

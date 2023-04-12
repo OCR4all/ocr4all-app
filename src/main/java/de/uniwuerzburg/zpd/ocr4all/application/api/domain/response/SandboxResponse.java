@@ -1,5 +1,5 @@
 /**
- * File:     WorkflowResponse.java
+ * File:     SandboxResponse.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.domain.response
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -23,17 +23,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 
 /**
- * Defines workflow responses for the api.
+ * Defines sandbox responses for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class WorkflowResponse implements Serializable {
+public class SandboxResponse implements Serializable {
 	/**
 	 * The serial version UID.
 	 */
@@ -99,42 +99,42 @@ public class WorkflowResponse implements Serializable {
 	private SnapshotSynopsisResponse snapshotSynopsis;
 
 	/**
-	 * Creates a workflow response for the api without sandbox synopsis.
+	 * Creates a sandbox response for the api without sandbox synopsis.
 	 * 
-	 * @param workflow The workflow.
+	 * @param sandbox The sandbox.
 	 * @since 1.8
 	 */
-	public WorkflowResponse(Workflow workflow) {
-		this(workflow, false);
+	public SandboxResponse(Sandbox sandbox) {
+		this(sandbox, false);
 	}
 
 	/**
-	 * Creates a workflow response for the api.
+	 * Creates a sandbox response for the api.
 	 * 
-	 * @param workflow          The workflow.
+	 * @param sandbox           The sandbox.
 	 * @param isSandboxSynopsis True if the sandbox synopsis is required.
 	 * @since 1.8
 	 */
-	public WorkflowResponse(Workflow workflow, boolean isSandboxSynopsis) {
+	public SandboxResponse(Sandbox sandbox, boolean isSandboxSynopsis) {
 		super();
 
-		projectId = workflow.getProject().getId();
-		id = workflow.getId();
+		projectId = sandbox.getProject().getId();
+		id = sandbox.getId();
 
-		name = workflow.getName();
-		description = workflow.getDescription();
+		name = sandbox.getName();
+		description = sandbox.getDescription();
 
-		state = workflow.getState().name();
+		state = sandbox.getState().name();
 
-		tracking = new TrackingResponse(workflow.getUser(), workflow.getConfiguration().getConfiguration().getCreated(),
-				workflow.getConfiguration().getConfiguration().getUpdated());
-		keywords = workflow.getConfiguration().getConfiguration().getKeywords();
+		tracking = new TrackingResponse(sandbox.getUser(), sandbox.getConfiguration().getConfiguration().getCreated(),
+				sandbox.getConfiguration().getConfiguration().getUpdated());
+		keywords = sandbox.getConfiguration().getConfiguration().getKeywords();
 
-		done = workflow.getConfiguration().getConfiguration().getDone();
+		done = sandbox.getConfiguration().getConfiguration().getDone();
 
-		isSnapshotAccess = workflow.isSnapshotAccess();
-		isSnapshotAvailable = isSnapshotAccess && workflow.isSnapshotAvailable();
-		snapshotSynopsis = isSandboxSynopsis && isSnapshotAvailable ? new SnapshotSynopsisResponse(workflow) : null;
+		isSnapshotAccess = sandbox.isSnapshotAccess();
+		isSnapshotAvailable = isSnapshotAccess && sandbox.isSnapshotAvailable();
+		snapshotSynopsis = isSandboxSynopsis && isSnapshotAvailable ? new SnapshotSynopsisResponse(sandbox) : null;
 	}
 
 	/**
@@ -393,19 +393,19 @@ public class WorkflowResponse implements Serializable {
 		/**
 		 * Creates a snapshot synopsis response for the api.
 		 * 
-		 * @param workflow The workflow.
+		 * @param sandbox The sandbox.
 		 * @since 1.8
 		 */
-		public SnapshotSynopsisResponse(Workflow workflow) {
+		public SnapshotSynopsisResponse(Sandbox sandbox) {
 			super();
 
-			home = workflow.getConfiguration().getSnapshots().getRoot().getFolder().toString();
+			home = sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString();
 
-			Path mets = Paths.get(home, workflow.getConfiguration().getMetsFileName());
+			Path mets = Paths.get(home, sandbox.getConfiguration().getMetsFileName());
 			if (Files.exists(mets))
 				try {
 					final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
-					final String metsGroup = workflow.getConfiguration().getMetsGroup();
+					final String metsGroup = sandbox.getConfiguration().getMetsGroup();
 
 					// mets file groups
 					final Hashtable<String, MetsParser.Root.FileGroup> fileGroups = new Hashtable<>();

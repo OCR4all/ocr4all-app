@@ -1,11 +1,11 @@
 /**
  * File:     Snapshot.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     16.03.2022
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow;
+package de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +28,9 @@ public class Snapshot {
 	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Snapshot.class);
 
 	/**
-	 * The workflow.
+	 * The sandbox.
 	 */
-	private final Workflow workflow;
+	private final Sandbox sandbox;
 
 	/**
 	 * The configuration.
@@ -41,35 +41,35 @@ public class Snapshot {
 	 * Creates a snapshot.
 	 * 
 	 * @param configuration The configuration.
-	 * @param workflow      The workflow to which this snapshot belongs.
+	 * @param sandbox       The sandbox to which this snapshot belongs.
 	 * @since 1.8
 	 */
-	Snapshot(SnapshotConfiguration configuration, Workflow workflow) {
+	Snapshot(SnapshotConfiguration configuration, Sandbox sandbox) {
 		super();
 
-		this.workflow = workflow;
+		this.sandbox = sandbox;
 		this.configuration = configuration;
 	}
 
 	/**
 	 * Creates a consistent snapshot.
 	 * 
-	 * @param track    The track. An empty list returns the root snapshot.
-	 * @param workflow The workflow to which this snapshot belongs.
+	 * @param track   The track. An empty list returns the root snapshot.
+	 * @param sandbox The sandbox to which this snapshot belongs.
 	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the workflow or it is inconsistent.
+	 *                                  the sandbox or it is inconsistent.
 	 * @since 1.8
 	 */
-	Snapshot(List<Integer> track, Workflow workflow) throws IllegalArgumentException {
+	Snapshot(List<Integer> track, Sandbox sandbox) throws IllegalArgumentException {
 		super();
 
-		this.workflow = workflow;
+		this.sandbox = sandbox;
 
-		configuration = workflow.getConfiguration().getSnapshots().getLeaf(track);
-		
+		configuration = sandbox.getConfiguration().getSnapshots().getLeaf(track);
+
 		if (configuration == null) {
-			String message = "invalid snapshot track " + (track == null ? "NULL" : track) + " for workflow '"
-					+ workflow.getId() + "'.";
+			String message = "invalid snapshot track " + (track == null ? "NULL" : track) + " for sandbox '"
+					+ sandbox.getId() + "'.";
 			logger.warn(message);
 
 			throw new IllegalArgumentException(message);
@@ -79,19 +79,19 @@ public class Snapshot {
 	/**
 	 * Returns the snapshots in the track.
 	 * 
-	 * @param track    The track. An empty list returns the root snapshot.
-	 * @param workflow The workflow to which this snapshot belongs.
+	 * @param track   The track. An empty list returns the root snapshot.
+	 * @param sandbox The sandbox to which this snapshot belongs.
 	 * @return The snapshots.
 	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the workflow or it is inconsistent.
+	 *                                  the sandbox or it is inconsistent.
 	 * @since 1.8
 	 */
-	public static List<Snapshot> getPath(List<Integer> track, Workflow workflow) throws IllegalArgumentException {
-		List<SnapshotConfiguration> configurations = workflow.getConfiguration().getSnapshots().getSnapshots(track);
+	public static List<Snapshot> getPath(List<Integer> track, Sandbox sandbox) throws IllegalArgumentException {
+		List<SnapshotConfiguration> configurations = sandbox.getConfiguration().getSnapshots().getSnapshots(track);
 
 		if (configurations == null) {
-			String message = "invalid snapshot track " + (track == null ? "NULL" : track) + " for workflow '"
-					+ workflow.getId() + "'.";
+			String message = "invalid snapshot track " + (track == null ? "NULL" : track) + " for sandbox '"
+					+ sandbox.getId() + "'.";
 			logger.warn(message);
 
 			throw new IllegalArgumentException(message);
@@ -99,19 +99,19 @@ public class Snapshot {
 
 		List<Snapshot> path = new ArrayList<>();
 		for (SnapshotConfiguration configuration : configurations)
-			path.add(new Snapshot(configuration, workflow));
+			path.add(new Snapshot(configuration, sandbox));
 
 		return path;
 	}
 
 	/**
-	 * Returns the workflow.
+	 * Returns the sandbox.
 	 *
-	 * @return The workflow.
+	 * @return The sandbox.
 	 * @since 1.8
 	 */
-	public Workflow getWorkflow() {
-		return workflow;
+	public Sandbox getSandbox() {
+		return sandbox;
 	}
 
 	/**
@@ -132,12 +132,12 @@ public class Snapshot {
 	 */
 	public boolean reset() {
 		if (configuration.removeDerived()) {
-			workflow.add(new ActionHistory("remove derived snapshots '" + configuration.getLoggerIdentifier() + "'",
+			sandbox.add(new ActionHistory("remove derived snapshots '" + configuration.getLoggerIdentifier() + "'",
 					null, null));
 
 			return true;
 		} else {
-			workflow.add(new ActionHistory(History.Level.error, "reset derived snapshots",
+			sandbox.add(new ActionHistory(History.Level.error, "reset derived snapshots",
 					"problems removing the derived snapshots of snapshots '" + configuration.getLoggerIdentifier()
 							+ "'",
 					null));

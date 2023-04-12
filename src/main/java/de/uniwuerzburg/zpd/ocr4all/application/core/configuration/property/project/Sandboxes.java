@@ -1,5 +1,5 @@
 /**
- * File:     Workflows.java
+ * File:     Sandboxes.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.projects
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -8,27 +8,27 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project;
 
 /**
- * Defines workflows.
+ * Defines sandboxes.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class Workflows {
+public class Sandboxes {
 	/**
 	 * The default folder.
 	 */
-	public static final String defaultFolder = "workflows";
+	public static final String defaultFolder = "sandboxes";
 
 	/**
-	 * The folder. The default value is workflows.
+	 * The folder. The default value is sandboxes.
 	 */
 	private String folder = defaultFolder;
 
 	/**
-	 * The workflow.
+	 * The sandbox.
 	 */
-	private Workflow workflow = new Workflow();
+	private Sandbox sandbox = new Sandbox();
 
 	/**
 	 * Returns the folder.
@@ -51,33 +51,33 @@ public class Workflows {
 	}
 
 	/**
-	 * Returns the workflow.
+	 * Returns the sandbox.
 	 *
-	 * @return The workflow.
+	 * @return The sandbox.
 	 * @since 1.8
 	 */
-	public Workflow getWorkflow() {
-		return workflow;
+	public Sandbox getSandbox() {
+		return sandbox;
 	}
 
 	/**
-	 * Set the workflow.
+	 * Set the sandbox.
 	 *
-	 * @param workflow The workflow to set.
+	 * @param sandbox The sandbox to set.
 	 * @since 1.8
 	 */
-	public void setWorkflow(Workflow workflow) {
-		this.workflow = workflow;
+	public void setSandbox(Sandbox sandbox) {
+		this.sandbox = sandbox;
 	}
 
 	/**
-	 * Defines workflow configurations.
+	 * Defines sandbox configurations.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class Workflow {
+	public static class Sandbox {
 		/**
 		 * The configuration.
 		 */
@@ -156,7 +156,7 @@ public class Workflows {
 	}
 
 	/**
-	 * Defines workflow configurations.
+	 * Defines sandbox configurations.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -166,10 +166,10 @@ public class Workflows {
 		/**
 		 * The default folder.
 		 */
-		public static final String defaultFolder = ".workflow";
+		public static final String defaultFolder = ".sandbox";
 
 		/**
-		 * The folder. The default value is .workflow.
+		 * The folder. The default value is .sandbox.
 		 */
 		private String folder = defaultFolder;
 
@@ -220,7 +220,7 @@ public class Workflows {
 	}
 
 	/**
-	 * Defines workflow configurations files.
+	 * Defines sandbox configurations files.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -230,7 +230,7 @@ public class Workflows {
 		/**
 		 * The default main file name.
 		 */
-		public static final String defaultMainFileName = "workflow";
+		public static final String defaultMainFileName = "sandbox";
 
 		/**
 		 * The default history file name.
@@ -238,7 +238,7 @@ public class Workflows {
 		public static final String defaultHistoryFileName = "history";
 
 		/**
-		 * The main file name. The default value is workflow.
+		 * The main file name. The default value is sandbox.
 		 */
 		private String main = defaultMainFileName;
 

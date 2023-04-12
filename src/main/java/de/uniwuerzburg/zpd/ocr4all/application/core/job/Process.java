@@ -21,8 +21,8 @@ import org.springframework.util.FileSystemUtils;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Snapshot;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.ProcessHistory;
@@ -58,9 +58,9 @@ public abstract class Process extends Job {
 	private final Project project;
 
 	/**
-	 * The workflow.
+	 * The sandbox.
 	 */
-	private final Workflow workflow;
+	private final Sandbox sandbox;
 
 	/**
 	 * Creates a process.
@@ -86,14 +86,14 @@ public abstract class Process extends Job {
 	 * @param locale               The application locale.
 	 * @param processing           The processing mode.
 	 * @param steps                The number of steps. This is a positive number.
-	 * @param workflow             The workflow.
+	 * @param sandbox              The sandbox.
 	 * @throws IllegalArgumentException Throws if the processing or project argument
 	 *                                  is missed or steps is not a positive number.
 	 * @since 1.8
 	 */
-	Process(ConfigurationService configurationService, Locale locale, Processing processing, int steps,
-			Workflow workflow) throws IllegalArgumentException {
-		this(configurationService, locale, processing, steps, workflow.getProject(), workflow);
+	Process(ConfigurationService configurationService, Locale locale, Processing processing, int steps, Sandbox sandbox)
+			throws IllegalArgumentException {
+		this(configurationService, locale, processing, steps, sandbox.getProject(), sandbox);
 	}
 
 	/**
@@ -104,20 +104,20 @@ public abstract class Process extends Job {
 	 * @param processing           The processing mode.
 	 * @param steps                The number of steps. This is a positive number.
 	 * @param project              The project.
-	 * @param workflow             The workflow.
+	 * @param sandbox              The sandbox.
 	 * @throws IllegalArgumentException Throws if the processing or project argument
 	 *                                  is missed or steps is not a positive number.
 	 * @since 1.8
 	 */
 	Process(ConfigurationService configurationService, Locale locale, Processing processing, int steps, Project project,
-			Workflow workflow) throws IllegalArgumentException {
+			Sandbox sandbox) throws IllegalArgumentException {
 		super(configurationService, locale, processing, steps);
 
 		if (project == null)
 			throw new IllegalArgumentException("Process: the project argument is mandatory.");
 
 		this.project = project;
-		this.workflow = workflow;
+		this.sandbox = sandbox;
 	}
 
 	/*
@@ -136,8 +136,8 @@ public abstract class Process extends Job {
 						&& (this == job
 								|| (isProjectType() && ((Process) job).isProjectType()
 										&& project.isSame(((Process) job).getProject()))
-								|| (isWorkflowType() && ((Process) job).isWorkflowType()
-										&& workflow.isSame(((Process) job).getWorkflow()))))
+								|| (isSandboxType() && ((Process) job).isSandboxType()
+										&& sandbox.isSame(((Process) job).getSandbox()))))
 					dependencies.add(job);
 
 		return dependencies;
@@ -150,16 +150,16 @@ public abstract class Process extends Job {
 	 * @since 1.8
 	 */
 	public boolean isProjectType() {
-		return workflow == null;
+		return sandbox == null;
 	}
 
 	/**
-	 * Returns true if it a workflow type.
+	 * Returns true if it a sandbox type.
 	 *
-	 * @return True if it a workflow type.
+	 * @return True if it a sandbox type.
 	 * @since 1.8
 	 */
-	public boolean isWorkflowType() {
+	public boolean isSandboxType() {
 		return !isProjectType();
 	}
 
@@ -174,13 +174,13 @@ public abstract class Process extends Job {
 	}
 
 	/**
-	 * Returns the workflow.
+	 * Returns the sandbox.
 	 *
-	 * @return The workflow.
+	 * @return The sandbox.
 	 * @since 1.8
 	 */
-	public Workflow getWorkflow() {
-		return workflow;
+	public Sandbox getSandbox() {
+		return sandbox;
 	}
 
 	/**
@@ -547,7 +547,7 @@ public abstract class Process extends Job {
 							configurationService.getApplication().getName(),
 							configurationService.getApplication().getDateFormat()),
 					project.getUser(),
-					project.getTarget(workflow,
+					project.getTarget(sandbox,
 							snapshot == null || snapshot.getConfiguration().isRoot() ? null
 									: snapshot.getConfiguration().getParent()),
 					snapshot == null ? null : snapshot.getConfiguration().getSandbox().getFolder(), getSnapshotTrack(),
@@ -604,7 +604,7 @@ public abstract class Process extends Job {
 			if (isProjectType())
 				project.add(processHistory);
 			else
-				workflow.add(processHistory);
+				sandbox.add(processHistory);
 		}
 
 		/**

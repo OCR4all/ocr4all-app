@@ -136,13 +136,13 @@ ocr4all:
                 main: model
                 assembly: assembly
             file: model
-        workflows:
-          folder: workflows
-          workflow:
+        sandboxes:
+          folder: sandboxes
+          sandbox:
             configuration:
-              folder: .workflow
+              folder: .sandbox
               files:
-                main: workflow
+                main: sandbox
                 history: history
             mets:
               file: mets.xml

@@ -21,8 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.WorkflowService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 
 /**
@@ -179,9 +179,9 @@ public class CoreApiController {
 	public static final String projectPathVariable = "/{projectId}";
 
 	/**
-	 * The workflow id path variable.
+	 * The sandbox id path variable.
 	 */
-	public static final String workflowPathVariable = "/{workflowId}";
+	public static final String sandboxPathVariable = "/{sandboxId}";
 
 	/**
 	 * The action path variable.
@@ -258,19 +258,18 @@ public class CoreApiController {
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
-	 * @param workflowService      The workflow service.
+	 * @param sandboxService       The sandbox service.
 	 * @since 1.8
 	 */
 	protected CoreApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, WorkflowService workflowService) {
+			SecurityService securityService, ProjectService projectService, SandboxService sandboxService) {
 		super();
 
 		this.logger = org.slf4j.LoggerFactory.getLogger(logger);
 		this.configurationService = configurationService;
 		this.securityService = securityService;
 
-		authorizationFactory = projectService == null ? null
-				: new AuthorizationFactory(projectService, workflowService);
+		authorizationFactory = projectService == null ? null : new AuthorizationFactory(projectService, sandboxService);
 	}
 
 	/**
@@ -458,9 +457,9 @@ public class CoreApiController {
 		public final Project project;
 
 		/**
-		 * The workflow.
+		 * The sandbox.
 		 */
-		public final Workflow workflow;
+		public final Sandbox sandbox;
 
 		/**
 		 * Creates an authorization for project actions.
@@ -490,45 +489,45 @@ public class CoreApiController {
 		}
 
 		/**
-		 * Creates an authorization for project and workflow actions.
+		 * Creates an authorization for project and sandbox actions.
 		 * 
-		 * @param projectId       The project id. This is the folder name.
-		 * @param workflowId      The workflow id. This is the folder name.
-		 * @param projectService  The project service.
-		 * @param workflowService The workflow service. Null if only project
-		 *                        authorizations is available.
+		 * @param projectId      The project id. This is the folder name.
+		 * @param sandboxId      The sandbox id. This is the folder name.
+		 * @param projectService The project service.
+		 * @param sandboxService The sandbox service. Null if only project
+		 *                       authorizations is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		private Authorization(String projectId, String workflowId, ProjectService projectService,
-				WorkflowService workflowService) throws ResponseStatusException {
-			this(projectId, workflowId, ProjectRight.any, projectService, workflowService);
+		private Authorization(String projectId, String sandboxId, ProjectService projectService,
+				SandboxService sandboxService) throws ResponseStatusException {
+			this(projectId, sandboxId, ProjectRight.any, projectService, sandboxService);
 		}
 
 		/**
-		 * Creates an authorization for project and workflow actions.
+		 * Creates an authorization for project and sandbox actions.
 		 * 
-		 * @param projectId       The project id. This is the folder name.
-		 * @param workflowId      The workflow id. This is the folder name.
-		 * @param projectRight    The right required on the project. If null, no right
-		 *                        is required.
-		 * @param projectService  The project service.
-		 * @param workflowService The workflow service. Null if only project
-		 *                        authorizations is available.
+		 * @param projectId      The project id. This is the folder name.
+		 * @param sandboxId      The sandbox id. This is the folder name.
+		 * @param projectRight   The right required on the project. If null, no right is
+		 *                       required.
+		 * @param projectService The project service.
+		 * @param sandboxService The sandbox service. Null if only project
+		 *                       authorizations is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		private Authorization(String projectId, String workflowId, ProjectRight projectRight,
-				ProjectService projectService, WorkflowService workflowService) throws ResponseStatusException {
+		private Authorization(String projectId, String sandboxId, ProjectRight projectRight,
+				ProjectService projectService, SandboxService sandboxService) throws ResponseStatusException {
 			super();
 			if (projectRight == null)
 				projectRight = ProjectRight.none;
 
 			Project project = null;
-			Workflow workflow = null;
+			Sandbox sandbox = null;
 
 			if (projectId == null || projectId.isBlank()
-					|| (workflowService != null && (workflowId == null || workflowId.isBlank())))
+					|| (sandboxService != null && (sandboxId == null || sandboxId.isBlank())))
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 			else
 				try {
@@ -547,12 +546,12 @@ public class CoreApiController {
 								|| (ProjectRight.write.equals(projectRight) && !project.isWrite())
 								|| (ProjectRight.read.equals(projectRight) && !project.isRead()))
 							throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-						else if (workflowService != null) {
-							if (!workflowService.isAvailable(project, workflowId))
+						else if (sandboxService != null) {
+							if (!sandboxService.isAvailable(project, sandboxId))
 								throw new ResponseStatusException(HttpStatus.NO_CONTENT);
 							else {
-								workflow = workflowService.authorize(project, workflowId);
-								if (workflow == null)
+								sandbox = sandboxService.authorize(project, sandboxId);
+								if (sandbox == null)
 									throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 							}
 						}
@@ -566,7 +565,7 @@ public class CoreApiController {
 				}
 
 			this.project = project;
-			this.workflow = workflow;
+			this.sandbox = sandbox;
 		}
 
 	}
@@ -585,9 +584,9 @@ public class CoreApiController {
 		private final ProjectService projectService;
 
 		/**
-		 * The workflow service.
+		 * The sandbox service.
 		 */
-		private final WorkflowService workflowService;
+		private final SandboxService sandboxService;
 
 		/**
 		 * Creates a factory for authorizations. Only project authorizations is
@@ -605,14 +604,14 @@ public class CoreApiController {
 		/**
 		 * Creates a factory for authorizations.
 		 * 
-		 * @param projectService  The project service.
-		 * @param workflowService The workflow service. Null if only project
-		 *                        authorizations is available.
+		 * @param projectService The project service.
+		 * @param sandboxService The sandbox service. Null if only project
+		 *                       authorizations is available.
 		 * @throws IllegalArgumentException The project service is mandatory and can not
 		 *                                  be null.
 		 * @since 1.8
 		 */
-		public AuthorizationFactory(ProjectService projectService, WorkflowService workflowService)
+		public AuthorizationFactory(ProjectService projectService, SandboxService sandboxService)
 				throws IllegalArgumentException {
 			super();
 
@@ -620,17 +619,17 @@ public class CoreApiController {
 				throw new IllegalArgumentException("AuthorizationFactory: the project service is mandatory.");
 
 			this.projectService = projectService;
-			this.workflowService = workflowService;
+			this.sandboxService = sandboxService;
 		}
 
 		/**
-		 * Returns true if the workflow service is available.
+		 * Returns true if the sandbox service is available.
 		 * 
-		 * @return True if the workflow service is available.
+		 * @return True if the sandbox service is available.
 		 * @since 1.8
 		 */
-		public boolean isWorkflowService() {
-			return workflowService != null;
+		public boolean isSandboxService() {
+			return sandboxService != null;
 		}
 
 		/**
@@ -661,66 +660,65 @@ public class CoreApiController {
 		}
 
 		/**
-		 * Authorizes for project and workflow actions.
+		 * Authorizes for project and sandbox actions.
 		 * 
-		 * @param projectId  The project id. This is the folder name.
-		 * @param workflowId The workflow id. This is the folder name.
-		 * @return The authorization. Null if no workflow service is available.
+		 * @param projectId The project id. This is the folder name.
+		 * @param sandboxId The sandbox id. This is the folder name.
+		 * @return The authorization. Null if no sandbox service is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		public Authorization authorize(String projectId, String workflowId) throws ResponseStatusException {
-			return isWorkflowService() ? new Authorization(projectId, workflowId, projectService, workflowService)
-					: null;
+		public Authorization authorize(String projectId, String sandboxId) throws ResponseStatusException {
+			return isSandboxService() ? new Authorization(projectId, sandboxId, projectService, sandboxService) : null;
 		}
 
 		/**
-		 * Authorizes for project and workflow actions.
+		 * Authorizes for project and sandbox actions.
 		 * 
 		 * @param projectId    The project id. This is the folder name.
-		 * @param workflowId   The workflow id. This is the folder name.
+		 * @param sandboxId    The sandbox id. This is the folder name.
 		 * @param projectRight The right required on the project. If null, no right is
 		 *                     required.
-		 * @return The authorization. Null if no workflow service is available.
+		 * @return The authorization. Null if no sandbox service is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		public Authorization authorize(String projectId, String workflowId, ProjectRight projectRight)
+		public Authorization authorize(String projectId, String sandboxId, ProjectRight projectRight)
 				throws ResponseStatusException {
-			return isWorkflowService()
-					? new Authorization(projectId, workflowId, projectRight, projectService, workflowService)
+			return isSandboxService()
+					? new Authorization(projectId, sandboxId, projectRight, projectService, sandboxService)
 					: null;
 		}
 
 		/**
 		 * Authorizes for actions on snapshots.
 		 * 
-		 * @param projectId  The project id. This is the folder name.
-		 * @param workflowId The workflow id. This is the folder name.
-		 * @return The authorization. Null if no workflow service is available.
+		 * @param projectId The project id. This is the folder name.
+		 * @param sandboxId The sandbox id. This is the folder name.
+		 * @return The authorization. Null if no sandbox service is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		public Authorization authorizeSnapshot(String projectId, String workflowId) throws ResponseStatusException {
-			return authorizeSnapshot(projectId, workflowId, ProjectRight.any);
+		public Authorization authorizeSnapshot(String projectId, String sandboxId) throws ResponseStatusException {
+			return authorizeSnapshot(projectId, sandboxId, ProjectRight.any);
 		}
 
 		/**
 		 * Authorizes for actions on snapshots.
 		 * 
 		 * @param projectId    The project id. This is the folder name.
-		 * @param workflowId   The workflow id. This is the folder name.
+		 * @param sandboxId    The sandbox id. This is the folder name.
 		 * @param projectRight The right required on the project. If null, no right is
 		 *                     required.
-		 * @return The authorization. Null if no workflow service is available.
+		 * @return The authorization. Null if no sandbox service is available.
 		 * @throws ResponseStatusException Throws on authorization troubles.
 		 * @since 1.8
 		 */
-		public Authorization authorizeSnapshot(String projectId, String workflowId, ProjectRight projectRight)
+		public Authorization authorizeSnapshot(String projectId, String sandboxId, ProjectRight projectRight)
 				throws ResponseStatusException {
-			Authorization authorization = authorize(projectId, workflowId, projectRight);
+			Authorization authorization = authorize(projectId, sandboxId, projectRight);
 
-			if (!authorization.workflow.isSnapshotAccess())
+			if (!authorization.sandbox.isSnapshotAccess())
 				throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
 			return authorization;

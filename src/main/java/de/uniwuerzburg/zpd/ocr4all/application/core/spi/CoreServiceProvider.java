@@ -38,7 +38,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @since 1.8
 	 */
 	public enum CoreData {
-		project, workflow
+		project, sandbox
 	}
 
 	/**

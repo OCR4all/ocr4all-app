@@ -16,12 +16,12 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Snapshots;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 
 /**
  * SnapshotsConfiguration is an immutable class that defines snapshots
- * configurations for workflows.
+ * configurations for sandboxes.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
@@ -44,10 +44,10 @@ public class SnapshotsConfiguration extends CoreFolder {
 	private final String user;
 
 	/**
-	 * Creates snapshots configuration for a workflow.
+	 * Creates snapshots configuration for a sandbox.
 	 * 
 	 * @param properties The configuration properties for the snapshots.
-	 * @param folder     The workflow folder.
+	 * @param folder     The sandbox folder.
 	 * @param user       The user.
 	 * @since 1.8
 	 */
@@ -57,7 +57,7 @@ public class SnapshotsConfiguration extends CoreFolder {
 		/*
 		 * Initialize the snapshots folder
 		 */
-		ConfigurationService.initializeFolder(true, this.folder, "workflow '" + this.folder.toString() + "' snapshots");
+		ConfigurationService.initializeFolder(true, this.folder, "sandbox '" + this.folder.toString() + "' snapshots");
 
 		// The snapshot properties
 		this.properties = properties.getSnapshot();
@@ -107,7 +107,7 @@ public class SnapshotsConfiguration extends CoreFolder {
 		else {
 			root = new SnapshotConfiguration(this.properties, null, this.folder, new ArrayList<>(), user, type, label,
 					description, serviceProvider, instance);
-			
+
 			return root.isConsistent() ? root : null;
 		}
 	}

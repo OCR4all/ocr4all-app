@@ -176,7 +176,7 @@ public class Snapshots {
 		public static final String defaultFolder = ".snapshot";
 
 		/**
-		 * The folder. The default value is .workflow.
+		 * The folder. The default value is .snapshot.
 		 */
 		private String folder = defaultFolder;
 
@@ -309,7 +309,7 @@ public class Snapshots {
 		public static final String defaultFolder = "sandbox";
 
 		/**
-		 * The folder. The default value is .workflow.
+		 * The folder. The default value is .sandbox.
 		 */
 		private String folder = defaultFolder;
 

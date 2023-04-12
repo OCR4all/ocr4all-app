@@ -1,5 +1,5 @@
 /**
- * File:     WorkflowConfiguration.java
+ * File:     SandboxConfiguration.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -17,23 +17,23 @@ import java.util.Set;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Workflows;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Sandboxes;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox;
 
 /**
- * Defines configurations for the workflows.
+ * Defines configurations for the sandboxes.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class WorkflowConfiguration extends CoreFolder {
+public class SandboxConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(WorkflowConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SandboxConfiguration.class);
 
 	/**
 	 * The configuration.
@@ -46,19 +46,19 @@ public class WorkflowConfiguration extends CoreFolder {
 	private final SnapshotsConfiguration snapshots;
 
 	/**
-	 * The configuration properties for the workflow.
+	 * The configuration properties for the sandbox.
 	 */
-	private final Workflows.Workflow properties;
+	private final Sandboxes.Sandbox properties;
 
 	/**
-	 * Creates a configuration for a workflow.
+	 * Creates a configuration for a sandbox.
 	 * 
-	 * @param properties The configuration properties for the workflow.
-	 * @param folder     The workflow folder.
+	 * @param properties The configuration properties for the sandbox.
+	 * @param folder     The sandbox folder.
 	 * @param user       The user.
 	 * @since 1.8
 	 */
-	WorkflowConfiguration(Workflows.Workflow properties, Path folder, String user) {
+	SandboxConfiguration(Sandboxes.Sandbox properties, Path folder, String user) {
 		super(folder);
 
 		this.properties = properties;
@@ -109,7 +109,7 @@ public class WorkflowConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Defines configurations for the workflow.
+	 * Defines configurations for the sandbox.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -122,9 +122,9 @@ public class WorkflowConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The workflow.
+		 * The sandbox.
 		 */
-		private Workflow workflow = null;
+		private Sandbox sandbox = null;
 
 		/**
 		 * The main configuration file.
@@ -142,29 +142,29 @@ public class WorkflowConfiguration extends CoreFolder {
 		private String user;
 
 		/**
-		 * Creates a configuration for the workflow.
+		 * Creates a configuration for the sandbox.
 		 * 
-		 * @param properties The configuration properties for the workflow.
+		 * @param properties The configuration properties for the sandbox.
 		 * @param user       The user.
 		 * @since 1.8
 		 */
-		public Configuration(Workflows.Configuration properties, String user) {
-			super(Paths.get(WorkflowConfiguration.this.folder.toString(), properties.getFolder()));
+		public Configuration(Sandboxes.Configuration properties, String user) {
+			super(Paths.get(SandboxConfiguration.this.folder.toString(), properties.getFolder()));
 
 			this.user = user;
 
 			/*
-			 * Initialize the workflow configuration folder
+			 * Initialize the sandbox configuration folder
 			 */
 			ConfigurationService.initializeFolder(true, folder,
-					"workflow '" + WorkflowConfiguration.this.folder.getFileName() + "' configuration");
+					"sandbox '" + SandboxConfiguration.this.folder.getFileName() + "' configuration");
 
 			// Initializes the configuration files
 			mainFile = getPath(properties.getFiles().getMain());
 			historyFile = getPath(properties.getFiles().getHistory());
 
 			// Loads the main configuration file
-			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_workflow_v1);
+			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_sandbox_v1);
 
 			loadMainConfiguration();
 		}
@@ -179,27 +179,27 @@ public class WorkflowConfiguration extends CoreFolder {
 			try {
 				Date currentTimeStamp = new Date();
 
-				workflow = mainConfigurationManager.getEntity(Workflow.class, null, message -> logger.warn(message));
+				sandbox = mainConfigurationManager.getEntity(Sandbox.class, null, message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || workflow.getName() == null || workflow.getState() == null
+				if (!isMainConfigurationAvailable() || sandbox.getName() == null || sandbox.getState() == null
 						|| !isStateConsistent()) {
 					if (!isMainConfigurationAvailable()) {
-						workflow = new Workflow();
+						sandbox = new Sandbox();
 
-						workflow.setDate(currentTimeStamp);
+						sandbox.setDate(currentTimeStamp);
 					}
 
-					workflow.setName(getName());
+					sandbox.setName(getName());
 
-					if (workflow.getState() == null || !isStateConsistent())
-						workflow.setState(Workflow.State.secured);
+					if (sandbox.getState() == null || !isStateConsistent())
+						sandbox.setState(Sandbox.State.secured);
 
 					persist(currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
 
-				workflow = null;
+				sandbox = null;
 			}
 		}
 
@@ -210,7 +210,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isMainConfigurationAvailable() {
-			return workflow != null;
+			return sandbox != null;
 		}
 
 		/**
@@ -233,17 +233,17 @@ public class WorkflowConfiguration extends CoreFolder {
 		private boolean persist(Date updated) {
 			if (isMainConfigurationAvailable())
 				try {
-					workflow.setUser(user);
-					workflow.setUpdated(updated == null ? new Date() : updated);
+					sandbox.setUser(user);
+					sandbox.setUpdated(updated == null ? new Date() : updated);
 
-					mainConfigurationManager.persist(workflow);
+					mainConfigurationManager.persist(sandbox);
 
-					logger.info("Persisted the main configuration of the workflow '" + workflow.getName() + "'.");
+					logger.info("Persisted the main configuration of the sandbox '" + sandbox.getName() + "'.");
 
 					return true;
 				} catch (Exception e) {
-					logger.warn("Could not persist the main configuration of the workflow '" + workflow.getName()
-							+ "' - " + e.getMessage());
+					logger.warn("Could not persist the main configuration of the sandbox '" + sandbox.getName() + "' - "
+							+ e.getMessage());
 				}
 
 			return false;
@@ -268,7 +268,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public String getId() {
-			return WorkflowConfiguration.this.folder.getFileName().toString();
+			return SandboxConfiguration.this.folder.getFileName().toString();
 		}
 
 		/**
@@ -278,8 +278,8 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public String getName() {
-			return isMainConfigurationAvailable() && workflow.getName() != null ? workflow.getName()
-					: WorkflowConfiguration.this.folder.getFileName().toString();
+			return isMainConfigurationAvailable() && sandbox.getName() != null ? sandbox.getName()
+					: SandboxConfiguration.this.folder.getFileName().toString();
 		}
 
 		/**
@@ -292,7 +292,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		public boolean setName(String name) {
 			if (isMainConfigurationAvailable() && name != null && !name.isBlank()) {
-				workflow.setName(name.trim());
+				sandbox.setName(name.trim());
 
 				return persist();
 			} else
@@ -317,7 +317,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public String getDescription() {
-			return isMainConfigurationAvailable() ? workflow.getDescription() : null;
+			return isMainConfigurationAvailable() ? sandbox.getDescription() : null;
 		}
 
 		/**
@@ -330,7 +330,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		public boolean setDescription(String description) {
 			if (isMainConfigurationAvailable()) {
-				workflow.setDescription(description == null || description.isBlank() ? null : description.trim());
+				sandbox.setDescription(description == null || description.isBlank() ? null : description.trim());
 
 				return persist();
 			} else
@@ -344,7 +344,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public Set<String> getKeywords() {
-			return isMainConfigurationAvailable() ? workflow.getKeywords() : null;
+			return isMainConfigurationAvailable() ? sandbox.getKeywords() : null;
 		}
 
 		/**
@@ -356,7 +356,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		public boolean setKeywords(Set<String> keywords) {
 			if (isMainConfigurationAvailable()) {
-				workflow.setKeywords(keywords);
+				sandbox.setKeywords(keywords);
 
 				return persist();
 			} else
@@ -374,24 +374,24 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @return True if the basic data was updated and persisted.
 		 * @since 1.8
 		 */
-		public boolean updateBasicData(String name, String description, Set<String> keywords, Workflow.State state) {
+		public boolean updateBasicData(String name, String description, Set<String> keywords, Sandbox.State state) {
 			if (state == null)
 				state = getState();
 
 			if (isMainConfigurationAvailable() && name != null && !name.isBlank()
 					&& (state.equals(getState()) || isUpdate(state))) {
-				workflow.setName(name.trim());
-				workflow.setDescription(description == null || description.isBlank() ? null : description.trim());
-				workflow.setKeywords(keywords);
+				sandbox.setName(name.trim());
+				sandbox.setDescription(description == null || description.isBlank() ? null : description.trim());
+				sandbox.setKeywords(keywords);
 
 				Date currentTimeStamp = new Date();
 
 				boolean wasDone = isDone();
-				workflow.setState(state);
+				sandbox.setState(state);
 				boolean isDone = isDone();
 
 				if (wasDone != isDone)
-					workflow.setDone(isDone ? currentTimeStamp : null);
+					sandbox.setDone(isDone ? currentTimeStamp : null);
 
 				return persist(currentTimeStamp);
 			} else
@@ -405,8 +405,8 @@ public class WorkflowConfiguration extends CoreFolder {
 		 *         available.
 		 * @since 1.8
 		 */
-		public Workflow.State getState() {
-			return isMainConfigurationAvailable() ? workflow.getState() : null;
+		public Sandbox.State getState() {
+			return isMainConfigurationAvailable() ? sandbox.getState() : null;
 		}
 
 		/*
@@ -428,7 +428,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		@Override
 		public String getUser() {
-			return isMainConfigurationAvailable() ? workflow.getUser() : null;
+			return isMainConfigurationAvailable() ? sandbox.getUser() : null;
 		}
 
 		/*
@@ -450,7 +450,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getCreated() {
-			return isMainConfigurationAvailable() ? workflow.getDate() : null;
+			return isMainConfigurationAvailable() ? sandbox.getDate() : null;
 		}
 
 		/*
@@ -472,7 +472,7 @@ public class WorkflowConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getUpdated() {
-			return isMainConfigurationAvailable() ? workflow.getUpdated() : null;
+			return isMainConfigurationAvailable() ? sandbox.getUpdated() : null;
 		}
 
 		/**
@@ -493,41 +493,41 @@ public class WorkflowConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public Date getDone() {
-			return isMainConfigurationAvailable() ? workflow.getDone() : null;
+			return isMainConfigurationAvailable() ? sandbox.getDone() : null;
 		}
 
 		/**
-		 * Returns true if the workflow requires special right.
+		 * Returns true if the sandbox requires special right.
 		 * 
-		 * @return True if the workflow is available and requires special right.
+		 * @return True if the sandbox is available and requires special right.
 		 * @since 1.8
 		 */
 		public boolean isSpecialRightRequired() {
 			return isMainConfigurationAvailable()
-					&& (Workflow.State.secured.equals(getState()) || Workflow.State.canceled.equals(getState()));
+					&& (Sandbox.State.secured.equals(getState()) || Sandbox.State.canceled.equals(getState()));
 		}
 
 		/**
-		 * Returns true if the workflow is done.
+		 * Returns true if the sandbox is done.
 		 * 
-		 * @return True if the workflow is available and done.
+		 * @return True if the sandbox is available and done.
 		 * @since 1.8
 		 */
 		public boolean isDone() {
 			return isMainConfigurationAvailable()
-					&& (Workflow.State.canceled.equals(getState()) || Workflow.State.closed.equals(getState()));
+					&& (Sandbox.State.canceled.equals(getState()) || Sandbox.State.closed.equals(getState()));
 		}
 
 		/**
-		 * Sets the workflow state and persists the main configuration if the state was
+		 * Sets the sandbox state and persists the main configuration if the state was
 		 * updated.
 		 * 
 		 * @param state The state to set.
-		 * @return True if the workflow is available and the state was updated and
+		 * @return True if the sandbox is available and the state was updated and
 		 *         persisted.
 		 * @since 1.8
 		 */
-		private boolean setState(Workflow.State state) {
+		private boolean setState(Sandbox.State state) {
 			// Test for state diagram consistency
 			if (!isUpdate(state))
 				return false;
@@ -536,11 +536,11 @@ public class WorkflowConfiguration extends CoreFolder {
 			Date currentTimeStamp = new Date();
 
 			boolean wasDone = isDone();
-			workflow.setState(state);
+			sandbox.setState(state);
 			boolean isDone = isDone();
 
 			if (wasDone != isDone)
-				workflow.setDone(isDone ? currentTimeStamp : null);
+				sandbox.setDone(isDone ? currentTimeStamp : null);
 
 			return persist(currentTimeStamp);
 		}
@@ -553,27 +553,27 @@ public class WorkflowConfiguration extends CoreFolder {
 		 *         matches the given state, returns false.
 		 * @since 1.8
 		 */
-		public boolean isUpdate(Workflow.State state) {
+		public boolean isUpdate(Sandbox.State state) {
 			if (state == null || !isMainConfigurationAvailable() || state.equals(getState()))
 				return false;
 
 			// Test for state diagram consistency
-			if (Workflow.State.secured.equals(state))
+			if (Sandbox.State.secured.equals(state))
 				return true;
 			else {
 				/*
-				 * The workflow state depends on the state of the process of the root snapshot
+				 * The sandbox state depends on the state of the process of the root snapshot
 				 */
 				if (!snapshots.getRoot().isProcessCompleted())
-					return Workflow.State.canceled.equals(state);
+					return Sandbox.State.canceled.equals(state);
 				else
 					switch (getState()) {
 					case paused:
-						return Workflow.State.active.equals(state);
+						return Sandbox.State.active.equals(state);
 					case closed:
-						return Workflow.State.canceled.equals(state);
+						return Sandbox.State.canceled.equals(state);
 					case canceled:
-						return Workflow.State.closed.equals(state);
+						return Sandbox.State.closed.equals(state);
 					case active:
 					case secured:
 					default:
@@ -593,70 +593,70 @@ public class WorkflowConfiguration extends CoreFolder {
 				return false;
 
 			/*
-			 * The workflow state depends on the state of the process of the root snapshot
+			 * The sandbox state depends on the state of the process of the root snapshot
 			 */
 			return snapshots.getRoot() == null || !snapshots.getRoot().isProcessCompleted()
-					? Workflow.State.secured.equals(getState()) || Workflow.State.canceled.equals(getState())
+					? Sandbox.State.secured.equals(getState()) || Sandbox.State.canceled.equals(getState())
 					: true;
 		}
 
 		/**
-		 * Secures the workflow and persists the main configuration if the state was
-		 * updated. The workflow can be secured from all other current states.
+		 * Secures the sandbox and persists the main configuration if the state was
+		 * updated. The sandbox can be secured from all other current states.
 		 * 
-		 * @return True if the workflow is available and could be activated.
+		 * @return True if the sandbox is available and could be activated.
 		 * @since 1.8
 		 */
 		public boolean secure() {
-			return setState(Workflow.State.secured);
+			return setState(Sandbox.State.secured);
 		}
 
 		/**
-		 * Activates the workflow and persists the main configuration if the state was
-		 * updated. The workflow can only be activated if the current state is either
+		 * Activates the sandbox and persists the main configuration if the state was
+		 * updated. The sandbox can only be activated if the current state is either
 		 * secured or paused.
 		 * 
-		 * @return True if the workflow is available and could be activated.
+		 * @return True if the sandbox is available and could be activated.
 		 * @since 1.8
 		 */
 		public boolean active() {
-			return setState(Workflow.State.active);
+			return setState(Sandbox.State.active);
 		}
 
 		/**
-		 * Pauses the workflow and persists the main configuration if the state was
-		 * updated. The workflow can only be paused if the current state is either
+		 * Pauses the sandbox and persists the main configuration if the state was
+		 * updated. The sandbox can only be paused if the current state is either
 		 * secured or active.
 		 * 
-		 * @return True if the workflow is available and could be activated.
+		 * @return True if the sandbox is available and could be activated.
 		 * @since 1.8
 		 */
 		public boolean pause() {
-			return setState(Workflow.State.paused);
+			return setState(Sandbox.State.paused);
 		}
 
 		/**
-		 * Closes the workflow and persists the main configuration if the state was
-		 * updated. The workflow can only be closed if the current state is either
+		 * Closes the sandbox and persists the main configuration if the state was
+		 * updated. The sandbox can only be closed if the current state is either
 		 * secured, active or canceled.
 		 * 
-		 * @return True if the workflow is available and could be closed.
+		 * @return True if the sandbox is available and could be closed.
 		 * @since 1.8
 		 */
 		public boolean close() {
-			return setState(Workflow.State.closed);
+			return setState(Sandbox.State.closed);
 		}
 
 		/**
-		 * Cancels the workflow and persists the main configuration if the state was
-		 * updated. The workflow can only be canceled if the current state is either
+		 * Cancels the sandbox and persists the main configuration if the state was
+		 * updated. The sandbox can only be canceled if the current state is either
 		 * secured, active or closed.
 		 * 
-		 * @return True if the workflow is available and could be closed.
+		 * @return True if the sandbox is available and could be closed.
 		 * @since 1.8
 		 */
 		public boolean cancel() {
-			return setState(Workflow.State.canceled);
+			return setState(Sandbox.State.canceled);
 		}
 
 		/**

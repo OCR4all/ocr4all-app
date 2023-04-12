@@ -29,7 +29,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.WorkflowService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
 
@@ -55,53 +55,53 @@ public class LauncherServiceProviderApiController extends ServiceProviderCoreApi
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
-	 * @param workflowService      The workflow service.
+	 * @param sandboxService       The sandbox service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The service.
 	 * @since 1.8
 	 */
 	@Autowired
 	public LauncherServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, WorkflowService workflowService,
+			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, LauncherService service) {
 		super(LauncherServiceProviderApiController.class, configurationService, securityService, projectService,
-				workflowService, schedulerService, Type.launcher, service, Project.Right.special);
+				sandboxService, schedulerService, Type.launcher, service, Project.Right.special);
 	}
 
 	/**
 	 * Returns the service providers in the response body.
 	 * 
-	 * @param projectId  The project id. This is the folder name.
-	 * @param workflowId The workflow id. This is the folder name.
-	 * @param lang       The language. if null, then use the application preferred
-	 *                   locale.
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param lang      The language. if null, then use the application preferred
+	 *                  locale.
 	 * @return The service providers in the response body.
 	 * @since 1.8
 	 */
-	@GetMapping(providersRequestMapping + projectPathVariable + workflowPathVariable)
+	@GetMapping(providersRequestMapping + projectPathVariable + sandboxPathVariable)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@PathVariable String projectId,
-			@PathVariable String workflowId, @RequestParam(required = false) String lang) {
-		return serviceProviders(authorizationFactory.authorizeSnapshot(projectId, workflowId, ProjectRight.special),
+			@PathVariable String sandboxId, @RequestParam(required = false) String lang) {
+		return serviceProviders(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.special),
 				null, lang);
 	}
 
 	/**
 	 * Schedules a process to execute the service provider.
 	 * 
-	 * @param projectId  The project id. This is the folder name.
-	 * @param workflowId The workflow id. This is the folder name.
-	 * @param request    The service provider root snapshot request.
-	 * @param lang       The language. if null, then use the application preferred
-	 *                   locale.
-	 * @param response   The HTTP-specific functionality in sending a response to
-	 *                   the client.
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The service provider root snapshot request.
+	 * @param lang      The language. if null, then use the application preferred
+	 *                  locale.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
 	 * @since 1.8
 	 */
-	@PostMapping(scheduleRequestMapping + projectPathVariable + workflowPathVariable)
-	public void schedule(@PathVariable String projectId, @PathVariable String workflowId,
+	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void schedule(@PathVariable String projectId, @PathVariable String sandboxId,
 			@RequestBody @Valid ServiceProviderSnapshotCoreRequest request, @RequestParam(required = false) String lang,
 			HttpServletResponse response) {
-		schedule(authorizationFactory.authorizeSnapshot(projectId, workflowId, ProjectRight.special), request, lang,
+		schedule(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.special), request, lang,
 				response);
 	}
 }

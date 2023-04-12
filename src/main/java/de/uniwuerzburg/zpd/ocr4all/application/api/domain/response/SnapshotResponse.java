@@ -10,7 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response;
 import java.io.Serializable;
 import java.util.List;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Snapshot;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 
 /**
  * Defines snapshot responses for the api.
@@ -31,9 +31,9 @@ public class SnapshotResponse implements Serializable {
 	private String projectId;
 
 	/**
-	 * The workflow id.
+	 * The sandbox id.
 	 */
-	private String workflowId;
+	private String sandboxId;
 
 	/**
 	 * True if the snapshot is consistent.
@@ -64,8 +64,8 @@ public class SnapshotResponse implements Serializable {
 	public SnapshotResponse(Snapshot snapshot) {
 		super();
 
-		projectId = snapshot.getWorkflow().getProject().getId();
-		workflowId = snapshot.getWorkflow().getId();
+		projectId = snapshot.getSandbox().getProject().getId();
+		sandboxId = snapshot.getSandbox().getId();
 
 		isConsistent = snapshot.getConfiguration().isConsistent();
 		track = snapshot.getConfiguration().getTrack();
@@ -101,23 +101,23 @@ public class SnapshotResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the workflow id.
+	 * Returns the Sandbox id.
 	 *
-	 * @return The workflow id.
+	 * @return The Sandbox id.
 	 * @since 1.8
 	 */
-	public String getWorkflowId() {
-		return workflowId;
+	public String getSandboxId() {
+		return sandboxId;
 	}
 
 	/**
-	 * Set the workflow id.
+	 * Set the Sandbox id.
 	 *
-	 * @param workflowId The workflow id to set.
+	 * @param SandboxId The Sandbox id to set.
 	 * @since 1.8
 	 */
-	public void setWorkflowId(String workflowId) {
-		this.workflowId = workflowId;
+	public void setSandboxId(String SandboxId) {
+		this.sandboxId = SandboxId;
 	}
 
 	/**
@@ -208,7 +208,7 @@ public class SnapshotResponse implements Serializable {
 	 * @since 1.8
 	 */
 	public static class SnapshotConfigurationResponse
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot {
+			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot {
 		/**
 		 * The serial version UID.
 		 */
@@ -230,7 +230,7 @@ public class SnapshotResponse implements Serializable {
 		 * @since 1.8
 		 */
 		public SnapshotConfigurationResponse(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot snapshot) {
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot snapshot) {
 			super(snapshot.getType(), snapshot.getLabel(), snapshot.getDescription(), snapshot.getServiceProvider(),
 					snapshot.getInstance(), snapshot.getDate(), snapshot.getUpdated(), snapshot.getUser(),
 					snapshot.getLock());

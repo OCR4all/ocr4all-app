@@ -47,7 +47,7 @@ public class OpticalCharacterRecognitionService
 	 */
 	@Override
 	public CoreData getCoreData() {
-		return CoreData.workflow;
+		return CoreData.sandbox;
 	}
 
 }

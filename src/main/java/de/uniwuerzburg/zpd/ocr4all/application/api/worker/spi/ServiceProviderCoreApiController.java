@@ -34,9 +34,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Task;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Snapshot;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.WorkflowService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
@@ -89,18 +89,18 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * @return The respective persistence snapshot type. Null if not available.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type getSnapshotType() {
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type getSnapshotType() {
 			switch (this) {
 			case launcher:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.launcher;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.launcher;
 			case preprocessing:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.preprocessing;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.preprocessing;
 			case olr:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.olr;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.olr;
 			case ocr:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.ocr;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.ocr;
 			case postcorrection:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type.postcorrection;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.postcorrection;
 			case imp:
 			default:
 				return null;
@@ -135,7 +135,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
 	 * @param projectService        The project service.
-	 * @param workflowService       The workflow service.
+	 * @param sandboxService        The sandbox service.
 	 * @param schedulerService      The scheduler service.
 	 * @param type                  The type.
 	 * @param service               The service.
@@ -143,9 +143,9 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @since 1.8
 	 */
 	protected ServiceProviderCoreApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, WorkflowService workflowService,
+			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, Type type, S service, Project.Right... requiredProjectRights) {
-		super(logger, configurationService, securityService, projectService, workflowService);
+		super(logger, configurationService, securityService, projectService, sandboxService);
 
 		this.schedulerService = schedulerService;
 		this.type = type;
@@ -156,14 +156,14 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	/**
 	 * Returns true if the service is available.
 	 * 
-	 * @param project  The project.
-	 * @param workflow The workflow. Null if the service core data does not require
-	 *                 the workflow.
+	 * @param project The project.
+	 * @param sandbox The sandbox. Null if the service core data does not require
+	 *                the sandbox.
 	 * @return True if the service is available. However, if the service core data
-	 *         requires the workflow and it is not defined, then returns false.
+	 *         requires the sandbox and it is not defined, then returns false.
 	 * @since 1.8
 	 */
-	protected boolean isAvailable(Project project, Workflow workflow) {
+	protected boolean isAvailable(Project project, Sandbox sandbox) {
 		// A selected project with required rights is always required
 		if (!service.isActiveProviderAvailable() || project == null
 				|| !project.getConfiguration().getConfiguration().isStateActive()
@@ -174,17 +174,17 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		case project:
 
 			return true;
-		case workflow:
+		case sandbox:
 		default:
-			if (workflow == null)
+			if (sandbox == null)
 				return false;
 
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Workflow.State state = workflow
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State state = sandbox
 					.getConfiguration().getConfiguration().getState();
 
-			return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Workflow.State.active
+			return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State.active
 					.equals(state)
-					|| (de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Workflow.State.secured
+					|| (de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State.secured
 							.equals(state) && project.isRights(Project.Right.special));
 		}
 	}
@@ -198,19 +198,19 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 *                      preferred locale.
 	 * @return The service providers in the response body.
 	 * @throws ResponseStatusException Throws if service providers are not available
-	 *                                 for the project/workflow.
+	 *                                 for the project/sandbox.
 	 * @since 1.8
 	 */
 	protected ResponseEntity<List<ServiceProviderResponse>> serviceProviders(Authorization authorization,
 			List<Integer> snapshotTrack, String lang) throws ResponseStatusException {
-		if (!isAvailable(authorization.project, authorization.workflow))
+		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
 			final Locale locale = getLocale(lang);
-			final Target target = authorization.project.getTarget(authorization.workflow,
-					authorization.workflow == null || snapshotTrack == null ? null
-							: authorization.workflow.getSnapshot(snapshotTrack).getConfiguration());
+			final Target target = authorization.project.getTarget(authorization.sandbox,
+					authorization.sandbox == null || snapshotTrack == null ? null
+							: authorization.sandbox.getSnapshot(snapshotTrack).getConfiguration());
 
 			final List<ServiceProviderResponse> providers = new ArrayList<>();
 			for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders())
@@ -254,22 +254,22 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * 
 	 * @param authorization The authorization.
 	 * @param request       The service provider request. Services of core data type
-	 *                      workflow requires a service provider snapshot request.
+	 *                      sandbox requires a service provider snapshot request.
 	 * @param lang          The language. if null, then use the application
 	 *                      preferred locale.
 	 * @param response      The HTTP-specific functionality in sending a response to
 	 *                      the client.
 	 * @throws ResponseStatusException Throws if service provider is not an instance
 	 *                                 of process or it is not available for the
-	 *                                 project/workflow. Furthermore, an internal
+	 *                                 project/sandbox. Furthermore, an internal
 	 *                                 server error is thrown if the service's core
-	 *                                 data type is workflow and the request is not
+	 *                                 data type is sandbox and the request is not
 	 *                                 of type service provider snapshot request.
 	 * @since 1.8
 	 */
 	public void schedule(Authorization authorization, ServiceProviderRequest request, String lang,
 			HttpServletResponse response) throws ResponseStatusException {
-		if (!isAvailable(authorization.project, authorization.workflow))
+		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
@@ -286,16 +286,16 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 						(ProcessServiceProvider) provider, request);
 
 				break;
-			case workflow:
+			case sandbox:
 			default:
-				if (authorization.workflow == null || request instanceof ServiceProviderSnapshotCoreRequest)
+				if (authorization.sandbox == null || request instanceof ServiceProviderSnapshotCoreRequest)
 					try {
 						final ServiceProviderSnapshotCoreRequest snapshotRequest = (ServiceProviderSnapshotCoreRequest) request;
 						final List<Integer> track = (request instanceof ServiceProviderSnapshotRequest)
 								? ((ServiceProviderSnapshotRequest) request).getParentSnapshot().getTrack()
 								: null;
 
-						Snapshot snapshot = authorization.workflow.createSnapshot(type.getSnapshotType(), track,
+						Snapshot snapshot = authorization.sandbox.createSnapshot(type.getSnapshotType(), track,
 								snapshotRequest.getLabel(), snapshotRequest.getDescription(), request,
 								configurationService.getInstance());
 

@@ -46,7 +46,7 @@ public class OpticalLayoutRecognitionService extends CoreServiceProvider<Optical
 	 */
 	@Override
 	public CoreData getCoreData() {
-		return CoreData.workflow;
+		return CoreData.sandbox;
 	}
 
 }

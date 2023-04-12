@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 
 /**
@@ -74,7 +74,7 @@ public class MetsResponse implements Serializable {
 	/**
 	 * Creates a mets response for the api.
 	 * 
-	 * @param workflow The workflow.
+	 * @param sandbox The sandbox.
 	 * @throws JsonParseException   Throws on parsing problems, used when
 	 *                              non-well-formed content is encountered.
 	 * @throws JsonMappingException Throws to signal fatal problems with mapping of
@@ -83,11 +83,11 @@ public class MetsResponse implements Serializable {
 	 *                              occurred.
 	 * @since 1.8
 	 */
-	public MetsResponse(Workflow workflow) throws JsonParseException, JsonMappingException, IOException {
+	public MetsResponse(Sandbox sandbox) throws JsonParseException, JsonMappingException, IOException {
 		super();
 
-		Path mets = Paths.get(workflow.getConfiguration().getSnapshots().getRoot().getFolder().toString(),
-				workflow.getConfiguration().getMetsFileName());
+		Path mets = Paths.get(sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString(),
+				sandbox.getConfiguration().getMetsFileName());
 		file = mets.toString();
 
 		if (Files.exists(mets)) {

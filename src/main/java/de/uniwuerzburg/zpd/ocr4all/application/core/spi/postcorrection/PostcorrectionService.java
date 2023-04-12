@@ -44,7 +44,7 @@ public class PostcorrectionService extends CoreServiceProvider<PostcorrectionSer
 	 */
 	@Override
 	public CoreData getCoreData() {
-		return CoreData.workflow;
+		return CoreData.sandbox;
 	}
 
 }

@@ -1,11 +1,11 @@
 /**
- * File:     Workflow.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow
+ * File:     Sandbox.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     14.04.2021
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.project.workflow;
+package de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.WorkflowConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SandboxConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
@@ -28,17 +28,17 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.util.PersistenceTools;
 
 /**
- * Defines workflows.
+ * Defines sandboxes.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class Workflow {
+public class Sandbox {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Workflow.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Sandbox.class);
 
 	/**
 	 * The project.
@@ -48,7 +48,7 @@ public class Workflow {
 	/**
 	 * The configuration.
 	 */
-	private final WorkflowConfiguration configuration;
+	private final SandboxConfiguration configuration;
 
 	/**
 	 * The history persistence manager.
@@ -56,17 +56,17 @@ public class Workflow {
 	private PersistenceManager historyManager = null;
 
 	/**
-	 * Creates a workflow.
+	 * Creates a sandbox.
 	 * 
-	 * @param folder  The workflow folder.
-	 * @param project The project to which this workflow belongs.
+	 * @param folder  The sandbox folder.
+	 * @param project The project to which this sandbox belongs.
 	 * @since 1.8
 	 */
-	public Workflow(Path folder, Project project) {
+	public Sandbox(Path folder, Project project) {
 		super();
 
 		this.project = project;
-		configuration = project.getConfiguration().getWorkflowsConfiguration().getWorkflow(folder, project.getUser());
+		configuration = project.getConfiguration().getSandboxesConfiguration().getSandbox(folder, project.getUser());
 	}
 
 	/**
@@ -116,12 +116,12 @@ public class Workflow {
 	 *         available.
 	 * @since 1.8
 	 */
-	public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Workflow.State getState() {
+	public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State getState() {
 		return configuration.getConfiguration().getState();
 	}
 
 	/**
-	 * Returns the project to which this workflow belongs.
+	 * Returns the project to which this sandbox belongs.
 	 *
 	 * @return The project.
 	 * @since 1.8
@@ -136,7 +136,7 @@ public class Workflow {
 	 * @return The configuration.
 	 * @since 1.8
 	 */
-	public WorkflowConfiguration getConfiguration() {
+	public SandboxConfiguration getConfiguration() {
 		return configuration;
 	}
 
@@ -168,7 +168,7 @@ public class Workflow {
 
 				getHistoryManager().persist(true, history);
 			} catch (Exception e) {
-				logger.warn("Could not add the history to the workflow '" + configuration.getConfiguration().getName()
+				logger.warn("Could not add the history to the sandbox '" + configuration.getConfiguration().getName()
 						+ "' - " + e.getMessage());
 			}
 	}
@@ -205,9 +205,9 @@ public class Workflow {
 	}
 
 	/**
-	 * Reset the workflow. The snapshots are removed.
+	 * Reset the sandbox. The snapshots are removed.
 	 * 
-	 * @return True if the workflow could be reseted.
+	 * @return True if the sandbox could be reseted.
 	 * @since 1.8
 	 */
 	public boolean reset() {
@@ -216,7 +216,7 @@ public class Workflow {
 
 			return true;
 		} else {
-			add(new ActionHistory(History.Level.error, "reset snapshots", "problems resetting the workflow snapshots",
+			add(new ActionHistory(History.Level.error, "reset snapshots", "problems resetting the sandbox snapshots",
 					null));
 
 			return false;
@@ -254,9 +254,9 @@ public class Workflow {
 	}
 
 	/**
-	 * Returns true if workflow was launched.
+	 * Returns true if sandbox was launched.
 	 * 
-	 * @return True if workflow was launched.
+	 * @return True if sandbox was launched.
 	 * @since 1.8
 	 */
 	public boolean isLaunched() {
@@ -283,7 +283,7 @@ public class Workflow {
 	 * @param track The track. An empty list returns the root snapshot.
 	 * @return The snapshot.
 	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the workflow or it is inconsistent.
+	 *                                  the sandbox or it is inconsistent.
 	 * @since 1.8
 	 */
 	public Snapshot getSnapshot(List<Integer> track) throws IllegalArgumentException {
@@ -297,7 +297,7 @@ public class Workflow {
 	 *              root snapshot.
 	 * @return The derived snapshots.
 	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the workflow or it is inconsistent.
+	 *                                  the sandbox or it is inconsistent.
 	 * @since 1.8
 	 */
 	public List<Snapshot> getDerived(List<Integer> track) throws IllegalArgumentException {
@@ -317,7 +317,7 @@ public class Workflow {
 	 * @param track The track. An empty list returns the root snapshot.
 	 * @return The snapshot.
 	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the workflow or it is inconsistent.
+	 *                                  the sandbox or it is inconsistent.
 	 * @since 1.8
 	 */
 	public List<Snapshot> getSnapshots(List<Integer> track) throws IllegalArgumentException {
@@ -340,7 +340,7 @@ public class Workflow {
 	 * @since 1.8
 	 */
 	public Snapshot createSnapshot(
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.workflow.Snapshot.Type type,
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type type,
 			List<Integer> trackParent, String label, String description, ServiceProvider serviceProvider,
 			Instance instance) throws IllegalArgumentException {
 
@@ -387,16 +387,16 @@ public class Workflow {
 	}
 
 	/**
-	 * Return true if the current and given workflows are the same.
+	 * Return true if the current and given sandboxes are the same.
 	 * 
-	 * @param workflow The workflow to test.
-	 * @return True if the current and given workflows are the same.
+	 * @param sandbox The sandbox to test.
+	 * @return True if the current and given sandboxes are the same.
 	 * @since 1.8
 	 */
-	public boolean isSame(Workflow workflow) {
+	public boolean isSame(Sandbox sandbox) {
 		try {
-			return workflow != null
-					&& Files.isSameFile(configuration.getFolder(), workflow.getConfiguration().getFolder());
+			return sandbox != null
+					&& Files.isSameFile(configuration.getFolder(), sandbox.getConfiguration().getFolder());
 		} catch (IOException e) {
 			return false;
 		}

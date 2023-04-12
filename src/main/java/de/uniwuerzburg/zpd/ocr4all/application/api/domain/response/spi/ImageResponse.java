@@ -25,9 +25,9 @@ public class ImageResponse extends FieldResponse<Object, ImageField> {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * True if it is a workflow image.
+	 * True if it is a sandbox image.
 	 */
-	private boolean isWorkflow;
+	private boolean isSandbox;
 
 	/**
 	 * True if hide check box.
@@ -64,7 +64,7 @@ public class ImageResponse extends FieldResponse<Object, ImageField> {
 	public ImageResponse(Locale locale, ImageField imageField) {
 		super(locale, Type.image, imageField);
 
-		isWorkflow = imageField.isWorkflow();
+		isSandbox = imageField.isSandbox();
 		isHideCheckbox = imageField.isHideCheckbox();
 		isZoom = imageField.isZoom();
 		isSelectType = imageField.isSelectType();
@@ -73,23 +73,23 @@ public class ImageResponse extends FieldResponse<Object, ImageField> {
 	}
 
 	/**
-	 * Returns true if it is a workflow image.
+	 * Returns true if it is a sandbox image.
 	 *
-	 * @return True if it is a workflow image.
+	 * @return True if it is a sandbox image.
 	 * @since 1.8
 	 */
-	public boolean isWorkflow() {
-		return isWorkflow;
+	public boolean isSandbox() {
+		return isSandbox;
 	}
 
 	/**
-	 * Set to true if it is a workflow image.
+	 * Set to true if it is a sandbox image.
 	 *
-	 * @param isWorkflow The workflow image flag to set.
+	 * @param isSandbox The sandbox image flag to set.
 	 * @since 1.8
 	 */
-	public void setWorkflow(boolean isWorkflow) {
-		this.isWorkflow = isWorkflow;
+	public void setSandbox(boolean isSandbox) {
+		this.isSandbox = isSandbox;
 	}
 
 	/**
