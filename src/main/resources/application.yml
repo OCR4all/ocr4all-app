@@ -104,6 +104,11 @@ ocr4all:
             main: model
             assembly: assembly
         file: model
+    workflows:
+      folder: workflows
+      file.extension:
+        metadata: .metadata
+        workflow: .workflow
     projects:
       folder: projects
       project:

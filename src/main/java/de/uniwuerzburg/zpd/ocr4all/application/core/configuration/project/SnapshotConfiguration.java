@@ -289,7 +289,7 @@ public class SnapshotConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public boolean isProcessCompleted() {
-		return isConsistent() && de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.completed
+		return isConsistent() && de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.completed
 				.equals(configuration.process.getState());
 	}
 
@@ -300,11 +300,11 @@ public class SnapshotConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public boolean isProcessExecuted() {
-		return isConsistent() && (de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.completed
+		return isConsistent() && (de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.completed
 				.equals(configuration.process.getState())
-				|| de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.canceled
+				|| de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.canceled
 						.equals(configuration.process.getState())
-				|| de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.interrupted
+				|| de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.interrupted
 						.equals(configuration.process.getState()));
 	}
 
@@ -526,7 +526,7 @@ public class SnapshotConfiguration extends CoreFolder {
 		/**
 		 * The process.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process process = null;
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process process = null;
 
 		/**
 		 * The main configuration file.
@@ -589,7 +589,7 @@ public class SnapshotConfiguration extends CoreFolder {
 
 			// configuration managers
 			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_sandbox_snapshot_v1);
-			processConfigurationManager = new PersistenceManager(processFile, Type.project_process_v1);
+			processConfigurationManager = new PersistenceManager(processFile, Type.job_process_v1);
 
 			if (isInitialize) {
 				ConfigurationService.initializeFolder(true, folder,
@@ -617,7 +617,7 @@ public class SnapshotConfiguration extends CoreFolder {
 					&& !serviceProvider.getId().isBlank()) {
 				final String loggerIdentifier = label == null ? track.toString() : label;
 				try {
-					process = new de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process(user);
+					process = new de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process(user);
 
 					processConfigurationManager.persist(process);
 
@@ -703,7 +703,7 @@ public class SnapshotConfiguration extends CoreFolder {
 		private void loadProcessConfiguration() {
 			try {
 				process = processConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.class, null,
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.class, null,
 						message -> logger.warn(message));
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
@@ -1070,10 +1070,10 @@ public class SnapshotConfiguration extends CoreFolder {
 		 * @return The process configuration.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process getProcessConfiguration() {
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process getProcessConfiguration() {
 			try {
 				return processConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.class, null,
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.class, null,
 						message -> logger.warn(message));
 			} catch (IOException e) {
 				logger.warn(e.getMessage());

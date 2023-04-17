@@ -274,7 +274,7 @@ public class Project implements Job.Cluster {
 	private PersistenceManager getHistoryManager() {
 		if (historyManager == null)
 			historyManager = new PersistenceManager(configuration.getConfiguration().getHistoryFile(),
-					Type.project_action_history_v1, Type.project_process_history_v1);
+					Type.project_action_history_v1, Type.job_process_history_v1);
 
 		return historyManager;
 	}

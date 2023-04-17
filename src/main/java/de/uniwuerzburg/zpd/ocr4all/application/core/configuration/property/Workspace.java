@@ -37,6 +37,11 @@ public class Workspace {
 	private Models models = new Models();
 
 	/**
+	 * The workflows.
+	 */
+	private Workflows workflows = new Workflows();
+
+	/**
 	 * The projects.
 	 */
 	private Projects projects = new Projects();
@@ -99,6 +104,26 @@ public class Workspace {
 	 */
 	public void setModels(Models models) {
 		this.models = models;
+	}
+
+	/**
+	 * Returns the workflows.
+	 *
+	 * @return The workflows.
+	 * @since 1.8
+	 */
+	public Workflows getWorkflows() {
+		return workflows;
+	}
+
+	/**
+	 * Set the workflows.
+	 *
+	 * @param workflows The workflows to set.
+	 * @since 1.8
+	 */
+	public void setWorkflows(Workflows workflows) {
+		this.workflows = workflows;
 	}
 
 	/**
