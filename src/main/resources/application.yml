@@ -106,9 +106,7 @@ ocr4all:
         file: model
     workflows:
       folder: workflows
-      file.extension:
-        metadata: .metadata
-        workflow: .workflow
+      file.extension: .wf
     projects:
       folder: projects
       project:

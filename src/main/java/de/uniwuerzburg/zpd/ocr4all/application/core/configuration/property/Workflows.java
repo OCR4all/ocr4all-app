@@ -79,9 +79,14 @@ public class Workflows {
 	 */
 	public static class File {
 		/**
+		 * The default extension.
+		 */
+		private static final String defaultExtension = ".wf";
+
+		/**
 		 * The extension.
 		 */
-		private Extension extension = new Extension();
+		private String extension = defaultExtension;
 
 		/**
 		 * Returns the extension.
@@ -89,8 +94,8 @@ public class Workflows {
 		 * @return The extension.
 		 * @since 1.8
 		 */
-		public Extension getExtension() {
-			return extension;
+		public String getExtension() {
+			return OCR4all.getNotEmpty(extension, defaultExtension);
 		}
 
 		/**
@@ -99,77 +104,8 @@ public class Workflows {
 		 * @param extension The extension to set.
 		 * @since 1.8
 		 */
-		public void setExtension(Extension extension) {
+		public void setExtension(String extension) {
 			this.extension = extension;
-		}
-
-		/**
-		 * Defines extensions.
-		 *
-		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-		 * @version 1.0
-		 * @since 1.8
-		 */
-		public static class Extension {
-			/**
-			 * The default metadata.
-			 */
-			private static final String defaultMetadata = ".metadata";
-
-			/**
-			 * The default workflow.
-			 */
-			private static final String defaultWorkflow = ".workflow";
-
-			/**
-			 * The metadata. The default value is .metadata.
-			 */
-			private String metadata = defaultMetadata;
-
-			/**
-			 * The workflow. The default value is .workflow.
-			 */
-			private String workflow = defaultWorkflow;
-
-			/**
-			 * Returns the metadata.
-			 *
-			 * @return The metadata.
-			 * @since 1.8
-			 */
-			public String getMetadata() {
-				return OCR4all.getNotEmpty(metadata, defaultMetadata);
-			}
-
-			/**
-			 * Set the metadata.
-			 *
-			 * @param metadata The metadata to set.
-			 * @since 1.8
-			 */
-			public void setMetadata(String metadata) {
-				this.metadata = metadata;
-			}
-
-			/**
-			 * Returns the workflow.
-			 *
-			 * @return The workflow.
-			 * @since 1.8
-			 */
-			public String getWorkflow() {
-				return OCR4all.getNotEmpty(workflow, defaultWorkflow);
-			}
-
-			/**
-			 * Set the workflow.
-			 *
-			 * @param workflow The workflow to set.
-			 * @since 1.8
-			 */
-			public void setWorkflow(String workflow) {
-				this.workflow = workflow;
-			}
 		}
 	}
 }

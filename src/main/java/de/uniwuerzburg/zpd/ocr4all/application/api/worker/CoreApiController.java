@@ -94,6 +94,16 @@ public class CoreApiController {
 	public static final String updateRequestMapping = "/update";
 
 	/**
+	 * The push request mapping.
+	 */
+	public static final String pushRequestMapping = "/push";
+
+	/**
+	 * The pull request mapping.
+	 */
+	public static final String pullRequestMapping = "/pull";
+
+	/**
 	 * The lock request mapping.
 	 */
 	public static final String lockRequestMapping = "/lock";
@@ -182,6 +192,11 @@ public class CoreApiController {
 	 * The sandbox id path variable.
 	 */
 	public static final String sandboxPathVariable = "/{sandboxId}";
+
+	/**
+	 * The workflow id path variable.
+	 */
+	public static final String workflowPathVariable = "/{workflowId}";
 
 	/**
 	 * The action path variable.

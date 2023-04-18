@@ -20,14 +20,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Workf
  */
 public class WorkflowsConfiguration extends CoreFolder {
 	/**
-	 * The file extension metadata.
+	 * The file extension.
 	 */
-	private final String metadataFileExtension;
-
-	/**
-	 * The file extension workflow.
-	 */
-	private final String workflowFileExtension;
+	private final String fileExtension;
 
 	/**
 	 * Creates a configuration for a workflow container.
@@ -39,30 +34,19 @@ public class WorkflowsConfiguration extends CoreFolder {
 	public WorkflowsConfiguration(Workflows properties, WorkspaceConfiguration workspaceConfiguration) {
 		super(Paths.get(workspaceConfiguration.getFolder().toString(), properties.getFolder()));
 
-		metadataFileExtension = properties.getFile().getExtension().getMetadata();
-		workflowFileExtension = properties.getFile().getExtension().getWorkflow();
+		fileExtension = properties.getFile().getExtension();
 
 		ConfigurationService.initializeFolder(true, folder, "workflows");
 	}
 
 	/**
-	 * Returns the file extension metadata.
+	 * Returns the file extension.
 	 *
-	 * @return The file extension metadata.
+	 * @return The file extension.
 	 * @since 1.8
 	 */
-	public String getMetadataFileExtension() {
-		return metadataFileExtension;
-	}
-
-	/**
-	 * Returns the file extension workflow.
-	 *
-	 * @return The file extension workflow.
-	 * @since 1.8
-	 */
-	public String getWorkflowFileExtension() {
-		return workflowFileExtension;
+	public String getFileExtension() {
+		return fileExtension;
 	}
 
 }

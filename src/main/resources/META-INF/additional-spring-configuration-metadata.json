@@ -196,14 +196,9 @@
 			"description": "ocr4all workspace workflows folder; the default value is 'workflows'."
 		},
 		{
-			"name": "ocr4all.workspace.workflows.file.extension.metadata",
+			"name": "ocr4all.workspace.workflows.file.extension",
 			"type": "java.lang.String",
-			"description": "ocr4all workspace workflows file extension for metadata; the default value is '.metadata'."
-		},
-		{
-			"name": "ocr4all.workspace.workflows.file.extension.workflow",
-			"type": "java.lang.String",
-			"description": "ocr4all workspace workflows file extension for workflow; the default value is '.workflow'."
+			"description": "ocr4all workspace workflows file extension; the default value is '.wf'."
 		},		
 		{
 			"name": "ocr4all.workspace.projects.folder",
