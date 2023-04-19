@@ -130,12 +130,9 @@ public class WorkflowService extends CoreService {
 				try {
 					Path path = getPath(uuid);
 
-					if (Files.exists(path)) {
-						List<Entity> entities = getPersistenceManager(uuid).getEntities(null,
-								message -> logger.warn(message), 1, null, Type.workflow_metadata_v1);
-						if (!entities.isEmpty() && entities.get(0) instanceof Metadata)
-							metadata = (Metadata) entities.get(0);
-					}
+					if (Files.exists(path))
+						metadata = getPersistenceManager(uuid).getEntity(Type.workflow_metadata_v1, Metadata.class,
+								message -> logger.warn(message));
 				} catch (Exception e) {
 					logger.warn(e.getMessage());
 				}
@@ -145,6 +142,9 @@ public class WorkflowService extends CoreService {
 
 				metadata.setUpdated(new Date());
 				metadata.setUpdateUser(securityService.getUser());
+				
+				metadata.setLabel(label);
+				metadata.setDescription(description);
 			}
 
 			List<Entity> entities = new ArrayList<>();
@@ -256,9 +256,8 @@ public class WorkflowService extends CoreService {
 	public Workflow getWorkflow(String uuid) {
 		if (uuid != null && !uuid.isBlank())
 			try {
-				List<Entity> entities = getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message),
-						1, null, Type.workflow_v1);
-				return !entities.isEmpty() && entities.get(0) instanceof Workflow ? (Workflow) entities.get(0) : null;
+				return getPersistenceManager(uuid).getEntity(Type.workflow_v1, Workflow.class,
+						message -> logger.warn(message));
 			} catch (Exception e) {
 				logger.warn(e.getMessage());
 			}
