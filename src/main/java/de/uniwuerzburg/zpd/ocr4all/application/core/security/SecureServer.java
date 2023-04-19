@@ -44,8 +44,8 @@ public interface SecureServer extends Priority.Entity {
 	 * {@link org.springframework.security.web.util.matcher.RequestMatcher}
 	 * implementations (i.e. via URL patterns). The application roles are defined in
 	 * {@link de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService.Role}.
-	 * 
-	 * <h2>Example</h2>
+	 *
+	 * Example
 	 * 
 	 * <pre>
 	 * return authorize.antMatchers(&quot;/administration/**&quot;).hasRole(&quot;COORD&quot;).antMatchers(&quot;/project/**&quot;).hasRole(&quot;USER&quot;);
