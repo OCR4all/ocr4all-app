@@ -14,6 +14,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfi
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <T> The entity type.
  * @since 1.8
  */
 public abstract class SecurityEntity<T> {

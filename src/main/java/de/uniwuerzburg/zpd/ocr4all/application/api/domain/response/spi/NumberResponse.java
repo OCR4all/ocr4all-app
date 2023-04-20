@@ -16,6 +16,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.NumberField;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <T> The value type.
+ * @param <N> The number field type.
  * @since 1.8
  */
 public class NumberResponse<T extends Number, N extends NumberField<T>> extends FieldResponse<T, N> {

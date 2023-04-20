@@ -48,6 +48,12 @@ public class ConfigurationService {
 	public enum OperatingSystem {
 		unix, mac, windows, notSupported;
 
+		/**
+		 * Returns the respective operating systems for frameworks.
+		 * 
+		 * @return The respective operating systems for frameworks.
+		 * @since 1.8
+		 */
 		public Framework.OperatingSystem getFramework() {
 			switch (this) {
 			case unix:

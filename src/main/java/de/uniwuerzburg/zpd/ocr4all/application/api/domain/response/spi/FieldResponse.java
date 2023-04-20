@@ -16,6 +16,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Field;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <T> The value type.
+ * @param <F> The field type.
  * @since 1.8
  */
 public class FieldResponse<T, F extends Field<T>> extends EntryResponse {
