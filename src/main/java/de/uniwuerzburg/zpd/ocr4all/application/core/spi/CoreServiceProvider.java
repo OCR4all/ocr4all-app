@@ -27,6 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvi
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <P> The service provider type.
  * @since 1.8
  */
 public abstract class CoreServiceProvider<P extends ServiceProvider> extends CoreService {
