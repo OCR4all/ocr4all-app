@@ -191,6 +191,16 @@
 			"description": "ocr4all workspace model file; the default value is 'model'."
 		},
 		{
+			"name": "ocr4all.workspace.workflows.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace workflows folder; the default value is 'workflows'."
+		},
+		{
+			"name": "ocr4all.workspace.workflows.file.extension",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace workflows file extension; the default value is '.wf'."
+		},		
+		{
 			"name": "ocr4all.workspace.projects.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all workspace projects folder; the default value is 'projects'."

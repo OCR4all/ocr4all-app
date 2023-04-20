@@ -245,7 +245,7 @@ public class SnapshotResponse implements Serializable {
 	 * @since 1.8
 	 */
 	public static class SnapshotProcessResponse
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process {
+			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process {
 		/**
 		 * The serial version UID.
 		 */
@@ -266,7 +266,7 @@ public class SnapshotResponse implements Serializable {
 		 * @param process The process.
 		 * @since 1.8
 		 */
-		public SnapshotProcessResponse(de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process process) {
+		public SnapshotProcessResponse(de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process process) {
 			super(process.getState(), process.getProgress(), process.getStandardOutput(), process.getStandardError(),
 					process.getNote(), process.getDate(), process.getUpdated(), process.getUser());
 		}

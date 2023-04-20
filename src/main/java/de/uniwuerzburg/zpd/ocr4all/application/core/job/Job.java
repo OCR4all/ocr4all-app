@@ -40,20 +40,20 @@ public abstract class Job {
 		 * @return The persistence state.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State getPersistence() {
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State getPersistence() {
 			switch (this) {
 			case scheduled:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.scheduled;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.scheduled;
 			case running:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.running;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.running;
 			case completed:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.completed;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.completed;
 			case canceled:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.canceled;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.canceled;
 			case interrupted:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.interrupted;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.interrupted;
 			case initialized:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State.initialized;
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State.initialized;
 			default:
 				return null;
 			}
@@ -66,7 +66,7 @@ public abstract class Job {
 		 * @return The state. Null if the given state is null.
 		 * @since 1.8
 		 */
-		public static State getState(de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Process.State state) {
+		public static State getState(de.uniwuerzburg.zpd.ocr4all.application.persistence.job.Process.State state) {
 			if (state == null)
 				return null;
 			else

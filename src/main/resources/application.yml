@@ -104,6 +104,9 @@ ocr4all:
             main: model
             assembly: assembly
         file: model
+    workflows:
+      folder: workflows
+      file.extension: .wf
     projects:
       folder: projects
       project:

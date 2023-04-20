@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.job.ProcessHistory;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.ActionHistory;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.ProcessHistory;
 
 /**
  * Defines history responses for the api.

@@ -231,6 +231,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
+	 * The workflows.
+	 */
+	private final WorkflowsConfiguration workflows;
+
+	/**
 	 * The projects.
 	 */
 	private final ProjectsConfiguration projects;
@@ -256,6 +261,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		ConfigurationService.initializeFolder(true, folder, "workspace");
 
 		configuration = new Configuration(properties.getConfiguration(), systemProperties);
+		workflows = new WorkflowsConfiguration(properties.getWorkflows(), this);
 		projects = new ProjectsConfiguration(properties.getProjects(), exchangeConfiguration, optConfiguration, this);
 	}
 
@@ -267,6 +273,16 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 */
 	public Configuration getConfiguration() {
 		return configuration;
+	}
+
+	/**
+	 * Returns the workflows.
+	 *
+	 * @return The workflows.
+	 * @since 1.8
+	 */
+	public WorkflowsConfiguration getWorkflows() {
+		return workflows;
 	}
 
 	/**
@@ -889,7 +905,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * Disables the service provider, this means, the service provider will be
 		 * inactive when the application is launched.
 		 * 
-		 * @param id The service provider id.
+		 * @param id   The service provider id.
 		 * @param user The user.
 		 * @since 1.8
 		 */
@@ -934,7 +950,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * Lazy initializes the service provider, this means, the service provider
 		 * initialization is deferred and will be performed in a new thread.
 		 * 
-		 * @param id The service provider id.
+		 * @param id   The service provider id.
 		 * @param user The user.
 		 * @since 1.8
 		 */
