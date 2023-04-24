@@ -25,8 +25,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -230,14 +228,13 @@ public class WorkflowApiController extends CoreApiController {
 	 *                   snapshot.
 	 * @param lang       The language. if null, then use the application preferred
 	 *                   locale.
-	 * @param response   The HTTP-specific functionality in sending a response to
-	 *                   the client.
+	 * @return The job in the response body.
 	 * @since 1.8
 	 */
 	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable + workflowPathVariable)
-	public void schedule(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<JobJsonResponse> schedule(@PathVariable String projectId, @PathVariable String sandboxId,
 			@PathVariable String workflowId, @RequestBody @Valid SnapshotRequest request,
-			@RequestParam(required = false) String lang, HttpServletResponse response) {
+			@RequestParam(required = false) String lang) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
 
@@ -250,14 +247,7 @@ public class WorkflowApiController extends CoreApiController {
 
 			Job.State jobState = schedulerService.schedule(workflow);
 
-			ObjectMapper objectMapper = new ObjectMapper();
-
-			response.setStatus(HttpServletResponse.SC_OK);
-			response.setContentType(applicationJson);
-			response.getWriter().write(objectMapper
-					.writeValueAsString(new JobJsonResponse(workflow.getId(), jobState, request.getTrack())));
-			response.getWriter().flush();
-
+			return ResponseEntity.ok().body(new JobJsonResponse(workflow.getId(), jobState, request.getTrack()));
 		} catch (IllegalArgumentException ex) {
 			log(ex);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
