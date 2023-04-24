@@ -173,6 +173,26 @@ public abstract class Process extends Job {
 		return project;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#isExecute()
+	 */
+	@Override
+	public boolean isExecute() {
+		return getProject().isExecute();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#isSpecial()
+	 */
+	@Override
+	public boolean isSpecial() {
+		return getProject().isSpecial();
+	}
+
 	/**
 	 * Returns the sandbox.
 	 *

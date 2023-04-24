@@ -114,26 +114,6 @@ public final class Task extends Process {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#isExecute()
-	 */
-	@Override
-	public boolean isExecute() {
-		return getProject().isExecute();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#isSpecial()
-	 */
-	@Override
-	public boolean isSpecial() {
-		return getProject().isSpecial();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#schedule(int)
 	 */
 	@Override

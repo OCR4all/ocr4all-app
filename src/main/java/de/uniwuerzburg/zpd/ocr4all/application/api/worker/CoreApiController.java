@@ -94,6 +94,11 @@ public class CoreApiController {
 	public static final String updateRequestMapping = "/update";
 
 	/**
+	 * The schedule request mapping.
+	 */
+	public static final String scheduleRequestMapping = "/schedule";
+
+	/**
 	 * The push request mapping.
 	 */
 	public static final String pushRequestMapping = "/push";
