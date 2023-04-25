@@ -262,6 +262,11 @@ public abstract class Process extends Job {
 		private SnapshotLock snapshotLock = null;
 
 		/**
+		 * True if the snapshot is lockable.
+		 */
+		private final boolean isSnapshotLockable;
+
+		/**
 		 * Creates a process instance with initialized state.
 		 * 
 		 * @param serviceProvider         The service provider.
@@ -273,14 +278,14 @@ public abstract class Process extends Job {
 		 */
 		public Instance(ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument,
 				Journal.Step journal) throws IllegalArgumentException {
-			this(serviceProvider, serviceProviderArgument, null, journal);
+			this(serviceProvider, serviceProviderArgument, null, false, journal);
 		}
 
 		/**
 		 * Creates a process instance with initialized state.
 		 * 
 		 * @param serviceProvider The service provider.
-		 * @param snapshot        The snapshot.
+		 * @param snapshot        The snapshot. The snapshot is lockable.
 		 * @param journal         The journal step.
 		 * @throws IllegalArgumentException Throws if the service provider, the model or
 		 *                                  the journal argument is missed.
@@ -288,11 +293,27 @@ public abstract class Process extends Job {
 		 */
 		public Instance(ProcessServiceProvider serviceProvider, Snapshot snapshot, Journal.Step journal)
 				throws IllegalArgumentException {
+			this(serviceProvider, snapshot, true, journal);
+		}
+
+		/**
+		 * Creates a process instance with initialized state.
+		 * 
+		 * @param serviceProvider    The service provider.
+		 * @param snapshot           The snapshot.
+		 * @param isSnapshotLockable True if the snapshot is lockable.
+		 * @param journal            The journal step.
+		 * @throws IllegalArgumentException Throws if the service provider, the model or
+		 *                                  the journal argument is missed.
+		 * @since 1.8
+		 */
+		public Instance(ProcessServiceProvider serviceProvider, Snapshot snapshot, boolean isSnapshotLockable,
+				Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider,
 					snapshot.getConfiguration().isConsistent()
 							? snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider()
 							: null,
-					snapshot, journal);
+					snapshot, isSnapshotLockable, journal);
 		}
 
 		/**
@@ -301,13 +322,14 @@ public abstract class Process extends Job {
 		 * @param serviceProvider         The service provider.
 		 * @param serviceProviderArgument The service provider arguments.
 		 * @param snapshot                The snapshot.
+		 * @param isSnapshotLockable      True if the snapshot is lockable.
 		 * @param journal                 The journal step.
 		 * @throws IllegalArgumentException Throws if the service provider, the model or
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
 		private Instance(ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument,
-				Snapshot snapshot, Journal.Step journal) throws IllegalArgumentException {
+				Snapshot snapshot, boolean isSnapshotLockable, Journal.Step journal) throws IllegalArgumentException {
 			super();
 
 			if (serviceProvider == null)
@@ -330,6 +352,7 @@ public abstract class Process extends Job {
 
 			this.serviceProvider = serviceProvider;
 			this.snapshot = snapshot;
+			this.isSnapshotLockable = snapshot != null && isSnapshotLockable;
 
 			processor = this.serviceProvider.newProcessor();
 			if (processor == null)
@@ -690,12 +713,15 @@ public abstract class Process extends Job {
 							 */
 							@Override
 							public void lockSnapshot(String comment) {
-								if (snapshot != null)
+								if (isSnapshotLockable)
 									snapshotLock = new SnapshotLock(comment);
+								else
+									journal.addNote("the snapshot is not lockable, the request with the message '"
+											+ comment + "' will be ignored.");
 							}
 						}, framework, getModelArgument());
 					} catch (Exception e) {
-						journal.setNote(OCR4allUtils.getStackTrace(e));
+						journal.addNote(OCR4allUtils.getStackTrace(e));
 					} finally {
 						if (framework.getTemporary() != null)
 							try {

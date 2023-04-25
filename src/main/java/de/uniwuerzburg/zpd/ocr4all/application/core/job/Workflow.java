@@ -54,6 +54,11 @@ public class Workflow extends Process {
 	private Instance instance = null;
 
 	/**
+	 * True if the workflow was canceled.
+	 */
+	private boolean isCanceled = false;
+
+	/**
 	 * Creates a workflow.
 	 * 
 	 * @param configurationService The configuration service.
@@ -86,16 +91,16 @@ public class Workflow extends Process {
 		if (rootSnapshot == null)
 			throw new IllegalArgumentException("Workflow: the root snapshot argument is mandatory.");
 
-		if (providers == null)
+		if (providers == null || providers.size() == 0)
 			throw new IllegalArgumentException("Workflow: no provider available.");
 
-		if (paths == null)
+		if (paths == null || paths.isEmpty())
 			throw new IllegalArgumentException("Workflow: no provider path available.");
 
-		this.uuid = uuid == null || uuid.isBlank() ? null : uuid.trim();
-		if (uuid == null)
+		if (uuid == null || uuid.isBlank())
 			throw new IllegalArgumentException("Workflow: no workflow uuid available.");
 
+		this.uuid = uuid.trim();
 		this.rootSnapshot = rootSnapshot;
 		this.providers = providers;
 		this.paths = paths;
@@ -119,8 +124,10 @@ public class Workflow extends Process {
 	 */
 	@Override
 	public String getShortDescription() {
-		return "workflow  ID " + uuid + " / root snaptshot track " + rootSnapshot.getConfiguration().getTrack()
-				+ (instance == null ? "" : instance.getShortDescription());
+		return "workflow  ID " + uuid
+				+ (instance == null ? "" : "(" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
+				+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack()
+				+ (instance == null ? "" : " / " + instance.getShortDescription());
 	}
 
 	/*
@@ -140,9 +147,27 @@ public class Workflow extends Process {
 	 */
 	@Override
 	protected void kill() {
+		isCanceled = true;
+
 		if (instance != null)
 			instance.cancel();
 
+	}
+
+	/**
+	 * Returns true if the path reaches its target, this means, it has no children.
+	 * 
+	 * @param path The path.
+	 * @return True if the path reaches its target.
+	 * @since 1.8
+	 */
+	private boolean isTarget(de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path path) {
+		if (path.getChildren() != null && !path.getChildren().isEmpty())
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path child : path.getChildren())
+				if (child != null)
+					return false;
+
+		return true;
 	}
 
 	/**
@@ -157,9 +182,11 @@ public class Workflow extends Process {
 	 */
 	private State execute(de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot parentSnapshot,
 			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths, int step) {
-		if (paths != null)
+		if (!isCanceled && paths != null)
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path path : paths)
-				if (path != null) {
+				if (isCanceled)
+					return State.canceled;
+				else if (path != null) {
 					getJournal().setIndex(step);
 
 					Provider provider = providers.get(path.getId());
@@ -176,7 +203,11 @@ public class Workflow extends Process {
 								provider.getProcessor().getDescription(), provider.getProcessor(),
 								configurationService.getInstance());
 
-						instance = new Instance(provider.getServiceProvider(), snapshot, getJournal().getStep());
+						/*
+						 * The snapshot is lockable iif the path reaches its target.
+						 */
+						instance = new Instance(provider.getServiceProvider(), snapshot, isTarget(path),
+								getJournal().getStep());
 					} catch (IllegalArgumentException e) {
 						getJournal().getStep().setNote(OCR4allUtils.getStackTrace(e));
 
@@ -194,7 +225,7 @@ public class Workflow extends Process {
 						return state;
 				}
 
-		return State.completed;
+		return isCanceled ? State.canceled : State.completed;
 	}
 
 	/**

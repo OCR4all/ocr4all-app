@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
@@ -67,7 +66,6 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @param jwtTokenFilter The JWT access token filter.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ApiSecurityServerConfig(AccountService accountService, JwtTokenFilter jwtTokenFilter) {
 		super();
 
@@ -84,7 +82,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 */
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(accountService).passwordEncoder(accountService.passwordEncoder());
+		auth.userDetailsService(accountService).passwordEncoder(accountService.getPasswordEncoder());
 	}
 
 	/*
@@ -184,7 +182,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @since 1.8
 	 */
 	@Bean
-	public CorsFilter corsFilter() {
+	CorsFilter corsFilter() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowCredentials(true);
 		config.addAllowedOrigin("*");

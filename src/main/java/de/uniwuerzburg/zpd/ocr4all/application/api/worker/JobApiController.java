@@ -18,7 +18,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -135,7 +134,6 @@ public class JobApiController extends CoreApiController {
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public JobApiController(ConfigurationService configurationService, SecurityService securityService,
 			SchedulerService service, ProjectService projectService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService);

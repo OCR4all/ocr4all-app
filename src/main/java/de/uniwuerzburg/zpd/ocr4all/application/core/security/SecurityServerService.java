@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.security;
 
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,6 @@ public class SecurityServerService extends SecurityService {
 	 * @param accountService       The account service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public SecurityServerService(ConfigurationService configurationService, AccountService accountService) {
 		super(SecurityServerService.class, configurationService);
 

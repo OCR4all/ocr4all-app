@@ -17,7 +17,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
@@ -87,7 +86,6 @@ public class SchedulerService extends CoreService {
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public SchedulerService(ConfigurationService configurationService) {
 		super(SchedulerService.class, configurationService);
 	}

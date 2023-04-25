@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
@@ -39,7 +38,6 @@ public class SandboxService extends CoreService {
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public SandboxService(ConfigurationService configurationService) {
 		super(SandboxService.class, configurationService);
 	}

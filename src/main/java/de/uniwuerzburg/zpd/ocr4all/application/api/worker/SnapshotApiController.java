@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -79,7 +78,6 @@ public class SnapshotApiController extends CoreApiController {
 	 * @param sandboxService       The sandbox service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public SnapshotApiController(ConfigurationService configurationService, SecurityService securityService,
 			ProjectService projectService, SandboxService sandboxService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService, sandboxService);

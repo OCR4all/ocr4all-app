@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.documentation;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -54,7 +53,6 @@ public class ApiDocumentationServerConfiguration extends ApiDocumentationConfigu
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ApiDocumentationServerConfiguration(ConfigurationService configurationService) {
 		super(configurationService);
 	}

@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.security;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +32,6 @@ public class SecurityDesktopService extends SecurityService {
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public SecurityDesktopService(ConfigurationService configurationService) {
 		super(SecurityDesktopService.class, configurationService);
 	}

@@ -875,6 +875,20 @@ public abstract class Job {
 			}
 
 			/**
+			 * Adds the note to the end.
+			 *
+			 * @param note The note to add.
+			 * @since 1.8
+			 */
+			public void addNote(String note) {
+				if (isNoteSet()) {
+					if (note != null)
+						this.note = this.note + "\n" + note;
+				} else
+					setNote(note);
+			}
+
+			/**
 			 * Reset the note.
 			 *
 			 * @since 1.8

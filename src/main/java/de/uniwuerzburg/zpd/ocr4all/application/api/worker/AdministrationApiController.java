@@ -21,7 +21,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -118,7 +117,6 @@ public class AdministrationApiController extends CoreApiController {
 	 * @param ocrService           The optical character recognition (OCR) service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
 			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService) {

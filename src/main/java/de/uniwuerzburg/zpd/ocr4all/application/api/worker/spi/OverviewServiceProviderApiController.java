@@ -13,7 +13,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -98,7 +97,6 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @param postcorrectionService The post-correction service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, ImportService importService, LauncherService launcherService,
 			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,

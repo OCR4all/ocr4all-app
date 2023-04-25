@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.project;
 
 import java.nio.file.Path;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +34,6 @@ public class ProjectServerService extends ProjectService {
 	 * @param securityService      The security service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ProjectServerService(ConfigurationService configurationService, SecurityServerService securityService) {
 		super(ProjectServerService.class, configurationService, securityService);
 	}

@@ -12,7 +12,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -60,7 +59,6 @@ public class PreprocessingServiceProviderApiController extends ServiceProviderCo
 	 * @param service              The service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public PreprocessingServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, PreprocessingService service) {

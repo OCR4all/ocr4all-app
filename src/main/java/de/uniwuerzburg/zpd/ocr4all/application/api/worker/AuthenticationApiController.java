@@ -14,7 +14,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -82,7 +81,6 @@ public class AuthenticationApiController extends CoreApiController {
 	 * @param jwtTokenUtil          The JWT access token utilities.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AuthenticationApiController(ConfigurationService configurationService, SecurityService securityService,
 			AccountService accountService, AuthenticationManager authenticationManager, JwtTokenUtil jwtTokenUtil) {
 		super(AuthenticationApiController.class, configurationService, securityService);

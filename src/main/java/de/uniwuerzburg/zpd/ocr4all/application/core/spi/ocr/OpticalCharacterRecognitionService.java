@@ -7,7 +7,6 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +31,6 @@ public class OpticalCharacterRecognitionService
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	@Autowired
 	public OpticalCharacterRecognitionService(ConfigurationService configurationService,
 			ThreadPoolTaskExecutor taskExecutor) {
 		super(OpticalCharacterRecognitionService.class, configurationService,

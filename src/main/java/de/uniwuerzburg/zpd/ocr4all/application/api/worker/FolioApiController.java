@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -103,7 +102,6 @@ public class FolioApiController extends CoreApiController {
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public FolioApiController(ConfigurationService configurationService, SecurityService securityService,
 			ProjectService projectService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService);

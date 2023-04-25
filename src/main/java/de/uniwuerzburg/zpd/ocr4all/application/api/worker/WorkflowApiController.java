@@ -245,9 +245,14 @@ public class WorkflowApiController extends CoreApiController {
 			de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow workflow = service.getJobWorkflow(getLocale(lang),
 					authorization.project, authorization.sandbox, request.getTrack(), workflowId);
 
+			if (workflow == null)
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
 			Job.State jobState = schedulerService.schedule(workflow);
 
 			return ResponseEntity.ok().body(new JobJsonResponse(workflow.getId(), jobState, request.getTrack()));
+		} catch (ResponseStatusException ex) {
+			throw ex;
 		} catch (IllegalArgumentException ex) {
 			log(ex);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

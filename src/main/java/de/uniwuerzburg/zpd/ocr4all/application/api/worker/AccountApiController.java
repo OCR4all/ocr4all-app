@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,7 +67,6 @@ public class AccountApiController extends CoreApiController {
 	 * @param accountService       The account service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AccountApiController(ConfigurationService configurationService, SecurityService securityService,
 			AccountService accountService) {
 		super(AccountApiController.class, configurationService, securityService);

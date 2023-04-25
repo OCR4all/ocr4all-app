@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -36,6 +36,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
  */
 @Service
 @ApplicationScope
+@Configuration
 public class ConfigurationService {
 	/**
 	 * The logger.
@@ -159,7 +160,6 @@ public class ConfigurationService {
 	 * @param properties       The ocr4all properties.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ConfigurationService(Environment environment, ServerProperties serverProperties, OCR4all properties) {
 		super();
 
@@ -182,7 +182,7 @@ public class ConfigurationService {
 	 * @since 1.8
 	 */
 	@Bean
-	public ThreadPoolTaskExecutor taskExecutor() {
+	ThreadPoolTaskExecutor taskExecutor() {
 		ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
 
 		pool.setCorePoolSize(application.getTaskExecutorProperties().getCorePoolSize());

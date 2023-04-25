@@ -384,7 +384,7 @@ public class WorkflowService extends CoreService {
 	 * @param sandbox     The sandbox.
 	 * @param trackParent The track to the parent snapshot.
 	 * @param uuid        The UUID.
-	 * @return The job workflow.
+	 * @return The job workflow. Null if the workflow is not available.
 	 * @throws IllegalArgumentException Throws on workflow troubles.
 	 * @since 1.8
 	 */
@@ -393,7 +393,7 @@ public class WorkflowService extends CoreService {
 		Workflow workflow = getWorkflow(uuid);
 
 		if (workflow == null)
-			throw new IllegalArgumentException("WorkflowService: unknown workflow ID '" + uuid + "'.");
+			return null;
 
 		if (workflow.getPaths() == null || workflow.getPaths().isEmpty())
 			throw new IllegalArgumentException("WorkflowService: no workflow path available.");

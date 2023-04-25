@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -58,7 +57,6 @@ public class ProjectSecurityApiController extends CoreApiController {
 	 * @param service              The project service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ProjectSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
 			ProjectService service) {
 		super(ProjectSecurityApiController.class, configurationService, securityService, service);

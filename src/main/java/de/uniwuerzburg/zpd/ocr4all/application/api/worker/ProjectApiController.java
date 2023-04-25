@@ -15,7 +15,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,7 +64,6 @@ public class ProjectApiController extends CoreApiController {
 	 * @param service              The project service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ProjectApiController(ConfigurationService configurationService, SecurityService securityService,
 			ProjectService service) {
 		super(ProjectApiController.class, configurationService, securityService, service);

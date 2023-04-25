@@ -14,7 +14,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,7 +49,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 	 * @param jwtTokenUtil The JWT access token utilities.
 	 * @since 1.8
 	 */
-	@Autowired
 	public JwtTokenFilter(JwtTokenUtil jwtTokenUtil) {
 		super();
 
