@@ -125,7 +125,7 @@ public class Workflow extends Process {
 	@Override
 	public String getShortDescription() {
 		return "workflow  ID " + uuid
-				+ (instance == null ? "" : "(" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
+				+ (instance == null ? "" : " (" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
 				+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack()
 				+ (instance == null ? "" : " / " + instance.getShortDescription());
 	}
@@ -199,8 +199,10 @@ public class Workflow extends Process {
 					de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot snapshot;
 					try {
 						snapshot = getSandbox().createSnapshot(provider.getSnapshotType(),
-								parentSnapshot.getConfiguration().getTrack(), provider.getProcessor().getLabel(),
-								provider.getProcessor().getDescription(), provider.getProcessor(),
+								parentSnapshot.getConfiguration().getTrack(),
+								"workflow  ID " + uuid + " (" + (getJournal().getIndex() + 1) + "/"
+										+ getJournal().getSize() + ")",
+								"root snaptshot " + rootSnapshot.getConfiguration().getTrack(), provider.getProcessor(),
 								configurationService.getInstance());
 
 						/*
