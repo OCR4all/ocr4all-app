@@ -17,6 +17,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 
@@ -34,9 +35,9 @@ public class Workflow extends Process {
 	private final de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot;
 
 	/**
-	 * The UUID.
+	 * The metadata.
 	 */
-	private final String uuid;
+	private final Metadata metadata;
 
 	/**
 	 * The providers. The key is the path ID.
@@ -68,7 +69,7 @@ public class Workflow extends Process {
 	 * @param project              The project.
 	 * @param sandbox              The sandbox.
 	 * @param rootSnapshot         The root snapshot.
-	 * @param uuid                 The UUID.
+	 * @param metadata             The metadata.
 	 * @param providers            The providers. The key is the path ID.
 	 * @param paths                The provider paths.
 	 * @throws IllegalArgumentException Throws if the processing, project, sandbox,
@@ -79,7 +80,7 @@ public class Workflow extends Process {
 	 */
 	public Workflow(ConfigurationService configurationService, Locale locale, Processing processing, int steps,
 			Project project, Sandbox sandbox,
-			de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot, String uuid,
+			de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot, Metadata metadata,
 			Hashtable<String, Provider> providers,
 			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths)
 			throws IllegalArgumentException {
@@ -97,10 +98,10 @@ public class Workflow extends Process {
 		if (paths == null || paths.isEmpty())
 			throw new IllegalArgumentException("Workflow: no provider path available.");
 
-		if (uuid == null || uuid.isBlank())
-			throw new IllegalArgumentException("Workflow: no workflow uuid available.");
+		if (metadata == null || metadata.getId() == null || metadata.getLabel() == null)
+			throw new IllegalArgumentException("Workflow: no metadata available.");
 
-		this.uuid = uuid.trim();
+		this.metadata = metadata;
 		this.rootSnapshot = rootSnapshot;
 		this.providers = providers;
 		this.paths = paths;
@@ -124,10 +125,9 @@ public class Workflow extends Process {
 	 */
 	@Override
 	public String getShortDescription() {
-		return "workflow  ID " + uuid
+		return "workflow " + metadata.getLabel()
 				+ (instance == null ? "" : " (" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
-				+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack()
-				+ (instance == null ? "" : " / " + instance.getShortDescription());
+				+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack();
 	}
 
 	/*
@@ -200,10 +200,12 @@ public class Workflow extends Process {
 					try {
 						snapshot = getSandbox().createSnapshot(provider.getSnapshotType(),
 								parentSnapshot.getConfiguration().getTrack(),
-								"workflow  ID " + uuid + " (" + (getJournal().getIndex() + 1) + "/"
+								"workflow  " + metadata.getLabel() + " (" + (getJournal().getIndex() + 1) + "/"
 										+ getJournal().getSize() + ")",
-								"root snaptshot " + rootSnapshot.getConfiguration().getTrack(), provider.getProcessor(),
-								configurationService.getInstance());
+								"workflow ID " + metadata.getId() + " / root snaptshot "
+										+ rootSnapshot.getConfiguration().getTrack()
+										+ (metadata.getDescription() == null ? "" : " / " + metadata.getDescription()),
+								provider.getProcessor(), configurationService.getInstance());
 
 						/*
 						 * The snapshot is lockable iif the path reaches its target.

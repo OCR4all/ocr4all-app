@@ -310,6 +310,38 @@ public class WorkflowService extends CoreService {
 	}
 
 	/**
+	 * Returns the job data of the workflow with given UUID.
+	 * 
+	 * @param uuid The UUID.
+	 * @return The job data. Null if the job data is not available.
+	 * @since 1.8
+	 */
+	public WorkflowJobData getJobData(String uuid) {
+		if (uuid != null && !uuid.isBlank())
+			try {
+				Metadata metadata = null;
+				Workflow workflow = null;
+
+				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
+						null, Type.workflow_metadata_v1, Type.workflow_view_v1)) {
+					if (entity instanceof Metadata && metadata == null)
+						metadata = (Metadata) entity;
+					else if (entity instanceof Workflow && workflow == null)
+						workflow = (Workflow) entity;
+
+					if (metadata != null && workflow != null)
+						break;
+				}
+
+				return new WorkflowJobData(metadata, workflow);
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+
+		return null;
+	}
+
+	/**
 	 * Returns the job workflow service provider.
 	 * 
 	 * @param processor The processor.
@@ -390,10 +422,11 @@ public class WorkflowService extends CoreService {
 	 */
 	public de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow getJobWorkflow(Locale locale, Project project,
 			Sandbox sandbox, List<Integer> trackParent, String uuid) throws IllegalArgumentException {
-		Workflow workflow = getWorkflow(uuid);
-
-		if (workflow == null)
+		WorkflowJobData jobData = getJobData(uuid);
+		if (jobData == null || jobData.getMetadata() == null || jobData.getWorkflow() == null)
 			return null;
+
+		Workflow workflow = jobData.getWorkflow();
 
 		if (workflow.getPaths() == null || workflow.getPaths().isEmpty())
 			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
@@ -426,8 +459,8 @@ public class WorkflowService extends CoreService {
 			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
 
 		return new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow(configurationService, locale,
-				Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent), uuid, providers,
-				workflow.getPaths());
+				Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent),
+				jobData.getMetadata(), providers, workflow.getPaths());
 	}
 
 }
