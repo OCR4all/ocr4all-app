@@ -1,7 +1,7 @@
 /**
  * File:     Workflow.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.job
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     24.04.2023
  */
@@ -60,7 +60,7 @@ public class Workflow extends Process {
 
 	/**
 	 * Creates a workflow.
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @param locale               The application locale.
 	 * @param processing           The processing mode.
@@ -108,7 +108,7 @@ public class Workflow extends Process {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getTargetName()
 	 */
 	@Override
@@ -118,7 +118,7 @@ public class Workflow extends Process {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getShortDescription()
 	 */
@@ -132,7 +132,7 @@ public class Workflow extends Process {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#execute()
 	 */
 	@Override
@@ -142,7 +142,7 @@ public class Workflow extends Process {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#kill()
 	 */
 	@Override
@@ -156,7 +156,7 @@ public class Workflow extends Process {
 
 	/**
 	 * Returns true if the path reaches its target, this means, it has no children.
-	 * 
+	 *
 	 * @param path The path.
 	 * @return True if the path reaches its target.
 	 * @since 1.8
@@ -172,7 +172,7 @@ public class Workflow extends Process {
 
 	/**
 	 * Executes the workflow defined in the paths using depth-first search.
-	 * 
+	 *
 	 * @param parentSnapshot The parent snapshot.
 	 * @param paths          The paths.
 	 * @param step           The current step.
@@ -255,8 +255,8 @@ public class Workflow extends Process {
 
 		/**
 		 * Creates a workflow provider.
-		 * 
-		 * @param provider     The service provider.
+		 *
+		 * @param serviceProvider     The service provider.
 		 * @param snapshotType The snapshot type.
 		 * @since 1.8
 		 */
