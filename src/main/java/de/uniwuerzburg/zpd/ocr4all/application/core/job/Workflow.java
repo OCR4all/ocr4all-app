@@ -256,8 +256,9 @@ public class Workflow extends Process {
 		/**
 		 * Creates a workflow provider.
 		 *
-		 * @param serviceProvider     The service provider.
-		 * @param snapshotType The snapshot type.
+		 * @param serviceProvider  The service provider.
+		 * @param snapshotType     The snapshot type.
+		 * @param processor        The processor.
 		 * @since 1.8
 		 */
 		public Provider(ProcessServiceProvider serviceProvider, Type snapshotType, Processor processor) {
