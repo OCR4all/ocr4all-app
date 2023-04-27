@@ -16,7 +16,6 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -76,7 +75,6 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @param service              The administration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AdministrationSecurityApiController(ConfigurationService configurationService,
 			SecurityService securityService, AdministrationService service) {
 		super(AdministrationSecurityApiController.class, configurationService, securityService);

@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,13 +23,24 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Entity;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.View;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 
 /**
  * Defines workflow services.
@@ -44,16 +57,47 @@ public class WorkflowService extends CoreService {
 	protected final SecurityService securityService;
 
 	/**
+	 * The preprocessing service.
+	 */
+	private final PreprocessingService preprocessingService;
+
+	/**
+	 * The optical layout recognition (OLR) service.
+	 */
+	private final OpticalLayoutRecognitionService olrService;
+
+	/**
+	 * The optical character recognition (OCR) service.
+	 */
+	private final OpticalCharacterRecognitionService ocrService;
+
+	/**
+	 * The post-correction service.
+	 */
+	private final PostcorrectionService postcorrectionService;
+
+	/**
 	 * Creates a workflow service.
 	 * 
-	 * @param configurationService The configuration service.
-	 * @param securityService      The security service.
+	 * @param configurationService  The configuration service.
+	 * @param securityService       The security service.
+	 * @param preprocessingService  The preprocessing service.
+	 * @param olrService            The optical layout recognition (OLR) service.
+	 * @param ocrService            The optical character recognition (OCR) service.
+	 * @param postcorrectionService The post-correction service.
 	 * @since 1.8
 	 */
-	public WorkflowService(ConfigurationService configurationService, SecurityService securityService) {
+	public WorkflowService(ConfigurationService configurationService, SecurityService securityService,
+			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
+			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService) {
 		super(WorkflowService.class, configurationService);
 
 		this.securityService = securityService;
+
+		this.preprocessingService = preprocessingService;
+		this.olrService = olrService;
+		this.ocrService = ocrService;
+		this.postcorrectionService = postcorrectionService;
 	}
 
 	/**
@@ -142,7 +186,7 @@ public class WorkflowService extends CoreService {
 
 				metadata.setUpdated(new Date());
 				metadata.setUpdateUser(securityService.getUser());
-				
+
 				metadata.setLabel(label);
 				metadata.setDescription(description);
 			}
@@ -263,6 +307,160 @@ public class WorkflowService extends CoreService {
 			}
 
 		return null;
+	}
+
+	/**
+	 * Returns the job data of the workflow with given UUID.
+	 * 
+	 * @param uuid The UUID.
+	 * @return The job data. Null if the job data is not available.
+	 * @since 1.8
+	 */
+	public WorkflowJobData getJobData(String uuid) {
+		if (uuid != null && !uuid.isBlank())
+			try {
+				Metadata metadata = null;
+				Workflow workflow = null;
+
+				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
+						null, Type.workflow_metadata_v1, Type.workflow_view_v1)) {
+					if (entity instanceof Metadata && metadata == null)
+						metadata = (Metadata) entity;
+					else if (entity instanceof Workflow && workflow == null)
+						workflow = (Workflow) entity;
+
+					if (metadata != null && workflow != null)
+						break;
+				}
+
+				return new WorkflowJobData(metadata, workflow);
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+
+		return null;
+	}
+
+	/**
+	 * Returns the job workflow service provider.
+	 * 
+	 * @param processor The processor.
+	 * @return The job workflow provider. Null if the service provider is unknown or
+	 *         inactive or not of type process.
+	 * @since 1.8
+	 */
+	private de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider getActiveProcessServiceProvider(
+			Processor processor) {
+		Snapshot.Type snapshotType = null;
+
+		ServiceProvider provider = preprocessingService.getActiveProvider(processor.getId());
+
+		if (provider != null)
+			snapshotType = Snapshot.Type.preprocessing;
+		else {
+			provider = olrService.getActiveProvider(processor.getId());
+
+			if (provider != null)
+				snapshotType = Snapshot.Type.olr;
+			else {
+				provider = ocrService.getActiveProvider(processor.getId());
+
+				if (provider != null)
+					snapshotType = Snapshot.Type.ocr;
+				else {
+					provider = postcorrectionService.getActiveProvider(processor.getId());
+
+					if (provider != null)
+						snapshotType = Snapshot.Type.postcorrection;
+				}
+			}
+		}
+
+		return provider == null || !(provider instanceof ProcessServiceProvider) ? null
+				: new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider(
+						(ProcessServiceProvider) provider, snapshotType, processor);
+	}
+
+	/**
+	 * Returns the number of steps of the workflow job.
+	 * 
+	 * @param providers The job workflow providers.
+	 * @param paths     The workflow paths.
+	 * @param steps     The current number of steps.
+	 * @return The actual number of steps taking into accout the given path.
+	 * @throws IllegalArgumentException Throws on unknown workflow provider.
+	 * @since 1.8
+	 */
+	private int getJobSteps(
+			Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider> providers,
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths, int steps)
+			throws IllegalArgumentException {
+		if (paths != null)
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path path : paths)
+				if (path != null) {
+					if (!providers.containsKey(path.getId()))
+						throw new IllegalArgumentException(
+								"WorkflowService: no workflow processor available for path id '" + path.getId() + "'.");
+
+					steps = getJobSteps(providers, path.getChildren(), steps++);
+				}
+
+		return steps;
+	}
+
+	/**
+	 * Returns the job workflow with given UUID.
+	 * 
+	 * @param locale      The application locale.
+	 * @param project     The project.
+	 * @param sandbox     The sandbox.
+	 * @param trackParent The track to the parent snapshot.
+	 * @param uuid        The UUID.
+	 * @return The job workflow. Null if the workflow is not available.
+	 * @throws IllegalArgumentException Throws on workflow troubles.
+	 * @since 1.8
+	 */
+	public de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow getJobWorkflow(Locale locale, Project project,
+			Sandbox sandbox, List<Integer> trackParent, String uuid) throws IllegalArgumentException {
+		WorkflowJobData jobData = getJobData(uuid);
+		if (jobData == null || jobData.getMetadata() == null || jobData.getWorkflow() == null)
+			return null;
+
+		Workflow workflow = jobData.getWorkflow();
+
+		if (workflow.getPaths() == null || workflow.getPaths().isEmpty())
+			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
+
+		if (workflow.getProcessors() == null || workflow.getProcessors().isEmpty())
+			throw new IllegalArgumentException("WorkflowService: no workflow processor available.");
+
+		/*
+		 * Loads the process service providers.
+		 */
+		Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider> providers = new Hashtable<>();
+		for (Processor processor : workflow.getProcessors())
+			if (processor != null) {
+				if (providers.containsKey(processor.getIdPath()))
+					throw new IllegalArgumentException("WorkflowService: workflow processor path ID '"
+							+ processor.getIdPath() + "' is not unique.");
+				de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider provider = getActiveProcessServiceProvider(
+						processor);
+
+				if (provider == null)
+					throw new IllegalArgumentException("WorkflowService: process service provider ID '"
+							+ processor.getId() + "' is unknown or inactive or not of type process.");
+				else
+					providers.put(processor.getIdPath(), provider);
+			}
+
+		int steps = getJobSteps(providers, workflow.getPaths(), 0);
+
+		if (steps == 0)
+			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
+
+		return new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow(configurationService, locale,
+				Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent),
+				jobData.getMetadata(), providers, workflow.getPaths());
 	}
 
 }

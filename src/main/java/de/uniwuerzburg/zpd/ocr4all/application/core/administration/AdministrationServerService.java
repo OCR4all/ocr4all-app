@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.administration;
 import java.util.Collection;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +43,6 @@ public class AdministrationServerService extends AdministrationService {
 	 * @param accountService       The account service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AdministrationServerService(ConfigurationService configurationService, SecurityServerService securityService,
 			AccountService accountService) {
 		super(AdministrationServerService.class, configurationService, securityService);

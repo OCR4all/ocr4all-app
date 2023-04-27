@@ -27,8 +27,8 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -57,6 +57,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfi
 @Profile("server")
 @Service
 @ApplicationScope
+@Configuration
 public class AccountService extends CoreService implements UserDetailsService {
 	/**
 	 * Defines user roles.
@@ -123,7 +124,6 @@ public class AccountService extends CoreService implements UserDetailsService {
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AccountService(ConfigurationService configurationService) {
 		super(AccountService.class, configurationService);
 
@@ -221,8 +221,18 @@ public class AccountService extends CoreService implements UserDetailsService {
 	 * @since 1.8
 	 */
 	@Bean
-	public PasswordEncoder passwordEncoder() {
+	PasswordEncoder passwordEncoder() {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+	/**
+	 * Returns the service to encode the passwords.
+	 * 
+	 * @return The service to encode the passwords.
+	 * @since 1.8
+	 */
+	public PasswordEncoder getPasswordEncoder() {
+		return passwordEncoder();
 	}
 
 	/**

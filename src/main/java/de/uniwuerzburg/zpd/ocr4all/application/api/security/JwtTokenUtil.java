@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
 import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -57,7 +56,6 @@ public class JwtTokenUtil {
 	 * @param accountService       The account service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public JwtTokenUtil(ConfigurationService configurationService, AccountService accountService) {
 		super();
 

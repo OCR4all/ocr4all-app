@@ -7,7 +7,6 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.documentation;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -46,7 +45,6 @@ public class ApiDocumentationDesktopConfiguration extends ApiDocumentationConfig
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public ApiDocumentationDesktopConfiguration(ConfigurationService configurationService) {
 		super(configurationService);
 	}

@@ -48,7 +48,7 @@ public class ApiSecurityDesktopConfig extends SecurityConfig {
 	 * @since 1.8
 	 */
 	@Bean
-	public CorsFilter corsFilter() {
+	CorsFilter corsFilter() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.addAllowedOrigin("*");
 		config.addAllowedHeader("*");

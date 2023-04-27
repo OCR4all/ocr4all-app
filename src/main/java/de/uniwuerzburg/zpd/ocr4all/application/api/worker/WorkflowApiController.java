@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
@@ -21,10 +22,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.workflow.WorkflowCoreData;
@@ -49,6 +57,11 @@ public class WorkflowApiController extends CoreApiController {
 	public static final String contextPath = apiContextPathVersion_1_0 + "/workflow";
 
 	/**
+	 * The scheduler service.
+	 */
+	protected final SchedulerService schedulerService;
+
+	/**
 	 * The workflow service.
 	 */
 	private final WorkflowService service;
@@ -64,9 +77,11 @@ public class WorkflowApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public WorkflowApiController(ConfigurationService configurationService, SecurityService securityService,
-			WorkflowService service, ProjectService projectService, SandboxService sandboxService) {
+			SchedulerService schedulerService, WorkflowService service, ProjectService projectService,
+			SandboxService sandboxService) {
 		super(WorkflowApiController.class, configurationService, securityService, projectService, sandboxService);
 
+		this.schedulerService = schedulerService;
 		this.service = service;
 	}
 
@@ -178,6 +193,71 @@ public class WorkflowApiController extends CoreApiController {
 		} catch (Exception ex) {
 			log(ex);
 
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns true if the workflow is available.
+	 * 
+	 * @param project The project.
+	 * @param sandbox The sandbox.
+	 * @return True if the workflow is available.
+	 * @since 1.8
+	 */
+	protected boolean isAvailable(Project project, Sandbox sandbox) {
+		// A selected project with required rights is always required
+		if (!project.getConfiguration().getConfiguration().isStateActive() || !project.isRights(Project.Right.execute))
+			return false;
+
+		de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State state = sandbox
+				.getConfiguration().getConfiguration().getState();
+
+		return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State.active.equals(state)
+				|| (de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Sandbox.State.secured
+						.equals(state) && project.isRights(Project.Right.special));
+	}
+
+	/**
+	 * Schedules a process to execute the workflow.
+	 * 
+	 * @param projectId  The project id. This is the folder name.
+	 * @param sandboxId  The sandbox id. This is the folder name.
+	 * @param workflowId The workflow id.
+	 * @param request    The snapshot request. This is the track to the root
+	 *                   snapshot.
+	 * @param lang       The language. if null, then use the application preferred
+	 *                   locale.
+	 * @return The job in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable + workflowPathVariable)
+	public ResponseEntity<JobJsonResponse> schedule(@PathVariable String projectId, @PathVariable String sandboxId,
+			@PathVariable String workflowId, @RequestBody @Valid SnapshotRequest request,
+			@RequestParam(required = false) String lang) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
+				ProjectRight.execute);
+
+		if (!isAvailable(authorization.project, authorization.sandbox))
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
+
+		try {
+			de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow workflow = service.getJobWorkflow(getLocale(lang),
+					authorization.project, authorization.sandbox, request.getTrack(), workflowId);
+
+			if (workflow == null)
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+			Job.State jobState = schedulerService.schedule(workflow);
+
+			return ResponseEntity.ok().body(new JobJsonResponse(workflow.getId(), jobState, request.getTrack()));
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (IllegalArgumentException ex) {
+			log(ex);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		} catch (Exception ex) {
+			log(ex);
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}

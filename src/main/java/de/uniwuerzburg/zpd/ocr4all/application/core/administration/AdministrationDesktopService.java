@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +37,6 @@ public class AdministrationDesktopService extends AdministrationService {
 	 * @param securityService      The security service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public AdministrationDesktopService(ConfigurationService configurationService,
 			SecurityDesktopService securityService) {
 		super(AdministrationDesktopService.class, configurationService, securityService);

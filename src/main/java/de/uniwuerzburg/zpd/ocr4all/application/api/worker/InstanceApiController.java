@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +46,6 @@ public class InstanceApiController extends CoreApiController {
 	 * @param securityService      The security service.
 	 * @since 1.8
 	 */
-	@Autowired
 	public InstanceApiController(ConfigurationService configurationService, SecurityService securityService) {
 		super(InstanceApiController.class, configurationService, securityService);
 	}
