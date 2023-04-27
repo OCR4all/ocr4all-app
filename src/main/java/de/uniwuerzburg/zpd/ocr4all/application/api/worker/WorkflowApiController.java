@@ -1,7 +1,7 @@
 /**
  * File:     WorkflowApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     17.04.2023
  */
@@ -68,9 +68,10 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Creates a workflow controller for the api.
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param schedulerService     The scheduler service.
 	 * @param service              The workflow service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
@@ -87,7 +88,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Returns the workflow core data in the response body.
-	 * 
+	 *
 	 * @param workflowId The workflow id.
 	 * @return The workflow core data in the response body.
 	 * @since 1.8
@@ -107,7 +108,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Returns the metadata of the workflows in the response body.
-	 * 
+	 *
 	 * @return The metadata of the workflows in the response body.
 	 * @since 1.8
 	 */
@@ -126,7 +127,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Creates the workflow and returns its metadata in the response body.
-	 * 
+	 *
 	 * @param request The workflow request.
 	 * @return The metadata in the response body.
 	 * @since 1.8
@@ -151,7 +152,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Updates the workflow and returns its metadata in the response body.
-	 * 
+	 *
 	 * @param workflowId The workflow id.
 	 * @param request    The workflow request.
 	 * @return The updated metadata in the response body.
@@ -177,7 +178,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Returns the metadata of the workflows in the response body.
-	 * 
+	 *
 	 * @param workflowId The workflow id.
 	 * @param response   The HTTP-specific functionality in sending a response to
 	 *                   the client.
@@ -199,7 +200,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Returns true if the workflow is available.
-	 * 
+	 *
 	 * @param project The project.
 	 * @param sandbox The sandbox.
 	 * @return True if the workflow is available.
@@ -220,7 +221,7 @@ public class WorkflowApiController extends CoreApiController {
 
 	/**
 	 * Schedules a process to execute the workflow.
-	 * 
+	 *
 	 * @param projectId  The project id. This is the folder name.
 	 * @param sandboxId  The sandbox id. This is the folder name.
 	 * @param workflowId The workflow id.
