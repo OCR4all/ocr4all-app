@@ -323,7 +323,7 @@ public class WorkflowService extends CoreService {
 				Workflow workflow = null;
 
 				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
-						null, Type.workflow_metadata_v1, Type.workflow_view_v1)) {
+						null, Type.workflow_metadata_v1, Type.workflow_v1)) {
 					if (entity instanceof Metadata && metadata == null)
 						metadata = (Metadata) entity;
 					else if (entity instanceof Workflow && workflow == null)
@@ -402,9 +402,9 @@ public class WorkflowService extends CoreService {
 						throw new IllegalArgumentException(
 								"WorkflowService: no workflow processor available for path id '" + path.getId() + "'.");
 
-					steps = getJobSteps(providers, path.getChildren(), steps++);
+					steps = getJobSteps(providers, path.getChildren(), steps + 1);
 				}
-
+		
 		return steps;
 	}
 
@@ -427,7 +427,7 @@ public class WorkflowService extends CoreService {
 			return null;
 
 		Workflow workflow = jobData.getWorkflow();
-
+		
 		if (workflow.getPaths() == null || workflow.getPaths().isEmpty())
 			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
 
@@ -452,11 +452,11 @@ public class WorkflowService extends CoreService {
 				else
 					providers.put(processor.getIdPath(), provider);
 			}
-
+		
 		int steps = getJobSteps(providers, workflow.getPaths(), 0);
 
 		if (steps == 0)
-			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
+			throw new IllegalArgumentException("WorkflowService: no job steps available.");
 
 		return new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow(configurationService, locale,
 				Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent),

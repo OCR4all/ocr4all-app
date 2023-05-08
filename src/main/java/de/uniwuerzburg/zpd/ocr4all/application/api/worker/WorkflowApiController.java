@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -238,14 +240,14 @@ public class WorkflowApiController extends CoreApiController {
 			@RequestParam(required = false) String lang) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
-
+		
 		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
 			de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow workflow = service.getJobWorkflow(getLocale(lang),
 					authorization.project, authorization.sandbox, request.getTrack(), workflowId);
-
+			
 			if (workflow == null)
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
@@ -289,6 +291,7 @@ public class WorkflowApiController extends CoreApiController {
 		/**
 		 * The view model.
 		 */
+		@JsonProperty("view-model")
 		private String viewModel = null;
 
 		/**
