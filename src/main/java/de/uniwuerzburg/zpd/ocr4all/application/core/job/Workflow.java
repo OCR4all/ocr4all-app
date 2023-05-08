@@ -188,6 +188,7 @@ public class Workflow extends Process {
 					return State.canceled;
 				else if (path != null) {
 					getJournal().setIndex(step);
+					step++;
 
 					Provider provider = providers.get(path.getId());
 					if (provider == null) {
@@ -224,7 +225,7 @@ public class Workflow extends Process {
 					if (!State.completed.equals(state))
 						return state;
 
-					state = execute(snapshot, path.getChildren(), step++);
+					state = execute(snapshot, path.getChildren(), step);
 					if (!State.completed.equals(state))
 						return state;
 				}
