@@ -45,11 +45,13 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
@@ -101,6 +103,11 @@ public class AdministrationApiController extends CoreApiController {
 	private final List<CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider> ocrProviders;
 
 	/**
+	 * The registered post-correction service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<PostcorrectionServiceProvider>.Provider> postcorrectionProviders;
+
+	/**
 	 * The registered service providers. The key is the id.
 	 */
 	private final Hashtable<String, CoreServiceProvider<?>.Provider> providers = new Hashtable<>();
@@ -108,18 +115,20 @@ public class AdministrationApiController extends CoreApiController {
 	/**
 	 * Creates an administration controller for the api.
 	 * 
-	 * @param configurationService The configuration service.
-	 * @param securityService      The security service.
-	 * @param importService        The import service.
-	 * @param launcherService      The launcher service.
-	 * @param preprocessingService The preprocessing service.
-	 * @param olrService           The optical layout recognition (OLR) service.
-	 * @param ocrService           The optical character recognition (OCR) service.
+	 * @param configurationService  The configuration service.
+	 * @param securityService       The security service.
+	 * @param importService         The import service.
+	 * @param launcherService       The launcher service.
+	 * @param preprocessingService  The preprocessing service.
+	 * @param olrService            The optical layout recognition (OLR) service.
+	 * @param ocrService            The optical character recognition (OCR) service.
+	 * @param postcorrectionService The post-correction service.
 	 * @since 1.8
 	 */
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
 			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
-			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService) {
+			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
+			PostcorrectionService postcorrectionService) {
 		super(AdministrationApiController.class, configurationService, securityService);
 
 		importProviders = importService.getProviders();
@@ -127,6 +136,7 @@ public class AdministrationApiController extends CoreApiController {
 		preprocessingProviders = preprocessingService.getProviders();
 		olrProviders = olrService.getProviders();
 		ocrProviders = ocrService.getProviders();
+		postcorrectionProviders = postcorrectionService.getProviders();
 
 		for (CoreServiceProvider<?>.Provider provider : importProviders)
 			providers.put(provider.getId(), provider);
@@ -141,6 +151,9 @@ public class AdministrationApiController extends CoreApiController {
 			providers.put(provider.getId(), provider);
 
 		for (CoreServiceProvider<?>.Provider provider : ocrProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : postcorrectionProviders)
 			providers.put(provider.getId(), provider);
 	}
 
@@ -1682,6 +1695,12 @@ public class AdministrationApiController extends CoreApiController {
 		private List<ProviderResponse> ocr;
 
 		/**
+		 * The registered post-correction service providers sorted by name.
+		 */
+		@JsonProperty("post-correction")
+		private List<ProviderResponse> postcorrection;
+
+		/**
 		 * Default constructor for a provider container response for the api.
 		 * 
 		 * @since 1.8
@@ -1718,6 +1737,10 @@ public class AdministrationApiController extends CoreApiController {
 			ocr = new ArrayList<>();
 			for (CoreServiceProvider<OpticalCharacterRecognitionServiceProvider>.Provider provider : ocrProviders)
 				ocr.add(new ProviderResponse(locale, provider));
+
+			postcorrection = new ArrayList<>();
+			for (CoreServiceProvider<PostcorrectionServiceProvider>.Provider provider : postcorrectionProviders)
+				postcorrection.add(new ProviderResponse(locale, provider));
 		}
 
 		/**
@@ -1818,6 +1841,26 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setOcr(List<ProviderResponse> providers) {
 			ocr = providers;
+		}
+
+		/**
+		 * Returns the post-correction.
+		 *
+		 * @return The post-correction.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getPostcorrection() {
+			return postcorrection;
+		}
+
+		/**
+		 * Set the post-correction.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setPostcorrection(List<ProviderResponse> providers) {
+			postcorrection = providers;
 		}
 
 		/**
