@@ -640,6 +640,21 @@ public abstract class Job {
 		}
 
 		/**
+		 * Sets the running step to the next feasible index. If the index is not set,
+		 * then set it to 0. If the index is the last, then do nothing.
+		 *
+		 * @since 1.8
+		 */
+		void nextIndex() {
+			if (steps.size() > 1) {
+				if (index < 0)
+					index = 0;
+				else if (index + 1 < steps.size())
+					index++;
+			}
+		}
+
+		/**
 		 * Reset the index of the running step, this means, if there are one step the
 		 * value remains 0. Otherwise, it is set to -1.
 		 *

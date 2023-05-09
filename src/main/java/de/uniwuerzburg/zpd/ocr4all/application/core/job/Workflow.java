@@ -137,7 +137,7 @@ public class Workflow extends Process {
 	 */
 	@Override
 	protected State execute() {
-		return execute(rootSnapshot, paths, 0);
+		return execute(rootSnapshot, paths);
 	}
 
 	/*
@@ -175,21 +175,19 @@ public class Workflow extends Process {
 	 *
 	 * @param parentSnapshot The parent snapshot.
 	 * @param paths          The paths.
-	 * @param step           The current step.
 	 * @return The end state of the execution, this means, canceled, completed or
 	 *         interrupted.
 	 * @since 1.8
 	 */
 	private State execute(de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot parentSnapshot,
-			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths, int step) {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths) {
 		if (!isCanceled && paths != null)
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path path : paths)
 				if (isCanceled)
 					return State.canceled;
 				else if (path != null) {
-					getJournal().setIndex(step);
-					step++;
-
+					getJournal().nextIndex();
+					
 					Provider provider = providers.get(path.getId());
 					if (provider == null) {
 						getJournal().getStep().setNote("unknown service provider with path ID '" + path.getId() + "'.");
@@ -225,7 +223,7 @@ public class Workflow extends Process {
 					if (!State.completed.equals(state))
 						return state;
 
-					state = execute(snapshot, path.getChildren(), step);
+					state = execute(snapshot, path.getChildren());
 					if (!State.completed.equals(state))
 						return state;
 				}
@@ -259,9 +257,9 @@ public class Workflow extends Process {
 		/**
 		 * Creates a workflow provider.
 		 *
-		 * @param serviceProvider  The service provider.
-		 * @param snapshotType     The snapshot type.
-		 * @param processor        The processor.
+		 * @param serviceProvider The service provider.
+		 * @param snapshotType    The snapshot type.
+		 * @param processor       The processor.
 		 * @since 1.8
 		 */
 		public Provider(ProcessServiceProvider serviceProvider, Type snapshotType, Processor processor) {
