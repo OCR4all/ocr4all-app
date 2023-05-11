@@ -335,6 +335,28 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	/*
 	 * (non-Javadoc)
 	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#
+	 * getCategories()
+	 */
+	@Override
+	public List<String> getCategories() {
+		return Arrays.asList("Sandbox launcher");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getSteps()
+	 */
+	@Override
+	public List<String> getSteps() {
+		return Arrays.asList("initialization/sandbox/launcher");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see
 	 * de.uniwuerzburg.zpd.ocr4all.application.core.spi.provider.ServiceProvider#
 	 * getIcon()
