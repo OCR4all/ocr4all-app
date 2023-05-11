@@ -41,18 +41,22 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfi
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
@@ -108,6 +112,16 @@ public class AdministrationApiController extends CoreApiController {
 	private final List<CoreServiceProvider<PostcorrectionServiceProvider>.Provider> postcorrectionProviders;
 
 	/**
+	 * The registered tool service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<ToolServiceProvider>.Provider> toolProviders;
+
+	/**
+	 * The registered export service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<ExportServiceProvider>.Provider> exportProviders;
+
+	/**
 	 * The registered service providers. The key is the id.
 	 */
 	private final Hashtable<String, CoreServiceProvider<?>.Provider> providers = new Hashtable<>();
@@ -123,12 +137,14 @@ public class AdministrationApiController extends CoreApiController {
 	 * @param olrService            The optical layout recognition (OLR) service.
 	 * @param ocrService            The optical character recognition (OCR) service.
 	 * @param postcorrectionService The post-correction service.
+	 * @param toolService           The tool service.
+	 * @param exportService         The export service.
 	 * @since 1.8
 	 */
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
 			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
-			PostcorrectionService postcorrectionService) {
+			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService) {
 		super(AdministrationApiController.class, configurationService, securityService);
 
 		importProviders = importService.getProviders();
@@ -137,6 +153,8 @@ public class AdministrationApiController extends CoreApiController {
 		olrProviders = olrService.getProviders();
 		ocrProviders = ocrService.getProviders();
 		postcorrectionProviders = postcorrectionService.getProviders();
+		toolProviders = toolService.getProviders();
+		exportProviders = exportService.getProviders();
 
 		for (CoreServiceProvider<?>.Provider provider : importProviders)
 			providers.put(provider.getId(), provider);
@@ -154,6 +172,12 @@ public class AdministrationApiController extends CoreApiController {
 			providers.put(provider.getId(), provider);
 
 		for (CoreServiceProvider<?>.Provider provider : postcorrectionProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : toolProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : exportProviders)
 			providers.put(provider.getId(), provider);
 	}
 
@@ -1701,6 +1725,16 @@ public class AdministrationApiController extends CoreApiController {
 		private List<ProviderResponse> postcorrection;
 
 		/**
+		 * The registered tool service providers sorted by name.
+		 */
+		private List<ProviderResponse> tool;
+
+		/**
+		 * The registered export service providers sorted by name.
+		 */
+		private List<ProviderResponse> export;
+
+		/**
 		 * Default constructor for a provider container response for the api.
 		 * 
 		 * @since 1.8
@@ -1741,6 +1775,14 @@ public class AdministrationApiController extends CoreApiController {
 			postcorrection = new ArrayList<>();
 			for (CoreServiceProvider<PostcorrectionServiceProvider>.Provider provider : postcorrectionProviders)
 				postcorrection.add(new ProviderResponse(locale, provider));
+
+			tool = new ArrayList<>();
+			for (CoreServiceProvider<ToolServiceProvider>.Provider provider : toolProviders)
+				tool.add(new ProviderResponse(locale, provider));
+
+			export = new ArrayList<>();
+			for (CoreServiceProvider<ExportServiceProvider>.Provider provider : exportProviders)
+				export.add(new ProviderResponse(locale, provider));
 		}
 
 		/**
@@ -1861,6 +1903,46 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setPostcorrection(List<ProviderResponse> providers) {
 			postcorrection = providers;
+		}
+
+		/**
+		 * Returns the tool.
+		 *
+		 * @return The tool.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getTool() {
+			return tool;
+		}
+
+		/**
+		 * Set the tool.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setTool(List<ProviderResponse> providers) {
+			tool = providers;
+		}
+
+		/**
+		 * Returns the export.
+		 *
+		 * @return The export.
+		 * @since 1.8
+		 */
+		public List<ProviderResponse> getExport() {
+			return export;
+		}
+
+		/**
+		 * Set the export.
+		 *
+		 * @param providers The providers to set.
+		 * @since 1.8
+		 */
+		public void setExport(List<ProviderResponse> providers) {
+			export = providers;
 		}
 
 		/**
