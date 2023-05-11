@@ -28,12 +28,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
@@ -85,6 +87,16 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private final PostcorrectionService postcorrectionService;
 
 	/**
+	 * The tool service.
+	 */
+	private final ToolService toolService;
+
+	/**
+	 * The export service.
+	 */
+	private final ExportService exportService;
+
+	/**
 	 * Creates an overview service provider controller for the api.
 	 * 
 	 * @param configurationService  The configuration service.
@@ -95,12 +107,15 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @param olrService            The optical layout recognition (OLR) service.
 	 * @param ocrService            The optical character recognition (OCR) service.
 	 * @param postcorrectionService The post-correction service.
+	 * @param toolService           The tool service.
+	 * @param exportService         The export service.
 	 * @since 1.8
 	 */
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, ImportService importService, LauncherService launcherService,
 			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
-			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService) {
+			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
+			ToolService toolService, ExportService exportService) {
 		super(OverviewServiceProviderApiController.class, configurationService, securityService);
 
 		this.importService = importService;
@@ -109,8 +124,21 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 		this.olrService = olrService;
 		this.ocrService = ocrService;
 		this.postcorrectionService = postcorrectionService;
+		this.toolService = toolService;
+		this.exportService = exportService;
 	}
 
+	/**
+	 * Set the service providers.
+	 * 
+	 * @param type    The type of the service providers.
+	 * @param service The service for the providers.
+	 * @param lang    The language. if null, then use the application preferred
+	 *                locale.
+	 * @return The service providers.
+	 * @throws ServiceProviderException Throws on service provider exceptions.
+	 * @since 1.8
+	 */
 	private List<ServiceProviderResponse> serviceProviders(ServiceProviderCoreApiController.Type type,
 			CoreServiceProvider<? extends ServiceProvider> service, String lang) throws ServiceProviderException {
 		final Locale locale = getLocale(lang);
@@ -165,6 +193,8 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.ocr, ocrService, lang));
 			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.postcorrection,
 					postcorrectionService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.tool, toolService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.export, exportService, lang));
 
 			return ResponseEntity.ok().body(providers);
 		} catch (ResponseStatusException ex) {
@@ -221,6 +251,16 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 
 			for (ServiceProviderResponse provider : serviceProviders(
 					ServiceProviderCoreApiController.Type.postcorrection, postcorrectionService, lang))
+				if (spiId.equals(provider.getId()))
+					return ResponseEntity.ok().body(provider);
+
+			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.tool,
+					toolService, lang))
+				if (spiId.equals(provider.getId()))
+					return ResponseEntity.ok().body(provider);
+
+			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.export,
+					exportService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 

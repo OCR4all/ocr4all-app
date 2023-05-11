@@ -31,6 +31,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterReco
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Entity;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -77,6 +78,11 @@ public class WorkflowService extends CoreService {
 	private final PostcorrectionService postcorrectionService;
 
 	/**
+	 * The tool service.
+	 */
+	private final ToolService toolService;
+
+	/**
 	 * Creates a workflow service.
 	 * 
 	 * @param configurationService  The configuration service.
@@ -85,11 +91,13 @@ public class WorkflowService extends CoreService {
 	 * @param olrService            The optical layout recognition (OLR) service.
 	 * @param ocrService            The optical character recognition (OCR) service.
 	 * @param postcorrectionService The post-correction service.
+	 * @param exportService         The export service.
 	 * @since 1.8
 	 */
 	public WorkflowService(ConfigurationService configurationService, SecurityService securityService,
 			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
-			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService) {
+			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
+			ToolService toolService) {
 		super(WorkflowService.class, configurationService);
 
 		this.securityService = securityService;
@@ -98,6 +106,7 @@ public class WorkflowService extends CoreService {
 		this.olrService = olrService;
 		this.ocrService = ocrService;
 		this.postcorrectionService = postcorrectionService;
+		this.toolService = toolService;
 	}
 
 	/**
@@ -372,6 +381,12 @@ public class WorkflowService extends CoreService {
 
 					if (provider != null)
 						snapshotType = Snapshot.Type.postcorrection;
+					else {
+						provider = toolService.getActiveProvider(processor.getId());
+
+						if (provider != null)
+							snapshotType = Snapshot.Type.tool;
+					}
 				}
 			}
 		}
@@ -404,7 +419,7 @@ public class WorkflowService extends CoreService {
 
 					steps = getJobSteps(providers, path.getChildren(), steps + 1);
 				}
-		
+
 		return steps;
 	}
 
@@ -427,7 +442,7 @@ public class WorkflowService extends CoreService {
 			return null;
 
 		Workflow workflow = jobData.getWorkflow();
-		
+
 		if (workflow.getPaths() == null || workflow.getPaths().isEmpty())
 			throw new IllegalArgumentException("WorkflowService: no workflow path available.");
 
@@ -452,7 +467,7 @@ public class WorkflowService extends CoreService {
 				else
 					providers.put(processor.getIdPath(), provider);
 			}
-		
+
 		int steps = getJobSteps(providers, workflow.getPaths(), 0);
 
 		if (steps == 0)
