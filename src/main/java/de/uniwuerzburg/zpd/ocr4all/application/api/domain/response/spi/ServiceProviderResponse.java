@@ -76,6 +76,16 @@ public class ServiceProviderResponse implements Serializable {
 	private String description;
 
 	/**
+	 * The categories.
+	 */
+	private List<String> categories;
+
+	/**
+	 * The steps.
+	 */
+	private List<String> steps;
+
+	/**
 	 * The icon.
 	 */
 	private String icon;
@@ -123,6 +133,8 @@ public class ServiceProviderResponse implements Serializable {
 			version = serviceProvider.getVersion();
 
 			description = serviceProvider.getDescription(locale).orElse(null);
+			categories = serviceProvider.getCategories();
+			steps = serviceProvider.getSteps();
 			icon = serviceProvider.getIcon().orElse(null);
 			index = serviceProvider.getIndex();
 
@@ -312,6 +324,46 @@ public class ServiceProviderResponse implements Serializable {
 	}
 
 	/**
+	 * Returns the categories.
+	 *
+	 * @return The categories.
+	 * @since 1.8
+	 */
+	public List<String> getCategories() {
+		return categories;
+	}
+
+	/**
+	 * Set the categories.
+	 *
+	 * @param categories The categories to set.
+	 * @since 1.8
+	 */
+	public void setCategories(List<String> categories) {
+		this.categories = categories;
+	}
+
+	/**
+	 * Returns the steps.
+	 *
+	 * @return The steps.
+	 * @since 1.8
+	 */
+	public List<String> getSteps() {
+		return steps;
+	}
+
+	/**
+	 * Set the steps.
+	 *
+	 * @param steps The steps to set.
+	 * @since 1.8
+	 */
+	public void setSteps(List<String> steps) {
+		this.steps = steps;
+	}
+
+	/**
 	 * Returns the icon.
 	 *
 	 * @return The icon.
@@ -418,7 +470,7 @@ public class ServiceProviderResponse implements Serializable {
 		 * Creates a premise response for the api.
 		 * 
 		 * @param premise The premise.
-		 * @param locale The locale.
+		 * @param locale  The locale.
 		 * @since 1.8
 		 */
 		public PremiseResponse(Premise premise, Locale locale) {

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -155,6 +156,28 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	@Override
 	public Optional<String> getDescription(Locale locale) {
 		return Optional.of(getString(locale, "description"));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#
+	 * getCategories()
+	 */
+	@Override
+	public List<String> getCategories() {
+		return Arrays.asList("Image import");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getSteps()
+	 */
+	@Override
+	public List<String> getSteps() {
+		return Arrays.asList("initialization/import");
 	}
 
 	/*
