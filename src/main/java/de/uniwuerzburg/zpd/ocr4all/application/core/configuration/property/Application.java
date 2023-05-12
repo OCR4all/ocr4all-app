@@ -569,10 +569,10 @@ public class Application {
 				 */
 				public static class Size {
 					/**
-					 * The task executor core pool size. The default value is 5.
+					 * The task executor core pool size. The default value is 6.
 					 */
 					@Min(value = 1, message = "The task executor core pool size should not be less than 1")
-					private int core = 5;
+					private int core = 6;
 
 					/**
 					 * Returns the task executor core pool size.

@@ -53,7 +53,7 @@
 		{
 			"name": "ocr4all.application.task.executor.pool.size.core",
 			"type": "java.lang.Integer",
-			"description": "ocr4all application task executor core pool size. This is optional, the default value is 5."
+			"description": "ocr4all application task executor core pool size. This is optional, the default value is 6."
 		},
 		{
 			"name": "ocr4all.application.security.groups.coordinator",
