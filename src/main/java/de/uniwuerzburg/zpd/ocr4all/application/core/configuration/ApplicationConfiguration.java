@@ -166,8 +166,7 @@ public class ApplicationConfiguration {
 		monitorInterval = properties.getMonitor().getInterval();
 
 		taskExecutorProperties = new TaskExecutorProperties(
-				properties.getTask().getExecutor().getPool().getSize().getCore(),
-				properties.getTask().getExecutor().getPool().getSize().getMax());
+				properties.getTask().getExecutor().getPool().getSize().getCore());
 
 		// The security groups group
 		String securityGroup = properties.getSecurity().getGroups().getAdministrator();
@@ -379,22 +378,15 @@ public class ApplicationConfiguration {
 		private final int corePoolSize;
 
 		/**
-		 * The task executor max pool size.
-		 */
-		private final int maxPoolSize;
-
-		/**
 		 * Creates properties for the task executor.
 		 * 
 		 * @param corePoolSize The task executor core pool size.
-		 * @param maxPoolSize  The task executor max pool size.
 		 * @since 1.8
 		 */
-		public TaskExecutorProperties(int corePoolSize, int maxPoolSize) {
+		public TaskExecutorProperties(int corePoolSize) {
 			super();
 
 			this.corePoolSize = corePoolSize;
-			this.maxPoolSize = maxPoolSize;
 		}
 
 		/**
@@ -405,16 +397,6 @@ public class ApplicationConfiguration {
 		 */
 		public int getCorePoolSize() {
 			return corePoolSize;
-		}
-
-		/**
-		 * Returns the task executor max pool size.
-		 *
-		 * @return The task executor max pool size.
-		 * @since 1.8
-		 */
-		public int getMaxPoolSize() {
-			return maxPoolSize;
 		}
 
 	}

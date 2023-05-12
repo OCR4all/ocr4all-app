@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 
 /**
@@ -99,6 +101,11 @@ public abstract class Job {
 	public enum Processing {
 		sequential, parallel
 	}
+
+	/**
+	 * The logger.
+	 */
+	protected static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Job.class);
 
 	/**
 	 * The configuration service.
@@ -390,36 +397,33 @@ public abstract class Job {
 	/**
 	 * Starts the job in a new thread if it is in scheduled state.
 	 * 
-	 * @param callback The callback method when the job finishes. If null, no
-	 *                 callback is performed.
+	 * @param taskExecutor The task executor.
+	 * @param callback     The callback method when the job finishes. If null, no
+	 *                     callback is performed.
 	 * @return The job state.
 	 * @since 1.8
 	 */
-	synchronized State start(Callback callback) {
+	synchronized State start(ThreadPoolTaskExecutor taskExecutor, Callback callback) {
 		if (isStateScheduled()) {
 			state = State.running;
 			start = new Date();
 
-			new Thread(new Runnable() {
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see java.lang.Runnable#run()
-				 */
-				@Override
-				public void run() {
-					State executionState = execute();
+			taskExecutor.execute(() -> {
+				logger.info("Start execution of job ID " + getId() + " / " + getTargetName() + ".");
 
-					if (!State.canceled.equals(state)) {
-						state = State.completed.equals(executionState) ? State.completed : State.interrupted;
+				State executionState = execute();
 
-						end = new Date();
-					}
+				if (!State.canceled.equals(state)) {
+					state = State.completed.equals(executionState) ? State.completed : State.interrupted;
 
-					if (callback != null)
-						callback.done(Job.this);
+					end = new Date();
 				}
-			}).start();
+
+				if (callback != null)
+					callback.done(Job.this);
+
+				logger.info("End execution of the job ID " + getId() + ".");
+			});
 		}
 
 		return state;

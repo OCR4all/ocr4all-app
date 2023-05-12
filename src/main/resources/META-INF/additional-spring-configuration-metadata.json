@@ -56,11 +56,6 @@
 			"description": "ocr4all application task executor core pool size. This is optional, the default value is 5."
 		},
 		{
-			"name": "ocr4all.application.task.executor.pool.size.max",
-			"type": "java.lang.Integer",
-			"description": "ocr4all application task executor max pool size. This is optional, the default value is 10."
-		},
-		{
 			"name": "ocr4all.application.security.groups.coordinator",
 			"type": "java.lang.String",
 			"description": "ocr4all application coordinator group. This is optional, the default value is coord."
