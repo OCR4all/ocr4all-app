@@ -134,7 +134,7 @@ public class FolioApiController extends CoreApiController {
 	 * Returns the list of folios of given project in the response body.
 	 * 
 	 * @param projectId The project id. This is the folder name.
-	 * @param request   The folio list request.
+	 * @param request   The folio list request. An empty list returns all folios.
 	 * @return The list of folios of given project in the response body.
 	 * @since 1.8
 	 */

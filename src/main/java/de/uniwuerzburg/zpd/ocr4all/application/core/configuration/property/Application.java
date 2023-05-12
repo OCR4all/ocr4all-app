@@ -575,12 +575,6 @@ public class Application {
 					private int core = 5;
 
 					/**
-					 * The task executor max pool size. The default value is 10.
-					 */
-					@Min(value = 1, message = "The task executor max pool size should not be less than 1")
-					private int max = 10;
-
-					/**
 					 * Returns the task executor core pool size.
 					 *
 					 * @return The task executor core pool size.
@@ -598,26 +592,6 @@ public class Application {
 					 */
 					public void setCore(int core) {
 						this.core = core;
-					}
-
-					/**
-					 * Returns the task executor max pool size.
-					 *
-					 * @return The task executor max pool size.
-					 * @since 1.8
-					 */
-					public int getMax() {
-						return max;
-					}
-
-					/**
-					 * Set the task executor max pool size.
-					 *
-					 * @param max The max pool size to set.
-					 * @since 1.8
-					 */
-					public void setMax(int max) {
-						this.max = max;
 					}
 				}
 			}

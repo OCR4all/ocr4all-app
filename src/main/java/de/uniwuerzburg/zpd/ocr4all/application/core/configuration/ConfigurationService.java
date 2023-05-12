@@ -15,10 +15,8 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
@@ -173,24 +171,6 @@ public class ConfigurationService {
 				opt);
 		api = new ApiConfiguration(properties.getApi());
 		temporary = new TemporaryConfiguration(properties.getTemporary());
-	}
-
-	/**
-	 * Returns the task executor.
-	 * 
-	 * @return The task executor.
-	 * @since 1.8
-	 */
-	@Bean
-	ThreadPoolTaskExecutor taskExecutor() {
-		ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
-
-		pool.setCorePoolSize(application.getTaskExecutorProperties().getCorePoolSize());
-		pool.setMaxPoolSize(application.getTaskExecutorProperties().getMaxPoolSize());
-
-		pool.setWaitForTasksToCompleteOnShutdown(false);
-
-		return pool;
 	}
 
 	/**

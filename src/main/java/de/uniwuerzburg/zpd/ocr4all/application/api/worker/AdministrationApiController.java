@@ -596,8 +596,7 @@ public class AdministrationApiController extends CoreApiController {
 				locale = configuration.getLocale();
 				viewLanguages = configuration.getViewLanguages();
 				monitorInterval = configuration.getMonitorInterval();
-				taskExecutor = new TaskExecutor(configuration.getTaskExecutorProperties().getCorePoolSize(),
-						configuration.getTaskExecutorProperties().getMaxPoolSize());
+				taskExecutor = new TaskExecutor(configuration.getTaskExecutorProperties().getCorePoolSize());
 			}
 
 			/**
@@ -797,23 +796,15 @@ public class AdministrationApiController extends CoreApiController {
 				private int corePoolSize;
 
 				/**
-				 * The task executor max pool size.
-				 */
-				@JsonProperty("max-pool-size")
-				private int maxPoolSize;
-
-				/**
 				 * Creates a task executor.
 				 * 
 				 * @param corePoolSize The task executor core pool size.
-				 * @param maxPoolSize  The task executor max pool size.
 				 * @since 1.8
 				 */
-				public TaskExecutor(int corePoolSize, int maxPoolSize) {
+				public TaskExecutor(int corePoolSize) {
 					super();
 
 					this.corePoolSize = corePoolSize;
-					this.maxPoolSize = maxPoolSize;
 				}
 
 				/**
@@ -834,26 +825,6 @@ public class AdministrationApiController extends CoreApiController {
 				 */
 				public void setCorePoolSize(int corePoolSize) {
 					this.corePoolSize = corePoolSize;
-				}
-
-				/**
-				 * Returns the task executor max pool size.
-				 *
-				 * @return The task executor max pool size.
-				 * @since 1.8
-				 */
-				public int getMaxPoolSize() {
-					return maxPoolSize;
-				}
-
-				/**
-				 * Set the task executor max pool size.
-				 *
-				 * @param maxPoolSize The max pool size to set.
-				 * @since 1.8
-				 */
-				public void setMaxPoolSize(int maxPoolSize) {
-					this.maxPoolSize = maxPoolSize;
 				}
 
 			}

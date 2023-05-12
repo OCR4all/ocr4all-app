@@ -17,6 +17,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
@@ -34,6 +35,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 @Service
 @ApplicationScope
 public class SchedulerService extends CoreService {
+	/**
+	 * The prefix to use for the names of newly created threads by task executor.
+	 */
+	private static final String taskExecutorThreadNamePrefix = "job-";
+	
 	/**
 	 * Defines queue positions.
 	 *
@@ -81,6 +87,11 @@ public class SchedulerService extends CoreService {
 	private boolean isRunning = true;
 
 	/**
+	 * The task executor.
+	 */
+	private final ThreadPoolTaskExecutor taskExecutor;
+
+	/**
 	 * Creates a scheduler service.
 	 * 
 	 * @param configurationService The configuration service.
@@ -88,6 +99,13 @@ public class SchedulerService extends CoreService {
 	 */
 	public SchedulerService(ConfigurationService configurationService) {
 		super(SchedulerService.class, configurationService);
+
+		taskExecutor = new ThreadPoolTaskExecutor();
+		
+		taskExecutor.setThreadNamePrefix(taskExecutorThreadNamePrefix);
+		taskExecutor.setCorePoolSize(configurationService.getApplication().getTaskExecutorProperties().getCorePoolSize());
+		taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
+		taskExecutor.afterPropertiesSet();
 	}
 
 	/**
@@ -178,7 +196,7 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	private void start(Job job) {
-		job.start(instance -> schedule());
+		job.start(taskExecutor, instance -> schedule());
 
 		if (job.isStateRunning())
 			running.put(job.getId(), job);
@@ -327,7 +345,7 @@ public class SchedulerService extends CoreService {
 					scheduled.add(index2, job1);
 				}
 			}
-			
+
 			schedule();
 		}
 	}
