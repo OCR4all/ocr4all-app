@@ -91,7 +91,7 @@ public class WorkflowService extends CoreService {
 	 * @param olrService            The optical layout recognition (OLR) service.
 	 * @param ocrService            The optical character recognition (OCR) service.
 	 * @param postcorrectionService The post-correction service.
-	 * @param exportService         The export service.
+	 * @param toolService           The tool service.
 	 * @since 1.8
 	 */
 	public WorkflowService(ConfigurationService configurationService, SecurityService securityService,
