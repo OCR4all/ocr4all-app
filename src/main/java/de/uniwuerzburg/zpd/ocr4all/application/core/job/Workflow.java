@@ -30,6 +30,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
  */
 public class Workflow extends Process {
 	/**
+	 * The short description.
+	 */
+	private final String shortDescription;
+
+	/**
 	 * The root snapshot.
 	 */
 	private final de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot;
@@ -64,6 +69,8 @@ public class Workflow extends Process {
 	 *
 	 * @param configurationService The configuration service.
 	 * @param locale               The application locale.
+	 * @param shortDescription     The short description. If null, use instance
+	 *                             short description.
 	 * @param processing           The processing mode.
 	 * @param steps                The number of steps. This is a positive number.
 	 * @param project              The project.
@@ -78,8 +85,8 @@ public class Workflow extends Process {
 	 *                                  or its paths in null.
 	 * @since 1.8
 	 */
-	public Workflow(ConfigurationService configurationService, Locale locale, Processing processing, int steps,
-			Project project, Sandbox sandbox,
+	public Workflow(ConfigurationService configurationService, Locale locale, String shortDescription,
+			Processing processing, int steps, Project project, Sandbox sandbox,
 			de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot, Metadata metadata,
 			Hashtable<String, Provider> providers,
 			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Path> paths)
@@ -101,6 +108,7 @@ public class Workflow extends Process {
 		if (metadata == null || metadata.getId() == null || metadata.getLabel() == null)
 			throw new IllegalArgumentException("Workflow: no metadata available.");
 
+		this.shortDescription = shortDescription == null || shortDescription.isBlank() ? null : shortDescription.trim();
 		this.metadata = metadata;
 		this.rootSnapshot = rootSnapshot;
 		this.providers = providers;
@@ -125,9 +133,11 @@ public class Workflow extends Process {
 	 */
 	@Override
 	public String getShortDescription() {
-		return "workflow " + metadata.getLabel()
-				+ (instance == null ? "" : " (" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
-				+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack();
+		return shortDescription != null ? shortDescription
+				: "workflow " + metadata.getLabel()
+						+ (instance == null ? ""
+								: " (" + (getJournal().getIndex() + 1) + "/" + getJournal().getSize() + ")")
+						+ " / root snaptshot " + rootSnapshot.getConfiguration().getTrack();
 	}
 
 	/*
@@ -187,7 +197,7 @@ public class Workflow extends Process {
 					return State.canceled;
 				else if (path != null) {
 					getJournal().nextIndex();
-					
+
 					Provider provider = providers.get(path.getId());
 					if (provider == null) {
 						getJournal().getStep().setNote("unknown service provider with path ID '" + path.getId() + "'.");

@@ -426,17 +426,20 @@ public class WorkflowService extends CoreService {
 	/**
 	 * Returns the job workflow with given UUID.
 	 * 
-	 * @param locale      The application locale.
-	 * @param project     The project.
-	 * @param sandbox     The sandbox.
-	 * @param trackParent The track to the parent snapshot.
-	 * @param uuid        The UUID.
+	 * @param locale           The application locale.
+	 * @param shortDescription The short description. If null, use instance short
+	 *                         description.
+	 * @param project          The project.
+	 * @param sandbox          The sandbox.
+	 * @param trackParent      The track to the parent snapshot.
+	 * @param uuid             The UUID.
 	 * @return The job workflow. Null if the workflow is not available.
 	 * @throws IllegalArgumentException Throws on workflow troubles.
 	 * @since 1.8
 	 */
-	public de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow getJobWorkflow(Locale locale, Project project,
-			Sandbox sandbox, List<Integer> trackParent, String uuid) throws IllegalArgumentException {
+	public de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow getJobWorkflow(Locale locale,
+			String shortDescription, Project project, Sandbox sandbox, List<Integer> trackParent, String uuid)
+			throws IllegalArgumentException {
 		WorkflowJobData jobData = getJobData(uuid);
 		if (jobData == null || jobData.getMetadata() == null || jobData.getWorkflow() == null)
 			return null;
@@ -474,7 +477,7 @@ public class WorkflowService extends CoreService {
 			throw new IllegalArgumentException("WorkflowService: no job steps available.");
 
 		return new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow(configurationService, locale,
-				Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent),
+				shortDescription, Job.Processing.parallel, steps, project, sandbox, sandbox.getSnapshot(trackParent),
 				jobData.getMetadata(), providers, workflow.getPaths());
 	}
 

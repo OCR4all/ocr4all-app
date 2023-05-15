@@ -280,8 +280,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 			Task task;
 			switch (service.getCoreData()) {
 			case project:
-				task = new Task(configurationService, locale, Job.Processing.parallel, authorization.project,
-						(ProcessServiceProvider) provider, request);
+				task = new Task(configurationService, locale, request.getJobShortDescription(), Job.Processing.parallel,
+						authorization.project, (ProcessServiceProvider) provider, request);
 
 				break;
 			case sandbox:
@@ -297,8 +297,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 								snapshotRequest.getLabel(), snapshotRequest.getDescription(), request,
 								configurationService.getInstance());
 
-						task = new Task(configurationService, locale, Job.Processing.parallel, snapshot,
-								(ProcessServiceProvider) provider);
+						task = new Task(configurationService, locale, request.getJobShortDescription(),
+								Job.Processing.parallel, snapshot, (ProcessServiceProvider) provider);
 					} catch (Exception ex) {
 						log(ex);
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -340,6 +340,33 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The job short description.
+		 */
+		@JsonProperty("job-short-description")
+		private String jobShortDescription;
+
+		/**
+		 * Returns the job short description.
+		 *
+		 * @return The job short description.
+		 * @since 1.8
+		 */
+		public String getJobShortDescription() {
+			return jobShortDescription;
+		}
+
+		/**
+		 * Set the job short description.
+		 *
+		 * @param jobShortDescription The job short description to set.
+		 * @since 1.8
+		 */
+		public void setJobShortDescription(String jobShortDescription) {
+			this.jobShortDescription = jobShortDescription;
+		}
+
 	}
 
 	/**
