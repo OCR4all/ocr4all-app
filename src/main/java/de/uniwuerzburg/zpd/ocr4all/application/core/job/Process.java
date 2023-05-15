@@ -764,7 +764,7 @@ public abstract class Process extends Job {
 		 *         done. Otherwise, the state of the done instance is returned.
 		 * @since 1.8
 		 */
-		public synchronized State cancel() {
+		public State cancel() {
 			if (isStateScheduled() || isStateRunning()) {
 				final boolean isRunning = State.running.equals(state);
 
