@@ -30,10 +30,17 @@ public final class Task extends Process {
 	private final Instance instance;
 
 	/**
+	 * The short description.
+	 */
+	private final String shortDescription;
+
+	/**
 	 * Creates a task.
 	 * 
 	 * @param configurationService    The configuration service.
 	 * @param locale                  The application locale.
+	 * @param shortDescription        The short description. If null, use instance
+	 *                                short description.
 	 * @param processing              The processing mode.
 	 * @param project                 The project.
 	 * @param serviceProvider         The service provider.
@@ -42,10 +49,11 @@ public final class Task extends Process {
 	 *                                  provider or model argument is missed.
 	 * @since 1.8
 	 */
-	public Task(ConfigurationService configurationService, Locale locale, Processing processing, Project project,
-			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
-			throws IllegalArgumentException {
-		this(configurationService, locale, processing, project, null, serviceProvider, serviceProviderArgument);
+	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
+			Processing processing, Project project, ProcessServiceProvider serviceProvider,
+			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
+		this(configurationService, locale, shortDescription, processing, project, null, serviceProvider,
+				serviceProviderArgument);
 	}
 
 	/**
@@ -53,6 +61,8 @@ public final class Task extends Process {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param locale               The application locale.
+	 * @param shortDescription     The short description. If null, use instance
+	 *                             short description.
 	 * @param processing           The processing mode.
 	 * @param snapshot             The snapshot.
 	 * @param serviceProvider      The service provider.
@@ -60,10 +70,11 @@ public final class Task extends Process {
 	 *                                  provider or model argument is missed.
 	 * @since 1.8
 	 */
-	public Task(ConfigurationService configurationService, Locale locale, Processing processing, Snapshot snapshot,
-			ProcessServiceProvider serviceProvider) throws IllegalArgumentException {
-		this(configurationService, locale, processing, snapshot.getSandbox().getProject(), snapshot, serviceProvider,
-				null);
+	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
+			Processing processing, Snapshot snapshot, ProcessServiceProvider serviceProvider)
+			throws IllegalArgumentException {
+		this(configurationService, locale, shortDescription, processing, snapshot.getSandbox().getProject(), snapshot,
+				serviceProvider, null);
 	}
 
 	/**
@@ -71,6 +82,8 @@ public final class Task extends Process {
 	 * 
 	 * @param configurationService    The configuration service.
 	 * @param locale                  The application locale.
+	 * @param shortDescription        The short description. If null, use instance
+	 *                                short description.
 	 * @param processing              The processing mode.
 	 * @param project                 The project.
 	 * @param snapshot                The snapshot.
@@ -80,13 +93,16 @@ public final class Task extends Process {
 	 *                                  provider or model argument is missed.
 	 * @since 1.8
 	 */
-	private Task(ConfigurationService configurationService, Locale locale, Processing processing, Project project,
-			Snapshot snapshot, ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
-			throws IllegalArgumentException {
+	private Task(ConfigurationService configurationService, Locale locale, String shortDescription,
+			Processing processing, Project project, Snapshot snapshot, ProcessServiceProvider serviceProvider,
+			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
 		super(configurationService, locale, processing, 1, project, snapshot == null ? null : snapshot.getSandbox());
 
 		instance = snapshot == null ? new Instance(serviceProvider, serviceProviderArgument, getJournal().getStep())
 				: new Instance(serviceProvider, snapshot, getJournal().getStep());
+
+		this.shortDescription = shortDescription == null || shortDescription.isBlank() ? instance.getShortDescription()
+				: shortDescription.trim();
 	}
 
 	/*
@@ -108,7 +124,7 @@ public final class Task extends Process {
 	 */
 	@Override
 	public String getShortDescription() {
-		return instance.getShortDescription();
+		return shortDescription;
 	}
 
 	/*

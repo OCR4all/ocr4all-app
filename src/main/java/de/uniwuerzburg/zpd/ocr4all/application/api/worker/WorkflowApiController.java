@@ -224,30 +224,33 @@ public class WorkflowApiController extends CoreApiController {
 	/**
 	 * Schedules a process to execute the workflow.
 	 *
-	 * @param projectId  The project id. This is the folder name.
-	 * @param sandboxId  The sandbox id. This is the folder name.
-	 * @param workflowId The workflow id.
-	 * @param request    The snapshot request. This is the track to the root
-	 *                   snapshot.
-	 * @param lang       The language. if null, then use the application preferred
-	 *                   locale.
+	 * @param projectId        The project id. This is the folder name.
+	 * @param sandboxId        The sandbox id. This is the folder name.
+	 * @param workflowId       The workflow id.
+	 * @param request          The snapshot request. This is the track to the root
+	 *                         snapshot.
+	 * @param lang             The language. If null, then use the application
+	 *                         preferred locale.
+	 * @param shortDescription The short description. If null, use instance short
+	 *                         description.
 	 * @return The job in the response body.
 	 * @since 1.8
 	 */
 	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable + workflowPathVariable)
 	public ResponseEntity<JobJsonResponse> schedule(@PathVariable String projectId, @PathVariable String sandboxId,
 			@PathVariable String workflowId, @RequestBody @Valid SnapshotRequest request,
-			@RequestParam(required = false) String lang) {
+			@RequestParam(required = false) String lang,
+			@RequestParam(required = false, name = "job-short-description") String shortDescription) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
-		
+
 		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
 			de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow workflow = service.getJobWorkflow(getLocale(lang),
-					authorization.project, authorization.sandbox, request.getTrack(), workflowId);
-			
+					shortDescription, authorization.project, authorization.sandbox, request.getTrack(), workflowId);
+
 			if (workflow == null)
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
