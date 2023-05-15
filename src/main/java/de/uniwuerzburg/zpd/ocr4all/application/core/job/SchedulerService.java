@@ -144,7 +144,7 @@ public class SchedulerService extends CoreService {
 	 * @param isRun True if the scheduler should run. Otherwise it should pause.
 	 * @since 1.8
 	 */
-	private synchronized void update(boolean isRun) {
+	private void update(boolean isRun) {
 		if (isRunning != isRun) {
 			isRunning = isRun;
 
