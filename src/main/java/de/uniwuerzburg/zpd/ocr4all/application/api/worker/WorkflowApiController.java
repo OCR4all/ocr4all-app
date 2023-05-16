@@ -12,6 +12,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
@@ -227,8 +228,8 @@ public class WorkflowApiController extends CoreApiController {
 	 * @param projectId        The project id. This is the folder name.
 	 * @param sandboxId        The sandbox id. This is the folder name.
 	 * @param workflowId       The workflow id.
-	 * @param request          The snapshot request. This is the track to the root
-	 *                         snapshot.
+	 * @param request          The workflow snapshot request. The track of the
+	 *                         parent snapshot can not be null.
 	 * @param lang             The language. If null, then use the application
 	 *                         preferred locale.
 	 * @param shortDescription The short description. If null, use instance short
@@ -238,9 +239,8 @@ public class WorkflowApiController extends CoreApiController {
 	 */
 	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable + workflowPathVariable)
 	public ResponseEntity<JobJsonResponse> schedule(@PathVariable String projectId, @PathVariable String sandboxId,
-			@PathVariable String workflowId, @RequestBody @Valid SnapshotRequest request,
-			@RequestParam(required = false) String lang,
-			@RequestParam(required = false, name = "job-short-description") String shortDescription) {
+			@PathVariable String workflowId, @RequestBody @Valid WorkflowSnapshotRequest request,
+			@RequestParam(required = false) String lang) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
 
@@ -249,14 +249,16 @@ public class WorkflowApiController extends CoreApiController {
 
 		try {
 			de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow workflow = service.getJobWorkflow(getLocale(lang),
-					shortDescription, authorization.project, authorization.sandbox, request.getTrack(), workflowId);
+					request.getJobShortDescription(), authorization.project, authorization.sandbox,
+					request.getParentSnapshot().getTrack(), workflowId);
 
 			if (workflow == null)
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
 			Job.State jobState = schedulerService.schedule(workflow);
 
-			return ResponseEntity.ok().body(new JobJsonResponse(workflow.getId(), jobState, request.getTrack()));
+			return ResponseEntity.ok()
+					.body(new JobJsonResponse(workflow.getId(), jobState, request.getParentSnapshot().getTrack()));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (IllegalArgumentException ex) {
@@ -382,6 +384,73 @@ public class WorkflowApiController extends CoreApiController {
 			this.workflow = workflow;
 		}
 
+	}
+
+	/**
+	 * Defines workflow snapshot requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class WorkflowSnapshotRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The job short description.
+		 */
+		@JsonProperty("job-short-description")
+		private String jobShortDescription;
+
+		/**
+		 * The parent snapshot.
+		 */
+		@NotNull
+		@JsonProperty("parent-snapshot")
+		private SnapshotRequest parentSnapshot;
+
+		/**
+		 * Returns the job short description.
+		 *
+		 * @return The job short description.
+		 * @since 1.8
+		 */
+		public String getJobShortDescription() {
+			return jobShortDescription;
+		}
+
+		/**
+		 * Set the job short description.
+		 *
+		 * @param jobShortDescription The job short description to set.
+		 * @since 1.8
+		 */
+		public void setJobShortDescription(String jobShortDescription) {
+			this.jobShortDescription = jobShortDescription;
+		}
+
+		/**
+		 * Returns the parent snapshot.
+		 *
+		 * @return The parent snapshot.
+		 * @since 1.8
+		 */
+		public SnapshotRequest getParentSnapshot() {
+			return parentSnapshot;
+		}
+
+		/**
+		 * Set the parent snapshot.
+		 *
+		 * @param parentSnapshot The parent snapshot to set.
+		 * @since 1.8
+		 */
+		public void setParentSnapshot(SnapshotRequest parentSnapshot) {
+			this.parentSnapshot = parentSnapshot;
+		}
 	}
 
 }
