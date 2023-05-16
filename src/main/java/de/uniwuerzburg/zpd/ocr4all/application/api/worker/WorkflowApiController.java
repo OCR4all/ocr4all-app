@@ -232,8 +232,6 @@ public class WorkflowApiController extends CoreApiController {
 	 *                         parent snapshot can not be null.
 	 * @param lang             The language. If null, then use the application
 	 *                         preferred locale.
-	 * @param shortDescription The short description. If null, use instance short
-	 *                         description.
 	 * @return The job in the response body.
 	 * @since 1.8
 	 */
