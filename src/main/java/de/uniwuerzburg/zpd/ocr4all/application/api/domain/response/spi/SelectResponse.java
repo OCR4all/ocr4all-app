@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.SelectField;
 
 /**
@@ -30,6 +33,7 @@ public class SelectResponse extends FieldResponse<Object, SelectField> {
 	/**
 	 * True if multiple options can be selected at once.
 	 */
+	@JsonProperty("multiple-options")
 	private boolean isMultipleOptions;
 
 	/**
@@ -66,6 +70,7 @@ public class SelectResponse extends FieldResponse<Object, SelectField> {
 	 * @return True if multiple options can be selected at once.
 	 * @since 1.8
 	 */
+	@JsonGetter("multiple-options")
 	public boolean isMultipleOptions() {
 		return isMultipleOptions;
 	}
