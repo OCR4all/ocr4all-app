@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
@@ -33,11 +34,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.BooleanField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Model;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.BooleanArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.StringArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils.FileGroup;
 
 /**
  * Defines service providers for LAREX launchers.
@@ -262,7 +266,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * @since 1.8
 	 */
 	private enum Field {
-		mimeTypeFilter("mime-type-filter");
+		mimeTypeFilter("mime-type-filter"), copyImages("copy-images");
 
 		/**
 		 * The name.
@@ -415,9 +419,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	public Model getModel(Target target) {
 		LauncherArgument argument = new LauncherArgument();
 
-		return new Model(new StringField(Field.mimeTypeFilter.getName(), argument.getMimeTypeFilter(),
-				locale -> getString(locale, "mime.type.filter.description"),
-				locale -> getString(locale, "mime.type.filter.placeholder")));
+		return new Model(
+				new StringField(Field.mimeTypeFilter.getName(), argument.getMimeTypeFilter(),
+						locale -> getString(locale, "mime.type.filter.description"),
+						locale -> getString(locale, "mime.type.filter.placeholder")),
+				new BooleanField(Field.copyImages.getName(), argument.isCopyImages(),
+						locale -> getString(locale, "copy.images"),
+						locale -> getString(locale, "copy.images.description"), false));
 	}
 
 	/*
@@ -460,6 +468,19 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				} catch (ClassCastException e) {
 					updatedStandardError(
 							"The argument '" + Field.mimeTypeFilter.getName() + "' is not of string type.");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
+				// copy images argument
+				try {
+					final BooleanArgument copyImagesArgument = modelArgument.getArgument(BooleanArgument.class,
+							Field.copyImages.getName());
+
+					if (copyImagesArgument != null && copyImagesArgument.getValue().isPresent())
+						argument.setCopyImages(copyImagesArgument.getValue().get());
+				} catch (ClassCastException e) {
+					updatedStandardError("The argument '" + Field.copyImages.getName() + "' is not of boolean type.");
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
@@ -771,6 +792,48 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		};
 	}
 
+	private void getImages(Framework framework, MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+			MetsParser.Root root, List<LarexFile> larexFiles) {
+		// mets pages
+		final List<Set<String>> pages = new ArrayList<>();
+
+		for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap().getPhysicalSequence()
+				.getPages())
+			try {
+				Set<String> fieldIds = new HashSet<>();
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+					fieldIds.add(fieldId.getId());
+
+				pages.add(fieldIds);
+			} catch (Exception e) {
+				// Ignore malformed mets page
+			}
+
+		// mets file groups
+		final Hashtable<String, MetsParser.Root.FileGroup> fileGroups = new Hashtable<>();
+
+		for (MetsParser.Root.FileGroup fileGroup : root.getFileGroups())
+			fileGroups.put(fileGroup.getId(), fileGroup);
+
+		// TODO: For each image from larexFiles, search the image recursively
+		// TODO: search page, remove larexFile from it
+		Set<String> page = pages.get(0);
+		MetsParser.Root.FileGroup.File file = getImage(metsFrameworkFileGroup, root.getFileGroups(), page,
+				new ArrayList<>(framework.getSnapshotTrack()));
+
+	}
+
+	private MetsParser.Root.FileGroup.File getImage(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+			List<MetsParser.Root.FileGroup> fileGroups, Set<String> page, List<Integer> snapshotTrack) {
+
+		snapshotTrack.remove(snapshotTrack.size() - 1);
+		String fileGroup = metsFrameworkFileGroup.getFileGroup(snapshotTrack);
+
+		// Search recursively if not found in fileGroups
+		
+		return null;
+	}
+
 	/**
 	 * Defines launcher arguments with default values.
 	 *
@@ -791,6 +854,12 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		private String mimeTypeFilter = pageXmlMimeType;
 
 		/**
+		 * True if copy the images.
+		 */
+		@JsonProperty("copy-images")
+		private boolean isCopyImages = true;
+
+		/**
 		 * Returns the mime type filter.
 		 *
 		 * @return The mime type filter.
@@ -808,6 +877,27 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		 */
 		public void setMimeTypeFilter(String mimeTypeFilter) {
 			this.mimeTypeFilter = mimeTypeFilter == null ? null : mimeTypeFilter.trim();
+		}
+
+		/**
+		 * Returns true if copy the images.
+		 *
+		 * @return True if copy the images.
+		 * @since 1.8
+		 */
+		@JsonGetter("copy-images")
+		public boolean isCopyImages() {
+			return isCopyImages;
+		}
+
+		/**
+		 * Set to true if copy the images.
+		 *
+		 * @param isCopyImages The copy flag to set.
+		 * @since 1.8
+		 */
+		public void setCopyImages(boolean isCopyImages) {
+			this.isCopyImages = isCopyImages;
 		}
 
 	}
