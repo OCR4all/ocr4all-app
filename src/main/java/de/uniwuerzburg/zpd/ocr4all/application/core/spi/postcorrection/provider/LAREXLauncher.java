@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
@@ -33,8 +34,10 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.BooleanField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Model;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.BooleanArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.StringArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
@@ -262,7 +265,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * @since 1.8
 	 */
 	private enum Field {
-		mimeTypeFilter("mime-type-filter");
+		mimeTypeFilter("mime-type-filter"), copyImages("copy-images");
 
 		/**
 		 * The name.
@@ -415,9 +418,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	public Model getModel(Target target) {
 		LauncherArgument argument = new LauncherArgument();
 
-		return new Model(new StringField(Field.mimeTypeFilter.getName(), argument.getMimeTypeFilter(),
-				locale -> getString(locale, "mime.type.filter.description"),
-				locale -> getString(locale, "mime.type.filter.placeholder")));
+		return new Model(
+				new StringField(Field.mimeTypeFilter.getName(), argument.getMimeTypeFilter(),
+						locale -> getString(locale, "mime.type.filter.description"),
+						locale -> getString(locale, "mime.type.filter.placeholder")),
+				new BooleanField(Field.copyImages.getName(), argument.isCopyImages(),
+						locale -> getString(locale, "copy.images"),
+						locale -> getString(locale, "copy.images.description"), false));
 	}
 
 	/*
@@ -460,6 +467,19 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				} catch (ClassCastException e) {
 					updatedStandardError(
 							"The argument '" + Field.mimeTypeFilter.getName() + "' is not of string type.");
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
+
+				// copy images argument
+				try {
+					final BooleanArgument copyImagesArgument = modelArgument.getArgument(BooleanArgument.class,
+							Field.copyImages.getName());
+
+					if (copyImagesArgument != null && copyImagesArgument.getValue().isPresent())
+						argument.setCopyImages(copyImagesArgument.getValue().get());
+				} catch (ClassCastException e) {
+					updatedStandardError("The argument '" + Field.copyImages.getName() + "' is not of boolean type.");
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
@@ -598,7 +618,8 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 
 						try {
 							Files.copy(inputFile,
-									Paths.get(framework.getTemporary().toString(), larexFile.getTargetFilename()),
+									Paths.get(framework.getTemporary().toString(),
+											larexFile.getXmlContainer().getTargetFilename()),
 									StandardCopyOption.REPLACE_EXISTING);
 						} catch (IOException e) {
 							updatedStandardError("Cannot copy the required input file '" + inputFile.toString()
@@ -609,6 +630,36 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 
 						larexFiles.add(larexFile);
 					}
+				}
+
+				if (argument.isCopyImages()) {
+					setImages(framework, metsFrameworkFileGroup, root, larexFiles);
+
+					for (LarexFile larexFile : larexFiles)
+						if (larexFile.isImageContainerSet()) {
+							final Path inputFile = Paths.get(processorWorkspace.toString(),
+									larexFile.getImageContainer().getSourceFile().getLocation().getPath());
+
+							if (!Files.exists(inputFile) || Files.isDirectory(inputFile)) {
+								updatedStandardError(
+										"The required input image '" + inputFile.toString() + "' is not available.");
+
+								return ProcessServiceProvider.Processor.State.interrupted;
+							}
+
+							try {
+								Files.copy(inputFile,
+										Paths.get(framework.getTemporary().toString(),
+												larexFile.getImageContainer().getTargetFilename()),
+										StandardCopyOption.REPLACE_EXISTING);
+							} catch (IOException e) {
+								updatedStandardError("Cannot copy the required input image '" + inputFile.toString()
+										+ "' to temporary directory - " + e.getMessage() + ".");
+
+								return ProcessServiceProvider.Processor.State.interrupted;
+							}
+
+						}
 				}
 
 				callback.updatedProgress(0.80F);
@@ -623,10 +674,22 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardOutput(
 							"Move the images to sandbox snapshot " + framework.getOutput().toString() + ".");
 
-					for (LarexFile larexFile : larexFiles)
-						Files.move(Paths.get(framework.getTemporary().toString(), larexFile.getTargetFilename()),
-								Paths.get(framework.getOutput().toString(), larexFile.getTargetFilename()),
+					for (LarexFile larexFile : larexFiles) {
+						Files.move(
+								Paths.get(framework.getTemporary().toString(),
+										larexFile.getXmlContainer().getTargetFilename()),
+								Paths.get(framework.getOutput().toString(),
+										larexFile.getXmlContainer().getTargetFilename()),
 								StandardCopyOption.REPLACE_EXISTING);
+
+						if (larexFile.isImageContainerSet())
+							Files.move(
+									Paths.get(framework.getTemporary().toString(),
+											larexFile.getImageContainer().getTargetFilename()),
+									Paths.get(framework.getOutput().toString(),
+											larexFile.getImageContainer().getTargetFilename()),
+									StandardCopyOption.REPLACE_EXISTING);
+					}
 
 				} catch (Exception e) {
 					updatedStandardError("Can not move files to sandbox - " + e.getMessage() + ".");
@@ -648,18 +711,36 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					// build mets sections
 					final StringBuffer metsFileBuffer = new StringBuffer();
 					final String sandboxRelativePath = framework.getOutputRelativeProcessorWorkspace().toString();
-					final Hashtable<String, String> targetPages = new Hashtable<>();
+					final Hashtable<String, List<String>> targetPages = new Hashtable<>();
 					for (LarexFile larexFile : larexFiles) {
-						targetPages.put(larexFile.getSourceFile().getId(), larexFile.getTargetFileID());
+						final LarexFile.Container xmlContainer = larexFile.getXmlContainer();
 
-						metsFileBuffer.append(
-								metsFileTemplate.replace(MetsPattern.file_id.getPattern(), larexFile.getTargetFileID())
+						List<String> targetPage = new ArrayList<>();
+						targetPage.add(xmlContainer.getTargetFileID());
+						targetPages.put(xmlContainer.getSourceFile().getId(), targetPage);
 
-										.replace(MetsPattern.file_mime_type.getPattern(),
-												larexFile.getSourceFile().getMimeType())
+						metsFileBuffer.append(metsFileTemplate
+								.replace(MetsPattern.file_id.getPattern(), xmlContainer.getTargetFileID())
 
-										.replace(MetsPattern.file_name.getPattern(),
-												sandboxRelativePath + "/" + larexFile.getTargetFilename()));
+								.replace(MetsPattern.file_mime_type.getPattern(),
+										xmlContainer.getSourceFile().getMimeType())
+
+								.replace(MetsPattern.file_name.getPattern(),
+										sandboxRelativePath + "/" + xmlContainer.getTargetFilename()));
+
+						if (larexFile.isImageContainerSet()) {
+							final LarexFile.Container imageContainer = larexFile.getImageContainer();
+							targetPage.add(imageContainer.getTargetFileID());
+
+							metsFileBuffer.append(metsFileTemplate
+									.replace(MetsPattern.file_id.getPattern(), imageContainer.getTargetFileID())
+
+									.replace(MetsPattern.file_mime_type.getPattern(),
+											imageContainer.getSourceFile().getMimeType())
+
+									.replace(MetsPattern.file_name.getPattern(),
+											sandboxRelativePath + "/" + imageContainer.getTargetFilename()));
+						}
 					}
 
 					// update mets file
@@ -735,7 +816,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								} else if (MetsTag.fileId.isOpenTag(line))
 									for (String fileGroup : targetPages.keySet())
 										if (line.contains("FILEID=\"" + fileGroup + "\""))
-											pageFileIds.add(targetPages.get(fileGroup));
+											pageFileIds.addAll(targetPages.get(fileGroup));
 
 								break;
 							case fileId:
@@ -772,6 +853,151 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	}
 
 	/**
+	 * Set the images for the LAREX files.
+	 * 
+	 * @param framework              The framework for the processor.
+	 * @param metsFrameworkFileGroup The mets file group for the framework.
+	 * @param root                   The mets deserialised root object.
+	 * @param larexFiles             The LAREX files.
+	 * @since 1.8
+	 */
+	private void setImages(Framework framework, MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+			MetsParser.Root root, List<LarexFile> larexFiles) {
+		// mets pages
+		final List<Set<String>> pages = new ArrayList<>();
+
+		for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap().getPhysicalSequence()
+				.getPages())
+			try {
+				Set<String> fieldIds = new HashSet<>();
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+					fieldIds.add(fieldId.getId());
+
+				pages.add(fieldIds);
+			} catch (Exception e) {
+				// Ignore malformed mets page
+			}
+
+		final Hashtable<String, Hashtable<String, MetsParser.Root.FileGroup.File>> fileGroups = new Hashtable<>();
+		for (MetsParser.Root.FileGroup fileGroup : root.getFileGroups()) {
+			Hashtable<String, MetsParser.Root.FileGroup.File> files = new Hashtable<>();
+			for (MetsParser.Root.FileGroup.File file : fileGroup.getFiles())
+				files.put(file.getId(), file);
+
+			fileGroups.put(fileGroup.getId(), files);
+		}
+
+		for (LarexFile larexFile : larexFiles) {
+			final LarexFile.Container xmlContainer = larexFile.getXmlContainer();
+
+			/*
+			 * Search the page.
+			 */
+			Set<String> page = null;
+			for (Set<String> search : pages)
+				if (search.remove(xmlContainer.getSourceFile().getId())) {
+					page = search;
+
+					break;
+				}
+
+			if (page != null) {
+				LarexImage larexImage = getImage(metsFrameworkFileGroup, fileGroups, page,
+						new ArrayList<>(framework.getTarget().getSandbox().getSnapshotTrack()));
+
+				if (larexImage != null)
+					larexFile.setImageContainer(larexImage.getSnapshotTrack(), larexImage.getFile());
+			}
+		}
+	}
+
+	/**
+	 * Search for the Larex image.
+	 * 
+	 * @param metsFrameworkFileGroup The framework for the processor.
+	 * @param fileGroups             The mets file groups.
+	 * @param page                   The mets page.
+	 * @param snapshotTrack          The snapshot track.
+	 * @return The Larex image. Null if no image was found.
+	 * @since 1.8
+	 */
+	private LarexImage getImage(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+			Hashtable<String, Hashtable<String, MetsParser.Root.FileGroup.File>> fileGroups, Set<String> page,
+			List<Integer> snapshotTrack) {
+
+		Hashtable<String, MetsParser.Root.FileGroup.File> fileGroup = fileGroups
+				.get(metsFrameworkFileGroup.getFileGroup(snapshotTrack));
+		if (fileGroup != null)
+			for (String fileId : page)
+				if (fileGroup.containsKey(fileId) && fileGroup.get(fileId).isMimeTypeImage())
+					return new LarexImage(snapshotTrack, fileGroup.get(fileId));
+
+		// Search recursively if not found in fileGroups
+		if (snapshotTrack.isEmpty())
+			return null;
+		else {
+			snapshotTrack.remove(snapshotTrack.size() - 1);
+
+			return getImage(metsFrameworkFileGroup, fileGroups, page, snapshotTrack);
+		}
+
+	}
+
+	/**
+	 * LarexImage is an immutable class that defines larex images.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	private static class LarexImage {
+		/**
+		 * The snapshot track.
+		 */
+		private final List<Integer> snapshotTrack;
+
+		/**
+		 * The mets file.
+		 */
+		private final MetsParser.Root.FileGroup.File file;
+
+		/**
+		 * Creates a larex image.
+		 * 
+		 * @param snapshotTrack The snapshot track.
+		 * @param file          The mets file.
+		 * @since 1.8
+		 */
+		public LarexImage(List<Integer> snapshotTrack, File file) {
+			super();
+
+			this.snapshotTrack = snapshotTrack;
+			this.file = file;
+		}
+
+		/**
+		 * Returns the snapshot track.
+		 *
+		 * @return The snapshot track.
+		 * @since 1.8
+		 */
+		public List<Integer> getSnapshotTrack() {
+			return snapshotTrack;
+		}
+
+		/**
+		 * Returns the mets file.
+		 *
+		 * @return The mets file.
+		 * @since 1.8
+		 */
+		public MetsParser.Root.FileGroup.File getFile() {
+			return file;
+		}
+
+	}
+
+	/**
 	 * Defines launcher arguments with default values.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -789,6 +1015,12 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		 */
 		@JsonProperty("mime-type-filter")
 		private String mimeTypeFilter = pageXmlMimeType;
+
+		/**
+		 * True if copy the images.
+		 */
+		@JsonProperty("copy-images")
+		private boolean isCopyImages = true;
 
 		/**
 		 * Returns the mime type filter.
@@ -810,6 +1042,27 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			this.mimeTypeFilter = mimeTypeFilter == null ? null : mimeTypeFilter.trim();
 		}
 
+		/**
+		 * Returns true if copy the images.
+		 *
+		 * @return True if copy the images.
+		 * @since 1.8
+		 */
+		@JsonGetter("copy-images")
+		public boolean isCopyImages() {
+			return isCopyImages;
+		}
+
+		/**
+		 * Set to true if copy the images.
+		 *
+		 * @param isCopyImages The copy flag to set.
+		 * @since 1.8
+		 */
+		public void setCopyImages(boolean isCopyImages) {
+			this.isCopyImages = isCopyImages;
+		}
+
 	}
 
 	/**
@@ -821,29 +1074,31 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 */
 	private static class LarexFile {
 		/**
+		 * The container type.
+		 */
+		private enum ContainerType {
+			xml, image
+		}
+
+		/**
 		 * The next file index.
 		 */
 		private static int nextFileIndex = 0;
 
 		/**
-		 * The file index.
+		 * The mets framework file group.
 		 */
-		private final int fileIndex;
+		private final MetsUtils.FrameworkFileGroup metsFrameworkFileGroup;
 
 		/**
-		 * The source mets file.
+		 * The xml container.
 		 */
-		private final MetsParser.Root.FileGroup.File sourceFile;
+		private final Container xmlContainer;
 
 		/**
-		 * The target file id.
+		 * The image container.
 		 */
-		private final String targetFileID;
-
-		/**
-		 * The target file name.
-		 */
-		private final String targetFilename;
+		private Container imageContainer = null;
 
 		/**
 		 * Creates a LAREX file.
@@ -852,53 +1107,157 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		 * @param sourceFile             The source mets file.
 		 * @since 1.8
 		 */
-		public LarexFile(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup, File sourceFile) {
+		public LarexFile(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+				MetsParser.Root.FileGroup.File sourceFile) {
 			super();
+			this.metsFrameworkFileGroup = metsFrameworkFileGroup;
 
-			fileIndex = ++nextFileIndex;
-
-			this.sourceFile = sourceFile;
-
-			targetFileID = metsFrameworkFileGroup.getOutput()
-					+ (sourceFile.getId().startsWith(metsFrameworkFileGroup.getInput())
-							? sourceFile.getId().substring(metsFrameworkFileGroup.getInput().length())
-							: "_" + fileIndex);
-
-			final String sourceFilename = Paths.get(sourceFile.getLocation().getPath()).getFileName().toString();
-			targetFilename = sourceFilename.startsWith(metsFrameworkFileGroup.getInput())
-					? metsFrameworkFileGroup.getOutput()
-							+ sourceFilename.substring(metsFrameworkFileGroup.getInput().length())
-					: sourceFilename;
+			xmlContainer = new Container(ContainerType.xml, sourceFile, null, this.metsFrameworkFileGroup.getInput(),
+					this.metsFrameworkFileGroup.getOutput());
 		}
 
 		/**
-		 * Returns the source mets file.
+		 * Returns the xml container.
 		 *
-		 * @return The source mets file.
+		 * @return The xml container.
 		 * @since 1.8
 		 */
-		public MetsParser.Root.FileGroup.File getSourceFile() {
-			return sourceFile;
+		public Container getXmlContainer() {
+			return xmlContainer;
 		}
 
 		/**
-		 * Returns the target file id.
+		 * Returns true if the image container is set.
 		 *
-		 * @return The target file id.
+		 * @return True if the image container is set.
 		 * @since 1.8
 		 */
-		public String getTargetFileID() {
-			return targetFileID;
+		public boolean isImageContainerSet() {
+			return imageContainer != null;
 		}
 
 		/**
-		 * Returns the target file name.
-		 * 
-		 * @return The target file name.
+		 * Returns the image container.
+		 *
+		 * @return The image container.
 		 * @since 1.8
 		 */
-		public String getTargetFilename() {
-			return targetFilename;
+		public Container getImageContainer() {
+			return imageContainer;
+		}
+
+		/**
+		 * Set the image container.
+		 *
+		 * @param imageContainer The image container to set.
+		 * @since 1.8
+		 */
+		public void setImageContainer(List<Integer> track, MetsParser.Root.FileGroup.File sourceFile) {
+			imageContainer = new Container(ContainerType.image, sourceFile, xmlContainer.getTargetFileCoreID(),
+					metsFrameworkFileGroup.getFileGroup(track), metsFrameworkFileGroup.getOutput());
+		}
+
+		/**
+		 * Container is an immutable class that defines containers.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class Container {
+			/**
+			 * The file index.
+			 */
+			private final int fileIndex;
+
+			/**
+			 * The container type.
+			 */
+			private final ContainerType type;
+
+			/**
+			 * The source mets file.
+			 */
+			private final MetsParser.Root.FileGroup.File sourceFile;
+
+			/**
+			 * The target file core id.
+			 */
+			private final String targetFileCoreID;
+
+			/**
+			 * The target file name.
+			 */
+			private final String targetFilename;
+
+			/**
+			 * Creates a container.
+			 * 
+			 * @param type             The container type.
+			 * @param sourceFile       The source mets file.
+			 * @param targetFileCoreID The source mets file.
+			 * @param targetFileCoreID The target file id.
+			 * @param targetFilename   The target file name.
+			 * @since 1.8
+			 */
+			private Container(ContainerType type, MetsParser.Root.FileGroup.File sourceFile, String targetFileCoreID,
+					String inputFileGroup, String outputFileGroup) {
+				super();
+
+				this.fileIndex = ++nextFileIndex;
+				this.type = type;
+				this.sourceFile = sourceFile;
+
+				this.targetFileCoreID = targetFileCoreID != null ? targetFileCoreID
+						: outputFileGroup + (sourceFile.getId().startsWith(inputFileGroup)
+								? sourceFile.getId().substring(inputFileGroup.length())
+								: "_" + fileIndex);
+
+				final String sourceFilename = Paths.get(sourceFile.getLocation().getPath()).getFileName().toString();
+				targetFilename = sourceFilename.startsWith(inputFileGroup)
+						? outputFileGroup + sourceFilename.substring(inputFileGroup.length())
+						: sourceFilename;
+			}
+
+			/**
+			 * Returns the source mets file.
+			 *
+			 * @return The source mets file.
+			 * @since 1.8
+			 */
+			public MetsParser.Root.FileGroup.File getSourceFile() {
+				return sourceFile;
+			}
+
+			/**
+			 * Returns the target file core id.
+			 *
+			 * @return The target file core id.
+			 * @since 1.8
+			 */
+			public String getTargetFileCoreID() {
+				return targetFileCoreID;
+			}
+
+			/**
+			 * Returns the target file id.
+			 *
+			 * @return The target file id.
+			 * @since 1.8
+			 */
+			public String getTargetFileID() {
+				return targetFileCoreID + "_" + type.name();
+			}
+
+			/**
+			 * Returns the target file name.
+			 * 
+			 * @return The target file name.
+			 * @since 1.8
+			 */
+			public String getTargetFilename() {
+				return targetFilename;
+			}
 		}
 	}
 }
