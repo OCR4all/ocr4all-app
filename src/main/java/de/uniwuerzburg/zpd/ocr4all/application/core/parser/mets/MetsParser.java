@@ -567,6 +567,16 @@ public class MetsParser {
 				}
 
 				/**
+				 * Returns true if the mime type is an image.
+				 *
+				 * @return True if the mime type is an image.
+				 * @since 1.8
+				 */
+				public boolean isMimeTypeImage() {
+					return mimeType != null && mimeType.startsWith("image/");
+				}
+
+				/**
 				 * Returns the mime type.
 				 *
 				 * @return The mime type.
