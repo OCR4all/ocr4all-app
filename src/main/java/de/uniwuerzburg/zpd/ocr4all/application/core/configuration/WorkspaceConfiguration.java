@@ -27,6 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.DisabledServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.LazyInitializedServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -546,6 +547,12 @@ public class WorkspaceConfiguration extends CoreFolder {
 		private final Hashtable<String, LazyInitializedServiceProvider> lazyInitializedServiceProviders = new Hashtable<>();
 
 		/**
+		 * The task executor service providers, this means, the scheduler service
+		 * executes the service providers in a separate pool of threads.
+		 */
+		private final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = new Hashtable<>();
+
+		/**
 		 * Creates a configuration for the workspace.
 		 * 
 		 * @param properties       The configuration properties for the workspace.
@@ -574,7 +581,8 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 			// Loads the service provider configuration file
 			serviceProviderConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getProvider()),
-					Type.service_provider_disabled_v1, Type.service_provider_lazy_initialized_v1);
+					Type.service_provider_disabled_v1, Type.service_provider_lazy_initialized_v1,
+					Type.service_provider_task_executor_v1);
 			loadServiceProviderConfiguration();
 		}
 
@@ -850,7 +858,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 						else if (identifier instanceof LazyInitializedServiceProvider)
 							lazyInitializedServiceProviders.put(identifier.getId(),
 									(LazyInitializedServiceProvider) identifier);
-						else
+						else if (identifier instanceof TaskExecutorServiceProvider) {
+							TaskExecutorServiceProvider taskExecutorServiceProvider = (TaskExecutorServiceProvider) identifier;
+							if (taskExecutorServiceProvider.getThreadName() != null)
+								taskExecutorServiceProviders.put(identifier.getId(), taskExecutorServiceProvider);
+						} else
 							logger.warn("The class type '" + identifier.getClass().getName()
 									+ "' is not implemented for service provider configuration.");
 					}
@@ -869,6 +881,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 			try {
 				List<Entity> entities = new ArrayList<>(disabledServiceProviders.values());
 				entities.addAll(lazyInitializedServiceProviders.values());
+				entities.addAll(taskExecutorServiceProviders.values());
 
 				serviceProviderConfigurationManager.persist(entities);
 
