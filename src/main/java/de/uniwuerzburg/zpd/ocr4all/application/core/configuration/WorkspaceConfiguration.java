@@ -479,6 +479,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 */
 	public class Configuration extends CoreFolder {
 		/**
+		 * True if the application needs to be restarted due to configuration updates.
+		 */
+		private boolean isRestart;
+
+		/**
 		 * The version.
 		 */
 		private Version version;
@@ -858,11 +863,10 @@ public class WorkspaceConfiguration extends CoreFolder {
 						else if (identifier instanceof LazyInitializedServiceProvider)
 							lazyInitializedServiceProviders.put(identifier.getId(),
 									(LazyInitializedServiceProvider) identifier);
-						else if (identifier instanceof TaskExecutorServiceProvider) {
-							TaskExecutorServiceProvider taskExecutorServiceProvider = (TaskExecutorServiceProvider) identifier;
-							if (taskExecutorServiceProvider.getThreadName() != null)
-								taskExecutorServiceProviders.put(identifier.getId(), taskExecutorServiceProvider);
-						} else
+						else if (identifier instanceof TaskExecutorServiceProvider)
+							taskExecutorServiceProviders.put(identifier.getId(),
+									(TaskExecutorServiceProvider) identifier);
+						else
 							logger.warn("The class type '" + identifier.getClass().getName()
 									+ "' is not implemented for service provider configuration.");
 					}
@@ -977,6 +981,98 @@ public class WorkspaceConfiguration extends CoreFolder {
 					persistServiceProviderConfiguration();
 				}
 			}
+		}
+
+		/**
+		 * Returns the task executor pool size. The key is the thread name and the value
+		 * its core pool size.
+		 *
+		 * @return The task executor pool size.
+		 * @since 1.8
+		 */
+		public Hashtable<String, Integer> getTaskExecutorPoolSize() {
+			Hashtable<String, Integer> poolSize = new Hashtable<>();
+			for (TaskExecutorServiceProvider executor : taskExecutorServiceProviders.values())
+				poolSize.put(executor.getThreadName(),
+						poolSize.contains(executor.getThreadName())
+								? Math.max(poolSize.get(executor.getThreadName()), executor.getCorePoolSize())
+								: executor.getCorePoolSize());
+
+			return poolSize;
+		}
+
+		/**
+		 * Returns the task executor service providers, this means, the scheduler
+		 * service executes the service providers in a separate pool of threads. The key
+		 * is the service provider id.
+		 * 
+		 * @return The task executor service providers.
+		 * @since 1.8
+		 */
+		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProvider() {
+			return new Hashtable<>(taskExecutorServiceProviders);
+		}
+
+		/**
+		 * Removes the task executor for given service provider.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void removeTaskExecutorServiceProvider(String id) {
+			if (id != null && !id.isBlank() && taskExecutorServiceProviders.remove(id.trim()) != null) {
+				isRestart = true;
+
+				persistServiceProviderConfiguration();
+			}
+		}
+
+		/**
+		 * Set the task executor service providers, this means, the scheduler service
+		 * executes the service provider in a separate pool of threads.
+		 * 
+		 * @param id           The service provider id.
+		 * @param threadName   The thread name. It is be trimmed. If null, the task
+		 *                     executor is removed from service provider.
+		 * @param corePoolSize The core pool size. The value must be greater than 0.
+		 * @param user         The user.
+		 * @since 1.8
+		 */
+		public void setTaskExecutorServiceProvider(String id, String threadName, int corePoolSize, String user) {
+			if (threadName == null || threadName.isBlank())
+				removeTaskExecutorServiceProvider(id);
+			else if (id != null && !id.isBlank()) {
+				isRestart = true;
+
+				id = id.trim();
+
+				taskExecutorServiceProviders.put(id,
+						new TaskExecutorServiceProvider(user, id, threadName, corePoolSize));
+
+				persistServiceProviderConfiguration();
+			}
+		}
+
+		/**
+		 * Returns true if the application needs to be restarted due to configuration
+		 * updates.
+		 *
+		 * @return True if the application needs to be restarted due to configuration
+		 *         updates.
+		 * @since 1.8
+		 */
+		public boolean isRestart() {
+			return isRestart;
+		}
+
+		/**
+		 * Set the isRestart.
+		 *
+		 * @param isRestart The isRestart to set.
+		 * @since 1.8
+		 */
+		public void setRestart(boolean isRestart) {
+			this.isRestart = isRestart;
 		}
 
 		/**
