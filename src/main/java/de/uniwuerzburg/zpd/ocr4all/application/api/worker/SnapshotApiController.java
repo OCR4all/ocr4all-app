@@ -277,13 +277,14 @@ public class SnapshotApiController extends CoreApiController {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
 		try {
-			Snapshot snapshot = authorization.sandbox.getSnapshot(request.getTrack());
+			final Snapshot snapshot = authorization.sandbox.getSnapshot(request.getTrack());
+			final SnapshotResponse snapshotResponse = new SnapshotResponse(snapshot);
 
 			return (snapshot.getConfiguration().isRoot()
 					? authorization.sandbox.getConfiguration().getSnapshots().reset()
 					: snapshot.getConfiguration().getParent()
 							.removeDerived(request.getTrack().get(request.getTrack().size() - 1)))
-									? ResponseEntity.ok().body(new SnapshotResponse(snapshot))
+									? ResponseEntity.ok().body(snapshotResponse)
 									: ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);

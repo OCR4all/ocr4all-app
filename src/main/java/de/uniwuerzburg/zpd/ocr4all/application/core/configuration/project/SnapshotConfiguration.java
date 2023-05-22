@@ -477,6 +477,7 @@ public class SnapshotConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public boolean removeDerived(int id) {
+		// TODO: remove information from mets file
 		return id > 0 && delete(Paths.get(derivedContainer.getFolder().toString(), "" + id));
 	}
 
