@@ -9,15 +9,16 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.workflow;
 
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.View;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
 
 /**
- * WorkflowCoreData is an immutable class that defines workflow core data.
+ * WorkflowCoreData is an immutable class that defines workflow data.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class WorkflowCoreData {
+public class WorkflowData {
 	/**
 	 * The metadata.
 	 */
@@ -29,17 +30,24 @@ public class WorkflowCoreData {
 	private final View view;
 
 	/**
-	 * Creates a workflow core data.
+	 * The workflow.
+	 */
+	private final Workflow workflow;
+
+	/**
+	 * Creates a workflow data.
 	 * 
 	 * @param metadata The metadata.
 	 * @param view     The view.
+	 * @param workflow The workflow.
 	 * @since 1.8
 	 */
-	public WorkflowCoreData(Metadata metadata, View view) {
+	public WorkflowData(Metadata metadata, View view, Workflow workflow) {
 		super();
-		
+
 		this.metadata = metadata;
 		this.view = view;
+		this.workflow = workflow;
 	}
 
 	/**
@@ -60,6 +68,16 @@ public class WorkflowCoreData {
 	 */
 	public View getView() {
 		return view;
+	}
+
+	/**
+	 * Returns the workflow.
+	 *
+	 * @return The workflow.
+	 * @since 1.8
+	 */
+	public Workflow getWorkflow() {
+		return workflow;
 	}
 
 }
