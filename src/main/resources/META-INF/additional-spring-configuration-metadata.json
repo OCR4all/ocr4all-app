@@ -51,9 +51,14 @@
 			"description": "ocr4all application administrator group. This is optional, the default value is admin."
 		},
 		{
-			"name": "ocr4all.application.task.executor.pool.size.core",
+			"name": "ocr4all.application.thread.pool.size.task",
 			"type": "java.lang.Integer",
-			"description": "ocr4all application task executor core pool size. This is optional, the default value is 6."
+			"description": "ocr4all application thread pool size for task. This is optional, the default value is 6."
+		},
+		{
+			"name": "ocr4all.application.thread.pool.size.workflow",
+			"type": "java.lang.Integer",
+			"description": "ocr4all application thread pool size for workflow. This is optional, the default value is 12."
 		},
 		{
 			"name": "ocr4all.application.security.groups.coordinator",

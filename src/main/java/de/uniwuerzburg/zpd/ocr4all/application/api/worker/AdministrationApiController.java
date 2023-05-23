@@ -572,10 +572,10 @@ public class AdministrationApiController extends CoreApiController {
 			private long monitorInterval;
 
 			/**
-			 * The task executor.
+			 * The thread pool size.
 			 */
-			@JsonProperty("task-executor")
-			private TaskExecutor taskExecutor;
+			@JsonProperty("thread-pool-size")
+			private ThreadPoolSize threadPoolSize;
 
 			/**
 			 * Default constructor for an application response for the api.
@@ -596,7 +596,8 @@ public class AdministrationApiController extends CoreApiController {
 				locale = configuration.getLocale();
 				viewLanguages = configuration.getViewLanguages();
 				monitorInterval = configuration.getMonitorInterval();
-				taskExecutor = new TaskExecutor(configuration.getTaskExecutorProperties().getCorePoolSize());
+				threadPoolSize = new ThreadPoolSize(configuration.getThreadPoolSizeProperties().getTask(),
+						configuration.getThreadPoolSizeProperties().getWorkflow());
 			}
 
 			/**
@@ -762,69 +763,95 @@ public class AdministrationApiController extends CoreApiController {
 			}
 
 			/**
-			 * Returns the task executor.
+			 * Returns the thread pool size.
 			 *
-			 * @return The task executor.
+			 * @return The thread pool size.
 			 * @since 1.8
 			 */
-			public TaskExecutor getTaskExecutor() {
-				return taskExecutor;
+			public ThreadPoolSize getThreadPoolSize() {
+				return threadPoolSize;
 			}
 
 			/**
-			 * Set the task executor.
+			 * Set the thread pool size.
 			 *
-			 * @param taskExecutor The task executor to set.
+			 * @param threadPoolSize The thread pool size to set.
 			 * @since 1.8
 			 */
-			public void setTaskExecutor(TaskExecutor taskExecutor) {
-				this.taskExecutor = taskExecutor;
+			public void setThreadPoolSize(ThreadPoolSize threadPoolSize) {
+				this.threadPoolSize = threadPoolSize;
 			}
 
 			/**
-			 * Defines task executor.
+			 * Defines thread pool sizes.
 			 *
 			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 			 * @version 1.0
 			 * @since 1.8
 			 */
-			public class TaskExecutor {
+			public class ThreadPoolSize {
 				/**
-				 * The task executor core pool size.
+				 * The task pool size.
 				 */
-				@JsonProperty("core-pool-size")
-				private int corePoolSize;
+				private int task;
 
 				/**
-				 * Creates a task executor.
+				 * The workflow pool size.
+				 */
+				private int workflow;
+
+				/**
+				 * Creates a thread pool size.
 				 * 
-				 * @param corePoolSize The task executor core pool size.
+				 * @param task     The task pool size.
+				 * @param workflow The workflow pool size.
 				 * @since 1.8
 				 */
-				public TaskExecutor(int corePoolSize) {
+				public ThreadPoolSize(int task, int workflow) {
 					super();
 
-					this.corePoolSize = corePoolSize;
+					this.task = task;
+					this.workflow = workflow;
 				}
 
 				/**
-				 * Returns the task executor core pool size.
+				 * Returns the task pool size.
 				 *
-				 * @return The task executor core pool size.
+				 * @return The task pool size.
 				 * @since 1.8
 				 */
-				public int getCorePoolSize() {
-					return corePoolSize;
+				public int getTask() {
+					return task;
 				}
 
 				/**
-				 * Set the task executor core pool size.
+				 * Set the task pool size.
 				 *
-				 * @param corePoolSize The core pool size to set.
+				 * @param size The size set.
 				 * @since 1.8
 				 */
-				public void setCorePoolSize(int corePoolSize) {
-					this.corePoolSize = corePoolSize;
+				public void setTask(int size) {
+					task = size;
+				}
+
+				/**
+				 * Returns the workflow pool size.
+				 *
+				 * @return The workflow pool size.
+				 * @since 1.8
+				 */
+				public int getWorkflow() {
+					return workflow;
+				}
+
+				/**
+				 * Set the workflow pool size.
+				 *
+				 * @param size The size to set.
+				 * @since 1.8
+				 */
+				public void setWorkflow(int size) {
+					workflow = size;
 				}
 
 			}

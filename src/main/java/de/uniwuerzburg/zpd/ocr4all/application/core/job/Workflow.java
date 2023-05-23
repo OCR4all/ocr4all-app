@@ -142,6 +142,16 @@ public class Workflow extends Process {
 
 	/*
 	 * (non-Javadoc)
+	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getThreadPool()
+	 */
+	@Override
+	public SchedulerService.ThreadPool getThreadPool() {
+		return SchedulerService.ThreadPool.workflow;
+	}
+
+	/*
+	 * (non-Javadoc)
 	 *
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#execute()
 	 */

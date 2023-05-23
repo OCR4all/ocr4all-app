@@ -27,6 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.DisabledServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.LazyInitializedServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 
@@ -470,6 +471,26 @@ public class WorkspaceConfiguration extends CoreFolder {
 	}
 
 	/**
+	 * Defines functional interfaces for callback of task executor pool size
+	 * updates.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	@FunctionalInterface
+	public interface TaskExecutorPoolSizeCallback {
+		/**
+		 * Updates the task executor pool size.
+		 * 
+		 * @param threadName   The thread name.
+		 * @param corePoolSize The core pool size. If 0, the task executor was removed.
+		 * @since 1.8
+		 */
+		public void update(String threadName, int corePoolSize);
+	}
+
+	/**
 	 * Defines configurations for the workspaces.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -546,6 +567,17 @@ public class WorkspaceConfiguration extends CoreFolder {
 		private final Hashtable<String, LazyInitializedServiceProvider> lazyInitializedServiceProviders = new Hashtable<>();
 
 		/**
+		 * The task executor service providers, this means, the scheduler service
+		 * executes the service providers in a separate pool of threads.
+		 */
+		private final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = new Hashtable<>();
+
+		/**
+		 * The callbacks of task executor pool size updates.
+		 */
+		private final List<TaskExecutorPoolSizeCallback> taskExecutorPoolSizeCallbacks = new ArrayList<>();
+
+		/**
 		 * Creates a configuration for the workspace.
 		 * 
 		 * @param properties       The configuration properties for the workspace.
@@ -574,7 +606,8 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 			// Loads the service provider configuration file
 			serviceProviderConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getProvider()),
-					Type.service_provider_disabled_v1, Type.service_provider_lazy_initialized_v1);
+					Type.service_provider_disabled_v1, Type.service_provider_lazy_initialized_v1,
+					Type.service_provider_task_executor_v1);
 			loadServiceProviderConfiguration();
 		}
 
@@ -818,6 +851,17 @@ public class WorkspaceConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Register the callback for task executor pool size updates.
+		 * 
+		 * @param callback The callback to register.
+		 * @since 1.8
+		 */
+		public void register(TaskExecutorPoolSizeCallback callback) {
+			if (callback != null)
+				taskExecutorPoolSizeCallbacks.add(callback);
+		}
+
+		/**
 		 * Returns the parse syntax.
 		 * 
 		 * @return The parse syntax.
@@ -850,6 +894,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 						else if (identifier instanceof LazyInitializedServiceProvider)
 							lazyInitializedServiceProviders.put(identifier.getId(),
 									(LazyInitializedServiceProvider) identifier);
+						else if (identifier instanceof TaskExecutorServiceProvider)
+							taskExecutorServiceProviders.put(identifier.getId(),
+									(TaskExecutorServiceProvider) identifier);
 						else
 							logger.warn("The class type '" + identifier.getClass().getName()
 									+ "' is not implemented for service provider configuration.");
@@ -869,6 +916,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 			try {
 				List<Entity> entities = new ArrayList<>(disabledServiceProviders.values());
 				entities.addAll(lazyInitializedServiceProviders.values());
+				entities.addAll(taskExecutorServiceProviders.values());
 
 				serviceProviderConfigurationManager.persist(entities);
 
@@ -963,6 +1011,119 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 					persistServiceProviderConfiguration();
 				}
+			}
+		}
+
+		/**
+		 * Returns the task executor pool sizes. The key is the thread name and the
+		 * value its core pool size.
+		 *
+		 * @return The task executor pool size.
+		 * @since 1.8
+		 */
+		public Hashtable<String, Integer> getTaskExecutorPoolSizes() {
+			Hashtable<String, Integer> poolSize = new Hashtable<>();
+			for (TaskExecutorServiceProvider executor : taskExecutorServiceProviders.values())
+				poolSize.put(executor.getThreadName(),
+						poolSize.contains(executor.getThreadName())
+								? Math.max(poolSize.get(executor.getThreadName()), executor.getCorePoolSize())
+								: executor.getCorePoolSize());
+
+			return poolSize;
+		}
+
+		/**
+		 * Returns the task executor service providers, this means, the scheduler
+		 * service executes the service providers in a separate pool of threads. The key
+		 * is the service provider id.
+		 * 
+		 * @return The task executor service providers.
+		 * @since 1.8
+		 */
+		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProvider() {
+			return new Hashtable<>(taskExecutorServiceProviders);
+		}
+
+		/**
+		 * Removes the task executor for given service provider.
+		 * 
+		 * @param id The service provider id.
+		 * @since 1.8
+		 */
+		public void removeTaskExecutorServiceProvider(String id) {
+			if (id != null && !id.isBlank()) {
+				TaskExecutorServiceProvider executor = taskExecutorServiceProviders.get(id.trim());
+
+				if (executor != null) {
+					int poolSizeBefore = getTaskExecutorPoolSizes().get(executor.getThreadName());
+					taskExecutorServiceProviders.remove(executor.getId());
+					Integer poolSizeAfter = getTaskExecutorPoolSizes().get(executor.getThreadName());
+
+					persistServiceProviderConfiguration();
+
+					/*
+					 * The update callbacks
+					 */
+					if (poolSizeAfter == null)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(executor.getThreadName(), 0);
+					else if (poolSizeAfter != poolSizeBefore)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(executor.getThreadName(), poolSizeAfter);
+				}
+			}
+		}
+
+		/**
+		 * Set the task executor service providers, this means, the scheduler service
+		 * executes the service provider in a separate pool of threads.
+		 * 
+		 * @param id           The service provider id.
+		 * @param threadName   The thread name. It is be trimmed. If null, the task
+		 *                     executor is removed from service provider.
+		 * @param corePoolSize The core pool size. The value must be greater than 0.
+		 * @param user         The user.
+		 * @since 1.8
+		 */
+		public void setTaskExecutorServiceProvider(String id, String threadName, int corePoolSize, String user) {
+			if (threadName == null || threadName.isBlank())
+				removeTaskExecutorServiceProvider(id);
+			else if (id != null && !id.isBlank()) {
+				id = id.trim();
+
+				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id) ? taskExecutorServiceProviders.get(id).getThreadName(): null;
+
+				Hashtable<String, Integer> poolSizesBefore = getTaskExecutorPoolSizes();
+
+				TaskExecutorServiceProvider executor = new TaskExecutorServiceProvider(user, id, threadName,
+						corePoolSize);
+				taskExecutorServiceProviders.put(id, executor);
+
+				Hashtable<String, Integer> poolSizesAfter = getTaskExecutorPoolSizes();
+
+				persistServiceProviderConfiguration();
+
+				/*
+				 * The update callbacks
+				 */
+				if (threadNameBefore != null && !threadNameBefore.equals(executor.getThreadName())) {
+					int poolSizeBefore = poolSizesBefore.get(threadNameBefore);
+					Integer poolSizeAfter = poolSizesAfter.get(threadNameBefore);
+
+					if (poolSizeAfter == null)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(threadNameBefore, 0);
+					else if (poolSizeAfter != poolSizeBefore)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(threadNameBefore, poolSizeAfter);
+				}
+
+				Integer poolSizeBefore = poolSizesBefore.get(executor.getThreadName());
+				int poolSizeAfter = poolSizesAfter.get(executor.getThreadName());
+
+				if (poolSizeBefore == null || poolSizeBefore != poolSizeAfter)
+					for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+						callback.update(executor.getThreadName(), poolSizeAfter);
 			}
 		}
 

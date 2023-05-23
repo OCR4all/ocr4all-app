@@ -66,9 +66,9 @@ public class Application {
 	private Monitor monitor = new Monitor();
 
 	/**
-	 * The task properties.
+	 * The thread properties.
 	 */
-	private Task task = new Task();
+	private Thread thread = new Thread();
 
 	/**
 	 * The security properties.
@@ -216,23 +216,23 @@ public class Application {
 	}
 
 	/**
-	 * Returns the task properties.
+	 * Returns the thread properties.
 	 *
-	 * @return The task properties.
+	 * @return The thread properties.
 	 * @since 1.8
 	 */
-	public Task getTask() {
-		return task;
+	public Thread getThread() {
+		return thread;
 	}
 
 	/**
-	 * Set the task properties.
+	 * Set the thread properties.
 	 *
-	 * @param task The task properties to set.
+	 * @param thread The thread properties to set.
 	 * @since 1.8
 	 */
-	public void setTask(Task task) {
-		this.task = task;
+	public void setThread(Thread thread) {
+		this.thread = thread;
 	}
 
 	/**
@@ -462,137 +462,129 @@ public class Application {
 	}
 
 	/**
-	 * Defines task properties.
+	 * Defines thread properties.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class Task {
+	public static class Thread {
 		/**
-		 * The task executor.
+		 * The pool.
 		 */
-		private Executor executor = new Executor();
+		private Pool pool = new Pool();
 
 		/**
-		 * Returns the task executor.
+		 * Returns the pool.
 		 *
-		 * @return The task executor.
+		 * @return The pool.
 		 * @since 1.8
 		 */
-		public Executor getExecutor() {
-			return executor;
+		public Pool getPool() {
+			return pool;
 		}
 
 		/**
-		 * Set the task executor.
+		 * Set the pool.
 		 *
-		 * @param executor The executor to set.
+		 * @param pool The pool to set.
 		 * @since 1.8
 		 */
-		public void setExecutor(Executor executor) {
-			this.executor = executor;
+		public void setPool(Pool pool) {
+			this.pool = pool;
 		}
 
 		/**
-		 * Defines task executor properties.
+		 * Defines pool properties.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 1.8
 		 */
-		public static class Executor {
+		public static class Pool {
 			/**
-			 * The task executor pool.
+			 * The size.
 			 */
-			private Pool pool = new Pool();
+			private Size size = new Size();
 
 			/**
-			 * Returns the task executor pool.
+			 * Returns the size.
 			 *
-			 * @return The task executor pool.
+			 * @return The size.
 			 * @since 1.8
 			 */
-			public Pool getPool() {
-				return pool;
+			public Size getSize() {
+				return size;
 			}
 
 			/**
-			 * Set the task executor pool.
+			 * Set the size.
 			 *
-			 * @param pool The pool to set.
+			 * @param size The size to set.
 			 * @since 1.8
 			 */
-			public void setPool(Pool pool) {
-				this.pool = pool;
+			public void setSize(Size size) {
+				this.size = size;
 			}
 
 			/**
-			 * Defines task executor pool properties.
+			 * Defines size properties.
 			 *
 			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 			 * @version 1.0
 			 * @since 1.8
 			 */
-			public static class Pool {
+			public static class Size {
 				/**
-				 * The task executor pool size.
+				 * The thread pool size for task. The default value is 6.
 				 */
-				private Size size = new Size();
+				@Min(value = 1, message = "The thread pool size for task should not be less than 1")
+				private int task = 6;
 
 				/**
-				 * Returns the task executor pool size.
+				 * The thread pool size for workflow. The default value is 12.
+				 */
+				@Min(value = 1, message = "The thread pool size for workflow should not be less than 1")
+				private int workflow = 12;
+
+				/**
+				 * Returns the thread pool size for task.
 				 *
-				 * @return The task executor pool size.
+				 * @return The size.
 				 * @since 1.8
 				 */
-				public Size getSize() {
-					return size;
+				public int getTask() {
+					return task;
 				}
 
 				/**
-				 * Set the task executor pool size.
+				 * Set the thread pool size for task.
 				 *
 				 * @param size The size to set.
 				 * @since 1.8
 				 */
-				public void setSize(Size size) {
-					this.size = size;
+				public void setTask(int size) {
+					task = size;
 				}
 
 				/**
-				 * Defines task executor pool size properties.
+				 * Returns the thread pool size for workflow.
 				 *
-				 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-				 * @version 1.0
+				 * @return The size.
 				 * @since 1.8
 				 */
-				public static class Size {
-					/**
-					 * The task executor core pool size. The default value is 6.
-					 */
-					@Min(value = 1, message = "The task executor core pool size should not be less than 1")
-					private int core = 6;
+				public int getWorkflow() {
+					return workflow;
+				}
 
-					/**
-					 * Returns the task executor core pool size.
-					 *
-					 * @return The task executor core pool size.
-					 * @since 1.8
-					 */
-					public int getCore() {
-						return core;
-					}
-
-					/**
-					 * Set the task executor core pool size.
-					 *
-					 * @param core The core pool size to set.
-					 * @since 1.8
-					 */
-					public void setCore(int core) {
-						this.core = core;
-					}
+				/**
+				 * Set the thread pool size for workflow.
+				 *
+				 * @param size The size to set.
+				 * @since 1.8
+				 */
+				public void setWorkflow(int size) {
+					workflow = size;
 				}
 			}
 		}
