@@ -471,6 +471,26 @@ public class WorkspaceConfiguration extends CoreFolder {
 	}
 
 	/**
+	 * Defines functional interfaces for callback of task executor pool size
+	 * updates.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	@FunctionalInterface
+	public interface TaskExecutorPoolSizeCallback {
+		/**
+		 * Updates the task executor pool size.
+		 * 
+		 * @param threadName   The thread name.
+		 * @param corePoolSize The core pool size. If 0, the task executor was removed.
+		 * @since 1.8
+		 */
+		public void update(String threadName, int corePoolSize);
+	}
+
+	/**
 	 * Defines configurations for the workspaces.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -478,11 +498,6 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public class Configuration extends CoreFolder {
-		/**
-		 * True if the application needs to be restarted due to configuration updates.
-		 */
-		private boolean isRestart;
-
 		/**
 		 * The version.
 		 */
@@ -556,6 +571,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * executes the service providers in a separate pool of threads.
 		 */
 		private final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = new Hashtable<>();
+
+		/**
+		 * The callbacks of task executor pool size updates.
+		 */
+		private final List<TaskExecutorPoolSizeCallback> taskExecutorPoolSizeCallbacks = new ArrayList<>();
 
 		/**
 		 * Creates a configuration for the workspace.
@@ -831,6 +851,17 @@ public class WorkspaceConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Register the callback for task executor pool size updates.
+		 * 
+		 * @param callback The callback to register.
+		 * @since 1.8
+		 */
+		public void register(TaskExecutorPoolSizeCallback callback) {
+			if (callback != null)
+				taskExecutorPoolSizeCallbacks.add(callback);
+		}
+
+		/**
 		 * Returns the parse syntax.
 		 * 
 		 * @return The parse syntax.
@@ -984,13 +1015,13 @@ public class WorkspaceConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the task executor pool size. The key is the thread name and the value
-		 * its core pool size.
+		 * Returns the task executor pool sizes. The key is the thread name and the
+		 * value its core pool size.
 		 *
 		 * @return The task executor pool size.
 		 * @since 1.8
 		 */
-		public Hashtable<String, Integer> getTaskExecutorPoolSize() {
+		public Hashtable<String, Integer> getTaskExecutorPoolSizes() {
 			Hashtable<String, Integer> poolSize = new Hashtable<>();
 			for (TaskExecutorServiceProvider executor : taskExecutorServiceProviders.values())
 				poolSize.put(executor.getThreadName(),
@@ -1020,10 +1051,26 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public void removeTaskExecutorServiceProvider(String id) {
-			if (id != null && !id.isBlank() && taskExecutorServiceProviders.remove(id.trim()) != null) {
-				isRestart = true;
+			if (id != null && !id.isBlank()) {
+				TaskExecutorServiceProvider executor = taskExecutorServiceProviders.get(id.trim());
 
-				persistServiceProviderConfiguration();
+				if (executor != null) {
+					int poolSizeBefore = getTaskExecutorPoolSizes().get(executor.getThreadName());
+					taskExecutorServiceProviders.remove(executor.getId());
+					Integer poolSizeAfter = getTaskExecutorPoolSizes().get(executor.getThreadName());
+
+					persistServiceProviderConfiguration();
+
+					/*
+					 * The update callbacks
+					 */
+					if (poolSizeAfter == null)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(executor.getThreadName(), 0);
+					else if (poolSizeAfter != poolSizeBefore)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(executor.getThreadName(), poolSizeAfter);
+				}
 			}
 		}
 
@@ -1042,37 +1089,42 @@ public class WorkspaceConfiguration extends CoreFolder {
 			if (threadName == null || threadName.isBlank())
 				removeTaskExecutorServiceProvider(id);
 			else if (id != null && !id.isBlank()) {
-				isRestart = true;
-
 				id = id.trim();
 
-				taskExecutorServiceProviders.put(id,
-						new TaskExecutorServiceProvider(user, id, threadName, corePoolSize));
+				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id) ? taskExecutorServiceProviders.get(id).getThreadName(): null;
+
+				Hashtable<String, Integer> poolSizesBefore = getTaskExecutorPoolSizes();
+
+				TaskExecutorServiceProvider executor = new TaskExecutorServiceProvider(user, id, threadName,
+						corePoolSize);
+				taskExecutorServiceProviders.put(id, executor);
+
+				Hashtable<String, Integer> poolSizesAfter = getTaskExecutorPoolSizes();
 
 				persistServiceProviderConfiguration();
+
+				/*
+				 * The update callbacks
+				 */
+				if (threadNameBefore != null && !threadNameBefore.equals(executor.getThreadName())) {
+					int poolSizeBefore = poolSizesBefore.get(threadNameBefore);
+					Integer poolSizeAfter = poolSizesAfter.get(threadNameBefore);
+
+					if (poolSizeAfter == null)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(threadNameBefore, 0);
+					else if (poolSizeAfter != poolSizeBefore)
+						for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+							callback.update(threadNameBefore, poolSizeAfter);
+				}
+
+				Integer poolSizeBefore = poolSizesBefore.get(executor.getThreadName());
+				int poolSizeAfter = poolSizesAfter.get(executor.getThreadName());
+
+				if (poolSizeBefore == null || poolSizeBefore != poolSizeAfter)
+					for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
+						callback.update(executor.getThreadName(), poolSizeAfter);
 			}
-		}
-
-		/**
-		 * Returns true if the application needs to be restarted due to configuration
-		 * updates.
-		 *
-		 * @return True if the application needs to be restarted due to configuration
-		 *         updates.
-		 * @since 1.8
-		 */
-		public boolean isRestart() {
-			return isRestart;
-		}
-
-		/**
-		 * Set the isRestart.
-		 *
-		 * @param isRestart The isRestart to set.
-		 * @since 1.8
-		 */
-		public void setRestart(boolean isRestart) {
-			this.isRestart = isRestart;
 		}
 
 		/**

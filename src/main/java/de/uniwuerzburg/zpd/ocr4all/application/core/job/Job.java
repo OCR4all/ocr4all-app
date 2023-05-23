@@ -195,6 +195,14 @@ public abstract class Job {
 	public abstract String getShortDescription();
 
 	/**
+	 * Returns the thread pool.
+	 * 
+	 * @return The thread pool.
+	 * @since 1.8
+	 */
+	public abstract SchedulerService.ThreadPool getThreadPool();
+
+	/**
 	 * Returns true if execute or special right is available.
 	 *
 	 * @return True if execute or special right is available.

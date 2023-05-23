@@ -38,8 +38,25 @@ public class SchedulerService extends CoreService {
 	/**
 	 * The prefix to use for the names of newly created threads by task executor.
 	 */
-	private static final String taskExecutorThreadNamePrefix = "job-";
-	
+	private static final String taskExecutorThreadNamePrefix = "job";
+
+	/**
+	 * The prefix to use for the names of newly created threads by task executor for
+	 * workspace.
+	 */
+	private static final String taskExecutorThreadNamePrefixWorkspace = taskExecutorThreadNamePrefix + "-ws";
+
+	/**
+	 * Defines thread pools.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public enum ThreadPool {
+		task, workflow
+	}
+
 	/**
 	 * Defines queue positions.
 	 *
@@ -87,9 +104,19 @@ public class SchedulerService extends CoreService {
 	private boolean isRunning = true;
 
 	/**
-	 * The task executor.
+	 * The thread pool for task.
 	 */
-	private final ThreadPoolTaskExecutor taskExecutor;
+	private final ThreadPoolTaskExecutor threadPoolTask;
+
+	/**
+	 * The thread pool for workflow.
+	 */
+	private final ThreadPoolTaskExecutor threadPoolWorkflow;
+
+	/**
+	 * The thread pool for workspace.
+	 */
+	private final Hashtable<String, ThreadPoolTaskExecutor> threadPoolWorkspace = new Hashtable<>();
 
 	/**
 	 * Creates a scheduler service.
@@ -100,12 +127,63 @@ public class SchedulerService extends CoreService {
 	public SchedulerService(ConfigurationService configurationService) {
 		super(SchedulerService.class, configurationService);
 
-		taskExecutor = new ThreadPoolTaskExecutor();
-		
-		taskExecutor.setThreadNamePrefix(taskExecutorThreadNamePrefix);
-		taskExecutor.setCorePoolSize(configurationService.getApplication().getTaskExecutorProperties().getCorePoolSize());
-		taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
-		taskExecutor.afterPropertiesSet();
+		/*
+		 * The thread pool for task
+		 */
+		threadPoolTask = new ThreadPoolTaskExecutor();
+
+		threadPoolTask.setThreadNamePrefix(taskExecutorThreadNamePrefix + "-" + ThreadPool.task.name() + "-");
+		threadPoolTask.setCorePoolSize(configurationService.getApplication().getThreadPoolSizeProperties().getTask());
+		threadPoolTask.setWaitForTasksToCompleteOnShutdown(false);
+		threadPoolTask.afterPropertiesSet();
+
+		/*
+		 * The thread pool for workflow
+		 */
+		threadPoolWorkflow = new ThreadPoolTaskExecutor();
+
+		threadPoolWorkflow.setThreadNamePrefix(taskExecutorThreadNamePrefix + "-" + ThreadPool.workflow.name() + "-");
+		threadPoolWorkflow
+				.setCorePoolSize(configurationService.getApplication().getThreadPoolSizeProperties().getTask());
+		threadPoolWorkflow.setWaitForTasksToCompleteOnShutdown(false);
+		threadPoolWorkflow.afterPropertiesSet();
+
+		/*
+		 * The thread pool for workspace
+		 */
+		Hashtable<String, Integer> poolSizes = configurationService.getWorkspace().getConfiguration()
+				.getTaskExecutorPoolSizes();
+		for (String threadName : poolSizes.keySet()) {
+			ThreadPoolTaskExecutor threadPool = new ThreadPoolTaskExecutor();
+
+			threadPool.setThreadNamePrefix(taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "-");
+			threadPool.setCorePoolSize(poolSizes.get(threadName));
+			threadPool.setWaitForTasksToCompleteOnShutdown(false);
+			threadPool.afterPropertiesSet();
+
+			threadPoolWorkspace.put(threadName, threadPool);
+		}
+
+		// The callback for thread pool for workspace updates
+		configurationService.getWorkspace().getConfiguration().register((threadName, corePoolSize) -> {
+			if (corePoolSize == 0)
+				threadPoolWorkspace.remove(threadName);
+			else {
+				ThreadPoolTaskExecutor threadPool = threadPoolWorkspace.get(threadName);
+				if (threadPool == null) {
+					threadPool = new ThreadPoolTaskExecutor();
+
+					threadPool.setThreadNamePrefix(taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "-");
+					threadPool.setCorePoolSize(corePoolSize);
+					threadPool.setWaitForTasksToCompleteOnShutdown(false);
+					threadPool.afterPropertiesSet();
+
+					threadPoolWorkspace.put(threadName, threadPool);
+
+				} else
+					threadPool.setCorePoolSize(corePoolSize);
+			}
+		});
 	}
 
 	/**
@@ -196,7 +274,10 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	private void start(Job job) {
-		job.start(taskExecutor, instance -> schedule());
+		// TODO: consider workspace thread pool
+		ThreadPoolTaskExecutor threadPool = ThreadPool.task.equals(job.getThreadPool()) ? threadPoolTask : threadPoolWorkflow;
+		
+		job.start(threadPool, instance -> schedule());
 
 		if (job.isStateRunning())
 			running.put(job.getId(), job);

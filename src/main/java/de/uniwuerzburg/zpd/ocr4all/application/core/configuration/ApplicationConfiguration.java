@@ -73,9 +73,9 @@ public class ApplicationConfiguration {
 	private final long monitorInterval;
 
 	/**
-	 * The task executor properties.
+	 * The thread pool size properties.
 	 */
-	private final TaskExecutorProperties taskExecutorProperties;
+	private final ThreadPoolSizeProperties threadPoolSizeProperties;
 
 	/**
 	 * The administrator group.
@@ -165,8 +165,8 @@ public class ApplicationConfiguration {
 		// The monitor interval
 		monitorInterval = properties.getMonitor().getInterval();
 
-		taskExecutorProperties = new TaskExecutorProperties(
-				properties.getTask().getExecutor().getPool().getSize().getCore());
+		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getTask(),
+				properties.getThread().getPool().getSize().getWorkflow());
 
 		// The security groups group
 		String securityGroup = properties.getSecurity().getGroups().getAdministrator();
@@ -305,13 +305,13 @@ public class ApplicationConfiguration {
 	}
 
 	/**
-	 * Returns the task executor properties.
+	 * Returns the thread pool size properties.
 	 *
-	 * @return The task executor properties.
+	 * @return The thread pool size properties.
 	 * @since 1.8
 	 */
-	public TaskExecutorProperties getTaskExecutorProperties() {
-		return taskExecutorProperties;
+	public ThreadPoolSizeProperties getThreadPoolSizeProperties() {
+		return threadPoolSizeProperties;
 	}
 
 	/**
@@ -365,38 +365,55 @@ public class ApplicationConfiguration {
 	}
 
 	/**
-	 * Defines task executor properties.
+	 * Defines thread pool size properties.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class TaskExecutorProperties {
+	public static class ThreadPoolSizeProperties {
 		/**
-		 * The task executor core pool size.
+		 * The task pool size.
 		 */
-		private final int corePoolSize;
+		private final int task;
 
 		/**
-		 * Creates properties for the task executor.
+		 * The workflow pool size.
+		 */
+		private final int workflow;
+
+		/**
+		 * Creates properties for the thread pool size.
 		 * 
-		 * @param corePoolSize The task executor core pool size.
+		 * @param task     The task pool size.
+		 * @param workflow The workflow pool size.
 		 * @since 1.8
 		 */
-		public TaskExecutorProperties(int corePoolSize) {
+		public ThreadPoolSizeProperties(int task, int workflow) {
 			super();
 
-			this.corePoolSize = corePoolSize;
+			this.task = task;
+			this.workflow = workflow;
 		}
 
 		/**
-		 * Returns the task executor core pool size.
+		 * Returns the task pool size.
 		 *
-		 * @return The task executor core pool size.
+		 * @return The task pool size.
 		 * @since 1.8
 		 */
-		public int getCorePoolSize() {
-			return corePoolSize;
+		public int getTask() {
+			return task;
+		}
+
+		/**
+		 * Returns the workflow pool size.
+		 *
+		 * @return The workflow pool size.
+		 * @since 1.8
+		 */
+		public int getWorkflow() {
+			return workflow;
 		}
 
 	}

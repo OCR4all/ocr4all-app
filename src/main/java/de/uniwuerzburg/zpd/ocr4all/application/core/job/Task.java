@@ -130,6 +130,16 @@ public final class Task extends Process {
 	/*
 	 * (non-Javadoc)
 	 * 
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getThreadPool()
+	 */
+	@Override
+	public SchedulerService.ThreadPool getThreadPool() {
+		return SchedulerService.ThreadPool.task;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#schedule(int)
 	 */
 	@Override
