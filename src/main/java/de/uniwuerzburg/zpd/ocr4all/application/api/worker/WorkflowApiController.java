@@ -154,6 +154,32 @@ public class WorkflowApiController extends CoreApiController {
 	}
 
 	/**
+	 * Updates the workflow metadata and returns it in the response body.
+	 *
+	 * @param workflowId The workflow id.
+	 * @param request    The workflow request.
+	 * @return The updated metadata in the response body.
+	 * @since 1.8
+	 */
+	@PostMapping(updateRequestMapping + workflowPathVariable)
+	public ResponseEntity<Metadata> update(@PathVariable String workflowId,
+			@RequestBody WorkflowMatadataRequest request) {
+		if (!securityService.isCoordinator())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+
+		try {
+			Metadata metadata = service.update(workflowId, request.getLabel(), request.getDescription());
+
+			return metadata == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(metadata);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Updates the workflow and returns its metadata in the response body.
 	 *
 	 * @param workflowId The workflow id.
@@ -225,13 +251,13 @@ public class WorkflowApiController extends CoreApiController {
 	/**
 	 * Schedules a process to execute the workflow.
 	 *
-	 * @param projectId        The project id. This is the folder name.
-	 * @param sandboxId        The sandbox id. This is the folder name.
-	 * @param workflowId       The workflow id.
-	 * @param request          The workflow snapshot request. The track of the
-	 *                         parent snapshot can not be null.
-	 * @param lang             The language. If null, then use the application
-	 *                         preferred locale.
+	 * @param projectId  The project id. This is the folder name.
+	 * @param sandboxId  The sandbox id. This is the folder name.
+	 * @param workflowId The workflow id.
+	 * @param request    The workflow snapshot request. The track of the parent
+	 *                   snapshot can not be null.
+	 * @param lang       The language. If null, then use the application preferred
+	 *                   locale.
 	 * @return The job in the response body.
 	 * @since 1.8
 	 */
@@ -269,13 +295,78 @@ public class WorkflowApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines workflow metadata requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class WorkflowMatadataRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The label.
+		 */
+		private String label = null;
+
+		/**
+		 * The description.
+		 */
+		private String description = null;
+
+		/**
+		 * Returns the label.
+		 *
+		 * @return The label.
+		 * @since 1.8
+		 */
+		public String getLabel() {
+			return label;
+		}
+
+		/**
+		 * Set the label.
+		 *
+		 * @param label The label to set.
+		 * @since 1.8
+		 */
+		public void setLabel(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * Returns the description.
+		 *
+		 * @return The description.
+		 * @since 1.8
+		 */
+		public String getDescription() {
+			return description;
+		}
+
+		/**
+		 * Set the description.
+		 *
+		 * @param description The description to set.
+		 * @since 1.8
+		 */
+		public void setDescription(String description) {
+			this.description = description;
+		}
+
+	}
+
+	/**
 	 * Defines workflow requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class WorkflowRequest implements Serializable {
+	public static class WorkflowRequest extends WorkflowMatadataRequest {
 		/**
 		 * The serial version UID.
 		 */

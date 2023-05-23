@@ -158,6 +158,23 @@ public class WorkflowService extends CoreService {
 	}
 
 	/**
+	 * Updates the workflow metadata.
+	 * 
+	 * @param uuid        The UUID of the workflow. It can not be null or blank.
+	 * @param label       The label. It can not be null or blank.
+	 * @param description The description.
+	 * @return The workflow metadata. Null if the workflow can not be persisted.
+	 * @since 1.8
+	 */
+	public Metadata update(String uuid, String label, String description) {
+		WorkflowData data = getData(uuid);
+
+		return data == null ? null
+				: persist(uuid, label, description, data.getView() == null ? null : data.getView().getModel(),
+						data.getWorkflow());
+	}
+
+	/**
 	 * Persists the workflow.
 	 * 
 	 * @param uuid        The UUID of the workflow. If null or blank, then a new
@@ -265,6 +282,41 @@ public class WorkflowService extends CoreService {
 
 			return null;
 		}
+	}
+
+	/**
+	 * Returns the data of the workflow with given UUID.
+	 * 
+	 * @param uuid The UUID.
+	 * @return The data. Null if the data is not available.
+	 * @since 1.8
+	 */
+	public WorkflowData getData(String uuid) {
+		if (uuid != null && !uuid.isBlank())
+			try {
+				Metadata metadata = null;
+				View view = null;
+				Workflow workflow = null;
+
+				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
+						null, Type.workflow_metadata_v1, Type.workflow_view_v1, Type.workflow_v1)) {
+					if (entity instanceof Metadata && metadata == null)
+						metadata = (Metadata) entity;
+					else if (entity instanceof View && view == null)
+						view = (View) entity;
+					else if (entity instanceof Workflow && workflow == null)
+						workflow = (Workflow) entity;
+
+					if (metadata != null && view != null && workflow != null)
+						break;
+				}
+
+				return new WorkflowData(metadata, view, workflow);
+			} catch (Exception e) {
+				logger.warn(e.getMessage());
+			}
+
+		return null;
 	}
 
 	/**
