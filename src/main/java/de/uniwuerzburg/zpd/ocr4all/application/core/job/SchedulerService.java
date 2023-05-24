@@ -136,7 +136,7 @@ public class SchedulerService extends CoreService {
 				configurationService.getApplication().getThreadPoolSizeProperties().getWorkflow());
 
 		/*
-		 * The workspace thread pools 
+		 * The workspace thread pools
 		 */
 		Hashtable<String, Integer> poolSizes = configurationService.getWorkspace().getConfiguration()
 				.getTaskExecutorPoolSizes();
@@ -149,7 +149,7 @@ public class SchedulerService extends CoreService {
 			if (corePoolSize == 0) {
 				threadPoolWorkspace.remove(threadName);
 
-				logger.info("Removed workspace thread pool '" + threadName + "'.");
+				logger.info("removed thread pool '" + taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "'.");
 			} else {
 				ThreadPoolTaskExecutor threadPool = threadPoolWorkspace.get(threadName);
 				if (threadPool == null)
@@ -158,7 +158,7 @@ public class SchedulerService extends CoreService {
 				else {
 					threadPool.setCorePoolSize(corePoolSize);
 
-					logger.info("Updated size of workspace thread pool '" + threadName + "' to " + corePoolSize + ".");
+					logger.info("updated size of workspace thread pool '" + threadName + "' to " + corePoolSize + ".");
 				}
 			}
 		});
@@ -184,7 +184,7 @@ public class SchedulerService extends CoreService {
 
 		threadPool.afterPropertiesSet();
 
-		logger.info("Created thread pool '" + name + "' with size " + corePoolSize + ".");
+		logger.info("created thread pool '" + name + "' with size " + corePoolSize + ".");
 
 		return threadPool;
 	}
@@ -277,11 +277,19 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	private void start(Job job) {
-		// TODO: consider workspace thread pool
-		ThreadPoolTaskExecutor threadPool = ThreadPool.task.equals(job.getThreadPool()) ? threadPoolTask
-				: threadPoolWorkflow;
+		ThreadPoolTaskExecutor threadPool = null;
 
-		job.start(threadPool, instance -> schedule());
+		if (job.getThreadPoolWorkspace() != null) {
+			threadPool = threadPoolWorkspace.get(job.getThreadPoolWorkspace());
+
+			if (threadPool == null)
+				logger.error("unknown thread pool '" + job.getThreadPoolWorkspace() + "' for job " + job.getId());
+		}
+
+		job.start(
+				threadPool != null ? threadPool
+						: (ThreadPool.task.equals(job.getThreadPool()) ? threadPoolTask : threadPoolWorkflow),
+				instance -> schedule());
 
 		if (job.isStateRunning())
 			running.put(job.getId(), job);

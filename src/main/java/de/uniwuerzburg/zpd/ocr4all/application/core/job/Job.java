@@ -203,6 +203,27 @@ public abstract class Job {
 	public abstract SchedulerService.ThreadPool getThreadPool();
 
 	/**
+	 * Returns true if the workspace thread pool is set.
+	 * 
+	 * @return True if the workspace thread pool is set.
+	 * @since 1.8
+	 */
+	public final boolean isThreadPoolWorkspace() {
+		return getThreadPoolWorkspace() != null;
+	}
+
+	/**
+	 * Returns the workspace thread pool. Extending classes can overwrite this
+	 * method to set a pool.
+	 * 
+	 * @return The thread pool. Null if not set.
+	 * @since 1.8
+	 */
+	public String getThreadPoolWorkspace() {
+		return null;
+	}
+
+	/**
 	 * Returns true if execute or special right is available.
 	 *
 	 * @return True if execute or special right is available.

@@ -250,24 +250,51 @@ public class AdministrationApiController extends CoreApiController {
 					configurationService.getWorkspace().getConfiguration()
 							.lazyInitializeServiceProvider(request.getId(), user);
 					entry = provider.getServiceProvider().lazy(user);
+
 					break;
 				case enable:
 					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
 					entry = provider.getServiceProvider().enable(user);
+
 					break;
 				case disable:
 					configurationService.getWorkspace().getConfiguration().disableServiceProvider(request.getId(),
 							user);
 					entry = provider.getServiceProvider().disable(user);
+
 					break;
 				case start:
 					entry = provider.getServiceProvider().start(user);
+
 					break;
 				case restart:
 					entry = provider.getServiceProvider().restart(user);
+
 					break;
 				case stop:
 					entry = provider.getServiceProvider().stop(user);
+
+					break;
+				case thread_pool_set:
+					if (request.getName() == null || request.getName().isBlank() || request.getSize() < 1)
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+					String threadPool = configurationService.getWorkspace().getConfiguration()
+							.setTaskExecutorServiceProvider(request.getId(), request.getName(), request.getSize(),
+									user);
+					if (threadPool == null)
+						throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+
+					entry = provider.getServiceProvider().setThreadPool(user, threadPool);
+
+					break;
+				case thread_pool_reset:
+					if (configurationService.getWorkspace().getConfiguration()
+							.removeTaskExecutorServiceProvider(request.getId()) == null)
+						throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+
+					entry = provider.getServiceProvider().resetThreadPool(user);
+
 					break;
 				default:
 					return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
@@ -2597,14 +2624,14 @@ public class AdministrationApiController extends CoreApiController {
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * Defines actions.
+		 * Defines actions. The action thread_pool_set requires name and size.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 1.8
 		 */
 		public enum Action {
-			eager, lazy, enable, disable, start, restart, stop
+			eager, lazy, enable, disable, start, restart, stop, thread_pool_set, thread_pool_reset
 		}
 
 		/**
@@ -2618,6 +2645,16 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		@NotNull
 		private Action action;
+
+		/**
+		 * The name. Required by action thread_pool_set.
+		 */
+		private String name;
+
+		/**
+		 * The size. Required by action thread_pool_set.
+		 */
+		private int size = 0;
 
 		/**
 		 * Default constructor for an authentication request.
@@ -2666,6 +2703,46 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setAction(Action action) {
 			this.action = action;
+		}
+
+		/**
+		 * Returns the name. Required by action thread_pool_set.
+		 *
+		 * @return The name.
+		 * @since 1.8
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Set the name. Required by action thread_pool_set.
+		 *
+		 * @param name The name to set.
+		 * @since 1.8
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * Returns the size. Required by action thread_pool_set.
+		 *
+		 * @return The size.
+		 * @since 1.8
+		 */
+		public int getSize() {
+			return size;
+		}
+
+		/**
+		 * Set the size. Required by action thread_pool_set.
+		 *
+		 * @param size The size to set.
+		 * @since 1.8
+		 */
+		public void setSize(int size) {
+			this.size = size;
 		}
 
 	}
