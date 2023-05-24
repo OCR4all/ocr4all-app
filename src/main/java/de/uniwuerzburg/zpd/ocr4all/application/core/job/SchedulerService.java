@@ -136,7 +136,7 @@ public class SchedulerService extends CoreService {
 				configurationService.getApplication().getThreadPoolSizeProperties().getWorkflow());
 
 		/*
-		 * The thread pool for workspace
+		 * The workspace thread pools 
 		 */
 		Hashtable<String, Integer> poolSizes = configurationService.getWorkspace().getConfiguration()
 				.getTaskExecutorPoolSizes();

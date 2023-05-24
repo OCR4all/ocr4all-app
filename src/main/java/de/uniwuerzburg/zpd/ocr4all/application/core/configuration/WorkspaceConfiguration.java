@@ -1040,7 +1040,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * @return The task executor service providers.
 		 * @since 1.8
 		 */
-		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProvider() {
+		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProviders() {
 			return new Hashtable<>(taskExecutorServiceProviders);
 		}
 
@@ -1091,7 +1091,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 			else if (id != null && !id.isBlank()) {
 				id = id.trim();
 
-				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id) ? taskExecutorServiceProviders.get(id).getThreadName(): null;
+				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id)
+						? taskExecutorServiceProviders.get(id).getThreadName()
+						: null;
 
 				Hashtable<String, Integer> poolSizesBefore = getTaskExecutorPoolSizes();
 

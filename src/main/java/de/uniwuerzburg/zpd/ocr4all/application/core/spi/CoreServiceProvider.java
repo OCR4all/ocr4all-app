@@ -19,6 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 
@@ -74,6 +75,9 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 		final Set<String> lazyInitializedServiceProviders = configurationService.getWorkspace().getConfiguration()
 				.getLazyInitializedServiceProviders();
 
+		final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = configurationService
+				.getWorkspace().getConfiguration().getTaskExecutorServiceProviders();
+
 		for (P provider : ServiceLoader.load(service))
 			if (provider.getName(configurationService.getApplication().getLocale()) != null
 					&& !provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty()) {
@@ -83,8 +87,12 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					this.logger.warn("Ignored provider for service " + service.getName() + " with duplicated key "
 							+ service.getName() + ".");
 				else {
+					TaskExecutorServiceProvider taskExecutorServiceProvider = taskExecutorServiceProviders.get(id);
+
 					provider.configure(!lazyInitializedServiceProviders.contains(id),
-							!disabledServiceProviders.contains(id), configuration);
+							!disabledServiceProviders.contains(id),
+							taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
+							configuration);
 
 					serviceProviders.put(id, provider);
 					providers.add(new Provider(id, provider));
