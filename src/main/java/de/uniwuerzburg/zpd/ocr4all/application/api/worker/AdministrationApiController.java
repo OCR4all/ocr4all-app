@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
@@ -231,7 +232,7 @@ public class AdministrationApiController extends CoreApiController {
 	@PostMapping(providerRequestMapping + actionRequestMapping)
 	public ResponseEntity<JournalEntryResponse> providerAction(@RequestBody @Valid ProviderRequest request) {
 		try {
-			CoreServiceProvider<?>.Provider provider = providers.get(request.getId());
+			CoreServiceProvider<?>.Provider provider = providers.get(request.getId().trim());
 
 			if (provider == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -243,31 +244,53 @@ public class AdministrationApiController extends CoreApiController {
 				switch (request.getAction()) {
 				case eager:
 					configurationService.getWorkspace().getConfiguration()
-							.eagerInitializeServiceProvider(request.getId());
+							.eagerInitializeServiceProvider(provider.getId());
 					entry = provider.getServiceProvider().eager(user);
 					break;
 				case lazy:
 					configurationService.getWorkspace().getConfiguration()
-							.lazyInitializeServiceProvider(request.getId(), user);
+							.lazyInitializeServiceProvider(provider.getId(), user);
 					entry = provider.getServiceProvider().lazy(user);
+
 					break;
 				case enable:
-					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
+					configurationService.getWorkspace().getConfiguration().enableServiceProvider(provider.getId());
 					entry = provider.getServiceProvider().enable(user);
+
 					break;
 				case disable:
-					configurationService.getWorkspace().getConfiguration().disableServiceProvider(request.getId(),
+					configurationService.getWorkspace().getConfiguration().disableServiceProvider(provider.getId(),
 							user);
 					entry = provider.getServiceProvider().disable(user);
+
 					break;
 				case start:
 					entry = provider.getServiceProvider().start(user);
+
 					break;
 				case restart:
 					entry = provider.getServiceProvider().restart(user);
+
 					break;
 				case stop:
 					entry = provider.getServiceProvider().stop(user);
+
+					break;
+				case thread_pool_set:
+					if (request.getName() == null || request.getName().isBlank() || request.getSize() < 1)
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+					entry = provider.getServiceProvider().setThreadPool(user,
+							configurationService.getWorkspace().getConfiguration().setTaskExecutorServiceProvider(
+									provider.getId(), request.getName(), request.getSize(), user));
+
+					break;
+				case thread_pool_reset:
+					configurationService.getWorkspace().getConfiguration()
+							.removeTaskExecutorServiceProvider(provider.getId());
+
+					entry = provider.getServiceProvider().resetThreadPool(user);
+
 					break;
 				default:
 					return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
@@ -789,7 +812,12 @@ public class AdministrationApiController extends CoreApiController {
 			 * @version 1.0
 			 * @since 1.8
 			 */
-			public class ThreadPoolSize {
+			public class ThreadPoolSize implements Serializable {
+				/**
+				 * The serial version UID.
+				 */
+				private static final long serialVersionUID = 1L;
+
 				/**
 				 * The task pool size.
 				 */
@@ -1197,6 +1225,12 @@ public class AdministrationApiController extends CoreApiController {
 			private String projectsFolder;
 
 			/**
+			 * The thread pools.
+			 */
+			@JsonProperty("thread-pools")
+			private List<ThreadPool> threadPools;
+
+			/**
 			 * Default constructor for a workspace response for the api.
 			 * 
 			 * @since 1.8
@@ -1212,6 +1246,16 @@ public class AdministrationApiController extends CoreApiController {
 				defaultVersion = WorkspaceConfiguration.Version.defaultVertsion.getLabel();
 
 				projectsFolder = configuration.getProjects().getFolder().toString();
+				
+				// The thread pools sorted by name
+				Hashtable<String, Integer> pools = configuration.getConfiguration().getTaskExecutorPoolSizes();
+				
+				List<String> poolNames = new ArrayList<>(pools.keySet());
+				Collections.sort(poolNames, (o1, o2) -> { return o1.compareToIgnoreCase(o2);});
+				
+				threadPools = new ArrayList<>();
+				for (String name: poolNames)
+					threadPools.add(new ThreadPool(name, pools.get(name)));
 			}
 
 			/**
@@ -1292,6 +1336,84 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setProjectsFolder(String projectsFolder) {
 				this.projectsFolder = projectsFolder;
+			}
+
+			/**
+			 * Defines thread pools.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public class ThreadPool implements Serializable {
+				/**
+				 * The serial version UID.
+				 */
+				private static final long serialVersionUID = 1L;
+
+				/**
+				 * The thread name.
+				 */
+				private String name;
+
+				/**
+				 * The core pool size.
+				 */
+				private int size;
+
+				/**
+				 * Creates a thread pool.
+				 * 
+				 * @param name The thread name.
+				 * @param size The core pool size.
+				 * @since 1.8
+				 */
+				public ThreadPool(String name, int size) {
+					super();
+
+					this.name = name;
+					this.size = size;
+				}
+
+				/**
+				 * Returns the thread name.
+				 *
+				 * @return The thread name.
+				 * @since 1.8
+				 */
+				public String getName() {
+					return name;
+				}
+
+				/**
+				 * Set the thread name.
+				 *
+				 * @param name The name to set.
+				 * @since 1.8
+				 */
+				public void setName(String name) {
+					this.name = name;
+				}
+
+				/**
+				 * Returns the core pool size.
+				 *
+				 * @return The core pool size.
+				 * @since 1.8
+				 */
+				public int getSize() {
+					return size;
+				}
+
+				/**
+				 * Set the core pool size.
+				 *
+				 * @param size The size to set.
+				 * @since 1.8
+				 */
+				public void setSize(int size) {
+					this.size = size;
+				}
 			}
 		}
 
@@ -1986,6 +2108,13 @@ public class AdministrationApiController extends CoreApiController {
 			private boolean isEagerInitialized;
 
 			/**
+			 * The thread pool for the execution of the service provider. Null if not set.
+			 */
+			@JsonInclude(JsonInclude.Include.NON_NULL)
+			@JsonProperty("thread-pool")
+			private String threadPool;
+
+			/**
 			 * The name.
 			 */
 			private String name;
@@ -2057,6 +2186,7 @@ public class AdministrationApiController extends CoreApiController {
 				status = serviceProvider.getStatus();
 				isEnabled = serviceProvider.isEnabled();
 				isEagerInitialized = serviceProvider.isEagerInitialized();
+				threadPool = serviceProvider.getThreadPool();
 				name = serviceProvider.getName(locale);
 				version = serviceProvider.getVersion();
 				description = serviceProvider.getDescription(locale).orElse(null);
@@ -2177,6 +2307,26 @@ public class AdministrationApiController extends CoreApiController {
 			 */
 			public void setEagerInitialized(boolean isEagerInitialized) {
 				this.isEagerInitialized = isEagerInitialized;
+			}
+
+			/**
+			 * Returns the thread pool for the execution of the service provider.
+			 *
+			 * @return The thread pool. Null if not set.
+			 * @since 1.8
+			 */
+			public String getThreadPool() {
+				return threadPool;
+			}
+
+			/**
+			 * Set the thread pool for the execution of the service provider.
+			 *
+			 * @param threadPool The thread pool to set. Null if not set.
+			 * @since 1.8
+			 */
+			public void setThreadPool(String threadPool) {
+				this.threadPool = threadPool;
 			}
 
 			/**
@@ -2597,14 +2747,14 @@ public class AdministrationApiController extends CoreApiController {
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * Defines actions.
+		 * Defines actions. The action thread_pool_set requires name and size.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 1.8
 		 */
 		public enum Action {
-			eager, lazy, enable, disable, start, restart, stop
+			eager, lazy, enable, disable, start, restart, stop, thread_pool_set, thread_pool_reset
 		}
 
 		/**
@@ -2618,6 +2768,16 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		@NotNull
 		private Action action;
+
+		/**
+		 * The name. Required by action thread_pool_set.
+		 */
+		private String name;
+
+		/**
+		 * The size. Required by action thread_pool_set.
+		 */
+		private int size = 0;
 
 		/**
 		 * Default constructor for an authentication request.
@@ -2666,6 +2826,46 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setAction(Action action) {
 			this.action = action;
+		}
+
+		/**
+		 * Returns the name. Required by action thread_pool_set.
+		 *
+		 * @return The name.
+		 * @since 1.8
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Set the name. Required by action thread_pool_set.
+		 *
+		 * @param name The name to set.
+		 * @since 1.8
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * Returns the size. Required by action thread_pool_set.
+		 *
+		 * @return The size.
+		 * @since 1.8
+		 */
+		public int getSize() {
+			return size;
+		}
+
+		/**
+		 * Set the size. Required by action thread_pool_set.
+		 *
+		 * @param size The size to set.
+		 * @since 1.8
+		 */
+		public void setSize(int size) {
+			this.size = size;
 		}
 
 	}

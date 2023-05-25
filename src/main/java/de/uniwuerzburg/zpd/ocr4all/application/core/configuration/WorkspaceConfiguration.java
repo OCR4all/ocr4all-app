@@ -1040,7 +1040,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * @return The task executor service providers.
 		 * @since 1.8
 		 */
-		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProvider() {
+		public Hashtable<String, TaskExecutorServiceProvider> getTaskExecutorServiceProviders() {
 			return new Hashtable<>(taskExecutorServiceProviders);
 		}
 
@@ -1075,23 +1075,27 @@ public class WorkspaceConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Set the task executor service providers, this means, the scheduler service
+		 * Set the task executor service provider, this means, the scheduler service
 		 * executes the service provider in a separate pool of threads.
 		 * 
-		 * @param id           The service provider id.
+		 * @param id           The service provider id. The id can not be null or blank.
 		 * @param threadName   The thread name. It is be trimmed. If null, the task
 		 *                     executor is removed from service provider.
 		 * @param corePoolSize The core pool size. The value must be greater than 0.
 		 * @param user         The user.
+		 * @return The thread name of the task executor service provider. Null if the
+		 *         task executor was removed or the id is not valid.
 		 * @since 1.8
 		 */
-		public void setTaskExecutorServiceProvider(String id, String threadName, int corePoolSize, String user) {
+		public String setTaskExecutorServiceProvider(String id, String threadName, int corePoolSize, String user) {
 			if (threadName == null || threadName.isBlank())
 				removeTaskExecutorServiceProvider(id);
 			else if (id != null && !id.isBlank()) {
 				id = id.trim();
 
-				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id) ? taskExecutorServiceProviders.get(id).getThreadName(): null;
+				final String threadNameBefore = taskExecutorServiceProviders.containsKey(id)
+						? taskExecutorServiceProviders.get(id).getThreadName()
+						: null;
 
 				Hashtable<String, Integer> poolSizesBefore = getTaskExecutorPoolSizes();
 
@@ -1124,7 +1128,11 @@ public class WorkspaceConfiguration extends CoreFolder {
 				if (poolSizeBefore == null || poolSizeBefore != poolSizeAfter)
 					for (TaskExecutorPoolSizeCallback callback : taskExecutorPoolSizeCallbacks)
 						callback.update(executor.getThreadName(), poolSizeAfter);
+
+				return executor.getThreadName();
 			}
+
+			return null;
 		}
 
 		/**
