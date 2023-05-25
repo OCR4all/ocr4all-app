@@ -231,7 +231,7 @@ public class AdministrationApiController extends CoreApiController {
 	@PostMapping(providerRequestMapping + actionRequestMapping)
 	public ResponseEntity<JournalEntryResponse> providerAction(@RequestBody @Valid ProviderRequest request) {
 		try {
-			CoreServiceProvider<?>.Provider provider = providers.get(request.getId());
+			CoreServiceProvider<?>.Provider provider = providers.get(request.getId().trim());
 
 			if (provider == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -243,22 +243,22 @@ public class AdministrationApiController extends CoreApiController {
 				switch (request.getAction()) {
 				case eager:
 					configurationService.getWorkspace().getConfiguration()
-							.eagerInitializeServiceProvider(request.getId());
+							.eagerInitializeServiceProvider(provider.getId());
 					entry = provider.getServiceProvider().eager(user);
 					break;
 				case lazy:
 					configurationService.getWorkspace().getConfiguration()
-							.lazyInitializeServiceProvider(request.getId(), user);
+							.lazyInitializeServiceProvider(provider.getId(), user);
 					entry = provider.getServiceProvider().lazy(user);
 
 					break;
 				case enable:
-					configurationService.getWorkspace().getConfiguration().enableServiceProvider(request.getId());
+					configurationService.getWorkspace().getConfiguration().enableServiceProvider(provider.getId());
 					entry = provider.getServiceProvider().enable(user);
 
 					break;
 				case disable:
-					configurationService.getWorkspace().getConfiguration().disableServiceProvider(request.getId(),
+					configurationService.getWorkspace().getConfiguration().disableServiceProvider(provider.getId(),
 							user);
 					entry = provider.getServiceProvider().disable(user);
 
@@ -279,19 +279,14 @@ public class AdministrationApiController extends CoreApiController {
 					if (request.getName() == null || request.getName().isBlank() || request.getSize() < 1)
 						return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-					String threadPool = configurationService.getWorkspace().getConfiguration()
-							.setTaskExecutorServiceProvider(request.getId(), request.getName(), request.getSize(),
-									user);
-					if (threadPool == null)
-						throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-
-					entry = provider.getServiceProvider().setThreadPool(user, threadPool);
+					entry = provider.getServiceProvider().setThreadPool(user,
+							configurationService.getWorkspace().getConfiguration().setTaskExecutorServiceProvider(
+									provider.getId(), request.getName(), request.getSize(), user));
 
 					break;
 				case thread_pool_reset:
-					if (configurationService.getWorkspace().getConfiguration()
-							.removeTaskExecutorServiceProvider(request.getId()) == null)
-						throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+					configurationService.getWorkspace().getConfiguration()
+							.removeTaskExecutorServiceProvider(provider.getId());
 
 					entry = provider.getServiceProvider().resetThreadPool(user);
 
