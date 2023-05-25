@@ -41,12 +41,6 @@ public class SchedulerService extends CoreService {
 	private static final String taskExecutorThreadNamePrefix = "job";
 
 	/**
-	 * The prefix to use for the names of newly created threads by task executor for
-	 * workspace.
-	 */
-	private static final String taskExecutorThreadNamePrefixWorkspace = taskExecutorThreadNamePrefix + "-ws";
-
-	/**
 	 * Defines thread pools.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -54,7 +48,33 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public enum ThreadPool {
-		task, workflow
+		task("tk"), workflow("wf"), workspace("ws");
+
+		/**
+		 * The label.
+		 */
+		private final String label;
+
+		/**
+		 * Creates a thread pool.
+		 * 
+		 * @param label The label.
+		 * @since 1.8
+		 */
+		private ThreadPool(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * Returns the label.
+		 *
+		 * @return The label.
+		 * @since 1.8
+		 */
+		public String getLabel() {
+			return label;
+		}
+
 	}
 
 	/**
@@ -130,14 +150,17 @@ public class SchedulerService extends CoreService {
 		/*
 		 * The application thread pools
 		 */
-		threadPoolTask = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.task.name(),
+		threadPoolTask = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.task.getLabel(),
 				configurationService.getApplication().getThreadPoolSizeProperties().getTask());
-		threadPoolWorkflow = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.workflow.name(),
+		threadPoolWorkflow = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.workflow.getLabel(),
 				configurationService.getApplication().getThreadPoolSizeProperties().getWorkflow());
 
 		/*
 		 * The workspace thread pools
 		 */
+		final String taskExecutorThreadNamePrefixWorkspace = taskExecutorThreadNamePrefix + "-"
+				+ ThreadPool.workspace.getLabel();
+
 		Hashtable<String, Integer> poolSizes = configurationService.getWorkspace().getConfiguration()
 				.getTaskExecutorPoolSizes();
 		for (String threadName : poolSizes.keySet())
@@ -147,9 +170,14 @@ public class SchedulerService extends CoreService {
 		// The callback for thread pool for workspace updates
 		configurationService.getWorkspace().getConfiguration().register((threadName, corePoolSize) -> {
 			if (corePoolSize == 0) {
-				threadPoolWorkspace.remove(threadName);
+				ThreadPoolTaskExecutor threadPool = threadPoolWorkspace.remove(threadName);
 
-				logger.info("removed thread pool '" + taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "'.");
+				if (threadPool != null) {
+					threadPool.shutdown();
+					
+					logger.info(
+							"removed thread pool '" + taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "'.");
+				}
 			} else {
 				ThreadPoolTaskExecutor threadPool = threadPoolWorkspace.get(threadName);
 				if (threadPool == null)
@@ -157,6 +185,7 @@ public class SchedulerService extends CoreService {
 							createThreadPool(taskExecutorThreadNamePrefixWorkspace, threadName, corePoolSize));
 				else {
 					threadPool.setCorePoolSize(corePoolSize);
+					threadPool.afterPropertiesSet();
 
 					logger.info("updated size of workspace thread pool '" + threadName + "' to " + corePoolSize + ".");
 				}
