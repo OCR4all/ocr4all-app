@@ -452,6 +452,7 @@ public class ApplicationConfiguration {
 		 */
 		public DefaultAdministrator(boolean isCreate, String login, String password) {
 			super();
+			
 			this.isCreate = isCreate;
 			this.login = login;
 			this.password = password;
