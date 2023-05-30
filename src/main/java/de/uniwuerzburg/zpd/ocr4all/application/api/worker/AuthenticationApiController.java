@@ -110,7 +110,7 @@ public class AuthenticationApiController extends CoreApiController {
 			final String token = jwtTokenUtil.generateToken(request.getUsername());
 
 			return ResponseEntity.ok().header(HttpHeaders.AUTHORIZATION, token).body(new AuthenticationResponse(
-					userDetails, configurationService.getInstance(), jwtTokenUtil.getExpirationDate(token)));
+					userDetails, configurationService.getInstance(), token, jwtTokenUtil.getExpirationDate(token)));
 		} catch (BadCredentialsException ex) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		} catch (Exception ex) {
@@ -132,8 +132,9 @@ public class AuthenticationApiController extends CoreApiController {
 			AuthenticationPrincipal principal = (AuthenticationPrincipal) accountService.getAuthentication()
 					.getPrincipal();
 
-			return ResponseEntity.ok().body(new AuthenticationResponse(principal.getUserDetails(),
-					configurationService.getInstance(), jwtTokenUtil.getExpirationDate(principal.getJwtToken())));
+			return ResponseEntity.ok()
+					.body(new AuthenticationResponse(principal.getUserDetails(), configurationService.getInstance(),
+							principal.getJwtToken(), jwtTokenUtil.getExpirationDate(principal.getJwtToken())));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -246,6 +247,11 @@ public class AuthenticationApiController extends CoreApiController {
 		private String authority;
 
 		/**
+		 * The JWT access token.
+		 */
+		private String token;
+
+		/**
 		 * The expiration date from the JWT access token.
 		 */
 		private Date expiration;
@@ -255,14 +261,16 @@ public class AuthenticationApiController extends CoreApiController {
 		 * 
 		 * @param userDetails The core user information.
 		 * @param instance    The instance.
+		 * @param token       The JWT access token.
 		 * @param expiration  The expiration date from the JWT access token.
 		 * @since 1.8
 		 */
-		public AuthenticationResponse(UserDetails userDetails, Instance instance, Date expiration) {
+		public AuthenticationResponse(UserDetails userDetails, Instance instance, String token, Date expiration) {
 			super();
 
 			this.username = userDetails.getUsername();
 			this.instance = instance;
+			this.token = token;
 			this.expiration = expiration;
 
 			boolean isCoordinator = false;
@@ -335,6 +343,26 @@ public class AuthenticationApiController extends CoreApiController {
 		 */
 		public void setAuthority(String authority) {
 			this.authority = authority;
+		}
+
+		/**
+		 * Returns the JWT access token.
+		 *
+		 * @return The JWT access token.
+		 * @since 1.8
+		 */
+		public String getToken() {
+			return token;
+		}
+
+		/**
+		 * Set the JWT access token.
+		 *
+		 * @param token The JWT access token to set.
+		 * @since 1.8
+		 */
+		public void setToken(String token) {
+			this.token = token;
 		}
 
 		/**
