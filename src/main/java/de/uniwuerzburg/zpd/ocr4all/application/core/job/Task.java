@@ -12,7 +12,8 @@ import java.util.Locale;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 
@@ -27,12 +28,43 @@ public final class Task extends Process {
 	/**
 	 * The process instance.
 	 */
-	private final Instance instance;
+	private Instance instance = null;
 
 	/**
 	 * The short description.
 	 */
 	private final String shortDescription;
+
+	/**
+	 * The snapshot type.
+	 */
+	private final de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType;
+
+	/**
+	 * The track to the parent snapshot. Null if the snapshot being created is the
+	 * root.
+	 */
+	private final List<Integer> snapshotTrackParent;
+
+	/**
+	 * The snapshot label.
+	 */
+	private final String snapshotLabel;
+
+	/**
+	 * The snapshot description.
+	 */
+	private final String snapshotDescription;
+
+	/**
+	 * The service provider.
+	 */
+	private final ProcessServiceProvider serviceProvider;
+
+	/**
+	 * The service provider arguments.
+	 */
+	private final ServiceProvider serviceProviderArgument;
 
 	/**
 	 * Creates a task.
@@ -52,29 +84,38 @@ public final class Task extends Process {
 	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
 			Processing processing, Project project, ProcessServiceProvider serviceProvider,
 			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
-		this(configurationService, locale, shortDescription, processing, project, null, serviceProvider,
-				serviceProviderArgument);
+		this(configurationService, locale, shortDescription, processing, project, null, null, null, null, null,
+				serviceProvider, serviceProviderArgument);
 	}
 
 	/**
 	 * Creates a task.
 	 * 
-	 * @param configurationService The configuration service.
-	 * @param locale               The application locale.
-	 * @param shortDescription     The short description. If null, use instance
-	 *                             short description.
-	 * @param processing           The processing mode.
-	 * @param snapshot             The snapshot.
-	 * @param serviceProvider      The service provider.
+	 * @param configurationService    The configuration service.
+	 * @param locale                  The application locale.
+	 * @param shortDescription        The short description. If null, use instance
+	 *                                short description.
+	 * @param processing              The processing mode.
+	 * @param sandbox                 The sandbox.
+	 * @param snapshotType            The snapshot type.
+	 * @param snapshotTrackParent     The track to the parent snapshot. Null if the
+	 *                                snapshot being created is the root.
+	 * @param snapshotLabel           The snapshot label.
+	 * @param snapshotDescription     The snapshot description.
+	 * @param serviceProvider         The service provider.
+	 * @param serviceProviderArgument The service provider arguments.
 	 * @throws IllegalArgumentException Throws if the processing, project, service
 	 *                                  provider or model argument is missed.
 	 * @since 1.8
 	 */
 	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
-			Processing processing, Snapshot snapshot, ProcessServiceProvider serviceProvider)
+			Processing processing, Sandbox sandbox,
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
+			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
+			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
 			throws IllegalArgumentException {
-		this(configurationService, locale, shortDescription, processing, snapshot.getSandbox().getProject(), snapshot,
-				serviceProvider, null);
+		this(configurationService, locale, shortDescription, processing, sandbox.getProject(), sandbox, snapshotType,
+				snapshotTrackParent, snapshotLabel, snapshotDescription, serviceProvider, serviceProviderArgument);
 	}
 
 	/**
@@ -86,7 +127,12 @@ public final class Task extends Process {
 	 *                                short description.
 	 * @param processing              The processing mode.
 	 * @param project                 The project.
-	 * @param snapshot                The snapshot.
+	 * @param sandbox                 The sandbox.
+	 * @param snapshotType            The snapshot type.
+	 * @param snapshotTrackParent     The track to the parent snapshot. Null if the
+	 *                                snapshot being created is the root.
+	 * @param snapshotLabel           The snapshot label.
+	 * @param snapshotDescription     The snapshot description.
 	 * @param serviceProvider         The service provider.
 	 * @param serviceProviderArgument The service provider arguments.
 	 * @throws IllegalArgumentException Throws if the processing, project, service
@@ -94,15 +140,24 @@ public final class Task extends Process {
 	 * @since 1.8
 	 */
 	private Task(ConfigurationService configurationService, Locale locale, String shortDescription,
-			Processing processing, Project project, Snapshot snapshot, ProcessServiceProvider serviceProvider,
-			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
-		super(configurationService, locale, processing, 1, project, snapshot == null ? null : snapshot.getSandbox());
+			Processing processing, Project project, Sandbox sandbox,
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
+			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
+			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
+			throws IllegalArgumentException {
+		super(configurationService, locale, processing, 1, project, sandbox);
 
-		instance = snapshot == null ? new Instance(serviceProvider, serviceProviderArgument, getJournal().getStep())
-				: new Instance(serviceProvider, snapshot, getJournal().getStep());
-
-		this.shortDescription = shortDescription == null || shortDescription.isBlank() ? instance.getShortDescription()
+		this.shortDescription = shortDescription == null || shortDescription.isBlank()
+				? serviceProvider.getName(locale) + " (v" + serviceProvider.getVersion() + ")"
 				: shortDescription.trim();
+
+		this.snapshotType = snapshotType;
+		this.snapshotTrackParent = snapshotTrackParent;
+		this.snapshotLabel = snapshotLabel;
+		this.snapshotDescription = snapshotDescription;
+
+		this.serviceProvider = serviceProvider;
+		this.serviceProviderArgument = serviceProviderArgument;
 	}
 
 	/*
@@ -145,22 +200,7 @@ public final class Task extends Process {
 	 */
 	@Override
 	public String getThreadPoolWorkspace() {
-		return instance.getThreadPool();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#schedule(int)
-	 */
-	@Override
-	boolean schedule(int id) {
-		if (super.schedule(id)) {
-			instance.schedule();
-
-			return true;
-		} else
-			return false;
+		return serviceProvider.getThreadPool();
 	}
 
 	/*
@@ -170,6 +210,21 @@ public final class Task extends Process {
 	 */
 	@Override
 	protected State execute() {
+		try {
+			if (isSandboxType())
+				instance = new Instance(serviceProvider,
+						getSandbox().createSnapshot(snapshotType, snapshotTrackParent, snapshotLabel,
+								snapshotDescription, serviceProviderArgument, configurationService.getInstance()),
+						getJournal().getStep());
+			else
+				instance = new Instance(serviceProvider, serviceProviderArgument, getJournal().getStep());
+		} catch (IllegalArgumentException e) {
+			getJournal().getStep().setNote(OCR4allUtils.getStackTrace(e));
+
+			return State.interrupted;
+		}
+
+		instance.schedule();
 		return instance.execute();
 	}
 
@@ -180,16 +235,7 @@ public final class Task extends Process {
 	 */
 	@Override
 	protected void kill() {
-		instance.cancel();
-	}
-
-	/**
-	 * Returns the snapshot track.
-	 * 
-	 * @return The snapshot track. Null if not available
-	 * @since 1.8
-	 */
-	public List<Integer> getSnapshotTrack() {
-		return instance.getSnapshotTrack();
+		if (instance != null)
+			instance.cancel();
 	}
 }

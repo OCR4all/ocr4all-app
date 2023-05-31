@@ -35,7 +35,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
@@ -278,6 +277,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 
 			final Locale locale = getLocale(lang);
 			Task task;
+			List<Integer> snapshotTrackParent = null;
 			switch (service.getCoreData()) {
 			case project:
 				task = new Task(configurationService, locale, request.getJobShortDescription(), Job.Processing.parallel,
@@ -289,16 +289,14 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 				if (authorization.sandbox == null || request instanceof ServiceProviderSnapshotCoreRequest)
 					try {
 						final ServiceProviderSnapshotCoreRequest snapshotRequest = (ServiceProviderSnapshotCoreRequest) request;
-						final List<Integer> track = (request instanceof ServiceProviderSnapshotRequest)
+						snapshotTrackParent = (request instanceof ServiceProviderSnapshotRequest)
 								? ((ServiceProviderSnapshotRequest) request).getParentSnapshot().getTrack()
 								: null;
 
-						Snapshot snapshot = authorization.sandbox.createSnapshot(type.getSnapshotType(), track,
-								snapshotRequest.getLabel(), snapshotRequest.getDescription(), request,
-								configurationService.getInstance());
-
 						task = new Task(configurationService, locale, request.getJobShortDescription(),
-								Job.Processing.parallel, snapshot, (ProcessServiceProvider) provider);
+								Job.Processing.parallel, authorization.sandbox, type.getSnapshotType(),
+								snapshotTrackParent, snapshotRequest.getLabel(), snapshotRequest.getDescription(),
+								(ProcessServiceProvider) provider, request);
 					} catch (Exception ex) {
 						log(ex);
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -315,8 +313,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 
 			response.setStatus(HttpServletResponse.SC_OK);
 			response.setContentType(applicationJson);
-			response.getWriter().write(objectMapper
-					.writeValueAsString(new JobJsonResponse(task.getId(), jobState, task.getSnapshotTrack())));
+			response.getWriter().write(
+					objectMapper.writeValueAsString(new JobJsonResponse(task.getId(), jobState, snapshotTrackParent)));
 			response.getWriter().flush();
 		} catch (ResponseStatusException ex) {
 			throw ex;

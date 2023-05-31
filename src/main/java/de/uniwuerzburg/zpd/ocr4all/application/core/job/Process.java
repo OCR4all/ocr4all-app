@@ -368,16 +368,6 @@ public abstract class Process extends Job {
 		}
 
 		/**
-		 * Returns the thread pool for the execution of the service provider.
-		 * 
-		 * @return The thread pool. Null if not set.
-		 * @since 1.8
-		 */
-		public String getThreadPool() {
-			return serviceProvider.getThreadPool();
-		}
-
-		/**
 		 * Returns the service provider model with their arguments.
 		 * 
 		 * @return The service provider model with their arguments.
