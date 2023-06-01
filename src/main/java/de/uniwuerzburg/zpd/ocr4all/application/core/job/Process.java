@@ -471,23 +471,13 @@ public abstract class Process extends Job {
 		}
 
 		/**
-		 * Schedules the job if it is in initialized state.
+		 * Returns true if the state is initialized.
 		 * 
+		 * @return True if the state is initialized.
 		 * @since 1.8
 		 */
-		void schedule() {
-			if (State.initialized.equals(state))
-				setState(State.scheduled);
-		}
-
-		/**
-		 * Returns true if the state is scheduled.
-		 * 
-		 * @return True if the state is scheduled.
-		 * @since 1.8
-		 */
-		public boolean isStateScheduled() {
-			return State.scheduled.equals(state);
+		private boolean isInitialized() {
+			return State.initialized.equals(state);
 		}
 
 		/**
@@ -496,7 +486,7 @@ public abstract class Process extends Job {
 		 * @return True if the state is running.
 		 * @since 1.8
 		 */
-		public boolean isStateRunning() {
+		private boolean isRunning() {
 			return State.running.equals(state);
 		}
 
@@ -516,16 +506,6 @@ public abstract class Process extends Job {
 			default:
 				return false;
 			}
-		}
-
-		/**
-		 * Returns the state.
-		 *
-		 * @return The state.
-		 * @since 1.8
-		 */
-		public Job.State getState() {
-			return state;
 		}
 
 		/**
@@ -657,7 +637,7 @@ public abstract class Process extends Job {
 		 * @since 1.8
 		 */
 		public synchronized State execute() {
-			if (isStateScheduled()) {
+			if (isInitialized()) {
 				setState(State.running);
 				start = new Date();
 
@@ -765,7 +745,7 @@ public abstract class Process extends Job {
 		 * @since 1.8
 		 */
 		public State cancel() {
-			if (isStateScheduled() || isStateRunning()) {
+			if (isInitialized() || isRunning()) {
 				final boolean isRunning = State.running.equals(state);
 
 				setState(State.canceled);

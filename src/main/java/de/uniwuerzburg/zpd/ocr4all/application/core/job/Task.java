@@ -224,7 +224,6 @@ public final class Task extends Process {
 			return State.interrupted;
 		}
 
-		instance.schedule();
 		return instance.execute();
 	}
 
