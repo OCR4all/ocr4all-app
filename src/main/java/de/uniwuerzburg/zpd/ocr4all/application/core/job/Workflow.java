@@ -237,12 +237,12 @@ public class Workflow extends Process {
 						return State.interrupted;
 					}
 
-					instance.schedule();
-
+					// executes the instance
 					State state = instance.execute();
 					if (!State.completed.equals(state))
 						return state;
 
+					// performs depth-first search (DFS) on path
 					state = execute(snapshot, path.getChildren());
 					if (!State.completed.equals(state))
 						return state;

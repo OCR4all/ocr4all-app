@@ -41,27 +41,27 @@ public class JobJsonResponse implements Serializable {
 	private Job.State jobState;
 
 	/**
-	 * The snapshot track.
+	 * The track to the parent snapshot.
 	 */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	@JsonProperty("snapshot-track")
-	private List<Integer> snapshotTrack;
+	@JsonProperty("snapshot-track-parent")
+	private List<Integer> snapshotTrackParent;
 
 	/**
 	 * Creates a JSON object for a scheduled job to send responses to clients.
 	 * 
-	 * @param jobId         The job id.
-	 * @param jobState      The job state.
-	 * @param snapshotTrack The snapshot track.
+	 * @param jobId               The job id.
+	 * @param jobState            The job state.
+	 * @param snapshotTrackParent The track to the parent snapshot.
 	 * @since 1.8
 	 */
-	public JobJsonResponse(int jobId, Job.State jobState, List<Integer> snapshotTrack) {
+	public JobJsonResponse(int jobId, Job.State jobState, List<Integer> snapshotTrackParent) {
 		super();
 
 		this.jobId = jobId;
 		this.jobState = jobState;
 
-		this.snapshotTrack = snapshotTrack;
+		this.snapshotTrackParent = snapshotTrackParent;
 	}
 
 	/**
@@ -105,23 +105,23 @@ public class JobJsonResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the snapshot track.
+	 * Returns the track to the parent snapshot.
 	 *
-	 * @return The snapshot track.
+	 * @return The track to the parent snapshot.
 	 * @since 1.8
 	 */
-	public List<Integer> getSnapshotTrack() {
-		return snapshotTrack;
+	public List<Integer> getSnapshotTrackParent() {
+		return snapshotTrackParent;
 	}
 
 	/**
-	 * Set the snapshot track.
+	 * Set the track to the parent snapshot.
 	 *
-	 * @param snapshotTrack The snapshot track to set.
+	 * @param track The track to set.
 	 * @since 1.8
 	 */
-	public void setSnapshotTrack(List<Integer> snapshotTrack) {
-		this.snapshotTrack = snapshotTrack;
+	public void setSnapshotTrackParent(List<Integer> track) {
+		snapshotTrackParent = track;
 	}
 
 }
