@@ -174,7 +174,7 @@ public class SchedulerService extends CoreService {
 
 				if (threadPool != null) {
 					threadPool.shutdown();
-					
+
 					logger.info(
 							"removed thread pool '" + taskExecutorThreadNamePrefixWorkspace + "-" + threadName + "'.");
 				}
@@ -627,23 +627,23 @@ public class SchedulerService extends CoreService {
 	}
 
 	/**
-	 * Returns the snapshot of all jobs.
+	 * Returns all jobs.
 	 * 
-	 * @return The snapshot.
+	 * @return The all jobs.
 	 * @since 1.8
 	 */
-	public Snapshot getSnapshot() {
-		return getSnapshot(null);
+	public Container getJobs() {
+		return getJobs(null);
 	}
 
 	/**
-	 * Returns the snapshot of the jobs that are associated to the given clusters.
+	 * Returns the jobs that are associated to the given clusters.
 	 * 
 	 * @param clusters The clusters. If null, all jobs are returned in the snapshot.
-	 * @return The snapshot.
+	 * @return The jobs that are associated to the given clusters.
 	 * @since 1.8
 	 */
-	public Snapshot getSnapshot(Collection<Job.Cluster> clusters) {
+	public Container getJobs(Collection<Job.Cluster> clusters) {
 		// Filter target jobs
 		Set<Job> jobs;
 		if (clusters == null)
@@ -656,7 +656,7 @@ public class SchedulerService extends CoreService {
 		}
 
 		// Add scheduled target jobs to the snapshot in the same order
-		Snapshot snapshot = new Snapshot();
+		Container snapshot = new Container();
 		for (Job job : scheduled)
 			if (jobs.remove(job))
 				snapshot.getScheduled().add(job);
@@ -673,13 +673,13 @@ public class SchedulerService extends CoreService {
 	}
 
 	/**
-	 * Defines scheduler snapshots.
+	 * Defines scheduler containers.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static final class Snapshot {
+	public static final class Container {
 		/**
 		 * The scheduled jobs in the same order as in the scheduler.
 		 */
@@ -700,7 +700,7 @@ public class SchedulerService extends CoreService {
 		 * 
 		 * @since 1.8
 		 */
-		public Snapshot() {
+		public Container() {
 			super();
 		}
 

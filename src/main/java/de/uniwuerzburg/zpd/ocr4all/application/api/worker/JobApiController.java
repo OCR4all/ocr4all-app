@@ -68,11 +68,6 @@ public class JobApiController extends CoreApiController {
 	public static final String schedulerActionRequestMapping = schedulerRequestMapping + actionRequestMapping;
 
 	/**
-	 * The scheduler snapshot request mapping.
-	 */
-	public static final String schedulerSnapshotRequestMapping = schedulerRequestMapping + "/snapshot";
-
-	/**
 	 * The reschedule request mapping.
 	 */
 	public static final String rescheduleRequestMapping = "/reschedule";
@@ -205,17 +200,17 @@ public class JobApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the scheduler snapshot of given type in the response body.
+	 * Returns the overview of given type in the response body.
 	 * 
-	 * @param type The snapshot type. Available types: project, domain,
+	 * @param type The overview type. Available types: project, domain,
 	 *             administration.
 	 * @param id   The id of the project for the associated jobs. This parameter is
 	 *             only required for snapshot type project.
-	 * @return The scheduler snapshot in the response body.
+	 * @return The overview in the response body.
 	 * @since 1.8
 	 */
-	@GetMapping(schedulerSnapshotRequestMapping + typePathVariable)
-	public ResponseEntity<SchedulerSnapshotResponse> schedulerSnapshot(@PathVariable String type,
+	@GetMapping(overviewRequestMapping + typePathVariable)
+	public ResponseEntity<JobOverviewResponse> overview(@PathVariable String type,
 			@RequestParam(required = false) String id) {
 
 		SchedulerSnapshotType schedulerSnapshotType;
@@ -228,13 +223,12 @@ public class JobApiController extends CoreApiController {
 		try {
 			switch (schedulerSnapshotType) {
 			case administration:
-				return isCoordinator() ? ResponseEntity.ok().body(new SchedulerSnapshotResponse(service, null))
+				return isCoordinator() ? ResponseEntity.ok().body(new JobOverviewResponse(service, null))
 						: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 			case project:
 				Authorization authorization = authorizationFactory.authorize(id, ProjectRight.execute);
 
-				return ResponseEntity.ok()
-						.body(new SchedulerSnapshotResponse(service, Arrays.asList(authorization.project)));
+				return ResponseEntity.ok().body(new JobOverviewResponse(service, Arrays.asList(authorization.project)));
 			case domain:
 				if (!isSecured())
 					return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
@@ -245,7 +239,7 @@ public class JobApiController extends CoreApiController {
 							|| (!project.getConfiguration().getConfiguration().isStateBlocked() && project.isExecute()))
 						clusters.add(project);
 
-				return ResponseEntity.ok().body(new SchedulerSnapshotResponse(service, clusters));
+				return ResponseEntity.ok().body(new JobOverviewResponse(service, clusters));
 			default:
 				logger.warn("The scheduler snapshot type \"" + schedulerSnapshotType.name() + "\" is not implemented.");
 
@@ -534,13 +528,13 @@ public class JobApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines scheduler snapshot responses for the api.
+	 * Defines job overview responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class SchedulerSnapshotResponse implements Serializable {
+	public static class JobOverviewResponse implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -562,21 +556,21 @@ public class JobApiController extends CoreApiController {
 		private List<JobResponse> done;
 
 		/**
-		 * Creates a scheduler snapshot response for the api.
+		 * Creates a job overview response for the api.
 		 * 
 		 * @param service  The scheduler service.
 		 * @param clusters The clusters to select the jobs under control of the
 		 *                 scheduler. If null, all jobs are selected.
 		 * @since 1.8
 		 */
-		public SchedulerSnapshotResponse(SchedulerService service, Collection<Job.Cluster> clusters) {
+		public JobOverviewResponse(SchedulerService service, Collection<Job.Cluster> clusters) {
 			super();
 
-			SchedulerService.Snapshot snapshot = service.getSnapshot(clusters);
+			SchedulerService.Container jobs = service.getJobs(clusters);
 
-			scheduled = getJobResponses(snapshot.getScheduled());
-			running = getJobResponses(snapshot.getRunning());
-			done = getJobResponses(snapshot.getDone());
+			scheduled = getJobResponses(jobs.getScheduled());
+			running = getJobResponses(jobs.getRunning());
+			done = getJobResponses(jobs.getDone());
 		}
 
 		/**

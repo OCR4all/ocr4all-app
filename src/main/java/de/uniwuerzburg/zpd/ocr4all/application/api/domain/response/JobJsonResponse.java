@@ -8,9 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response;
 
 import java.io.Serializable;
-import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
@@ -41,27 +39,17 @@ public class JobJsonResponse implements Serializable {
 	private Job.State jobState;
 
 	/**
-	 * The track to the parent snapshot.
-	 */
-	@JsonInclude(JsonInclude.Include.NON_NULL)
-	@JsonProperty("snapshot-track-parent")
-	private List<Integer> snapshotTrackParent;
-
-	/**
 	 * Creates a JSON object for a scheduled job to send responses to clients.
 	 * 
-	 * @param jobId               The job id.
-	 * @param jobState            The job state.
-	 * @param snapshotTrackParent The track to the parent snapshot.
+	 * @param jobId    The job id.
+	 * @param jobState The job state.
 	 * @since 1.8
 	 */
-	public JobJsonResponse(int jobId, Job.State jobState, List<Integer> snapshotTrackParent) {
+	public JobJsonResponse(int jobId, Job.State jobState) {
 		super();
 
 		this.jobId = jobId;
 		this.jobState = jobState;
-
-		this.snapshotTrackParent = snapshotTrackParent;
 	}
 
 	/**
@@ -102,26 +90,6 @@ public class JobJsonResponse implements Serializable {
 	 */
 	public void setJobState(Job.State jobState) {
 		this.jobState = jobState;
-	}
-
-	/**
-	 * Returns the track to the parent snapshot.
-	 *
-	 * @return The track to the parent snapshot.
-	 * @since 1.8
-	 */
-	public List<Integer> getSnapshotTrackParent() {
-		return snapshotTrackParent;
-	}
-
-	/**
-	 * Set the track to the parent snapshot.
-	 *
-	 * @param track The track to set.
-	 * @since 1.8
-	 */
-	public void setSnapshotTrackParent(List<Integer> track) {
-		snapshotTrackParent = track;
 	}
 
 }
