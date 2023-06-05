@@ -277,7 +277,6 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 
 			final Locale locale = getLocale(lang);
 			Task task;
-			List<Integer> snapshotTrackParent = null;
 			switch (service.getCoreData()) {
 			case project:
 				task = new Task(configurationService, locale, request.getJobShortDescription(), Job.Processing.parallel,
@@ -289,7 +288,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 				if (authorization.sandbox == null || request instanceof ServiceProviderSnapshotCoreRequest)
 					try {
 						final ServiceProviderSnapshotCoreRequest snapshotRequest = (ServiceProviderSnapshotCoreRequest) request;
-						snapshotTrackParent = (request instanceof ServiceProviderSnapshotRequest)
+						final List<Integer> snapshotTrackParent = (request instanceof ServiceProviderSnapshotRequest)
 								? ((ServiceProviderSnapshotRequest) request).getParentSnapshot().getTrack()
 								: null;
 
@@ -313,8 +312,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 
 			response.setStatus(HttpServletResponse.SC_OK);
 			response.setContentType(applicationJson);
-			response.getWriter().write(
-					objectMapper.writeValueAsString(new JobJsonResponse(task.getId(), jobState, snapshotTrackParent)));
+			response.getWriter().write(objectMapper.writeValueAsString(new JobJsonResponse(task.getId(), jobState)));
 			response.getWriter().flush();
 		} catch (ResponseStatusException ex) {
 			throw ex;

@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 
 /**
@@ -35,11 +39,13 @@ public class JobResponse implements Serializable {
 	/**
 	 * True if execute or special right is available.
 	 */
+	@JsonProperty("execute")
 	private boolean isExecute;
 
 	/**
 	 * True if special right is available.
 	 */
+	@JsonProperty("special")
 	private boolean isSpecial;
 
 	/**
@@ -78,6 +84,12 @@ public class JobResponse implements Serializable {
 	private String description;
 
 	/**
+	 * The process specific data.
+	 */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private ProcessResponse process;
+
+	/**
 	 * Creates a job response for the api.
 	 * 
 	 * @param job The job.
@@ -96,6 +108,10 @@ public class JobResponse implements Serializable {
 		journal = new JournalResponse(job.getJournal());
 		target = job.getTargetName();
 		description = job.getShortDescription();
+
+		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process
+				? new ProcessResponse((de.uniwuerzburg.zpd.ocr4all.application.core.job.Process) job)
+				: null;
 	}
 
 	/**
@@ -124,6 +140,7 @@ public class JobResponse implements Serializable {
 	 * @return True if execute or special right is available.
 	 * @since 1.8
 	 */
+	@JsonGetter("execute")
 	public boolean isExecute() {
 		return isExecute;
 	}
@@ -144,6 +161,7 @@ public class JobResponse implements Serializable {
 	 * @return True if special right is available.
 	 * @since 1.8
 	 */
+	@JsonGetter("special")
 	public boolean isSpecial() {
 		return isSpecial;
 	}
@@ -296,6 +314,87 @@ public class JobResponse implements Serializable {
 	 */
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	/**
+	 * Defines process responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ProcessResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The project id.
+		 */
+		@JsonProperty("project-id")
+		private String idPproject;
+
+		/**
+		 * The sandbox id.
+		 */
+		@JsonInclude(JsonInclude.Include.NON_NULL)
+		@JsonProperty("sandbox-id")
+		private String idSandbox;
+
+		/**
+		 * Creates a process response for the api.
+		 * 
+		 * @param process The process.
+		 * @since 1.8
+		 */
+		public ProcessResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.Process process) {
+			super();
+
+			idPproject = process.getProject().getId();
+			idSandbox = process.isSandboxType() ? process.getSandbox().getId() : null;
+		}
+
+		/**
+		 * Returns the project id.
+		 *
+		 * @return The project id.
+		 * @since 1.8
+		 */
+		public String getIdPproject() {
+			return idPproject;
+		}
+
+		/**
+		 * Set the project id.
+		 *
+		 * @param id The id to set.
+		 * @since 1.8
+		 */
+		public void setIdPproject(String id) {
+			idPproject = id;
+		}
+
+		/**
+		 * Returns the sandbox id.
+		 *
+		 * @return The sandbox id.
+		 * @since 1.8
+		 */
+		public String getIdSandbox() {
+			return idSandbox;
+		}
+
+		/**
+		 * Set the sandbox id.
+		 *
+		 * @param id The id to set.
+		 * @since 1.8
+		 */
+		public void setIdSandbox(String id) {
+			idSandbox = id;
+		}
+
 	}
 
 	/**
@@ -460,22 +559,39 @@ public class JobResponse implements Serializable {
 			/**
 			 * True if the progress is completed, this means, its progress is 1.
 			 */
+			@JsonProperty("completed")
 			private boolean isCompleted;
 
 			/**
 			 * The standard output message. Null if not set.
 			 */
+			@JsonProperty("standard-output")
 			private String standardOutput;
 
 			/**
 			 * The standard error message. Null if not set.
 			 */
+			@JsonProperty("standard-error")
 			private String standardError;
 
 			/**
 			 * The note. Null if not set.
 			 */
 			private String note;
+
+			/**
+			 * The snapshot track.
+			 */
+			@JsonInclude(JsonInclude.Include.NON_NULL)
+			@JsonProperty("snapshot-track")
+			private List<Integer> snapshotTrack;
+
+			/**
+			 * The service provider id.
+			 */
+			@JsonInclude(JsonInclude.Include.NON_NULL)
+			@JsonProperty("service-provider-id")
+			private String serviceProviderId;
 
 			/**
 			 * Creates a journal step response for the api.
@@ -496,6 +612,16 @@ public class JobResponse implements Serializable {
 				standardError = step.getStandardError();
 
 				note = step.getNote();
+
+				if (step.isFurtherInformationSet()) {
+					if (step.getFurtherInformation() instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process.Instance.StepFurtherInformation) {
+						de.uniwuerzburg.zpd.ocr4all.application.core.job.Process.Instance.StepFurtherInformation furtherInformation = (de.uniwuerzburg.zpd.ocr4all.application.core.job.Process.Instance.StepFurtherInformation) step
+								.getFurtherInformation();
+
+						snapshotTrack = furtherInformation.getSnapshotTrack();
+						serviceProviderId = furtherInformation.getServiceProviderId();
+					}
+				}
 			}
 
 			/**
@@ -546,6 +672,7 @@ public class JobResponse implements Serializable {
 			 * @return The isCompleted.
 			 * @since 1.8
 			 */
+			@JsonGetter("completed")
 			public boolean isCompleted() {
 				return isCompleted;
 			}
@@ -618,6 +745,46 @@ public class JobResponse implements Serializable {
 			 */
 			public void setNote(String note) {
 				this.note = note;
+			}
+
+			/**
+			 * Returns the snapshot track.
+			 *
+			 * @return The snapshot track.
+			 * @since 1.8
+			 */
+			public List<Integer> getSnapshotTrack() {
+				return snapshotTrack;
+			}
+
+			/**
+			 * Set the snapshot track.
+			 *
+			 * @param snapshotTrack The snapshot track to set.
+			 * @since 1.8
+			 */
+			public void setSnapshotTrack(List<Integer> snapshotTrack) {
+				this.snapshotTrack = snapshotTrack;
+			}
+
+			/**
+			 * Returns the service provider id.
+			 *
+			 * @return The service provider id.
+			 * @since 1.8
+			 */
+			public String getServiceProviderId() {
+				return serviceProviderId;
+			}
+
+			/**
+			 * Set the service provider id.
+			 *
+			 * @param id The id to set.
+			 * @since 1.8
+			 */
+			public void setServiceProviderId(String id) {
+				serviceProviderId = id;
 			}
 		}
 	}

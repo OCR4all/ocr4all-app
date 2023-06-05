@@ -210,7 +210,7 @@ public abstract class Process extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	protected class Instance {
+	public class Instance {
 		/**
 		 * The state. The initial state is initialized.
 		 */
@@ -340,8 +340,6 @@ public abstract class Process extends Job {
 					throw new IllegalArgumentException("Instance: the snapshot process is not consistent.");
 				else if (snapshot.getConfiguration().getConfiguration().getProcessConfiguration().getState() != null)
 					throw new IllegalArgumentException("Instance: the snapshot is already in use.");
-
-				snapshot.getConfiguration().getConfiguration().updateProcess(state);
 			}
 
 			if (serviceProviderArgument == null)
@@ -363,7 +361,7 @@ public abstract class Process extends Job {
 			this.journal = journal;
 
 			// Initializes snapshot process state
-			if (snapshot != null)
+			if (this.snapshot != null)
 				snapshot.getConfiguration().getConfiguration().updateProcess(state);
 		}
 
@@ -647,6 +645,8 @@ public abstract class Process extends Job {
 				if (processor == null)
 					journal.setNote("no processor available for the service provider");
 				else {
+					journal.setFurtherInformation(new StepFurtherInformation());
+
 					Framework framework = getFramework();
 					try {
 						executionState = processor.execute(new ProcessServiceProvider.Processor.Callback() {
@@ -773,6 +773,35 @@ public abstract class Process extends Job {
 			}
 
 			return state;
+		}
+
+		/**
+		 * Defines further information for journal steps.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class StepFurtherInformation implements JournalStepFurtherInformation {
+			/**
+			 * Returns the snapshot track.
+			 * 
+			 * @return The snapshot track. Null if not set.
+			 * @since 1.8
+			 */
+			public List<Integer> getSnapshotTrack() {
+				return snapshot == null ? null : snapshot.getConfiguration().getTrack();
+			}
+
+			/**
+			 * Returns the service provider id.
+			 * 
+			 * @return The service provider id.
+			 * @since 1.8
+			 */
+			public String getServiceProviderId() {
+				return serviceProvider.getClass().getName();
+			}
 		}
 
 		/**

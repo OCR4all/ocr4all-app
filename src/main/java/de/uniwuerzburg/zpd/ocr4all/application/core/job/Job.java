@@ -527,6 +527,16 @@ public abstract class Job {
 	}
 
 	/**
+	 * Defines further information for journal steps.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public interface JournalStepFurtherInformation {
+	}
+
+	/**
 	 * Defines journals.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -747,6 +757,11 @@ public abstract class Job {
 			private String note;
 
 			/**
+			 * The further information.
+			 */
+			private JournalStepFurtherInformation furtherInformation;
+
+			/**
 			 * Default constructor for a step in a journal.
 			 * 
 			 * @param index The index. The first index is 0.
@@ -946,6 +961,45 @@ public abstract class Job {
 			}
 
 			/**
+			 * Returns true if the further information is set.
+			 *
+			 * @return True if the further information is set.
+			 * @since 1.8
+			 */
+			public boolean isFurtherInformationSet() {
+				return furtherInformation != null;
+			}
+
+			/**
+			 * Returns the further information.
+			 *
+			 * @return The further information.
+			 * @since 1.8
+			 */
+			public JournalStepFurtherInformation getFurtherInformation() {
+				return furtherInformation;
+			}
+
+			/**
+			 * Set the further information.
+			 *
+			 * @param furtherInformation The further information to set.
+			 * @since 1.8
+			 */
+			public void setFurtherInformation(JournalStepFurtherInformation furtherInformation) {
+				this.furtherInformation = furtherInformation;
+			}
+
+			/**
+			 * Reset the further information.
+			 *
+			 * @since 1.8
+			 */
+			public void resetFurtherInformation() {
+				furtherInformation = null;
+			}
+
+			/**
 			 * Initializes the step.
 			 * 
 			 * @since 1.8
@@ -957,6 +1011,8 @@ public abstract class Job {
 				resetStandardError();
 
 				resetNote();
+
+				resetFurtherInformation();
 			}
 
 			/**

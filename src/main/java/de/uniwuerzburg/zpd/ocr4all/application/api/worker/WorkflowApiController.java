@@ -281,8 +281,7 @@ public class WorkflowApiController extends CoreApiController {
 
 			Job.State jobState = schedulerService.schedule(workflow);
 
-			return ResponseEntity.ok()
-					.body(new JobJsonResponse(workflow.getId(), jobState, request.getParentSnapshot().getTrack()));
+			return ResponseEntity.ok().body(new JobJsonResponse(workflow.getId(), jobState));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (IllegalArgumentException ex) {
