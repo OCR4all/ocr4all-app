@@ -74,11 +74,6 @@ public class JobResponse implements Serializable {
 	private JournalResponse journal;
 
 	/**
-	 * The target.
-	 */
-	private String target;
-
-	/**
 	 * The description.
 	 */
 	private String description;
@@ -106,7 +101,6 @@ public class JobResponse implements Serializable {
 		end = job.getEnd();
 		state = job.getState();
 		journal = new JournalResponse(job.getJournal());
-		target = job.getTargetName();
 		description = job.getShortDescription();
 
 		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process
@@ -277,26 +271,6 @@ public class JobResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the target.
-	 *
-	 * @return The target.
-	 * @since 1.8
-	 */
-	public String getTarget() {
-		return target;
-	}
-
-	/**
-	 * Set the target.
-	 *
-	 * @param target The target to set.
-	 * @since 1.8
-	 */
-	public void setTarget(String target) {
-		this.target = target;
-	}
-
-	/**
 	 * Returns the description.
 	 *
 	 * @return The description.
@@ -314,6 +288,26 @@ public class JobResponse implements Serializable {
 	 */
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	/**
+	 * Returns the process.
+	 *
+	 * @return The process.
+	 * @since 1.8
+	 */
+	public ProcessResponse getProcess() {
+		return process;
+	}
+
+	/**
+	 * Set the process.
+	 *
+	 * @param process The process to set.
+	 * @since 1.8
+	 */
+	public void setProcess(ProcessResponse process) {
+		this.process = process;
 	}
 
 	/**

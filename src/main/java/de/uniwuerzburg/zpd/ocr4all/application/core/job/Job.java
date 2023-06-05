@@ -179,14 +179,6 @@ public abstract class Job {
 	}
 
 	/**
-	 * Returns the target name.
-	 * 
-	 * @return The target name.
-	 * @since 1.8
-	 */
-	public abstract String getTargetName();
-
-	/**
 	 * Returns the short description.
 	 * 
 	 * @return The short description.
@@ -438,7 +430,7 @@ public abstract class Job {
 			start = new Date();
 
 			taskExecutor.execute(() -> {
-				logger.info("Start execution of job ID " + getId() + " / " + getTargetName() + ".");
+				logger.info("Start execution of job ID " + getId() + ".");
 
 				State executionState = execute();
 

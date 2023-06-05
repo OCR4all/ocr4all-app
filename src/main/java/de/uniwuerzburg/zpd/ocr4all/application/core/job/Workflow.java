@@ -118,16 +118,6 @@ public class Workflow extends Process {
 	/*
 	 * (non-Javadoc)
 	 *
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getTargetName()
-	 */
-	@Override
-	public String getTargetName() {
-		return getProject().getName() + " (" + getSandbox().getConfiguration().getConfiguration().getName() + ")";
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
 	 * @see
 	 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Job#getShortDescription()
 	 */
