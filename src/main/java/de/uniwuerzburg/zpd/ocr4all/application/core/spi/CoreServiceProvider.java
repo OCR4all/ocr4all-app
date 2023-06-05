@@ -78,22 +78,23 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 		final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = configurationService
 				.getWorkspace().getConfiguration().getTaskExecutorServiceProviders();
 
-		for (P provider : ServiceLoader.load(service))
-			if (provider.getName(configurationService.getApplication().getLocale()) != null
-					&& !provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty()) {
-				String id = provider.getClass().getName();
+		for (P provider : ServiceLoader.load(service)) {
+			String id = provider.getClass().getName();
 
-				if (serviceProviders.containsKey(id))
-					this.logger.warn("Ignored provider for service " + service.getName() + " with duplicated key "
-							+ service.getName() + ".");
+			if (serviceProviders.containsKey(id))
+				this.logger.warn("Ignored service provider with duplicated key " + id + ".");
+			else {
+				TaskExecutorServiceProvider taskExecutorServiceProvider = taskExecutorServiceProviders.get(id);
+
+				provider.configure(!lazyInitializedServiceProviders.contains(id),
+						!disabledServiceProviders.contains(id),
+						taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
+						configuration);
+
+				if (provider.getName(configurationService.getApplication().getLocale()) == null
+						|| provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty())
+					this.logger.warn("Ignored service provider with key " + id + ", since its name is not defied.");
 				else {
-					TaskExecutorServiceProvider taskExecutorServiceProvider = taskExecutorServiceProviders.get(id);
-
-					provider.configure(!lazyInitializedServiceProviders.contains(id),
-							!disabledServiceProviders.contains(id),
-							taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
-							configuration);
-
 					serviceProviders.put(id, provider);
 					providers.add(new Provider(id, provider));
 
@@ -115,6 +116,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					}
 				}
 			}
+		}
 
 		if (providers.isEmpty())
 			this.logger.warn("No providers registered for " + service.getName() + ".");
