@@ -200,6 +200,76 @@ public class JobApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the job.
+	 * 
+	 * @param id The job id.
+	 * @return The job.
+	 * @throws ResponseStatusException Throws if the user is not authorized.
+	 * @since 1.8
+	 */
+	private Job getJob(int id) throws ResponseStatusException {
+		try {
+			Job job = service.getJob(id);
+
+			if (!isCoordinator()) {
+				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process)
+					authorizationFactory.authorize(
+							((de.uniwuerzburg.zpd.ocr4all.application.core.job.Process) job).getProject().getId(),
+							ProjectRight.execute);
+				else
+					throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+			}
+
+			return job;
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	/**
+	 * Removes the job and returns it in the response body.
+	 * 
+	 * @param id The job id.
+	 * @return The removed job in the response body.
+	 * @since 1.8
+	 */
+	@GetMapping(removeRequestMapping + idPathVariable)
+	public ResponseEntity<JobResponse> remove(@PathVariable int id) {
+		try {
+			Job job = getJob(id);
+
+			return service.removeDone(id) ? ResponseEntity.ok().body(new JobResponse(job))
+					: ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the job in the response body.
+	 * 
+	 * @param id The job id.
+	 * @return The job in the response body.
+	 * @since 1.8
+	 */
+	@GetMapping(entityRequestMapping + idPathVariable)
+	public ResponseEntity<JobResponse> entity(@PathVariable int id) {
+		try {
+			return ResponseEntity.ok().body(new JobResponse(getJob(id)));
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Returns the overview of given type in the response body.
 	 * 
 	 * @param type The overview type. Available types: project, domain,

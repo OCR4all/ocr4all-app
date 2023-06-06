@@ -189,6 +189,11 @@ public class CoreApiController {
 	public static final String spiPathVariable = "/{spiId}";
 
 	/**
+	 * The id path variable.
+	 */
+	public static final String idPathVariable = "/{id}";
+
+	/**
 	 * The project id path variable.
 	 */
 	public static final String projectPathVariable = "/{projectId}";

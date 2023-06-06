@@ -290,7 +290,7 @@ public class SchedulerService extends CoreService {
 	 * @throws IllegalArgumentException Throws if the job is unknown.
 	 * @since 1.8
 	 */
-	private Job getJob(int id) throws IllegalArgumentException {
+	public Job getJob(int id) throws IllegalArgumentException {
 		Job job = jobs.get(id);
 
 		if (job == null)
@@ -601,6 +601,24 @@ public class SchedulerService extends CoreService {
 
 		for (int id : expunges)
 			jobs.remove(id);
+	}
+
+	/**
+	 * Removes the done job.
+	 * 
+	 * @param id The job id.
+	 * @return True if the job could be removed.
+	 * @since 1.8
+	 */
+	public synchronized boolean removeDone(int id) {
+		Job job = jobs.get(id);
+
+		if (job != null && job.isDone()) {
+			jobs.remove(id);
+
+			return true;
+		} else
+			return false;
 	}
 
 	/**
