@@ -3,6 +3,6 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://enunciate.webcohesion.com/schemas/enunciate-2.15.0.xsd">
 
-	<application root="/api" />
+	<application root="/"/>
 
 </enunciate>
