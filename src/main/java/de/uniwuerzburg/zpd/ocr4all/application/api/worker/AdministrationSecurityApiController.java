@@ -13,8 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;

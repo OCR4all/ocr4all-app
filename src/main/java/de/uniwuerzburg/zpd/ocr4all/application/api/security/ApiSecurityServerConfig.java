@@ -7,7 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;

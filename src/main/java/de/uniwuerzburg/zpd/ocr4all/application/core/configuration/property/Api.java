@@ -7,7 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property;
 
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 
 /**
  * Defines ocr4all api properties.
