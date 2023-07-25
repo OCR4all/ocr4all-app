@@ -159,22 +159,22 @@ public class ServiceProviderResponse implements Serializable {
 		List<EntryResponse> list = new ArrayList<>();
 
 		for (Entry entry : entries) {
-			if (entry instanceof Group)
-				list.add(new GroupResponse(locale, (Group) entry));
-			else if (entry instanceof BooleanField)
-				list.add(new BooleanResponse(locale, (BooleanField) entry));
-			else if (entry instanceof DecimalField)
-				list.add(new DecimalResponse(locale, (DecimalField) entry));
-			else if (entry instanceof IntegerField)
-				list.add(new IntegerResponse(locale, (IntegerField) entry));
-			else if (entry instanceof RecognitionModelField)
-				list.add(new RecognitionModelResponse(locale, (RecognitionModelField) entry));
-			else if (entry instanceof SelectField)
-				list.add(new SelectResponse(locale, (SelectField) entry));
-			else if (entry instanceof StringField)
-				list.add(new StringResponse(locale, (StringField) entry));
-			else if (entry instanceof ImageField)
-				list.add(new ImageResponse(locale, (ImageField) entry));
+			if (entry instanceof Group group)
+				list.add(new GroupResponse(locale, group));
+			else if (entry instanceof BooleanField field)
+				list.add(new BooleanResponse(locale, field));
+			else if (entry instanceof DecimalField field)
+				list.add(new DecimalResponse(locale, field));
+			else if (entry instanceof IntegerField field)
+				list.add(new IntegerResponse(locale, field));
+			else if (entry instanceof RecognitionModelField field)
+				list.add(new RecognitionModelResponse(locale, field));
+			else if (entry instanceof SelectField field)
+				list.add(new SelectResponse(locale, field));
+			else if (entry instanceof StringField field)
+				list.add(new StringResponse(locale, field));
+			else if (entry instanceof ImageField field)
+				list.add(new ImageResponse(locale, field));
 			else
 				org.slf4j.LoggerFactory.getLogger(EntryResponse.class).error(
 						"No responce is implemented for model entry " + entry.getClass().getCanonicalName() + ".");

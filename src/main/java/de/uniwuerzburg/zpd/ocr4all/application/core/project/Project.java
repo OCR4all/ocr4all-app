@@ -573,7 +573,7 @@ public class Project implements Job.Cluster {
 
 		if (jobs != null)
 			for (Job job : jobs)
-				if (job != null && (job instanceof Process) && isSame(((Process) job).getProject()))
+				if (job != null && (job instanceof Process process) && isSame(process.getProject()))
 					associated.add(job);
 
 		return associated;

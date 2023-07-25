@@ -9,7 +9,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.request;
 
 import java.io.Serializable;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Defines requests with identification for the api.

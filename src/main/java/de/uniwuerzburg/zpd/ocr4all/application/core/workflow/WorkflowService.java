@@ -300,12 +300,12 @@ public class WorkflowService extends CoreService {
 
 				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
 						null, Type.workflow_metadata_v1, Type.workflow_view_v1, Type.workflow_v1)) {
-					if (entity instanceof Metadata && metadata == null)
-						metadata = (Metadata) entity;
-					else if (entity instanceof View && view == null)
-						view = (View) entity;
-					else if (entity instanceof Workflow && workflow == null)
-						workflow = (Workflow) entity;
+					if (entity instanceof Metadata metadata1 && metadata == null)
+						metadata = metadata1;
+					else if (entity instanceof View view1 && view == null)
+						view = view1;
+					else if (entity instanceof Workflow workflow1 && workflow == null)
+						workflow = workflow1;
 
 					if (metadata != null && view != null && workflow != null)
 						break;
@@ -334,10 +334,10 @@ public class WorkflowService extends CoreService {
 
 				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
 						null, Type.workflow_metadata_v1, Type.workflow_view_v1)) {
-					if (entity instanceof Metadata && metadata == null)
-						metadata = (Metadata) entity;
-					else if (entity instanceof View && view == null)
-						view = (View) entity;
+					if (entity instanceof Metadata metadata1 && metadata == null)
+						metadata = metadata1;
+					else if (entity instanceof View view1 && view == null)
+						view = view1;
 
 					if (metadata != null && view != null)
 						break;
@@ -385,10 +385,10 @@ public class WorkflowService extends CoreService {
 
 				for (Entity entity : getPersistenceManager(uuid).getEntities(null, message -> logger.warn(message), 0,
 						null, Type.workflow_metadata_v1, Type.workflow_v1)) {
-					if (entity instanceof Metadata && metadata == null)
-						metadata = (Metadata) entity;
-					else if (entity instanceof Workflow && workflow == null)
-						workflow = (Workflow) entity;
+					if (entity instanceof Metadata metadata1 && metadata == null)
+						metadata = metadata1;
+					else if (entity instanceof Workflow workflow1 && workflow == null)
+						workflow = workflow1;
 
 					if (metadata != null && workflow != null)
 						break;

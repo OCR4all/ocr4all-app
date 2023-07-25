@@ -889,14 +889,14 @@ public class WorkspaceConfiguration extends CoreFolder {
 					if (identifier.getId() != null && !identifier.getId().isBlank()) {
 						identifier.setId(identifier.getId().trim());
 
-						if (identifier instanceof DisabledServiceProvider)
-							disabledServiceProviders.put(identifier.getId(), (DisabledServiceProvider) identifier);
-						else if (identifier instanceof LazyInitializedServiceProvider)
+						if (identifier instanceof DisabledServiceProvider provider)
+							disabledServiceProviders.put(identifier.getId(), provider);
+						else if (identifier instanceof LazyInitializedServiceProvider provider)
 							lazyInitializedServiceProviders.put(identifier.getId(),
-									(LazyInitializedServiceProvider) identifier);
-						else if (identifier instanceof TaskExecutorServiceProvider)
+									provider);
+						else if (identifier instanceof TaskExecutorServiceProvider provider)
 							taskExecutorServiceProviders.put(identifier.getId(),
-									(TaskExecutorServiceProvider) identifier);
+									provider);
 						else
 							logger.warn("The class type '" + identifier.getClass().getName()
 									+ "' is not implemented for service provider configuration.");

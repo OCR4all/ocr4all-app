@@ -9,8 +9,8 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;

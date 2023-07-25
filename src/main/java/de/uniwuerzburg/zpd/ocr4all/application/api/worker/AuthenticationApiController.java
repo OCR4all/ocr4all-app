@@ -10,9 +10,9 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;

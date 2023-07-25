@@ -40,7 +40,7 @@ public interface SecureServer extends Priority.Entity {
 
 	/**
 	 * Authorize requests by restricting access based on
-	 * {@link javax.servlet.http.HttpServletRequest} using
+	 * {@link jakarta.servlet.http.HttpServletRequest} using
 	 * {@link org.springframework.security.web.util.matcher.RequestMatcher}
 	 * implementations (i.e. via URL patterns). The application roles are defined in
 	 * {@link de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService.Role}.

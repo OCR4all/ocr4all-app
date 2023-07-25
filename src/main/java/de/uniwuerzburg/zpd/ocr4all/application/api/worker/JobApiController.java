@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
@@ -212,9 +212,9 @@ public class JobApiController extends CoreApiController {
 			Job job = service.getJob(id);
 
 			if (!isCoordinator()) {
-				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process)
+				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process process)
 					authorizationFactory.authorize(
-							((de.uniwuerzburg.zpd.ocr4all.application.core.job.Process) job).getProject().getId(),
+							process.getProject().getId(),
 							ProjectRight.execute);
 				else
 					throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);

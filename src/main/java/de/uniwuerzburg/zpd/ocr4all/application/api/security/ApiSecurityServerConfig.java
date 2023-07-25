@@ -7,9 +7,10 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +42,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  * @version 1.0
  * @since 1.8
  */
+@Configuration
 @Profile("api & server")
 @EnableWebSecurity
 public class ApiSecurityServerConfig extends SecurityConfig {
@@ -80,7 +82,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
 	 * annotation.authentication.builders.AuthenticationManagerBuilder)
 	 */
-	@Override
+	/*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(accountService).passwordEncoder(accountService.getPasswordEncoder());
 	}
@@ -201,7 +203,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @see org.springframework.security.config.annotation.web.configuration.
 	 * WebSecurityConfigurerAdapter#authenticationManagerBean()
 	 */
-	@Override
+	/*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
 	@Bean
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		return super.authenticationManagerBean();

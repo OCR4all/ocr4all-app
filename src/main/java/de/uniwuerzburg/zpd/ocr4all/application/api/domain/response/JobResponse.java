@@ -103,8 +103,8 @@ public class JobResponse implements Serializable {
 		journal = new JournalResponse(job.getJournal());
 		description = job.getShortDescription();
 
-		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process
-				? new ProcessResponse((de.uniwuerzburg.zpd.ocr4all.application.core.job.Process) job)
+		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process p
+				? new ProcessResponse(p)
 				: null;
 	}
 

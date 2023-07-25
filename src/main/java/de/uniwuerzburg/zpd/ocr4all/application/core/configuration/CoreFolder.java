@@ -138,7 +138,7 @@ public class CoreFolder {
 	public boolean isFolderEmpty() {
 		if (isFolderDirectory())
 			try (Stream<Path> entries = Files.list(folder)) {
-				return !entries.findFirst().isPresent();
+				return entries.findFirst().isEmpty();
 			} catch (IOException ioe) {
 				// Nothing to do
 			}

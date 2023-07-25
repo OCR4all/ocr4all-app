@@ -7,7 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
  * Defines ocr4all temporary properties.

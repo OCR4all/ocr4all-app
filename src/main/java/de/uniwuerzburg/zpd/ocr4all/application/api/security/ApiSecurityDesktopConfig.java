@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -27,17 +28,19 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  */
 @Profile("api & desktop")
 @Configuration
-public class ApiSecurityDesktopConfig extends SecurityConfig {
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-	 * annotation.web.builders.HttpSecurity)
-	 */
-	@Override
-	public void configure(WebSecurity web) throws Exception {
-		web.ignoring().antMatchers(patternMatchZeroMoreDirectories);
+public class ApiSecurityDesktopConfig {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.springframework.security.config.annotation.web.configuration.
+     * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
+     * annotation.web.builders.HttpSecurity)
+     */
+    @Bean
+    WebSecurityCustomizer webSecurityCustomizer() throws Exception {
+        return (web) -> {
+            web.ignoring().antMatchers(patternMatchZeroMoreDirectories);
+        };
 	}
 
 	/**

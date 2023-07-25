@@ -185,7 +185,7 @@ ocr4all:
         license: https://opensource.org/licenses/MIT
 ---
 spring:
-    profiles: desktop
+    config.activate.on-profile: desktop
 
 logging:
   level:
@@ -193,7 +193,7 @@ logging:
 
 ---
 spring:
-    profiles: server
+    config.activate.on-profile: server
 
 logging:
   file:
@@ -210,7 +210,7 @@ ocr4all:
 
 ---
 spring:
-    profiles: development
+    config.activate.on-profile: development
 
 server:
   port: 9090

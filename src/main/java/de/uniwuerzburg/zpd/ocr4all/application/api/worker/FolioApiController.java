@@ -12,15 +12,14 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -119,7 +118,7 @@ public class FolioApiController extends CoreApiController {
 	public ResponseEntity<FolioResponse> entity(@PathVariable String projectId, @RequestParam Integer id) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 		try {
-			List<Folio> folio = authorization.project.getFolios(Collections.singleton(id));
+			List<Folio> folio = authorization.project.getFolios(Set.of(id));
 
 			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
 					: ResponseEntity.ok().body(new FolioResponse(folio.get(0)));
@@ -191,7 +190,7 @@ public class FolioApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@PostMapping(orderUploadRequestMapping + projectPathVariable)
-	public void orderUpload(@PathVariable String projectId, @RequestParam("file") MultipartFile file,
+	public void orderUpload(@PathVariable String projectId, @RequestParam MultipartFile file,
 			HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {

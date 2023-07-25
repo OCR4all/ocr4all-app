@@ -55,10 +55,10 @@ public class SelectResponse extends FieldResponse<Object, SelectField> {
 
 		items = new ArrayList<>();
 		for (SelectField.Item item : selectField.getItems())
-			if (item instanceof SelectField.Option)
-				items.add(new OptionResponse(locale, (SelectField.Option) item));
-			else if (item instanceof SelectField.Association)
-				items.add(new AssociationResponse(locale, (SelectField.Association) item));
+			if (item instanceof SelectField.Option option)
+				items.add(new OptionResponse(locale, option));
+			else if (item instanceof SelectField.Association association)
+				items.add(new AssociationResponse(locale, association));
 			else
 				org.slf4j.LoggerFactory.getLogger(SelectResponse.class).error(
 						"No responce is implemented for select item " + item.getClass().getCanonicalName() + ".");

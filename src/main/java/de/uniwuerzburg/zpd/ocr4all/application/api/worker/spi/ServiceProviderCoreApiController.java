@@ -13,8 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -288,8 +288,8 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 				if (authorization.sandbox == null || request instanceof ServiceProviderSnapshotCoreRequest)
 					try {
 						final ServiceProviderSnapshotCoreRequest snapshotRequest = (ServiceProviderSnapshotCoreRequest) request;
-						final List<Integer> snapshotTrackParent = (request instanceof ServiceProviderSnapshotRequest)
-								? ((ServiceProviderSnapshotRequest) request).getParentSnapshot().getTrack()
+						final List<Integer> snapshotTrackParent = (request instanceof ServiceProviderSnapshotRequest spsr)
+								? spsr.getParentSnapshot().getTrack()
 								: null;
 
 						task = new Task(configurationService, locale, request.getJobShortDescription(),
