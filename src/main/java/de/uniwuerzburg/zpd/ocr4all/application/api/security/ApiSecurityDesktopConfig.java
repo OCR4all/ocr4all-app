@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,19 +29,19 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  */
 @Profile("api & desktop")
 @Configuration
-public class ApiSecurityDesktopConfig {
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.springframework.security.config.annotation.web.configuration.
-     * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-     * annotation.web.builders.HttpSecurity)
-     */
-    @Bean
-    WebSecurityCustomizer webSecurityCustomizer() throws Exception {
-        return (web) -> {
-            web.ignoring().antMatchers(patternMatchZeroMoreDirectories);
-        };
+public class ApiSecurityDesktopConfig extends SecurityConfig {
+	/**
+	 * Customizes {@link WebSecurity}. Beans of this type will automatically be used
+	 * by {@link WebSecurityConfiguration} to customize {@link WebSecurity}.
+	 * 
+	 * @return The customizations to perform on {@link WebSecurity}.
+	 * @since 1.8
+	 */
+	@Bean
+	WebSecurityCustomizer webSecurityCustomizer() {
+		return (web) -> {
+			web.ignoring().requestMatchers(patternMatchZeroMoreDirectories);
+		};
 	}
 
 	/**

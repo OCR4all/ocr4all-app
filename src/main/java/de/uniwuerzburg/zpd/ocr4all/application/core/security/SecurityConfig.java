@@ -7,8 +7,6 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.security;
 
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-
 /**
  * Defines security configurations.
  *
@@ -16,7 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
  * @version 1.0
  * @since 1.8
  */
-public abstract class SecurityConfig extends WebSecurityConfigurerAdapter {
+public abstract class SecurityConfig {
 	/**
 	 * The ant pattern to match root directory.
 	 */
