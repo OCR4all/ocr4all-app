@@ -7,8 +7,6 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,8 +14,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -34,6 +32,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectSecurityApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Defines security configurations for api server profiles.
@@ -44,7 +43,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  */
 @Configuration
 @Profile("api & server")
-@EnableWebSecurity
 public class ApiSecurityServerConfig extends SecurityConfig {
 	/**
 	 * The logger.
@@ -82,31 +80,42 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
 	 * annotation.authentication.builders.AuthenticationManagerBuilder)
 	 */
-	/*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
+	/*
+	 * ~~(Migrate manually based on
+	 * https://spring.io/blog/2022/02/21/spring-security-without-the-
+	 * websecurityconfigureradapter)~~>
+	 */@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(accountService).passwordEncoder(accountService.getPasswordEncoder());
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Configures the {@code FilterChainProxy}.
 	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-	 * annotation.web.builders.HttpSecurity)
+	 * @param http The {@link HttpSecurity} is similar to Spring Security's XML
+	 *             &lt;http&gt; element in the namespace configuration. It allows
+	 *             configuring web based security for specific http requests. By
+	 *             default it will be applied to all requests, but can be restricted
+	 *             using {@link #requestMatcher(RequestMatcher)} or other similar
+	 *             methods.
+	 * @return The filter chain which is capable of being matched against an
+	 *         {@code HttpServletRequest} in order to decide whether it applies to
+	 *         that request.
+	 * @since 1.8
 	 */
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Bean
+	SecurityFilterChain filterChain(HttpSecurity http) {
 		// Enable CORS and disable CSRF
-		http = http.cors().and().csrf().disable();
+		http = http.csrf(csrf -> csrf.disable());
 
-		// Set session management to stateless
-		http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+		// Set session management to state less
+		http = http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
 		// Set unauthorized requests exception handler
-		http = http.exceptionHandling().authenticationEntryPoint((request, response, ex) -> {
+		http = http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
 			logger.error("Unauthorized request - {}", ex.getMessage());
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
-		}).and();
+		}));
 
 		/*
 		 * Set permissions on end points
@@ -174,6 +183,8 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 
 		// Add JWT token filter
 		http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+		return http.build();
 	}
 
 	/**
@@ -203,7 +214,11 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @see org.springframework.security.config.annotation.web.configuration.
 	 * WebSecurityConfigurerAdapter#authenticationManagerBean()
 	 */
-	/*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
+	/*
+	 * ~~(Migrate manually based on
+	 * https://spring.io/blog/2022/02/21/spring-security-without-the-
+	 * websecurityconfigureradapter)~~>
+	 */@Override
 	@Bean
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		return super.authenticationManagerBean();
