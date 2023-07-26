@@ -69,11 +69,6 @@ public class ApiConfiguration {
 	 */
 	public static class JWT {
 		/**
-		 * The JWT access token secret.
-		 */
-		private final String secret;
-
-		/**
 		 * The JWT access token issuer.
 		 */
 		private final String issuer;
@@ -91,19 +86,8 @@ public class ApiConfiguration {
 		public JWT(Api.JWT properties) {
 			super();
 
-			secret = properties.getSecret();
 			issuer = properties.getIssuer();
 			validity = properties.getValidity();
-		}
-
-		/**
-		 * Returns the JWT access token secret.
-		 *
-		 * @return The JWT access token secret.
-		 * @since 1.8
-		 */
-		public String getSecret() {
-			return secret;
 		}
 
 		/**

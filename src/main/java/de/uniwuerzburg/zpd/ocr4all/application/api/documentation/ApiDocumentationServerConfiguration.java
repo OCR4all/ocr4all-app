@@ -42,9 +42,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
  * @version 1.0
  * @since 1.8
  */
-@Profile("server & api & documentation")
-@Configuration
-@EnableSwagger2
+//@Profile("server & api & documentation")
+//@Configuration
+//@EnableSwagger2
 public class ApiDocumentationServerConfiguration extends ApiDocumentationConfiguration {
 	/**
 	 * Creates a configuration for the api documentation of Spring REST Web Services

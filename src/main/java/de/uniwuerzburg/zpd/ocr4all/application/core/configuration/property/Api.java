@@ -76,19 +76,9 @@ public class Api {
 	 */
 	public static class JWT {
 		/**
-		 * The default access token secret.
-		 */
-		private static final String defaultSecret = "--access token secret--";
-
-		/**
 		 * The default access token issuer.
 		 */
 		private static final String defaultIssuer = "ocr4all.org";
-
-		/**
-		 * The access token secret. The default secret is --access token secret--.
-		 */
-		private String secret = defaultSecret;
 
 		/**
 		 * The access token issuer. The default issuer is ocr4all.org.
@@ -101,26 +91,6 @@ public class Api {
 		 */
 		@Min(value = 1000, message = "The access token validity should not be less than 1000 ms")
 		private long validity = 604800000;
-
-		/**
-		 * Returns the access token secret.
-		 *
-		 * @return The access token secret.
-		 * @since 1.8
-		 */
-		public String getSecret() {
-			return OCR4all.getNotEmpty(secret, defaultSecret);
-		}
-
-		/**
-		 * Set the access token secret.
-		 *
-		 * @param secret The secret to set.
-		 * @since 1.8
-		 */
-		public void setSecret(String secret) {
-			this.secret = secret;
-		}
 
 		/**
 		 * Returns the access token issuer.

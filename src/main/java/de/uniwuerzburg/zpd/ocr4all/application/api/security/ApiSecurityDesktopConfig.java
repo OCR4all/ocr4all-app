@@ -25,7 +25,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Profile("api & desktop")
 @Configuration
@@ -35,7 +35,7 @@ public class ApiSecurityDesktopConfig extends SecurityConfig {
 	 * by {@link WebSecurityConfiguration} to customize {@link WebSecurity}.
 	 * 
 	 * @return The customizations to perform on {@link WebSecurity}.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
@@ -49,7 +49,7 @@ public class ApiSecurityDesktopConfig extends SecurityConfig {
 	 * Used by spring security if CORS is enabled.
 	 * 
 	 * @return The CORS filter that allows requests for any origin by default.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	CorsFilter corsFilter() {

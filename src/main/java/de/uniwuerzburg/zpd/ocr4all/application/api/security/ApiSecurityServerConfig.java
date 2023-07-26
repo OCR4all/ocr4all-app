@@ -44,7 +44,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Configuration
 @Profile("api & server")
@@ -69,7 +69,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * 
 	 * @param accountService The account service.
 	 * @param jwtTokenFilter The JWT access token filter.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ApiSecurityServerConfig(AccountService accountService, JwtTokenFilter jwtTokenFilter) {
 		super();
@@ -84,7 +84,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * 
 	 * @return The {@link AuthenticationProvider} implementation that retrieves user
 	 *         details from the {@link UserDetailsService}.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	DaoAuthenticationProvider authenticationProvider() {
@@ -109,7 +109,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 *         {@code HttpServletRequest} in order to decide whether it applies to
 	 *         that request.
 	 * @throws Exception Throws on filter chain exceptions.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -205,7 +205,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * Used by spring security if CORS is enabled.
 	 * 
 	 * @return The CORS filter that allows requests for any origin by default.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	CorsFilter corsFilter() {
@@ -227,7 +227,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @param authConfiguration The authentication {@link Configuration}.
 	 * @return The manager that processes an {@link Authentication} request.
 	 * @throws Exception Throws on authentication manager exceptions.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration authConfiguration) throws Exception {

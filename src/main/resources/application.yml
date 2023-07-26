@@ -167,7 +167,6 @@ ocr4all:
     prefix: ocr4all-
   api:
     jwt:
-      secret: --access token secret--
       issuer: ocr4all.org
       validity: 604800000
     documentation:
@@ -186,6 +185,7 @@ ocr4all:
 ---
 spring:
     config.activate.on-profile: desktop
+    security.user.password: no-password-required
 
 logging:
   level:
@@ -221,8 +221,8 @@ logging:
     path:
     name:
   level:
-    org.springframework.security: INFO
-    de.uniwuerzburg.zpd.ocr4all.application: DEBUG
+    "[org.springframework.security]": INFO
+    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application.security.administrator.create: true
