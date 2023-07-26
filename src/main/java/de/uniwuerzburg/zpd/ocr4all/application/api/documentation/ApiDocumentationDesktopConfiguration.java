@@ -7,13 +7,13 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.documentation;
 
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import io.swagger.v3.oas.models.OpenAPI;
 
 /**
  * Defines configurations for the api documentation of Spring REST Web Services
@@ -34,8 +34,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
  * @version 1.0
  * @since 1.8
  */
-//@Profile("desktop & api & documentation")
-//@Configuration
+@Profile("desktop & api & documentation")
+@Configuration
 //@EnableSwagger2
 public class ApiDocumentationDesktopConfiguration extends ApiDocumentationConfiguration {
 	/**
@@ -58,7 +58,7 @@ public class ApiDocumentationDesktopConfiguration extends ApiDocumentationConfig
 	 */
 	@Bean
 	@Override
-	public Docket api() {
+	public OpenAPI api() {
 		return api(null);
 	}
 }

@@ -12,7 +12,7 @@
 spring:
   profiles:
     active:
-      - server
+      - desktop
       - api
       - documentation
       - development
@@ -32,6 +32,15 @@ server:
 # context path
 #
 #server.servlet.context-path: /path
+
+#
+# Swagger API documentation
+#
+springdoc:
+  api-docs.path: /api/doc
+  swagger-ui.path: /api/doc/swagger-ui.html
+#  packagesToScan: de.uniwuerzburg.zpd.ocr4all.application.api
+#  pathsToMatch: /api/**
 
 #
 # Swagger API documentation

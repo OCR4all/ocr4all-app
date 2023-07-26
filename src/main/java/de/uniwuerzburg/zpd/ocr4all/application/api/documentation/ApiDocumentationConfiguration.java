@@ -7,16 +7,11 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.documentation;
 
-import java.util.Collections;
-
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApiConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 
 /**
  * Defines configurations for the api documentation of Spring REST Web Services
@@ -69,7 +64,7 @@ public abstract class ApiDocumentationConfiguration {
 	 * @return The docket bean, which mainly includes the configuration of Swagger.
 	 * @since 1.8
 	 */
-	public abstract Docket api();
+	public abstract OpenAPI api();
 
 	/**
 	 * Returns the sensible defaults and convenience methods for configuration of
@@ -82,15 +77,19 @@ public abstract class ApiDocumentationConfiguration {
 	 *         Springfox framework.
 	 * @since 1.8
 	 */
-	protected Docket api(SpringfoxFrameworkConfiguration configuration) {
-		Docket api = new Docket(DocumentationType.SWAGGER_2).apiInfo(getApiInformation())
-				.useDefaultResponseMessages(false);
+	protected OpenAPI api(SpringfoxFrameworkConfiguration configuration) {
+		OpenAPI api = new OpenAPI();
+		
+		//
+		addApiInformation(api);
 
 		if (configuration != null)
 			api = configuration.add(api);
 
-		return api.select().apis(RequestHandlerSelectors.basePackage(this.configuration.getBasePackage()))
-				.paths(PathSelectors.any()).build();
+//		return api.select().apis(RequestHandlerSelectors.basePackage(this.configuration.getBasePackage()))
+//				.paths(PathSelectors.any()).build();
+		
+		return api;
 	}
 
 	/**
@@ -99,12 +98,17 @@ public abstract class ApiDocumentationConfiguration {
 	 * @return The api's meta information.
 	 * @since 1.8
 	 */
-	private ApiInfo getApiInformation() {
-		return new ApiInfo(configuration.getTitle(), configuration.getDescription(), configuration.getVersion(),
-				configuration.getUrl().getTermsOfService(),
-				new Contact(configuration.getContact().getName(), configuration.getUrl().getContact(),
-						configuration.getContact().getEmail()),
-				configuration.getLicense(), configuration.getUrl().getLicense(), Collections.emptyList());
+	private void addApiInformation(OpenAPI api) {
+		api.info(new Info().title(configuration.getTitle())
+	              .description(configuration.getDescription())
+	              .version(configuration.getVersion())
+	              .license(new License().name(configuration.getLicense()).url(configuration.getUrl().getLicense())));
+		
+//		return new ApiInfo(configuration.getTitle(), configuration.getDescription(), configuration.getVersion(),
+//				configuration.getUrl().getTermsOfService(),
+//				new Contact(configuration.getContact().getName(), configuration.getUrl().getContact(),
+//						configuration.getContact().getEmail()),
+//				configuration.getLicense(), configuration.getUrl().getLicense(), Collections.emptyList());
 	}
 
 	/**
@@ -125,7 +129,7 @@ public abstract class ApiDocumentationConfiguration {
 		 * @return The docket with custom configuration.
 		 * @since 1.8
 		 */
-		public Docket add(Docket docket);
+		public OpenAPI add(OpenAPI api);
 	}
 
 }
