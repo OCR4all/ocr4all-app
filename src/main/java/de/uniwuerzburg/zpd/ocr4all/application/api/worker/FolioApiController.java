@@ -17,21 +17,17 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -41,6 +37,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Keyword;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines folio controllers for the api.
@@ -50,7 +49,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Keyword;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = FolioApiController.contextPath, produces = CoreApiController.applicationJson)
 public class FolioApiController extends CoreApiController {
 	/**
