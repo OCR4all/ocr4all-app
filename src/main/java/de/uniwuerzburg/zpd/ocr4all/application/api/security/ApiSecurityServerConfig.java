@@ -22,6 +22,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.documentation.ApiDocumentationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AdministrationApiController;
@@ -197,6 +200,27 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 		return http.build();
 	}
 
+	/**
+	 * Defines a CORS configuration that allows requests for any origin by default.
+	 * Used by spring security if CORS is enabled.
+	 * 
+	 * @return The CORS configuration that allows requests for any origin by
+	 *         default.
+	 * @since 17
+	 */
+	private CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration config = new CorsConfiguration();
+
+		config.addAllowedOrigin("*");
+		config.addAllowedHeader("*");
+		config.addAllowedMethod("*");
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
+
+		return source;
+	}
+	
 	/**
 	 * Returns the manager that processes an {@link Authentication} request.
 	 * 
