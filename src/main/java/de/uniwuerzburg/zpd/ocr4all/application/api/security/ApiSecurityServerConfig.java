@@ -225,7 +225,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	@Bean
 	CorsConfigurationSource configurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowCredentials(true);
+		//config.setAllowCredentials(true);
 		config.addAllowedOrigin("*");
 		config.addAllowedHeader("*");
 		config.addAllowedMethod("*");
