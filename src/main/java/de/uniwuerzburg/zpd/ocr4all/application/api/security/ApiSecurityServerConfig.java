@@ -23,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
@@ -114,7 +115,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		// Enable CORS and disable CSRF
-		http.csrf(csrf -> csrf.disable());
+		http.cors(cors -> cors.configurationSource(configurationSource())).csrf(csrf -> csrf.disable());
 
 		// Set session management to state less
 		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -219,6 +220,19 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
 
 		return new CorsFilter(source);
+	}
+
+	CorsConfigurationSource configurationSource() {
+		CorsConfiguration config = new CorsConfiguration();
+		config.setAllowCredentials(true);
+		config.addAllowedOrigin("*");
+		config.addAllowedHeader("*");
+		config.addAllowedMethod("*");
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
+
+		return source;
 	}
 
 	/**
