@@ -9,6 +9,8 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
 import java.util.Date;
 
+import javax.crypto.SecretKey;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,19 +23,25 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * Defines JWT access token utilities.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Profile("api & server")
 @Component
 public class JwtTokenUtil {
+	/**
+	 * The {@link SecretKey} instance suitable for use with the specified
+	 * {@link SignatureAlgorithm} HS512.
+	 */
+	private static final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+
 	/**
 	 * The logger.
 	 */
@@ -54,7 +62,7 @@ public class JwtTokenUtil {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param accountService       The account service.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public JwtTokenUtil(ConfigurationService configurationService, AccountService accountService) {
 		super();
@@ -68,14 +76,15 @@ public class JwtTokenUtil {
 	 * 
 	 * @param username The user name.
 	 * @return The JWT access token.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public String generateToken(String username) {
 		final Date createdDate = new Date();
 		final Date expirationDate = getExpiration(createdDate);
 
 		return Jwts.builder().setSubject(username).setIssuer(configuration.getIssuer()).setIssuedAt(createdDate)
-				.setExpiration(expirationDate).signWith(SignatureAlgorithm.HS512, configuration.getSecret()).compact();
+				.setExpiration(expirationDate).signWith(secretKey).compact();
+//				.setExpiration(expirationDate).signWith(SignatureAlgorithm.HS512, configuration.getSecret()).compact();
 	}
 
 	/**
@@ -83,7 +92,7 @@ public class JwtTokenUtil {
 	 * 
 	 * @param date The date to returns the expiration timestamp.
 	 * @return The JWT access token expiration timestamp.
-	 * @since 1.8
+	 * @since 17
 	 */
 	private Date getExpiration(Date date) {
 		return new Date(date.getTime() + configuration.getValidity());
@@ -94,10 +103,11 @@ public class JwtTokenUtil {
 	 * 
 	 * @param token The JWT access token.
 	 * @return The user name from the JWT access token.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public String getUsername(String token) {
-		return Jwts.parser().setSigningKey(configuration.getSecret()).parseClaimsJws(token).getBody().getSubject();
+		return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
+//		return Jwts.parserBuilder().setSigningKey(configuration.getSecret()).parseClaimsJws(token).getBody().getSubject();
 	}
 
 	/**
@@ -105,10 +115,10 @@ public class JwtTokenUtil {
 	 * 
 	 * @param token The JWT access token.
 	 * @return The expiration date from the JWT access token.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Date getExpirationDate(String token) {
-		return Jwts.parser().setSigningKey(configuration.getSecret()).parseClaimsJws(token).getBody().getExpiration();
+		return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getExpiration();
 	}
 
 	/**
@@ -116,15 +126,13 @@ public class JwtTokenUtil {
 	 * 
 	 * @param token The JWT access token.
 	 * @return The core user information. Null if the JWT access token is not valid.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public UserDetails validate(String token) {
 		try {
-			Jwts.parser().setSigningKey(configuration.getSecret()).parseClaimsJws(token);
+			Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
 
 			return accountService.loadUserByUsername(getUsername(token));
-		} catch (SignatureException ex) {
-			logger.warn("Invalid JWT signature - {}", ex.getMessage());
 		} catch (MalformedJwtException ex) {
 			logger.warn("Invalid JWT token - {}", ex.getMessage());
 		} catch (ExpiredJwtException ex) {

@@ -10,20 +10,16 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,6 +38,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.workflow.WorkflowCoreData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.workflow.WorkflowService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines workflow controllers for the api.
@@ -51,7 +50,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = WorkflowApiController.contextPath, produces = CoreApiController.applicationJson)
 public class WorkflowApiController extends CoreApiController {
 	/**

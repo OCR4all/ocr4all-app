@@ -34,12 +34,19 @@ server:
 #server.servlet.context-path: /path
 
 #
-# Swagger API documentation
+# open API documentation
 #
-springfox.documentation:
-  swaggerUi.baseUrl: /api/doc
-  swagger.v2.path: /api/doc/v2/json
-  openApi.v3.path: /api/doc/v3/json
+# sort: 
+#   tags-sorter -> sorts tags (e.g. controllers)
+#   operations-sorter -> sorts methods
+springdoc:
+  packagesToScan: de.uniwuerzburg.zpd.ocr4all.application.api
+  pathsToMatch: /api/**
+  api-docs.path: /api/doc
+  swagger-ui:
+    path: /api/doc/swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
 
 #
 # ocr4all configuration
@@ -167,7 +174,6 @@ ocr4all:
     prefix: ocr4all-
   api:
     jwt:
-      secret: --access token secret--
       issuer: ocr4all.org
       validity: 604800000
     documentation:
@@ -185,7 +191,8 @@ ocr4all:
         license: https://opensource.org/licenses/MIT
 ---
 spring:
-    profiles: desktop
+    config.activate.on-profile: desktop
+    security.user.password: no-password-required
 
 logging:
   level:
@@ -193,7 +200,7 @@ logging:
 
 ---
 spring:
-    profiles: server
+    config.activate.on-profile: server
 
 logging:
   file:
@@ -210,7 +217,7 @@ ocr4all:
 
 ---
 spring:
-    profiles: development
+    config.activate.on-profile: development
 
 server:
   port: 9090
@@ -221,8 +228,8 @@ logging:
     path:
     name:
   level:
-    org.springframework.security: INFO
-    de.uniwuerzburg.zpd.ocr4all.application: DEBUG
+    "[org.springframework.security]": INFO
+    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application.security.administrator.create: true

@@ -7,17 +7,21 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -33,16 +37,17 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectSecurityApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Defines security configurations for api server profiles.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
+@Configuration
 @Profile("api & server")
-@EnableWebSecurity
 public class ApiSecurityServerConfig extends SecurityConfig {
 	/**
 	 * The logger.
@@ -64,7 +69,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * 
 	 * @param accountService The account service.
 	 * @param jwtTokenFilter The JWT access token filter.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ApiSecurityServerConfig(AccountService accountService, JwtTokenFilter jwtTokenFilter) {
 		super();
@@ -73,60 +78,74 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 		this.jwtTokenFilter = jwtTokenFilter;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Returns the {@link AuthenticationProvider} implementation that retrieves user
+	 * details from the {@link UserDetailsService}.
 	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-	 * annotation.authentication.builders.AuthenticationManagerBuilder)
+	 * @return The {@link AuthenticationProvider} implementation that retrieves user
+	 *         details from the {@link UserDetailsService}.
+	 * @since 17
 	 */
-	@Override
-	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(accountService).passwordEncoder(accountService.getPasswordEncoder());
+	@Bean
+	DaoAuthenticationProvider authenticationProvider() {
+		DaoAuthenticationProvider auth = new DaoAuthenticationProvider();
+
+		auth.setUserDetailsService(accountService);
+		auth.setPasswordEncoder(accountService.getPasswordEncoder());
+
+		return auth;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Configures the {@code FilterChainProxy}.
 	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-	 * annotation.web.builders.HttpSecurity)
+	 * @param http The {@link HttpSecurity} is similar to Spring Security's XML
+	 *             &lt;http&gt; element in the namespace configuration. It allows
+	 *             configuring web based security for specific http requests. By
+	 *             default it will be applied to all requests, but can be restricted
+	 *             using {@link #requestMatcher(RequestMatcher)} or other similar
+	 *             methods.
+	 * @return The filter chain which is capable of being matched against an
+	 *         {@code HttpServletRequest} in order to decide whether it applies to
+	 *         that request.
+	 * @throws Exception Throws on filter chain exceptions.
+	 * @since 17
 	 */
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Bean
+	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		// Enable CORS and disable CSRF
-		http = http.cors().and().csrf().disable();
+		http = http.csrf(csrf -> csrf.disable());
 
-		// Set session management to stateless
-		http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+		// Set session management to state less
+		http = http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
 		// Set unauthorized requests exception handler
-		http = http.exceptionHandling().authenticationEntryPoint((request, response, ex) -> {
+		http = http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
 			logger.error("Unauthorized request - {}", ex.getMessage());
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
-		}).and();
+		}));
 
 		/*
 		 * Set permissions on end points
 		 */
-		http.authorizeRequests()
+		http.authorizeHttpRequests(auth -> auth
 				/*
 				 * The public end points
 				 */
 				// instance
-				.antMatchers(HttpMethod.GET, InstanceApiController.contextPath).permitAll()
+				.requestMatchers(HttpMethod.GET, InstanceApiController.contextPath).permitAll()
 
 				// login
-				.antMatchers(HttpMethod.POST, AuthenticationApiController.contextPath).permitAll()
+				.requestMatchers(HttpMethod.POST, AuthenticationApiController.contextPath).permitAll()
 
 				// RESTful web API documentation
-				.antMatchers(HttpMethod.GET, matchAll(ApiDocumentationConfiguration.contextPath)).permitAll()
+				.requestMatchers(HttpMethod.GET, matchAll(ApiDocumentationConfiguration.contextPath)).permitAll()
 
 				/*
 				 * The private end points
 				 */
 				// administration
-				.antMatchers(HttpMethod.GET,
+				.requestMatchers(HttpMethod.GET,
 						AdministrationApiController.contextPath + CoreApiController.overviewRequestMapping,
 						AdministrationApiController.contextPath + CoreApiController.providerRequestMapping
 								+ CoreApiController.overviewRequestMapping,
@@ -144,34 +163,41 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 								+ CoreApiController.listRequestMapping)
 				.hasRole(AccountService.Role.COORD.name())
 
-				.antMatchers(matchAll(AdministrationApiController.contextPath))
+				.requestMatchers(matchAll(AdministrationApiController.contextPath))
 				.hasRole(AccountService.Role.ADMIN.name())
 
 				// job
-				.antMatchers(HttpMethod.GET,
+				.requestMatchers(HttpMethod.GET,
 						JobApiController.contextPath + JobApiController.schedulerInformationRequestMapping)
 				.hasRole(AccountService.Role.COORD.name())
 
-				.antMatchers(HttpMethod.GET,
+				.requestMatchers(HttpMethod.GET,
 						matchAll(JobApiController.contextPath + JobApiController.schedulerActionRequestMapping))
 				.hasRole(AccountService.Role.ADMIN.name())
 
 				// project
-				.antMatchers(HttpMethod.GET, ProjectApiController.contextPath + CoreApiController.createRequestMapping,
+				.requestMatchers(HttpMethod.GET,
+						ProjectApiController.contextPath + CoreApiController.createRequestMapping,
 						ProjectApiController.contextPath + CoreApiController.removeRequestMapping)
 				.hasRole(AccountService.Role.COORD.name())
 
-				.antMatchers(HttpMethod.POST, ProjectApiController.contextPath + CoreApiController.updateRequestMapping)
+				.requestMatchers(HttpMethod.POST,
+						ProjectApiController.contextPath + CoreApiController.updateRequestMapping)
 				.hasRole(AccountService.Role.COORD.name())
 
-				.antMatchers(matchAll(ProjectSecurityApiController.contextPath))
+				.requestMatchers(matchAll(ProjectSecurityApiController.contextPath))
 				.hasRole(AccountService.Role.COORD.name())
 
 				// remainder
-				.anyRequest().hasRole(AccountService.Role.USER.name());
+				.anyRequest().hasRole(AccountService.Role.USER.name()));
+
+		// The authentication provider
+		http.authenticationProvider(authenticationProvider());
 
 		// Add JWT token filter
 		http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+		return http.build();
 	}
 
 	/**
@@ -179,7 +205,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * Used by spring security if CORS is enabled.
 	 * 
 	 * @return The CORS filter that allows requests for any origin by default.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	CorsFilter corsFilter() {
@@ -195,16 +221,17 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 		return new CorsFilter(source);
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Returns the manager that processes an {@link Authentication} request.
 	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#authenticationManagerBean()
+	 * @param authConfiguration The authentication {@link Configuration}.
+	 * @return The manager that processes an {@link Authentication} request.
+	 * @throws Exception Throws on authentication manager exceptions.
+	 * @since 17
 	 */
-	@Override
 	@Bean
-	public AuthenticationManager authenticationManagerBean() throws Exception {
-		return super.authenticationManagerBean();
+	AuthenticationManager authenticationManager(AuthenticationConfiguration authConfiguration) throws Exception {
+		return authConfiguration.getAuthenticationManager();
 	}
 
 }

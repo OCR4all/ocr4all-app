@@ -12,9 +12,9 @@ import java.util.List;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,7 +31,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = InstanceApiController.contextPath, produces = CoreApiController.applicationJson)
 public class InstanceApiController extends CoreApiController {
 	/**

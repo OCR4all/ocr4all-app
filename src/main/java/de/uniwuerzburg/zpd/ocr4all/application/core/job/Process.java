@@ -132,12 +132,12 @@ public abstract class Process extends Job {
 
 		if (jobs != null)
 			for (Job job : jobs)
-				if (job != null && (job instanceof Process)
+				if (job != null && (job instanceof Process process)
 						&& (this == job
-								|| (isProjectType() && ((Process) job).isProjectType()
-										&& project.isSame(((Process) job).getProject()))
-								|| (isSandboxType() && ((Process) job).isSandboxType()
-										&& sandbox.isSame(((Process) job).getSandbox()))))
+								|| (isProjectType() && process.isProjectType()
+										&& project.isSame(process.getProject()))
+								|| (isSandboxType() && process.isSandboxType()
+										&& sandbox.isSame(process.getSandbox()))))
 					dependencies.add(job);
 
 		return dependencies;

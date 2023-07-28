@@ -716,8 +716,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					}
 
 				// Threshold parameter
-				if (launcherArgument instanceof LauncherArgumentMethodThreshold) {
-					LauncherArgumentMethodThreshold launcherArgumentMethodThreshold = (LauncherArgumentMethodThreshold) launcherArgument;
+				if (launcherArgument instanceof LauncherArgumentMethodThreshold launcherArgumentMethodThreshold) {
 
 					if (availableArguments.remove(Field.methodThreshold.getName()))
 						try {

@@ -376,11 +376,6 @@
 			"description": "ocr4all prefix for temporary files/directories names; the default value is 'ocr4all-'."
 		},
 		{
-			"name": "ocr4all.api.jwt.secret",
-			"type": "java.lang.String",
-			"description": "ocr4all api JWT access token secret. The default value is '--access token secret--'."
-		},
-		{
 			"name": "ocr4all.api.jwt.issuer",
 			"type": "java.lang.String",
 			"description": "ocr4all api JWT access token issuer. The default issuer is 'ocr4all.org'."

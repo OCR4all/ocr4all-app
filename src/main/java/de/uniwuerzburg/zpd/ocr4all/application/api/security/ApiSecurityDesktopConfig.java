@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -23,21 +25,23 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Profile("api & desktop")
 @Configuration
 public class ApiSecurityDesktopConfig extends SecurityConfig {
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Customizes {@link WebSecurity}. Beans of this type will automatically be used
+	 * by {@link WebSecurityConfiguration} to customize {@link WebSecurity}.
 	 * 
-	 * @see org.springframework.security.config.annotation.web.configuration.
-	 * WebSecurityConfigurerAdapter#configure(org.springframework.security.config.
-	 * annotation.web.builders.HttpSecurity)
+	 * @return The customizations to perform on {@link WebSecurity}.
+	 * @since 17
 	 */
-	@Override
-	public void configure(WebSecurity web) throws Exception {
-		web.ignoring().antMatchers(patternMatchZeroMoreDirectories);
+	@Bean
+	WebSecurityCustomizer webSecurityCustomizer() {
+		return (web) -> {
+			web.ignoring().requestMatchers(patternMatchZeroMoreDirectories);
+		};
 	}
 
 	/**
@@ -45,7 +49,7 @@ public class ApiSecurityDesktopConfig extends SecurityConfig {
 	 * Used by spring security if CORS is enabled.
 	 * 
 	 * @return The CORS filter that allows requests for any origin by default.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Bean
 	CorsFilter corsFilter() {

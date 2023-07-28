@@ -16,16 +16,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
@@ -35,6 +33,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Defines job controllers for the api.
@@ -44,7 +43,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = JobApiController.contextPath, produces = CoreApiController.applicationJson)
 public class JobApiController extends CoreApiController {
 	/**
@@ -212,10 +211,8 @@ public class JobApiController extends CoreApiController {
 			Job job = service.getJob(id);
 
 			if (!isCoordinator()) {
-				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process)
-					authorizationFactory.authorize(
-							((de.uniwuerzburg.zpd.ocr4all.application.core.job.Process) job).getProject().getId(),
-							ProjectRight.execute);
+				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process process)
+					authorizationFactory.authorize(process.getProject().getId(), ProjectRight.execute);
 				else
 					throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 			}

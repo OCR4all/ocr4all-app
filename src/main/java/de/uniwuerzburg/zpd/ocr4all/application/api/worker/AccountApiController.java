@@ -11,18 +11,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -32,6 +28,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.Password;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.State;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Defines account controllers for the api.
@@ -41,7 +40,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
  * @since 1.8
  */
 @Profile("api & server")
-@Controller
+@RestController
 @RequestMapping(path = AccountApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AccountApiController extends CoreApiController {
 	/**

@@ -7,51 +7,51 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.documentation;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import springfox.documentation.service.ApiKey;
-import springfox.documentation.service.AuthorizationScope;
-import springfox.documentation.service.SecurityReference;
-import springfox.documentation.spi.service.contexts.SecurityContext;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 /**
- * Defines configurations for the api documentation of Spring REST Web Services
- * with Swagger 2 for server profiles. The user interface of the documentation
- * is available at the following URL:
+ * Defines configurations for the ope API documentation of Spring REST Web
+ * Services for server profiles. The user interface of the documentation is
+ * available at the following URL:
  * <ul>
  * <li>swagger-ui:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/swagger-ui/</code></li>
- * <li>swagger v2:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/v2/json</code></li>
- * <li>open api v3:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/v3/json</code></li>
+ * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/swagger-ui.html</code></li>
+ * <li>open api: <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc</code></li>
  * </ul>
- * The <code>/api/doc</code> prefix path is defined in the configuration file
- * <code>application.yml</code>. Bearer must be inserted before the JWT token in
- * the authorization.
+ * The <code>/api/doc</code> path is defined in the configuration file
+ * <code>application.yml</code>.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Profile("server & api & documentation")
 @Configuration
-@EnableSwagger2
 public class ApiDocumentationServerConfiguration extends ApiDocumentationConfiguration {
+	/**
+	 * The authorization scheme.
+	 */
+	private static final String authorizationScheme = "Bearer";
+
+	/**
+	 * The authorization scheme name.
+	 */
+	private static final String authorizationSchemeName = "Bearer scheme";
+
 	/**
 	 * Creates a configuration for the api documentation of Spring REST Web Services
 	 * with Swagger 2 for server profile.
 	 * 
 	 * @param configurationService The configuration service.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ApiDocumentationServerConfiguration(ConfigurationService configurationService) {
 		super(configurationService);
@@ -60,47 +60,47 @@ public class ApiDocumentationServerConfiguration extends ApiDocumentationConfigu
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.api.ApiDocumentationConfiguration#api
-	 * ()
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.api.documentation.
+	 * ApiDocumentationConfiguration#api()
 	 */
 	@Bean
 	@Override
-	public Docket api() {
-		return api(docket -> docket.securityContexts(Arrays.asList(securityContext()))
-				.securitySchemes(Arrays.asList(apiKey())));
+	public OpenAPI api() {
+		return api(api -> addSecurity(api));
 	}
 
 	/**
-	 * Returns the api key.
+	 * Adds the security components and schema to the open API.
 	 * 
-	 * @return The api key.
-	 * @since 1.8
+	 * @param api The open API to add the security components and schema.
+	 * @return The updated open API.
+	 * @since 17
 	 */
-	private ApiKey apiKey() {
-		return new ApiKey("JWT", "Authorization", "header");
+	private OpenAPI addSecurity(OpenAPI api) {
+		var components = getAuthorizationComponents();
+		var securityItem = new SecurityRequirement().addList(authorizationSchemeName);
+
+		return api.components(components).addSecurityItem(securityItem);
 	}
 
 	/**
-	 * Returns the security context.
+	 * Returns the authorization components.
 	 * 
-	 * @return The security context.
-	 * @since 1.8
+	 * @return The authorization components.
+	 * @since 17
 	 */
-	private SecurityContext securityContext() {
-		return SecurityContext.builder().securityReferences(defaultAuthorization()).build();
+	private Components getAuthorizationComponents() {
+		return new Components().addSecuritySchemes(authorizationSchemeName, getSecurityScheme());
 	}
 
 	/**
-	 * Returns the default authorization.
+	 * Returns the authorization scheme.
 	 * 
-	 * @return The default authorization.
-	 * @since 1.8
+	 * @return The authorization scheme.
+	 * @since 17
 	 */
-	private List<SecurityReference> defaultAuthorization() {
-		AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
-		AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
-		authorizationScopes[0] = authorizationScope;
-		return Arrays.asList(new SecurityReference("JWT", authorizationScopes));
+	private SecurityScheme getSecurityScheme() {
+		return new SecurityScheme().name(authorizationSchemeName).type(SecurityScheme.Type.HTTP)
+				.scheme(authorizationScheme);
 	}
 }

@@ -633,8 +633,8 @@ public class SchedulerService extends CoreService {
 	public boolean isTarget(int id, Collection<Project> projects) throws IllegalArgumentException {
 		Job job = getJob(id);
 
-		if (job instanceof Process && projects != null) {
-			Project target = ((Process) job).getProject();
+		if (job instanceof Process process && projects != null) {
+			Project target = process.getProject();
 
 			for (Project project : projects)
 				if (target.isSame(project))

@@ -17,19 +17,15 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
@@ -63,6 +59,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvi
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines administration controllers for the api.
@@ -72,7 +71,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = AdministrationApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AdministrationApiController extends CoreApiController {
 	/**
@@ -1246,15 +1245,17 @@ public class AdministrationApiController extends CoreApiController {
 				defaultVersion = WorkspaceConfiguration.Version.defaultVertsion.getLabel();
 
 				projectsFolder = configuration.getProjects().getFolder().toString();
-				
+
 				// The thread pools sorted by name
 				Hashtable<String, Integer> pools = configuration.getConfiguration().getTaskExecutorPoolSizes();
-				
+
 				List<String> poolNames = new ArrayList<>(pools.keySet());
-				Collections.sort(poolNames, (o1, o2) -> { return o1.compareToIgnoreCase(o2);});
-				
+				Collections.sort(poolNames, (o1, o2) -> {
+					return o1.compareToIgnoreCase(o2);
+				});
+
 				threadPools = new ArrayList<>();
-				for (String name: poolNames)
+				for (String name : poolNames)
 					threadPools.add(new ThreadPool(name, pools.get(name)));
 			}
 
