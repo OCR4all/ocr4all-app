@@ -202,7 +202,6 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 
 	/**
 	 * Defines a CORS configuration that allows requests for any origin by default.
-	 * Used by spring security if CORS is enabled.
 	 * 
 	 * @return The CORS configuration that allows requests for any origin by
 	 *         default.
