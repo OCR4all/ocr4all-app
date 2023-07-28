@@ -34,10 +34,10 @@ server:
 #server.servlet.context-path: /path
 
 #
-# Swagger API documentation
+# open API documentation
 #
 # sort: 
-#   tags-sorter -> sort tags (e.g. controllers)
+#   tags-sorter -> sorts tags (e.g. controllers)
 #   operations-sorter -> sorts methods
 springdoc:
   packagesToScan: de.uniwuerzburg.zpd.ocr4all.application.api
