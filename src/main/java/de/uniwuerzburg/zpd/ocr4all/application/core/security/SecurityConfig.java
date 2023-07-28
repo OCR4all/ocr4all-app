@@ -7,6 +7,10 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.security;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 /**
  * Defines security configurations.
  *
@@ -34,6 +38,27 @@ public abstract class SecurityConfig {
 	 */
 	public static String matchAll(String path) {
 		return path + patternMatchZeroMoreDirectories;
+	}
+
+	/**
+	 * Defines a CORS configuration that allows requests for any origin by default.
+	 * Used by spring security if CORS is enabled.
+	 * 
+	 * @return The CORS configuration that allows requests for any origin by
+	 *         default.
+	 * @since 17
+	 */
+	protected CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration config = new CorsConfiguration();
+
+		config.addAllowedOrigin("*");
+		config.addAllowedHeader("*");
+		config.addAllowedMethod("*");
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
+
+		return source;
 	}
 
 }

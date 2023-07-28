@@ -22,9 +22,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.documentation.ApiDocumentationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AdministrationApiController;
@@ -114,13 +111,13 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		// Enable CORS and disable CSRF
-		http = http.csrf(csrf -> csrf.disable());
+		http.cors(cors -> cors.configurationSource(corsConfigurationSource())).csrf(csrf -> csrf.disable());
 
 		// Set session management to state less
-		http = http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
 		// Set unauthorized requests exception handler
-		http = http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
+		http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
 			logger.error("Unauthorized request - {}", ex.getMessage());
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
 		}));
@@ -198,27 +195,6 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 		http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
-	}
-
-	/**
-	 * Defines a cross-origin filter that allows requests for any origin by default.
-	 * Used by spring security if CORS is enabled.
-	 * 
-	 * @return The CORS filter that allows requests for any origin by default.
-	 * @since 17
-	 */
-	@Bean
-	CorsFilter corsFilter() {
-		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowCredentials(true);
-		config.addAllowedOrigin("*");
-		config.addAllowedHeader("*");
-		config.addAllowedMethod("*");
-
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
-
-		return new CorsFilter(source);
 	}
 
 	/**
