@@ -34,12 +34,19 @@ server:
 #server.servlet.context-path: /path
 
 #
-# Swagger API documentation
+# open API documentation
 #
-springfox.documentation:
-  swaggerUi.baseUrl: /api/doc
-  swagger.v2.path: /api/doc/v2/json
-  openApi.v3.path: /api/doc/v3/json
+# sort: 
+#   tags-sorter -> sorts tags (e.g. controllers)
+#   operations-sorter -> sorts methods
+springdoc:
+  packagesToScan: de.uniwuerzburg.zpd.ocr4all.application.api
+  pathsToMatch: /api/**
+  api-docs.path: /api/doc
+  swagger-ui:
+    path: /api/doc/swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
 
 #
 # ocr4all configuration

@@ -13,18 +13,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.administration.AdministrationService;
@@ -35,6 +32,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityEntity;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.State;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Defines administration controllers for the api and server.
@@ -44,7 +43,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
  * @since 1.8
  */
 @Profile("api & server")
-@Controller
+@RestController
 @RequestMapping(path = AdministrationSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AdministrationSecurityApiController extends CoreApiController {
 	/**
@@ -577,7 +576,7 @@ public class AdministrationSecurityApiController extends CoreApiController {
 		/**
 		 * Creates a user response for the api.
 		 * 
-		 * @param user The user.
+		 * @param user   The user.
 		 * @param groups The groups.
 		 * @since 1.8
 		 */

@@ -9,17 +9,14 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
@@ -31,6 +28,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 /**
  * Defines tool service provider controllers for the api.
@@ -40,7 +39,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
  * @since 1.8
  */
 @Profile("api")
-@Controller
+@RestController
 @RequestMapping(path = ToolServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class ToolServiceProviderApiController extends ServiceProviderCoreApiController<ToolService> {
 	/**

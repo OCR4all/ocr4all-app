@@ -12,38 +12,33 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import io.swagger.v3.oas.models.OpenAPI;
 
 /**
- * Defines configurations for the api documentation of Spring REST Web Services
- * with Swagger 2 for desktop profiles. The user interface of the documentation
- * is available at the following URL:
+ * Defines configurations for the ope API documentation of Spring REST Web
+ * Services for desktop profiles. The user interface of the documentation is
+ * available at the following URL:
  * <ul>
  * <li>swagger-ui:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/swagger-ui/</code></li>
- * <li>swagger v2:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/v2/json</code></li>
- * <li>open api v3:
- * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/v3/json</code></li>
+ * <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc/swagger-ui.html</code></li>
+ * <li>open api: <code>http://[HOST]:[PORT][/CONTEXT PATH]/api/doc</code></li>
  * </ul>
- * The <code>/api/doc</code> prefix path is defined in the configuration file
+ * The <code>/api/doc</code> path is defined in the configuration file
  * <code>application.yml</code>.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
-//@Profile("desktop & api & documentation")
-//@Configuration
-//@EnableSwagger2
+@Profile("desktop & api & documentation")
+@Configuration
 public class ApiDocumentationDesktopConfiguration extends ApiDocumentationConfiguration {
 	/**
 	 * Creates a configuration for the api documentation of Spring REST Web Services
 	 * with Swagger 2 for desktop profile.
 	 * 
 	 * @param configurationService The configuration service.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ApiDocumentationDesktopConfiguration(ConfigurationService configurationService) {
 		super(configurationService);
@@ -52,13 +47,12 @@ public class ApiDocumentationDesktopConfiguration extends ApiDocumentationConfig
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.api.ApiDocumentationConfiguration#api
-	 * ()
+	 * @see de.uniwuerzburg.zpd.ocr4all.application.api.documentation.
+	 * ApiDocumentationConfiguration#api()
 	 */
 	@Bean
 	@Override
-	public Docket api() {
+	public OpenAPI api() {
 		return api(null);
 	}
 }

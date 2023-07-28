@@ -10,10 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.Serializable;
 import java.util.Date;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,11 +20,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.security.AuthenticationPrincipal;
@@ -38,6 +34,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService.Role;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines authentication controllers for the api.
@@ -47,7 +46,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
  * @since 1.8
  */
 @Profile("api & server")
-@Controller
+@RestController
 @RequestMapping(path = AuthenticationApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AuthenticationApiController extends CoreApiController {
 	/**
