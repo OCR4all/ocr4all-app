@@ -51,7 +51,7 @@ public class ApiSecurityDesktopConfig extends SecurityConfig {
 	 * @return The CORS filter that allows requests for any origin by default.
 	 * @since 17
 	 */
-	@Bean
+//	@Bean
 	CorsFilter corsFilter() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.addAllowedOrigin("*");

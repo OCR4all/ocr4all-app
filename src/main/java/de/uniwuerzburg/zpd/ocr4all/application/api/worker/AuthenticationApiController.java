@@ -20,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,6 +48,7 @@ import jakarta.validation.constraints.NotNull;
  */
 @Profile("api & server")
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(path = AuthenticationApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AuthenticationApiController extends CoreApiController {
 	/**

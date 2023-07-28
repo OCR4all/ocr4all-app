@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +42,7 @@ import jakarta.validation.Valid;
  */
 @Profile("api")
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(path = OpticalCharacterRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class OpticalCharacterRecognitionServiceProviderApiController
 		extends ServiceProviderCoreApiController<OpticalCharacterRecognitionService> {

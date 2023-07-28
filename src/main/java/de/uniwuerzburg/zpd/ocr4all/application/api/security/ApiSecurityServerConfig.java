@@ -114,13 +114,13 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		// Enable CORS and disable CSRF
-		http = http.csrf(csrf -> csrf.disable());
+		http.csrf(csrf -> csrf.disable());
 
 		// Set session management to state less
-		http = http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
 		// Set unauthorized requests exception handler
-		http = http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
+		http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
 			logger.error("Unauthorized request - {}", ex.getMessage());
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
 		}));
@@ -207,7 +207,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 * @return The CORS filter that allows requests for any origin by default.
 	 * @since 17
 	 */
-	@Bean
+//	@Bean
 	CorsFilter corsFilter() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowCredentials(true);

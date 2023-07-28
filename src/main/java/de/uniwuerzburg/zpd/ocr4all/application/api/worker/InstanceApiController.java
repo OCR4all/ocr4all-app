@@ -12,6 +12,7 @@ import java.util.List;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
  */
 @Profile("api")
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(path = InstanceApiController.contextPath, produces = CoreApiController.applicationJson)
 public class InstanceApiController extends CoreApiController {
 	/**

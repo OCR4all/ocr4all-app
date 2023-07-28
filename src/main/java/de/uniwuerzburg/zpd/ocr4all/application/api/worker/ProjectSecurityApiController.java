@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,6 +38,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
  */
 @Profile("api & server")
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(path = ProjectSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
 public class ProjectSecurityApiController extends CoreApiController {
 	/**

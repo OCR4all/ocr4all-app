@@ -16,6 +16,7 @@ import java.util.Set;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,6 +45,7 @@ import jakarta.validation.constraints.NotBlank;
  */
 @Profile("api & server")
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(path = AdministrationSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AdministrationSecurityApiController extends CoreApiController {
 	/**
