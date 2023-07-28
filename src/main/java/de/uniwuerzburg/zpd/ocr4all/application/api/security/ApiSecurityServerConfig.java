@@ -115,7 +115,7 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		// Enable CORS and disable CSRF
-		http.csrf(csrf -> csrf.disable());
+		http.cors(cors -> cors.configurationSource(configurationSource())).csrf(csrf -> csrf.disable());
 
 		// Set session management to state less
 		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
