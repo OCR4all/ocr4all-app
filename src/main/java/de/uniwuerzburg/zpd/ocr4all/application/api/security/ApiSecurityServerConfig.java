@@ -22,9 +22,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.documentation.ApiDocumentationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.AdministrationApiController;
@@ -36,7 +33,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.JobApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectSecurityApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityConfig;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
@@ -48,7 +44,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 @Configuration
 @Profile("api & server")
-public class ApiSecurityServerConfig extends SecurityConfig {
+public class ApiSecurityServerConfig extends ApiSecurityConfig {
 	/**
 	 * The logger.
 	 */
@@ -113,20 +109,20 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 	 */
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		// Enable CORS and disable CSRF
+		// enable CORS and disable CSRF
 		http.cors(cors -> cors.configurationSource(corsConfigurationSource())).csrf(csrf -> csrf.disable());
 
-		// Set session management to state less
+		// set session management to state less
 		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-		// Set unauthorized requests exception handler
+		// set unauthorized requests exception handler
 		http.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
 			logger.error("Unauthorized request - {}", ex.getMessage());
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
 		}));
 
 		/*
-		 * Set permissions on end points
+		 * set permissions on end points
 		 */
 		http.authorizeHttpRequests(auth -> auth
 				/*
@@ -191,35 +187,15 @@ public class ApiSecurityServerConfig extends SecurityConfig {
 				// remainder
 				.anyRequest().hasRole(AccountService.Role.USER.name()));
 
-		// The authentication provider
+		// the authentication provider
 		http.authenticationProvider(authenticationProvider());
 
-		// Add JWT token filter
+		// add JWT token filter
 		http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
 
-	/**
-	 * Defines a CORS configuration that allows requests for any origin by default.
-	 * 
-	 * @return The CORS configuration that allows requests for any origin by
-	 *         default.
-	 * @since 17
-	 */
-	private CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration config = new CorsConfiguration();
-
-		config.addAllowedOrigin("*");
-		config.addAllowedHeader("*");
-		config.addAllowedMethod("*");
-
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
-
-		return source;
-	}
-	
 	/**
 	 * Returns the manager that processes an {@link Authentication} request.
 	 * 
