@@ -32,17 +32,26 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityEntity;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.State;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Defines administration controllers for the api and server.
+ * Defines security administration controllers for the api and server.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
 @Profile("api & server")
+@Tag(name = "administration security", description = "the security administration API")
 @RestController
 @RequestMapping(path = AdministrationSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AdministrationSecurityApiController extends CoreApiController {
@@ -67,7 +76,7 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	private final AdministrationService service;
 
 	/**
-	 * Creates an administration controller for the api and server.
+	 * Creates a security administration controller for the api and server.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
@@ -88,8 +97,13 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the user with his groups in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "User with Groups", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = UserGroupResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(userRequestMapping + entityRequestMapping)
-	public ResponseEntity<UserGroupResponse> userEntity(@RequestParam String login) {
+	public ResponseEntity<UserGroupResponse> userEntity(
+			@Parameter(description = "the user login") @RequestParam String login) {
 		try {
 			User user = service.getUser(login);
 
@@ -108,6 +122,10 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The users sorted by login in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the users sorted by login in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Users with Groups", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = UserResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(userRequestMapping + listRequestMapping)
 	public ResponseEntity<List<UserResponse>> userList() {
 		try {
@@ -132,6 +150,13 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The created user in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "creates the user and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Creatred User", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = UserResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(userRequestMapping + createRequestMapping)
 	public ResponseEntity<UserResponse> userCreate(@RequestBody @Valid UserRequest request) {
 		String login = SecurityEntity.filter(request.getLogin());
@@ -167,6 +192,13 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The updated user in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates the user and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated User", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = UserResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(userRequestMapping + updateRequestMapping)
 	public ResponseEntity<UserResponse> userUpdate(@RequestBody @Valid UserRequest request) {
 		String login = SecurityEntity.filter(request.getLogin());
@@ -202,6 +234,13 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The user with updated groups in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates the user groups and returns the user with his groups in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated User Groups", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = UserGroupResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(userRequestMapping + updateRequestMapping + groupRequestMapping)
 	public ResponseEntity<UserGroupResponse> userGroupUpdate(@RequestBody @Valid UserGroupRequest request) {
 		String login = SecurityEntity.filter(request.getLogin());
@@ -234,8 +273,15 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The removed user in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the user and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed User", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = UserResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(userRequestMapping + removeRequestMapping)
-	public ResponseEntity<UserResponse> userRemove(@RequestParam String login) {
+	public ResponseEntity<UserResponse> userRemove(
+			@Parameter(description = "the user login") @RequestParam String login) {
 		login = SecurityEntity.filter(login);
 		if (login == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -266,6 +312,11 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The group in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the group in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Group", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = GroupResponse.class)) }),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(groupRequestMapping + entityRequestMapping)
 	public ResponseEntity<GroupResponse> groupEntity(@RequestParam String label) {
 		try {
@@ -286,6 +337,10 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The groups sorted by label in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the groups sorted by label in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Groups", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = GroupResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(groupRequestMapping + listRequestMapping)
 	public ResponseEntity<List<GroupResponse>> groupList() {
 		try {
@@ -310,8 +365,16 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The created group in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "creates the group and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Creatred Group", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = GroupResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(groupRequestMapping + createRequestMapping)
-	public ResponseEntity<GroupResponse> groupCreate(@RequestBody @Valid GroupRequest request) {
+	public ResponseEntity<GroupResponse> groupCreate(
+			@Parameter(description = "the group") @RequestBody @Valid GroupRequest request) {
 		String label = SecurityEntity.filter(request.getLabel());
 		if (label == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -342,6 +405,13 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * @return The updated group in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates the group and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Group", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = GroupResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(groupRequestMapping + updateRequestMapping)
 	public ResponseEntity<GroupResponse> groupUpdate(@RequestBody @Valid GroupRequest request) {
 		String label = SecurityEntity.filter(request.getLabel());
@@ -369,12 +439,19 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	/**
 	 * Removes the group and returns it in the response body.
 	 * 
-	 * @param label The group login.
+	 * @param label The group label.
 	 * @return The removed group in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the group and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Group", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = GroupResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(groupRequestMapping + removeRequestMapping)
-	public ResponseEntity<GroupResponse> groupRemove(@RequestParam String label) {
+	public ResponseEntity<GroupResponse> groupRemove(
+			@Parameter(description = "the group label") @RequestParam String label) {
 		label = SecurityEntity.filter(label);
 		if (label == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

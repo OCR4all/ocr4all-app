@@ -22,6 +22,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Defines instance controllers for the api.
@@ -31,6 +37,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "instance", description = "the instance API")
 @RestController
 @RequestMapping(path = InstanceApiController.contextPath, produces = CoreApiController.applicationJson)
 public class InstanceApiController extends CoreApiController {
@@ -56,6 +63,10 @@ public class InstanceApiController extends CoreApiController {
 	 * @return The instance main information.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the instance main information")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Information", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = InstanceResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping
 	public ResponseEntity<InstanceResponse> info() {
 		try {
