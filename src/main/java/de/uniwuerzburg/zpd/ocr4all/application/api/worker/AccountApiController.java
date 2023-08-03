@@ -28,6 +28,12 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.Password;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.State;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -40,6 +46,7 @@ import jakarta.validation.constraints.NotBlank;
  * @since 1.8
  */
 @Profile("api & server")
+@Tag(name = "account", description = "the account API")
 @RestController
 @RequestMapping(path = AccountApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AccountApiController extends CoreApiController {
@@ -79,6 +86,11 @@ public class AccountApiController extends CoreApiController {
 	 * @return The account in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the account in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Available Account", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AccountResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "Unknown Account", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping
 	public ResponseEntity<AccountResponse> entity() {
 		try {
@@ -109,6 +121,9 @@ public class AccountApiController extends CoreApiController {
 	 *                 client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "Updates the password.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Password"),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(passwordRequestMapping)
 	public void passwordUpdate(@RequestBody @Valid PasswordRequest request, HttpServletResponse response) {
 		try {

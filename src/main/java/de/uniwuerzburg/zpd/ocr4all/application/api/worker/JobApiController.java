@@ -33,6 +33,13 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
@@ -43,6 +50,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "job", description = "the job API")
 @RestController
 @RequestMapping(path = JobApiController.contextPath, produces = CoreApiController.applicationJson)
 public class JobApiController extends CoreApiController {
@@ -142,6 +150,10 @@ public class JobApiController extends CoreApiController {
 	 * @return The scheduler information in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the scheduler information in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Scheduler", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SchedulerInformationResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(schedulerInformationRequestMapping)
 	public ResponseEntity<SchedulerInformationResponse> schedulerInformation() {
 		try {
@@ -161,8 +173,15 @@ public class JobApiController extends CoreApiController {
 	 * @return The scheduler information in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "performs the scheduler action and returns its information in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Scheduler", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SchedulerInformationResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "501", description = "Not Implemented", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(schedulerActionRequestMapping + actionPathVariable)
-	public ResponseEntity<SchedulerInformationResponse> schedulerAction(@PathVariable String action) {
+	public ResponseEntity<SchedulerInformationResponse> schedulerAction(
+			@Parameter(description = "the action to perform - available actions: run, pause, expunge") @PathVariable String action) {
 		SchedulerAction schedulerAction;
 		try {
 			schedulerAction = SchedulerAction.valueOf(action);
@@ -230,8 +249,14 @@ public class JobApiController extends CoreApiController {
 	 * @return The removed job in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the job and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping + idPathVariable)
-	public ResponseEntity<JobResponse> remove(@PathVariable int id) {
+	public ResponseEntity<JobResponse> remove(@Parameter(description = "the job id") @PathVariable int id) {
 		try {
 			Job job = getJob(id);
 
@@ -253,8 +278,14 @@ public class JobApiController extends CoreApiController {
 	 * @return The job in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the job in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping + idPathVariable)
-	public ResponseEntity<JobResponse> entity(@PathVariable int id) {
+	public ResponseEntity<JobResponse> entity(@Parameter(description = "the job id") @PathVariable int id) {
 		try {
 			return ResponseEntity.ok().body(new JobResponse(getJob(id)));
 		} catch (ResponseStatusException ex) {
@@ -267,7 +298,7 @@ public class JobApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the overview of given type in the response body.
+	 * Returns the overview of the jobs of given type in the response body.
 	 * 
 	 * @param type The overview type. Available types: project, domain,
 	 *             administration.
@@ -276,9 +307,18 @@ public class JobApiController extends CoreApiController {
 	 * @return The overview in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the overview of the jobs of given type in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Jobs Overview", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobOverviewResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "501", description = "Not Implemented", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(overviewRequestMapping + typePathVariable)
-	public ResponseEntity<JobOverviewResponse> overview(@PathVariable String type,
-			@RequestParam(required = false) String id) {
+	public ResponseEntity<JobOverviewResponse> overview(
+			@Parameter(description = "the overview type - available types: project, domain administration") @PathVariable String type,
+			@Parameter(description = "the id of the project for the associated jobs - this parameter is only required for snapshot type project") @RequestParam(required = false) String id) {
 
 		SchedulerSnapshotType schedulerSnapshotType;
 		try {
@@ -391,9 +431,17 @@ public class JobApiController extends CoreApiController {
 	 *                 client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "cancels the job")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Canceled Job"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(cancelRequestMapping + jobPathVariable)
-	public void cancel(@PathVariable int jobId, @RequestParam(required = false) String type,
-			@RequestParam(required = false) String id, HttpServletResponse response) {
+	public void cancel(@Parameter(description = "the job id") @PathVariable int jobId,
+			@Parameter(description = "the snapshot type - it is required for users without coordinator security permission and is either project or domain") @RequestParam(required = false) String type,
+			@Parameter(description = "the id of the project for the associated jobs - this parameter is only required for snapshot type project") @RequestParam(required = false) String id,
+			HttpServletResponse response) {
 
 		secure(type, id, false, jobId);
 
@@ -427,10 +475,21 @@ public class JobApiController extends CoreApiController {
 	 *                 client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "reschedules the job")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Rescheduled Job"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
+			@ApiResponse(responseCode = "501", description = "Not Implemented", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(rescheduleRequestMapping + actionPathVariable + jobPathVariable)
-	public void reschedule(@PathVariable String action, @PathVariable int jobId,
-			@RequestParam(required = false) String type, @RequestParam(required = false) String id,
-			@RequestParam(required = false) Integer swap, HttpServletResponse response) {
+	public void reschedule(
+			@Parameter(description = "the action to perform - available actions are: begin, end, swap") @PathVariable String action,
+			@Parameter(description = "the job id") @PathVariable int jobId,
+			@Parameter(description = "the snapshot type. It is required for users without coordinator security permission and is either project or domain") @RequestParam(required = false) String type,
+			@Parameter(description = "the id of the project for the associated jobs - this parameter is only required for snapshot type project") @RequestParam(required = false) String id,
+			@Parameter(description = "the job id to be swapped with the job defined in the jobId parameter - it is only required for swap actions") @RequestParam(required = false) Integer swap,
+			HttpServletResponse response) {
 		ReschedulerAction reschedulerAction;
 		try {
 			reschedulerAction = ReschedulerAction.valueOf(action);

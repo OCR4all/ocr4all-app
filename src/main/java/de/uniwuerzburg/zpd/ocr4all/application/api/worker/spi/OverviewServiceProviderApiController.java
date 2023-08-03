@@ -39,15 +39,23 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Defines overview service provider controllers for the api.
+ * Defines overview api controllers for the service providers.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "SPI overview", description = "the overview API for the service providers")
 @RestController
 @RequestMapping(path = OverviewServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class OverviewServiceProviderApiController extends CoreApiController {
@@ -97,7 +105,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private final ExportService exportService;
 
 	/**
-	 * Creates an overview service provider controller for the api.
+	 * Creates an overview api controller for service providers.
 	 * 
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
@@ -180,6 +188,10 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @return The service providers in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@RequestParam(required = false) String lang) {
 		try {
@@ -215,6 +227,12 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @return The service provider in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the service provider with required id in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Service Provider", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ServiceProviderResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping + spiPathVariable)
 	public ResponseEntity<ServiceProviderResponse> serviceProviders(@PathVariable String spiId,
 			@RequestParam(required = false) String lang) {

@@ -59,6 +59,13 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvi
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -71,6 +78,7 @@ import jakarta.validation.constraints.NotNull;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "administration", description = "the administration API")
 @RestController
 @RequestMapping(path = AdministrationApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AdministrationApiController extends CoreApiController {
@@ -187,6 +195,10 @@ public class AdministrationApiController extends CoreApiController {
 	 * @return The administration overview in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the administration overview in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Overview", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AdministrationResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(overviewRequestMapping)
 	public ResponseEntity<AdministrationResponse> overview() {
 		try {
@@ -202,13 +214,18 @@ public class AdministrationApiController extends CoreApiController {
 	 * Returns the administration service overview for the providers in the response
 	 * body.
 	 * 
-	 * @param lang The language. if null, then use the application preferred locale.
+	 * @param lang The language. If null, then use the application preferred locale.
 	 * @return The administration service overview for the providers in the response
 	 *         body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the administration service overview for the providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Provider Overview", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProviderContainerResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(providerRequestMapping + overviewRequestMapping)
-	public ResponseEntity<ProviderContainerResponse> providerOverview(@RequestParam(required = false) String lang) {
+	public ResponseEntity<ProviderContainerResponse> providerOverview(
+			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		try {
 			return ResponseEntity.ok().body(new ProviderContainerResponse(getLocale(lang)));
 		} catch (Exception ex) {
@@ -219,15 +236,22 @@ public class AdministrationApiController extends CoreApiController {
 	}
 
 	/**
-	 * Authenticates the user and returns the authorization header of the response
-	 * with the JWT access token along with the user identity information in the
-	 * response body.
+	 * Configures the service provider. Allowed actions are: eager, lazy, enable,
+	 * disable, start, restart, stop, thread_pool_set and thread_pool_reset. The
+	 * action thread_pool_set requires name and size.
 	 * 
-	 * @param request The authentication request.
-	 * @return The authorization header of the response with the JWT access token
-	 *         along with the user identity information in the response body.
+	 * @param request The provider request.
+	 * @return The provider journal entry in the response body.
 	 * @since 1.8
 	 */
+	// TODO
+	@Operation(summary = "configures the service provider and returns the provider journal entry in the response body; allowed actions are: eager, lazy, enable, disable, start, restart, stop, thread_pool_set (requires name and size) and thread_pool_reset")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Provider Journal Entry", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JournalEntryResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "501", description = "Not Implemented", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(providerRequestMapping + actionRequestMapping)
 	public ResponseEntity<JournalEntryResponse> providerAction(@RequestBody @Valid ProviderRequest request) {
 		try {

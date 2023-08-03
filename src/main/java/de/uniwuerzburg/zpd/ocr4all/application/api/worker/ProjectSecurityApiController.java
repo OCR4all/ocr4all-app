@@ -27,6 +27,13 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.Projec
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Defines project security controllers for the api.
@@ -36,6 +43,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
  * @since 1.8
  */
 @Profile("api & server")
+@Tag(name = "project security", description = "the project security API")
 @RestController
 @RequestMapping(path = ProjectSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
 public class ProjectSecurityApiController extends CoreApiController {
@@ -71,8 +79,17 @@ public class ProjectSecurityApiController extends CoreApiController {
 	 * @return The project security in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the project security in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Project Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectSecurity.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(informationRequestMapping)
-	public ResponseEntity<ProjectSecurity> information(@RequestParam String id) {
+	public ResponseEntity<ProjectSecurity> information(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(id, ProjectRight.none);
 		try {
 			return ResponseEntity.ok().body(new ProjectSecurity(authorization.project));
@@ -110,6 +127,14 @@ public class ProjectSecurityApiController extends CoreApiController {
 	 * @return The updated project security in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates a project security and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Project Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectSecurity.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
 	public ResponseEntity<ProjectSecurity> update(@RequestBody ProjectSecurity request) {
 		Authorization authorization = authorizationFactory.authorize(request.getId(), ProjectRight.none);

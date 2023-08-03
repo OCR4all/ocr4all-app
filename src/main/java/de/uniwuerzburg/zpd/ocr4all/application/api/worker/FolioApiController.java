@@ -37,6 +37,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Keyword;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -49,6 +57,7 @@ import jakarta.validation.constraints.NotNull;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "folio", description = "the folio API")
 @RestController
 @RequestMapping(path = FolioApiController.contextPath, produces = CoreApiController.applicationJson)
 public class FolioApiController extends CoreApiController {
@@ -106,15 +115,25 @@ public class FolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the folio in the response body.
+	 * Returns the folio of given project in the response body.
 	 * 
 	 * @param projectId The project id. This is the folder name.
 	 * @param id        The folio id.
 	 * @return The folio in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the folio of given project in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = FolioResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping + projectPathVariable)
-	public ResponseEntity<FolioResponse> entity(@PathVariable String projectId, @RequestParam Integer id) {
+	public ResponseEntity<FolioResponse> entity(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the folio id") @RequestParam Integer id) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 		try {
 			List<Folio> folio = authorization.project.getFolios(Set.of(id));
@@ -136,8 +155,17 @@ public class FolioApiController extends CoreApiController {
 	 * @return The list of folios of given project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the list of folios of given project in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(listRequestMapping + projectPathVariable)
-	public ResponseEntity<List<FolioResponse>> list(@PathVariable String projectId,
+	public ResponseEntity<List<FolioResponse>> list(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@RequestBody @Valid FolioListRequest request) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 		try {
@@ -163,8 +191,17 @@ public class FolioApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
+	@Operation(summary = "downloads the folio order")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Folio"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(value = orderDownloadRequestMapping + projectPathVariable, produces = CoreApiController.applicationText)
-	public void orderDownload(@PathVariable String projectId, HttpServletResponse response) throws IOException {
+	public void orderDownload(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
@@ -188,9 +225,17 @@ public class FolioApiController extends CoreApiController {
 	 *                  client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates folios order")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request Succeeded Normally"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(orderUploadRequestMapping + projectPathVariable)
-	public void orderUpload(@PathVariable String projectId, @RequestParam MultipartFile file,
-			HttpServletResponse response) {
+	public void orderUpload(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@RequestParam MultipartFile file, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
 			List<Integer> order = new ArrayList<>();
@@ -249,6 +294,14 @@ public class FolioApiController extends CoreApiController {
 	 * @return The updated folios in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates the folios and returns then in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping + projectPathVariable)
 	public ResponseEntity<List<FolioResponse>> update(@PathVariable String projectId,
 			@RequestBody @Valid FolioRequest request) {
@@ -346,9 +399,18 @@ public class FolioApiController extends CoreApiController {
 	 *                  client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the thumbnail derivative with given id")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Downloaded Thumbnail Derivative"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(derivativeThumbnailRequestMapping + projectPathVariable)
-	public void getDerivativeThumbnail(@PathVariable String projectId, @RequestParam int id,
-			HttpServletResponse response) {
+	public void getDerivativeThumbnail(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,
@@ -364,9 +426,17 @@ public class FolioApiController extends CoreApiController {
 	 *                  client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the detail derivative with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Detail Derivative"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(derivativeDetailRequestMapping + projectPathVariable)
-	public void getDerivativeDetail(@PathVariable String projectId, @RequestParam int id,
-			HttpServletResponse response) {
+	public void getDerivativeDetail(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,
@@ -382,8 +452,17 @@ public class FolioApiController extends CoreApiController {
 	 *                  client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the best derivative with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Best Derivative"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(derivativeBestRequestMapping + projectPathVariable)
-	public void getDerivativeBest(@PathVariable String projectId, @RequestParam int id, HttpServletResponse response) {
+	public void getDerivativeBest(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,

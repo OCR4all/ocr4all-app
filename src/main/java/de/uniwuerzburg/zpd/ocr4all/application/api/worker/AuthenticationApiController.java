@@ -34,6 +34,12 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService.Role;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +52,7 @@ import jakarta.validation.constraints.NotNull;
  * @since 1.8
  */
 @Profile("api & server")
+@Tag(name = "authentication", description = "the authentication API")
 @RestController
 @RequestMapping(path = AuthenticationApiController.contextPath, produces = CoreApiController.applicationJson)
 public class AuthenticationApiController extends CoreApiController {
@@ -99,6 +106,11 @@ public class AuthenticationApiController extends CoreApiController {
 	 *         along with the user identity information in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "authenticates the user and returns the authorization header of the response with the JWT access token along with the user identity information in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Authenticated", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AuthenticationResponse.class)) }),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping
 	public ResponseEntity<AuthenticationResponse> login(@RequestBody @Valid AuthenticationRequest request) {
 		try {
@@ -125,6 +137,10 @@ public class AuthenticationApiController extends CoreApiController {
 	 * @return The user identity information in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the user identity information in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Authenticated", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AuthenticationResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(informationRequestMapping)
 	public ResponseEntity<AuthenticationResponse> information() {
 		try {

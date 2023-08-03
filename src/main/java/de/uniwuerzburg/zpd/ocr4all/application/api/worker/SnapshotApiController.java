@@ -33,6 +33,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -45,6 +53,7 @@ import jakarta.validation.constraints.NotBlank;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "snapshot", description = "the snapshot API")
 @RestController
 @RequestMapping(path = SnapshotApiController.contextPath, produces = CoreApiController.applicationJson)
 public class SnapshotApiController extends CoreApiController {
@@ -92,8 +101,19 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The snapshot in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the leaf snapshot in the track of the request in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Leaf Track Snapshot", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(entityRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SnapshotResponse> entity(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SnapshotResponse> entity(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
@@ -118,9 +138,20 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The snapshots in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the derived snapshots of the leaf snapshot in the track of the request in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Derived Track Snapshots", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SnapshotResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(derivedRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<List<SnapshotResponse>> derived(@PathVariable String projectId,
-			@PathVariable String sandboxId, @RequestBody @Valid SnapshotRequest request) {
+	public ResponseEntity<List<SnapshotResponse>> derived(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
 			List<Snapshot> snapshots = authorization.sandbox.getDerived(request.getTrack());
@@ -148,8 +179,19 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The snapshots in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the snapshots in the track of the request in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Track Snapshots", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SnapshotResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(pathRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<List<SnapshotResponse>> path(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<List<SnapshotResponse>> path(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
@@ -180,8 +222,20 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The updated snapshot in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates the configuration of the leaf snapshot in the track of the request and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Leaf Track Snapshot", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SnapshotResponse> update(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SnapshotResponse> update(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotConfigurationRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
@@ -210,8 +264,20 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The updated snapshot in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "locks the leaf snapshot in the track of the request and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Locked Leaf Track Snapshot", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(lockRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SnapshotResponse> lock(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SnapshotResponse> lock(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotLockRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
@@ -240,8 +306,20 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The updated snapshot in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "unlocks the leaf snapshot in the track of the request and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unlocked Leaf Track Snapshot", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(unlockRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SnapshotResponse> unlock(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SnapshotResponse> unlock(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
@@ -270,8 +348,19 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The removed snapshot in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the leaf snapshot in the track of the request and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Leaf Track Snapshot", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(removeRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SnapshotResponse> remove(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SnapshotResponse> remove(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId,
 				ProjectRight.execute);
@@ -295,9 +384,9 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the files in the sandbox of the leaf snapshot in the track of the
-	 * request in the response body. If the track is null or empty, then the sandbox
-	 * belongs to the root snapshot.
+	 * Returns the list of files in the sandbox of the leaf snapshot in the track of
+	 * the request in the response body. If the track is null or empty, then the
+	 * sandbox belongs to the root snapshot.
 	 * 
 	 * @param projectId The project id. This is the folder name.
 	 * @param sandboxId The sandbox id. This is the folder name.
@@ -305,8 +394,20 @@ public class SnapshotApiController extends CoreApiController {
 	 * @return The files in the sandbox of the snapshot.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the list of files in the sandbox of the leaf snapshot in the track of the request in the response body - if the track is null or empty, then the sandbox belongs to the root snapshot")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "File List Leaf Track Snapshot", content = {
+					@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(sandboxRequestMapping + fileRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SandboxResponse> sandboxFile(@PathVariable String projectId, @PathVariable String sandboxId,
+	public ResponseEntity<SandboxResponse> sandboxFileList(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
@@ -333,8 +434,18 @@ public class SnapshotApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
+	@Operation(summary = "downloads the file in the sandbox of the leaf snapshot in the track of the request")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "File Leaf Track Snapshot"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(sandboxRequestMapping + downloadRequestMapping + projectPathVariable + sandboxPathVariable)
-	public void sandboxDownload(@PathVariable String projectId, @PathVariable String sandboxId,
+	public void sandboxDownload(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SandboxRequest request, HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {

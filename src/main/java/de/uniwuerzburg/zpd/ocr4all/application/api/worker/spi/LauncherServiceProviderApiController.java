@@ -28,6 +28,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
@@ -39,6 +47,7 @@ import jakarta.validation.Valid;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "SPI launcher", description = "the launcher service provider API")
 @RestController
 @RequestMapping(path = LauncherServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class LauncherServiceProviderApiController extends ServiceProviderCoreApiController<LauncherService> {
@@ -75,9 +84,21 @@ public class LauncherServiceProviderApiController extends ServiceProviderCoreApi
 	 * @return The service providers in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(providersRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@PathVariable String projectId,
-			@PathVariable String sandboxId, @RequestParam(required = false) String lang) {
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		return serviceProviders(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.special),
 				null, lang);
 	}
@@ -94,9 +115,20 @@ public class LauncherServiceProviderApiController extends ServiceProviderCoreApi
 	 *                  client.
 	 * @since 1.8
 	 */
+	@Operation(summary = "schedules a process to execute the service provider")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(scheduleRequestMapping + projectPathVariable + sandboxPathVariable)
-	public void schedule(@PathVariable String projectId, @PathVariable String sandboxId,
-			@RequestBody @Valid ServiceProviderSnapshotCoreRequest request, @RequestParam(required = false) String lang,
+	public void schedule(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid ServiceProviderSnapshotCoreRequest request,
+			@Parameter(description = "the language") @RequestParam(required = false) String lang,
 			HttpServletResponse response) {
 		schedule(authorizationFactory.authorizeSnapshot(projectId, sandboxId, ProjectRight.special), request, lang,
 				response);
