@@ -31,6 +31,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
@@ -42,6 +50,7 @@ import jakarta.validation.Valid;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "project", description = "the project API")
 @RestController
 @RequestMapping(path = ProjectApiController.contextPath, produces = CoreApiController.applicationJson)
 public class ProjectApiController extends CoreApiController {
@@ -77,8 +86,17 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the project in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping)
-	public ResponseEntity<ProjectResponse> entity(@RequestParam String id) {
+	public ResponseEntity<ProjectResponse> entity(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(id);
 
 		try {
@@ -96,6 +114,10 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The list of authorized projects sorted by name in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the list of authorized projects sorted by name in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Projects", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ProjectResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping)
 	public ResponseEntity<List<ProjectResponse>> list() {
 		try {
@@ -119,8 +141,17 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The created project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "creates a project and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Created Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(createRequestMapping)
-	public ResponseEntity<ProjectResponse> create(@RequestParam String id) {
+	public ResponseEntity<ProjectResponse> create(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		if (id.isBlank())
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -153,6 +184,15 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The updated project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates a project and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
 	public ResponseEntity<ProjectResponse> update(@RequestBody @Valid ProjectRequest request) {
 		if (request.getName() == null || request.getName().isBlank())
@@ -190,8 +230,17 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The project history in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the project history in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Project History", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = HistoryResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(historyInformationRequestMapping)
-	public ResponseEntity<HistoryResponse> historyInformation(@RequestParam String id) {
+	public ResponseEntity<HistoryResponse> historyInformation(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(id, ProjectRight.execute);
 		try {
 			return ResponseEntity.ok().body(new HistoryResponse(authorization.project.getHistory()));
@@ -203,7 +252,7 @@ public class ProjectApiController extends CoreApiController {
 	}
 
 	/**
-	 * Downloads the project history.
+	 * Downloads the project history in zip format.
 	 * 
 	 * @param id       The project id. This is the folder name.
 	 * @param response The HTTP-specific functionality in sending a response to the
@@ -211,8 +260,18 @@ public class ProjectApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
+	@Operation(summary = "downloads the project history in zip format")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Project History ZIP"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(value = historyDownloadRequestMapping, produces = CoreApiController.applicationZip)
-	public void historyDownload(@RequestParam String id, HttpServletResponse response) throws IOException {
+	public void historyDownload(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id,
+			HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorize(id, ProjectRight.execute);
 		try {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + id + ".zip\"");
@@ -265,20 +324,40 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The initialized project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "initializes the project and returns in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Initialized Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(initializeRequestMapping)
-	public ResponseEntity<ProjectResponse> initialize(@RequestParam String id) {
+	public ResponseEntity<ProjectResponse> initialize(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		return initializeReset(id, true);
 	}
 
 	/**
-	 * Resets the project and returns it in the response body.
+	 * Reset the project and returns it in the response body.
 	 * 
 	 * @param id The project id. This is the folder name.
-	 * @return The reseted project in the response body.
+	 * @return The reset project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "reset the project and returns in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Reset Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(resetRequestMapping)
-	public ResponseEntity<ProjectResponse> reset(@RequestParam String id) {
+	public ResponseEntity<ProjectResponse> reset(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		return initializeReset(id, false);
 	}
 
@@ -289,8 +368,17 @@ public class ProjectApiController extends CoreApiController {
 	 * @return The removed project in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the project and returns in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Project", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ProjectResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping)
-	public ResponseEntity<ProjectResponse> remove(@RequestParam String id) {
+	public ResponseEntity<ProjectResponse> remove(
+			@Parameter(description = "the project id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(id, ProjectRight.none);
 		try {
 			return configurationService.getWorkspace().getProjects()

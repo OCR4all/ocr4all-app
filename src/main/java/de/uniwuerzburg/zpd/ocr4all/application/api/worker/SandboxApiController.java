@@ -34,6 +34,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
@@ -45,6 +53,7 @@ import jakarta.validation.Valid;
  * @since 1.8
  */
 @Profile("api")
+@Tag(name = "sandbox", description = "the sandbox API")
 @RestController
 @RequestMapping(path = SandboxApiController.contextPath, produces = CoreApiController.applicationJson)
 public class SandboxApiController extends CoreApiController {
@@ -87,8 +96,18 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The sandbox in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the sandbox in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sandbox", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SandboxResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping + projectPathVariable)
-	public ResponseEntity<SandboxResponse> entity(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<SandboxResponse> entity(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id);
 		try {
 			return ResponseEntity.ok().body(new SandboxResponse(authorization.sandbox, true));
@@ -107,8 +126,17 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The list of sandbox sorted by name in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the list of sandboxes of given project sorted by name in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sandboxes", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SandboxResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping + projectPathVariable)
-	public ResponseEntity<List<SandboxResponse>> list(@PathVariable String projectId) {
+	public ResponseEntity<List<SandboxResponse>> list(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 		try {
 			List<SandboxResponse> sandboxes = new ArrayList<>();
@@ -131,8 +159,20 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The created sandbox in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "creates a sandbox and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Created Sandbox", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SandboxResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflict", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(createRequestMapping + projectPathVariable)
-	public ResponseEntity<SandboxResponse> create(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<SandboxResponse> create(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
 			if (authorization.project.getConfiguration().getSandboxesConfiguration().isAvailable(id)) {
@@ -164,8 +204,18 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The updated sandbox in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "updates a sandbox and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Sandbox", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SandboxResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping + projectPathVariable)
-	public ResponseEntity<SandboxResponse> update(@PathVariable String projectId,
+	public ResponseEntity<SandboxResponse> update(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@RequestBody @Valid SandboxRequest request) {
 		if (request.getName() == null || request.getName().isBlank())
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -203,8 +253,18 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The sandbox history in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "returns the sandbox history in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sandbox History", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = HistoryResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(historyInformationRequestMapping + projectPathVariable)
-	public ResponseEntity<HistoryResponse> historyInformation(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<HistoryResponse> historyInformation(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id, ProjectRight.execute);
 		try {
 			return ResponseEntity.ok().body(new HistoryResponse(authorization.sandbox.getHistory()));
@@ -216,7 +276,7 @@ public class SandboxApiController extends CoreApiController {
 	}
 
 	/**
-	 * Downloads the sandbox history.
+	 * Downloads the sandbox history in zip format.
 	 * 
 	 * @param projectId The project id. This is the folder name.
 	 * @param id        The sandbox id. This is the folder name.
@@ -225,10 +285,20 @@ public class SandboxApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
+	@Operation(summary = "downloads the sandbox history in zip format")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sandbox History ZIP"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(value = historyDownloadRequestMapping
 			+ projectPathVariable, produces = CoreApiController.applicationZip)
-	public void historyDownload(@PathVariable String projectId, @RequestParam String id, HttpServletResponse response)
-			throws IOException {
+	public void historyDownload(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id,
+			HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorize(projectId, id, ProjectRight.execute);
 		try {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + id + ".zip\"");
@@ -242,15 +312,25 @@ public class SandboxApiController extends CoreApiController {
 	}
 
 	/**
-	 * Resets the sandbox and returns it in the response body.
+	 * Reset the sandbox and returns it in the response body.
 	 * 
 	 * @param projectId The project id. This is the folder name.
 	 * @param id        The sandbox id. This is the folder name.
 	 * @return The reseted sandbox in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "reset the sandbox and returns in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Reset Sandbox", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SandboxResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(resetRequestMapping + projectPathVariable)
-	public ResponseEntity<SandboxResponse> reset(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<SandboxResponse> reset(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id, ProjectRight.special);
 		try {
 			if (authorization.sandbox.reset()) {
@@ -275,8 +355,18 @@ public class SandboxApiController extends CoreApiController {
 	 * @return The removed sandbox in the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "removes the sandbox and returns in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Sandbox", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SandboxResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping + projectPathVariable)
-	public ResponseEntity<SandboxResponse> remove(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<SandboxResponse> remove(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id, ProjectRight.special);
 		try {
 			return authorization.project.getConfiguration().getSandboxesConfiguration()
@@ -301,8 +391,18 @@ public class SandboxApiController extends CoreApiController {
 	 *         the response body.
 	 * @since 1.8
 	 */
+	@Operation(summary = "Returns the information contained in the mets (Metadata Encoding and Transmission Standard) XML file in the specified sandbox in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "METS", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = MetsResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(metsRequestMapping + projectPathVariable)
-	public ResponseEntity<MetsResponse> mets(@PathVariable String projectId, @RequestParam String id) {
+	public ResponseEntity<MetsResponse> mets(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId, id);
 		try {
 			return ResponseEntity.ok().body(new MetsResponse(authorization.sandbox));
