@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -167,4 +168,15 @@ public class OCR4allUtils {
 		return Files.list(folder).filter(file -> Files.isDirectory(file)).collect(Collectors.toList());
 	}
 
+	/**
+	 * Returns an immutable universally unique identifier ({@code UUID}). The
+	 * {@code UUID} represents a 128-bit value and is generated using a
+	 * cryptographically strong pseudo random number generator.
+	 * 
+	 * @return A randomly generated {@code UUID}.
+	 * @since 1.8
+	 */
+	public static String getUUID() {
+		return UUID.randomUUID().toString();
+	}
 }

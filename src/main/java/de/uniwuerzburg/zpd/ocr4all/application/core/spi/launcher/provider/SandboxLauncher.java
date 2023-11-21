@@ -30,7 +30,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
@@ -758,10 +758,10 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				 */
 				updatedStandardOutput("Load project images.");
 
-				Hashtable<Integer, Folio> folios = new Hashtable<>();
+				Hashtable<String, Folio> folios = new Hashtable<>();
 				try {
 					for (Folio folio : (new PersistenceManager(framework.getTarget().getProject().getFolio(),
-							Type.project_folio_v1)).getEntities(Folio.class))
+							Type.folio_v1)).getEntities(Folio.class))
 						folios.put(folio.getId(), folio);
 				} catch (Exception e) {
 					updatedStandardError("Cannot read project folios - " + e.getMessage() + ".");
@@ -779,8 +779,8 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				// The images
 				updatedStandardOutput("Determine sandbox launcher images.");
 
-				Set<Integer> images = new HashSet<>();
-				for (int id : launcherArgument.getImages())
+				Set<String> images = new HashSet<>();
+				for (String id : launcherArgument.getImages())
 					if (folios.containsKey(id))
 						images.add(id);
 
@@ -822,7 +822,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 
 				// Copy required project images to temporary directory
 				int index = 0;
-				for (int id : images) {
+				for (String id : images) {
 					callback.updatedProgress(0.35F * (++index) / images.size());
 
 					String fileName = id + "." + ImageFormat.getImageFormat(folios.get(id).getFormat()).name();
@@ -1009,7 +1009,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 		/**
 		 * The images.
 		 */
-		private List<Integer> images = new ArrayList<Integer>();
+		private List<String> images = new ArrayList<>();
 
 		/**
 		 * The method.
@@ -1088,7 +1088,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 		 * @return The images.
 		 * @since 1.8
 		 */
-		public List<Integer> getImages() {
+		public List<String> getImages() {
 			return images;
 		}
 
@@ -1098,7 +1098,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 		 * @param images The images to set.
 		 * @since 1.8
 		 */
-		public void setImages(List<Integer> images) {
+		public void setImages(List<String> images) {
 			this.images = images;
 		}
 

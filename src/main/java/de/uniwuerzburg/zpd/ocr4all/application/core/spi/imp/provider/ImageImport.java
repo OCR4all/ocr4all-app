@@ -30,9 +30,10 @@ import org.apache.commons.io.FilenameUtils;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
@@ -264,11 +265,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 * The folio persistence manager.
 			 */
 			private PersistenceManager folioManager;
-
-			/**
-			 * The folio names.
-			 */
-			private final Set<String> folioNames = new HashSet<>();
 
 			/**
 			 * Returns true if the image should be processed.
@@ -527,37 +523,20 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				 */
 				updatedStandardOutput("Load project folio configuration.");
 
-				folioManager = new PersistenceManager(framework.getTarget().getProject().getFolio(),
-						Type.project_folio_v1);
-				folioNames.clear();
-
-				int id = 0;
-				try {
-					for (Folio folio : folioManager.getEntities(Folio.class,
-							message -> updatedStandardError(message))) {
-						folioNames.add(folio.getName());
-
-						id = Math.max(id, folio.getId());
-					}
-				} catch (Exception e) {
-					updatedStandardError("The folios configuration cannot be read from file '"
-							+ framework.getTarget().getProject().getFolio() + "' - " + e.getMessage() + ".");
-
-					return ProcessServiceProvider.Processor.State.interrupted;
-				}
+				folioManager = new PersistenceManager(framework.getTarget().getProject().getFolio(), Type.folio_v1);
 
 				if (isCanceled())
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				/*
-				 * The available folios
+				 * Select the the folios to be imported
 				 */
-				updatedStandardOutput("Determine the folios to import.");
+				updatedStandardOutput("Select the the folios to be imported.");
 
-				List<Path> availableFolios;
+				List<Path> importFolios;
 
 				try (Stream<Path> stream = Files.list(source)) {
-					availableFolios = stream.filter(image -> isProcess(image)).collect(Collectors.toList());
+					importFolios = stream.filter(image -> isProcess(image)).collect(Collectors.toList());
 				} catch (Exception e) {
 					updatedStandardError("The folios cannot be read from the project exchange folder '"
 							+ source.toString() + "' - " + e.getMessage() + ".");
@@ -566,7 +545,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				}
 
 				// sort the folios
-				Collections.sort(availableFolios, new Comparator<Path>() {
+				Collections.sort(importFolios, new Comparator<Path>() {
 					/*
 					 * (non-Javadoc)
 					 * 
@@ -586,31 +565,8 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					}
 				});
 
-				// Folios to be imported. They are unique by file name without extension
-				List<Path> importFolios = new ArrayList<>();
-				StringBuffer buffer = new StringBuffer();
-				int ignored = 0;
-				for (Path folio : availableFolios) {
-					String fileName = folio.getFileName().toString();
-
-					if (folioNames.add(FilenameUtils.removeExtension(fileName)))
-						importFolios.add(folio);
-					else {
-						++ignored;
-
-						if (buffer.length() > 0)
-							buffer.append(", ");
-
-						buffer.append(fileName);
-					}
-				}
-
-				if (ignored > 0)
-					updatedStandardError("Following " + (ignored == 0 ? "folio was" : ignored + " folios were")
-							+ " already imported and will be ignored: " + buffer.toString());
-
 				if (importFolios.isEmpty()) {
-					updatedStandardOutput("There are no folios to import from the project exchange folder '"
+					updatedStandardOutput("There are no folios to be imported from the project exchange folder '"
 							+ source.toString() + "'.");
 
 					callback.updatedProgress(1);
@@ -646,9 +602,9 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 
 				List<Folio> folios = new ArrayList<>();
 				int index = 0;
-				++id;
 				for (Path file : importFolios)
 					try {
+						String id = OCR4allUtils.getUUID();
 						String fileName = file.getFileName().toString();
 
 						ImageFormat imageFormat = ImageFormat.getImageFormat(FilenameUtils.getExtension(fileName));
@@ -677,7 +633,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 								FilenameUtils.removeExtension(fileName), format, size, null));
 
 						callback.updatedProgress(0.20F * (++index) / importFolios.size());
-						++id;
 					} catch (IOException e) {
 						updatedStandardError(
 								"Cannot copy the folio '" + file.toString() + "' - " + e.getMessage() + ".");
