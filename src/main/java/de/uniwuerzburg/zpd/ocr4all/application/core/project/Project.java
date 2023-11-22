@@ -29,8 +29,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.ActionHistory;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.ProjectHistory;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.util.PersistenceTools;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
@@ -637,12 +637,12 @@ public class Project implements Job.Cluster {
 	 * @return The folios. On troubles returns an empty array.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Set<Integer> ids) {
+	public List<Folio> getFolios(Set<String> ids) {
 		try {
 			List<Folio> folios = new ArrayList<>();
 
-			for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(),
-					Type.project_folio_v1)).getEntities(Folio.class))
+			for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
+					.getEntities(Folio.class))
 				if (ids == null || ids.contains(folio.getId()))
 					folios.add(folio);
 
@@ -680,7 +680,7 @@ public class Project implements Job.Cluster {
 	 */
 	public int persist(List<Folio> folios) {
 		try {
-			return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.project_folio_v1))
+			return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
 					.persist(folios);
 		} catch (Exception e) {
 			logger.warn(e.getMessage());

@@ -35,7 +35,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Keyword;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,21 +50,21 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Defines folio controllers for the api.
+ * Defines project folio controllers for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
 @Profile("api")
-@Tag(name = "folio", description = "the folio API")
+@Tag(name = "project folio", description = "the project folio API")
 @RestController
-@RequestMapping(path = FolioApiController.contextPath, produces = CoreApiController.applicationJson)
-public class FolioApiController extends CoreApiController {
+@RequestMapping(path = ProjectFolioApiController.contextPath, produces = CoreApiController.applicationJson)
+public class ProjectFolioApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = apiContextPathVersion_1_0 + "/folio";
+	public static final String contextPath = ProjectApiController.contextPath + folioRequestMapping;
 
 	/**
 	 * The order request mapping.
@@ -109,7 +109,7 @@ public class FolioApiController extends CoreApiController {
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
-	public FolioApiController(ConfigurationService configurationService, SecurityService securityService,
+	public ProjectFolioApiController(ConfigurationService configurationService, SecurityService securityService,
 			ProjectService projectService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService);
 	}
@@ -133,7 +133,7 @@ public class FolioApiController extends CoreApiController {
 	@GetMapping(entityRequestMapping + projectPathVariable)
 	public ResponseEntity<FolioResponse> entity(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@Parameter(description = "the folio id") @RequestParam Integer id) {
+			@Parameter(description = "the folio id") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 		try {
 			List<Folio> folio = authorization.project.getFolios(Set.of(id));
@@ -238,12 +238,12 @@ public class FolioApiController extends CoreApiController {
 			@RequestParam MultipartFile file, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
-			List<Integer> order = new ArrayList<>();
-			Set<Integer> addedFolioId = new HashSet<>();
+			List<String> order = new ArrayList<>();
+			Set<String> addedFolioId = new HashSet<>();
 			for (String line : (new String(file.getBytes(), StandardCharsets.UTF_8)).split("\\r?\\n"))
 				try {
-					int folioId = Integer.parseInt(line.split("\t", 2)[0].trim());
-					if (addedFolioId.add(folioId))
+					String folioId = line.split("\t", 2)[0].trim();
+					if (!folioId.isEmpty() && addedFolioId.add(folioId))
 						order.add(folioId);
 				} catch (Exception e) {
 					// Ignore wrong line
@@ -254,13 +254,13 @@ public class FolioApiController extends CoreApiController {
 
 			List<Folio> folios = authorization.project.getFolios();
 
-			Hashtable<Integer, Folio> idFolios = new Hashtable<Integer, Folio>();
+			Hashtable<String, Folio> idFolios = new Hashtable<String, Folio>();
 			for (Folio folio : folios)
 				idFolios.put(folio.getId(), folio);
 
 			// Set the new order
 			List<Folio> newOrder = new ArrayList<>();
-			for (int id : order)
+			for (String id : order)
 				if (idFolios.containsKey(id))
 					newOrder.add(idFolios.get(id));
 
@@ -268,7 +268,7 @@ public class FolioApiController extends CoreApiController {
 			 * Adds the remainder folios at the end of the new order list preserving the
 			 * original order
 			 */
-			Set<Integer> orderSet = new HashSet<>(order);
+			Set<String> orderSet = new HashSet<>(order);
 			for (Folio folio : folios)
 				if (!orderSet.contains(folio.getId()))
 					newOrder.add(folio);
@@ -315,22 +315,19 @@ public class FolioApiController extends CoreApiController {
 				return ResponseEntity.status(HttpStatus.OK).build();
 
 			Set<String> keywords = null;
-			if (FolioRequest.Action.type_set.equals(request.getAction())) {
-				if (request.getType() == null)
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-			} else
+			if (!FolioRequest.Action.pageXMLType_set.equals(request.getAction()))
 				keywords = request.getKeywords() == null ? new HashSet<>()
 						: Keyword.normalizeKeywords(request.getKeywords());
 
-			Set<Integer> updated = new HashSet<>();
+			Set<String> updated = new HashSet<>();
 
 			for (Folio folio : folios)
 				if (request.getIdentifiers().contains(folio.getId())) {
 					updated.add(folio.getId());
 
 					switch (request.getAction()) {
-					case type_set:
-						folio.setType(request.getType());
+					case pageXMLType_set:
+						folio.setPageXMLType(request.getPageXMLType());
 
 						break;
 					case keywords_add:
@@ -385,7 +382,7 @@ public class FolioApiController extends CoreApiController {
 	 *                                 status not found (404).
 	 * @since 1.8
 	 */
-	private void getDerivative(Project project, Path folder, int imageId, HttpServletResponse response)
+	private void getDerivative(Project project, Path folder, String imageId, HttpServletResponse response)
 			throws ResponseStatusException {
 		getImage(folder, imageId, project.getConfiguration().getImages().getDerivatives().getFormat().name(), response);
 	}
@@ -400,8 +397,7 @@ public class FolioApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "returns the thumbnail derivative with given id")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Downloaded Thumbnail Derivative"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Thumbnail Derivative"),
 			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -410,7 +406,7 @@ public class FolioApiController extends CoreApiController {
 	@GetMapping(derivativeThumbnailRequestMapping + projectPathVariable)
 	public void getDerivativeThumbnail(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,
@@ -436,7 +432,7 @@ public class FolioApiController extends CoreApiController {
 	@GetMapping(derivativeDetailRequestMapping + projectPathVariable)
 	public void getDerivativeDetail(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,
@@ -462,7 +458,7 @@ public class FolioApiController extends CoreApiController {
 	@GetMapping(derivativeBestRequestMapping + projectPathVariable)
 	public void getDerivativeBest(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@Parameter(description = "the image id") @RequestParam int id, HttpServletResponse response) {
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 
 		getDerivative(authorization.project,
@@ -486,7 +482,7 @@ public class FolioApiController extends CoreApiController {
 		 * The identifiers.
 		 */
 		@NotNull
-		private Set<Integer> identifiers;
+		private Set<String> identifiers;
 
 		/**
 		 * Returns the identifiers.
@@ -494,7 +490,7 @@ public class FolioApiController extends CoreApiController {
 		 * @return The identifiers.
 		 * @since 1.8
 		 */
-		public Set<Integer> getIdentifiers() {
+		public Set<String> getIdentifiers() {
 			return identifiers;
 		}
 
@@ -504,7 +500,7 @@ public class FolioApiController extends CoreApiController {
 		 * @param identifiers The identifiers to set.
 		 * @since 1.8
 		 */
-		public void setIdentifiers(Set<Integer> identifiers) {
+		public void setIdentifiers(Set<String> identifiers) {
 			this.identifiers = identifiers;
 		}
 
@@ -558,7 +554,7 @@ public class FolioApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public enum Action {
-			type_set, keywords_add, keywords_set, keywords_remove, keywords_remove_all
+			pageXMLType_set, keywords_add, keywords_set, keywords_remove, keywords_remove_all
 		}
 
 		/**
@@ -568,9 +564,9 @@ public class FolioApiController extends CoreApiController {
 		private Action action;
 
 		/**
-		 * The type.
+		 * The PAGE XML type.
 		 */
-		private Folio.Type type;
+		private Folio.PageXMLType pageXMLType;
 
 		/**
 		 * The keywords.
@@ -581,7 +577,7 @@ public class FolioApiController extends CoreApiController {
 		 * The image identifiers to perform the action
 		 */
 		@NotNull
-		private Set<Integer> identifiers;
+		private Set<String> identifiers;
 
 		/**
 		 * Returns the action to perform.
@@ -605,23 +601,23 @@ public class FolioApiController extends CoreApiController {
 		}
 
 		/**
-		 * Returns the type.
+		 * Returns the PAGE XML type.
 		 *
-		 * @return The type.
+		 * @return The PAGE XML type.
 		 * @since 1.8
 		 */
-		public Folio.Type getType() {
-			return type;
+		public Folio.PageXMLType getPageXMLType() {
+			return pageXMLType;
 		}
 
 		/**
-		 * Set the type.
+		 * Set the PAGE XML type.
 		 *
-		 * @param type The type to set.
+		 * @param pageXMLType The PAGE XML type to set.
 		 * @since 1.8
 		 */
-		public void setType(Folio.Type type) {
-			this.type = type;
+		public void setPageXMLType(Folio.PageXMLType pageXMLType) {
+			this.pageXMLType = pageXMLType;
 		}
 
 		/**
@@ -650,7 +646,7 @@ public class FolioApiController extends CoreApiController {
 		 * @return The identifiers.
 		 * @since 1.8
 		 */
-		public Set<Integer> getIdentifiers() {
+		public Set<String> getIdentifiers() {
 			return identifiers;
 		}
 
@@ -660,7 +656,7 @@ public class FolioApiController extends CoreApiController {
 		 * @param images The identifiers to set.
 		 * @since 1.8
 		 */
-		public void setIdentifiers(Set<Integer> images) {
+		public void setIdentifiers(Set<String> images) {
 			this.identifiers = images;
 		}
 

@@ -184,6 +184,11 @@ public class CoreApiController {
 	public static final String securityRequestMapping = "/security";
 
 	/**
+	 * The folio request mapping.
+	 */
+	public static final String folioRequestMapping = "/folio";
+
+	/**
 	 * The spi id path variable.
 	 */
 	public static final String spiPathVariable = "/{spiId}";
@@ -455,7 +460,7 @@ public class CoreApiController {
 	 *                                 status not found (404).
 	 * @since 1.8
 	 */
-	protected static void getImage(Path folder, int id, String format, HttpServletResponse response)
+	protected static void getImage(Path folder, String id, String format, HttpServletResponse response)
 			throws ResponseStatusException {
 		try {
 			byte[] image = Files.readAllBytes(Paths.get(folder.toString(), id + "." + format));

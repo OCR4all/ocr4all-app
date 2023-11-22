@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +31,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecogni
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Entity;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -193,7 +193,7 @@ public class WorkflowService extends CoreService {
 		else {
 			Metadata metadata = null;
 			if (uuid == null || uuid.isBlank()) {
-				uuid = UUID.randomUUID().toString();
+				uuid = OCR4allUtils.getUUID();
 
 				metadata = new Metadata(securityService.getUser(), uuid, label.trim(), description);
 			} else {
