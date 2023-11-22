@@ -30,6 +30,11 @@ public class Repository {
 	private Configuration configuration = new Configuration();
 
 	/**
+	 * The container.
+	 */
+	private Container container = new Container();
+
+	/**
 	 * Returns the folder.
 	 *
 	 * @return The folder.
@@ -67,6 +72,26 @@ public class Repository {
 	 */
 	public void setConfiguration(Configuration configuration) {
 		this.configuration = configuration;
+	}
+
+	/**
+	 * Returns the container.
+	 *
+	 * @return The container.
+	 * @since 1.8
+	 */
+	public Container getContainer() {
+		return container;
+	}
+
+	/**
+	 * Set the container.
+	 *
+	 * @param container The container to set.
+	 * @since 1.8
+	 */
+	public void setContainer(Container container) {
+		this.container = container;
 	}
 
 	/**
@@ -142,36 +167,35 @@ public class Repository {
 	 */
 	public static class Files {
 		/**
-		 * The default security file name.
+		 * The default main file name.
 		 */
-		private static final String defaultSecurityFileName = "security";
+		private static final String defaultMainFileName = "repository";
 
 		/**
-		 * The security file name. The default value is security.
+		 * The main file name. The default value is repository.
 		 */
-		private String security = defaultSecurityFileName;
+		private String main = defaultMainFileName;
 
 		/**
-		 * Returns the security file name.
+		 * Returns the main file name.
 		 *
-		 * @return The security file name.
+		 * @return The main file name.
 		 * @since 1.8
 		 */
-		public String getSecurity() {
-			return OCR4all.getNotEmpty(security, defaultSecurityFileName);
+		public String getMain() {
+			return OCR4all.getNotEmpty(main, defaultMainFileName);
 		}
 
 		/**
-		 * Set the security file name.
+		 * Set the main file name.
 		 *
 		 * @param fileName The file name to set.
 		 * @since 1.8
 		 */
-		public void setSecurity(String fileName) {
-			security = fileName;
+		public void setMain(String fileName) {
+			main = fileName;
 		}
 
 	}
-
 
 }

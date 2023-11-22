@@ -119,6 +119,11 @@ public class ConfigurationService {
 	private final ExchangeConfiguration exchange;
 
 	/**
+	 * The configuration for the repository.
+	 */
+	private final RepositoryConfiguration repository;
+
+	/**
 	 * The configuration for the workspace.
 	 */
 	private final WorkspaceConfiguration workspace;
@@ -166,6 +171,7 @@ public class ConfigurationService {
 
 		application = new ApplicationConfiguration(properties.getApplication());
 		exchange = new ExchangeConfiguration(properties);
+		repository = new RepositoryConfiguration(properties);
 		opt = new OptConfiguration(properties);
 		workspace = new WorkspaceConfiguration(properties.getWorkspace(), properties.getSystem(), application, exchange,
 				opt);
@@ -305,6 +311,16 @@ public class ConfigurationService {
 	 */
 	public ExchangeConfiguration getExchange() {
 		return exchange;
+	}
+
+	/**
+	 * Returns the configuration for the repository.
+	 *
+	 * @return The configuration for the repository.
+	 * @since 1.8
+	 */
+	public RepositoryConfiguration getRepository() {
+		return repository;
 	}
 
 	/**

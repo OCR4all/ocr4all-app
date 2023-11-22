@@ -141,9 +141,9 @@
 			"description": "ocr4all repository configuration folder; the default value is '.repository'."
 		},
 		{
-			"name": "ocr4all.repository.configuration.files.security",
+			"name": "ocr4all.repository.configuration.files.main",
 			"type": "java.lang.String",
-			"description": "ocr4all repository security configuration file; the default value is 'security'."
+			"description": "ocr4all repository main configuration file; the default value is 'repository'."
 		},
 		{
 			"name": "ocr4all.repository.container.configuration.folder",
@@ -156,18 +156,40 @@
 			"description": "ocr4all main repository container configuration file; the default value is 'container'."
 		},
 		{
-			"name": "ocr4all.repository.container.configuration.files.security",
-			"type": "java.lang.String",
-			"description": "ocr4all security repository container configuration file; the default value is 'security'."
-		},
-		{
 			"name": "ocr4all.repository.container.configuration.files.folio",
 			"type": "java.lang.String",
 			"description": "ocr4all folio repository container configuration file; the default value is 'folio'."
 		},
-		
-		
-		
+		{
+			"name": "ocr4all.repository.container.folios.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository folios folder; the default value is 'folios'."
+		},
+		{
+			"name": "ocr4all.repository.container.derivatives.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository derivatives folder; the default value is 'derivatives'."
+		},
+		{
+			"name": "ocr4all.repository.container.derivatives.format",
+			"type": "java.lang.String",
+			"description": "ocr4all repository derivatives format. The format must be suitable for use on web pages (jpg, png); the default value is 'jpg'."
+		},
+		{
+			"name": "ocr4all.repository.container.derivatives.quality.thumbnail.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository derivatives quality thumbnail folder; the default value is 'thumbnail'."
+		},
+		{
+			"name": "ocr4all.repository.container.derivatives.quality.detail.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository derivatives quality detail folder; the default value is 'detail'."
+		},
+		{
+			"name": "ocr4all.repository.container.derivatives.quality.best.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository derivatives quality best folder; the default value is 'best'."
+		},
 		{
 			"name": "ocr4all.workspace.folder",
 			"type": "java.lang.String",
@@ -252,11 +274,6 @@
 			"name": "ocr4all.workspace.projects.project.configuration.files.main",
 			"type": "java.lang.String",
 			"description": "ocr4all main workspace project configuration file; the default value is 'project'."
-		},
-		{
-			"name": "ocr4all.workspace.projects.project.configuration.files.security",
-			"type": "java.lang.String",
-			"description": "ocr4all security project configuration file; the default value is 'security'."
 		},
 		{
 			"name": "ocr4all.workspace.projects.project.configuration.files.folio",

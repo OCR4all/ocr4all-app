@@ -196,11 +196,6 @@ public class Project {
 		private static final String defaultMainFileName = "project";
 
 		/**
-		 * The default security file name.
-		 */
-		private static final String defaultSecurityFileName = "security";
-
-		/**
 		 * The default folio file name.
 		 */
 		private static final String defaultFolioFileName = "folio";
@@ -214,11 +209,6 @@ public class Project {
 		 * The main file name. The default value is project.
 		 */
 		private String main = defaultMainFileName;
-
-		/**
-		 * The security file name. The default value is security.
-		 */
-		private String security = defaultSecurityFileName;
 
 		/**
 		 * The folio file name. The default value is folio.
@@ -248,26 +238,6 @@ public class Project {
 		 */
 		public void setMain(String fileName) {
 			main = fileName;
-		}
-
-		/**
-		 * Returns the security file name.
-		 *
-		 * @return The security file name.
-		 * @since 1.8
-		 */
-		public String getSecurity() {
-			return OCR4all.getNotEmpty(security, defaultSecurityFileName);
-		}
-
-		/**
-		 * Set the security file name.
-		 *
-		 * @param fileName The file name to set.
-		 * @since 1.8
-		 */
-		public void setSecurity(String fileName) {
-			security = fileName;
 		}
 
 		/**

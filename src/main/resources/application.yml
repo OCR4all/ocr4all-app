@@ -96,13 +96,12 @@ ocr4all:
     folder: ${user.home}/ocr4all/repository
     configuration:
       folder: .repository
-      files.security: security
+      files.main: repository
     container:
         configuration:
           folder: .container
           files:
             main: container
-            security: security
             folio: folio
         folios.folder: folios
         derivatives:
@@ -141,7 +140,6 @@ ocr4all:
           folder: .project
           files:
             main: project
-            security: security
             folio: folio
             history: history
         images:
