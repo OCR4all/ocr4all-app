@@ -285,13 +285,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			/**
 			 * Returns the folio size.
 			 * 
-			 * @param size The size in the form [width]x[height].
-			 * @return The folio size.
-			 * @since 1.8
-			 */
-			/**
-			 * Returns the folio size.
-			 * 
 			 * @param identifyJob The identify job.
 			 * @param source      The source name.
 			 * @param target      The target name.

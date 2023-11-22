@@ -11,6 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
+
 /**
  * Defines ocr4all properties.
  *
@@ -36,6 +38,11 @@ public class OCR4all {
 	 * The exchange properties.
 	 */
 	private FolderRequired exchange = new FolderRequired();
+
+	/**
+	 * The repository properties.
+	 */
+	private Repository repository = new Repository();
 
 	/**
 	 * The workspace properties.
@@ -115,6 +122,26 @@ public class OCR4all {
 	 */
 	public void setExchange(FolderRequired exchange) {
 		this.exchange = exchange;
+	}
+
+	/**
+	 * Returns the repository properties.
+	 *
+	 * @return The repository properties.
+	 * @since 1.8
+	 */
+	public Repository getRepository() {
+		return repository;
+	}
+
+	/**
+	 * Set the repository properties.
+	 *
+	 * @param repository The repository properties to set.
+	 * @since 1.8
+	 */
+	public void setRepository(Repository repository) {
+		this.repository = repository;
 	}
 
 	/**

@@ -92,6 +92,26 @@ ocr4all:
         convert: C:/Program Files/ImageMagick-7.1.0/convert
         identify: C:/Program Files/ImageMagick-7.1.0/identify
   exchange.folder: ${user.home}/ocr4all/exchange
+  repository:
+    folder: ${user.home}/ocr4all/repository
+    configuration:
+      folder: .repository
+      files.security: security
+    container:
+        configuration:
+          folder: .container
+          files:
+            main: container
+            security: security
+            folio: folio
+        folios.folder: folios
+        derivatives:
+          folder: derivatives
+          format: jpg
+          quality:
+            thumbnail.folder: thumbnail
+            detail.folder: detail
+            best.folder: best
   workspace:
     folder: ${user.home}/ocr4all/workspace
     configuration:
@@ -211,6 +231,7 @@ logging:
 
 ocr4all:
   exchange.folder: /srv/ocr4all/exchange
+  repository.folder: /srv/ocr4al/repository
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -234,6 +255,7 @@ logging:
 ocr4all:
   application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/exchange
+  repository.folder: ${user.home}/ocr4all/repository
   workspace.folder: ${user.home}/ocr4all/workspace
   opt.folder: ${user.home}/ocr4all/opt
   temporary.folder: ${user.home}/ocr4all/tmp

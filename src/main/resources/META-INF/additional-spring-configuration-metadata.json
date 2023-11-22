@@ -131,6 +131,44 @@
 			"description": "ocr4all exchange directory."
 		},
 		{
+			"name": "ocr4all.repository.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository directory."
+		},
+		{
+			"name": "ocr4all.repository.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository configuration folder; the default value is '.repository'."
+		},
+		{
+			"name": "ocr4all.repository.configuration.files.security",
+			"type": "java.lang.String",
+			"description": "ocr4all repository security configuration file; the default value is 'security'."
+		},
+		{
+			"name": "ocr4all.repository.container.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository container configuration folder; the default value is '.container'."
+		},
+		{
+			"name": "ocr4all.repository.container.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main repository container configuration file; the default value is 'container'."
+		},
+		{
+			"name": "ocr4all.repository.container.configuration.files.security",
+			"type": "java.lang.String",
+			"description": "ocr4all security repository container configuration file; the default value is 'security'."
+		},
+		{
+			"name": "ocr4all.repository.container.configuration.files.folio",
+			"type": "java.lang.String",
+			"description": "ocr4all folio repository container configuration file; the default value is 'folio'."
+		},
+		
+		
+		
+		{
 			"name": "ocr4all.workspace.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all workspace directory."
@@ -218,17 +256,17 @@
 		{
 			"name": "ocr4all.workspace.projects.project.configuration.files.security",
 			"type": "java.lang.String",
-			"description": "ocr4all main workspace project configuration file; the default value is 'security'."
+			"description": "ocr4all security project configuration file; the default value is 'security'."
 		},
 		{
 			"name": "ocr4all.workspace.projects.project.configuration.files.folio",
 			"type": "java.lang.String",
-			"description": "ocr4all main workspace project configuration file; the default value is 'folio'."
+			"description": "ocr4all folio project configuration file; the default value is 'folio'."
 		},
 		{
 			"name": "ocr4all.workspace.projects.project.configuration.files.history",
 			"type": "java.lang.String",
-			"description": "ocr4all main workspace project configuration file; the default value is 'history'."
+			"description": "ocr4all history project configuration file; the default value is 'history'."
 		},
 		{
 			"name": "ocr4all.workspace.projects.project.images.folder",
