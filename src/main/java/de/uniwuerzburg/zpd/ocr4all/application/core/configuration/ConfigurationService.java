@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
