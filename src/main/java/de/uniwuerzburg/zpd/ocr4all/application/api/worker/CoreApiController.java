@@ -119,6 +119,16 @@ public class CoreApiController {
 	public static final String unlockRequestMapping = "/unlock";
 
 	/**
+	 * The secure request mapping.
+	 */
+	public static final String secureRequestMapping = "/secure";
+
+	/**
+	 * The unsecure request mapping.
+	 */
+	public static final String unsecureRequestMapping = "/unsecure";
+
+	/**
 	 * The download request mapping.
 	 */
 	public static final String downloadRequestMapping = "/download";
