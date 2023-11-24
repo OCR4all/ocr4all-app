@@ -148,7 +148,7 @@ public class SandboxConfiguration extends CoreFolder {
 		 * @param user       The user.
 		 * @since 1.8
 		 */
-		public Configuration(Sandboxes.Configuration properties, String user) {
+		Configuration(Sandboxes.Configuration properties, String user) {
 			super(Paths.get(SandboxConfiguration.this.folder.toString(), properties.getFolder()));
 
 			this.user = user;

@@ -66,6 +66,19 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for administrator security operations.
+	 * 
+	 * @throws ResponseStatusException Throw with http status 401 (Unauthorized) if
+	 *                                 the administrator security permission is not
+	 *                                 achievable by the session user.
+	 * @since 1.8
+	 */
+	private void authorize() throws ResponseStatusException {
+		if (!service.isAdministrator())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+	}
+
+	/**
 	 * Returns the repository security in the response body.
 	 * 
 	 * @return The repository security in the response body.
@@ -78,16 +91,15 @@ public class RepositorySecurityApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(informationRequestMapping)
 	public ResponseEntity<RepositorySecurityResponse> information() {
-		if (service.isAdministrator())
-			try {
-				return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
-			} catch (Exception ex) {
-				log(ex);
+		authorize();
 
-				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-			}
-		else
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		try {
+			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
 	}
 
 	/**
@@ -105,9 +117,11 @@ public class RepositorySecurityApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
 	public ResponseEntity<RepositorySecurityResponse> update(@RequestBody RepositorySecurityRequest request) {
+		authorize();
+
 		if (request == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		else if (service.isAdministrator())
+		else
 			try {
 				service.updateSecurity(request);
 
@@ -117,8 +131,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 
 				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 			}
-		else
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+
 	}
 
 	/**
@@ -134,18 +147,17 @@ public class RepositorySecurityApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(secureRequestMapping)
 	public ResponseEntity<RepositorySecurityResponse> secure() {
-		if (service.isAdministrator())
-			try {
-				service.secure(true);
+		authorize();
 
-				return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
-			} catch (Exception ex) {
-				log(ex);
+		try {
+			service.secure(true);
 
-				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-			}
-		else
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
 	}
 
 	/**
@@ -161,18 +173,17 @@ public class RepositorySecurityApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(unsecureRequestMapping)
 	public ResponseEntity<RepositorySecurityResponse> unsecure() {
-		if (service.isAdministrator())
-			try {
-				service.secure(false);
+		authorize();
 
-				return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
-			} catch (Exception ex) {
-				log(ex);
+		try {
+			service.secure(false);
 
-				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-			}
-		else
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
 	}
 
 	/**
@@ -195,7 +206,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 		private TrackingResponse tracking;
 
 		/**
-		 * Creates a sandbox responses for the api.
+		 * Creates a repository security response for the api.
 		 * 
 		 * @param service The repository service.
 		 * @since 1.8

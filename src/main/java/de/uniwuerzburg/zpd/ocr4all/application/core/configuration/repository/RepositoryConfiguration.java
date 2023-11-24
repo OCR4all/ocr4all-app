@@ -17,6 +17,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Container;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -40,6 +41,11 @@ public class RepositoryConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
+	 * The container properties.
+	 */
+	private final Container container;
+
+	/**
 	 * Creates a configuration for the repository.
 	 * 
 	 * @param properties The ocr4all properties.
@@ -49,6 +55,7 @@ public class RepositoryConfiguration extends CoreFolder {
 		super(Paths.get(properties.getRepository().getFolder()));
 
 		configuration = new Configuration(properties.getRepository().getConfiguration());
+		container = properties.getRepository().getContainer();
 	}
 
 	/**
@@ -59,6 +66,16 @@ public class RepositoryConfiguration extends CoreFolder {
 	 */
 	public Configuration getConfiguration() {
 		return configuration;
+	}
+
+	/**
+	 * Returns the container properties.
+	 *
+	 * @return The container properties.
+	 * @since 1.8
+	 */
+	public Container getContainer() {
+		return container;
 	}
 
 	/**
@@ -85,7 +102,7 @@ public class RepositoryConfiguration extends CoreFolder {
 		 * @param properties The configuration properties for the repository.
 		 * @since 1.8
 		 */
-		public Configuration(Repository.Configuration properties) {
+		Configuration(Repository.Configuration properties) {
 			super(Paths.get(RepositoryConfiguration.this.folder.toString(), properties.getFolder()));
 
 			// Initialize the repository configuration folder and consequently the

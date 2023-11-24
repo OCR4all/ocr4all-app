@@ -175,7 +175,7 @@ public class ProjectConfiguration extends CoreFolder {
 		 * @param user                  The user.
 		 * @since 1.8
 		 */
-		public Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
+		Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
 				OptConfiguration optConfiguration, String user) {
 			super(Paths.get(ProjectConfiguration.this.folder.toString(), properties.getFolder()));
 
@@ -1043,7 +1043,7 @@ public class ProjectConfiguration extends CoreFolder {
 		private final Path folios;
 
 		/**
-		 * The folder for folios derivatives quality thumbnail.
+		 * The folder for folios derivatives.
 		 */
 		private final Derivatives derivatives;
 

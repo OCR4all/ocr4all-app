@@ -82,7 +82,7 @@ public class RepositoryApiController extends CoreApiController {
 	public ResponseEntity<RepositoryResponse> overview() {
 		try {
 			return ResponseEntity.ok()
-					.body(new RepositoryResponse(service.isAdministrator(), service.getContainer().isCreate()));
+					.body(new RepositoryResponse(service.isAdministrator(), service.isCreateContainer()));
 		} catch (Exception ex) {
 			log(ex);
 

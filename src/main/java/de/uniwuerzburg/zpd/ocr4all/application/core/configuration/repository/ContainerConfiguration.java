@@ -7,12 +7,22 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Container;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 
 /**
  * Defines configurations for the container.
@@ -22,6 +32,10 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repos
  * @since 1.8
  */
 public class ContainerConfiguration extends CoreFolder {
+	/**
+	 * The logger.
+	 */
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ContainerConfiguration.class);
 
 	/**
 	 * The configuration.
@@ -29,15 +43,36 @@ public class ContainerConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
+	 * The images.
+	 */
+	private final Images images;
+
+	/**
 	 * Creates a configuration for the container.
 	 * 
-	 * @param properties The ocr4all properties.
+	 * @param properties The ocr4all container properties.
+	 * @param folder     The container folder.
 	 * @since 1.8
 	 */
 	public ContainerConfiguration(Container properties, Path folder) {
+		this(properties, folder, null);
+	}
+
+	/**
+	 * Creates a configuration for the container.
+	 * 
+	 * @param properties The ocr4all container properties.
+	 * @param folder     The container folder.
+	 * @param basicData  The basic data for a container configuration. If non null
+	 *                   and the main configuration is not available, then this
+	 *                   basic data is used to initialize the main configuration.
+	 * @since 1.8
+	 */
+	public ContainerConfiguration(Container properties, Path folder, Configuration.BasicData basicData) {
 		super(folder);
 
-		configuration = new Configuration(properties.getConfiguration());
+		configuration = new Configuration(properties.getConfiguration(), basicData);
+		images = new Images(properties);
 	}
 
 	/**
@@ -51,17 +86,27 @@ public class ContainerConfiguration extends CoreFolder {
 	}
 
 	/**
+	 * Returns the images.
+	 *
+	 * @return The images.
+	 * @since 1.8
+	 */
+	public Images getImages() {
+		return images;
+	}
+
+	/**
 	 * Defines configurations for the repository.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Configuration extends CoreFolder {
+	public class Configuration extends CoreFolder implements TrackingData {
 		/**
-		 * The main configuration file.
+		 * The main configuration persistence manager.
 		 */
-		private final Path mainFile;
+		private final PersistenceManager mainConfigurationManager;
 
 		/**
 		 * The folio configuration file.
@@ -69,31 +114,146 @@ public class ContainerConfiguration extends CoreFolder {
 		private final Path folioFile;
 
 		/**
+		 * The container.
+		 */
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container container = null;
+
+		/**
 		 * Creates a configuration for the repository.
 		 * 
 		 * @param properties The configuration properties for the repository.
+		 * @param basicData  The basic data for a container configuration. If non null
+		 *                   and the main configuration is not available, then this
+		 *                   basic data is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		public Configuration(Container.Configuration properties) {
+		Configuration(Container.Configuration properties, BasicData basicData) {
 			super(Paths.get(ContainerConfiguration.this.folder.toString(), properties.getFolder()));
 
-			// Initialize the repository configuration folder and consequently the
-			// repository
-			ConfigurationService.initializeFolder(true, folder, "repository configuration");
+			// Initialize the container configuration folder and consequently the
+			// container
+			ConfigurationService.initializeFolder(true, folder, "container configuration");
 
 			// Initializes the configuration files
-			mainFile = getPath(properties.getFiles().getMain());
 			folioFile = getPath(properties.getFiles().getFolio());
+
+			// Loads the main configuration file
+			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
+					Type.repository_container_v1);
+			loadMainConfiguration(basicData);
 		}
 
 		/**
-		 * Returns the main configuration file.
-		 *
-		 * @return The main configuration file.
+		 * Loads the main configuration file.
+		 * 
+		 * @param basicData The basic data for a container configuration. If non null
+		 *                  and the main configuration is not available, then this basic
+		 *                  data is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		public Path getMainFile() {
-			return mainFile;
+		private void loadMainConfiguration(BasicData basicData) {
+			// Load main configuration
+			try {
+				container = mainConfigurationManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.class, null,
+						message -> logger.warn(message));
+
+				if (!isMainConfigurationAvailable() || container.getName() == null || container.getSecurity() == null) {
+					Date currentTimeStamp = new Date();
+					if (!isMainConfigurationAvailable()) {
+						container = new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container();
+
+						container.setDate(currentTimeStamp);
+
+						if (basicData != null) {
+							container.setName(basicData.getName());
+							container.setDescription(basicData.getDescription());
+							container.setKeywords(basicData.getKeywords());
+
+							if (basicData.getUser() != null)
+								container.setSecurity(
+										new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security(
+												basicData.getUser(),
+												de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.special));
+
+						}
+					} else
+						// avoid using basic data if not creating a main configuration
+						basicData = null;
+
+					if (container.getName() == null)
+						container.setName(ContainerConfiguration.this.folder.getFileName().toString());
+
+					if (container.getSecurity() == null)
+						container.setSecurity(
+								new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security());
+
+					persist(basicData == null ? null : basicData.getUser(), currentTimeStamp);
+				}
+			} catch (IOException e) {
+				logger.warn(e.getMessage());
+
+				container = null;
+			}
+		}
+
+		/**
+		 * Returns true if the main configuration is available.
+		 * 
+		 * @return True if the main configuration is available.
+		 * @since 1.8
+		 */
+		public boolean isMainConfigurationAvailable() {
+			return container != null;
+		}
+
+		/**
+		 * Persist the main configuration with current update time stamp.
+		 * 
+		 * @param user The user.
+		 * @return True if the main configuration could be persisted.
+		 * @since 1.8
+		 */
+		private boolean persist(String user) {
+			return persist(user, null);
+		}
+
+		/**
+		 * Persist the main configuration.
+		 * 
+		 * @param user    The user.
+		 * @param updated The updated time. If null, uses the current time stamp.
+		 * @return True if the main configuration could be persisted.
+		 * @since 1.8
+		 */
+		private boolean persist(String user, Date updated) {
+			if (isMainConfigurationAvailable())
+				try {
+					container.setUser(user);
+					container.setUpdated(updated == null ? new Date() : updated);
+
+					mainConfigurationManager.persist(container);
+
+					logger.info("Persisted the container configuration.");
+
+					return true;
+				} catch (Exception e) {
+					logger.warn("Could not persist the container configuration - " + e.getMessage());
+				}
+
+			return false;
+		}
+
+		/**
+		 * Reloads the main configuration file.
+		 * 
+		 * @return True if the main configuration is available.
+		 * @since 1.8
+		 */
+		public boolean reloadMainConfiguration() {
+			loadMainConfiguration(null);
+
+			return isMainConfigurationAvailable();
 		}
 
 		/**
@@ -106,5 +266,555 @@ public class ContainerConfiguration extends CoreFolder {
 			return folioFile;
 		}
 
+		/**
+		 * Returns the name.
+		 * 
+		 * @return The name.
+		 * @since 1.8
+		 */
+		public String getName() {
+			return isMainConfigurationAvailable() ? container.getName() : null;
+		}
+
+		/**
+		 * Returns the basic data without user.
+		 * 
+		 * @return The basic data without user.
+		 * @since 1.8
+		 */
+		public BasicData getBasicData() {
+			return isMainConfigurationAvailable()
+					? new BasicData(null, container.getName(), container.getDescription(),
+							container.getKeywords() == null ? null : new HashSet<>(container.getKeywords()))
+					: null;
+		}
+
+		/**
+		 * Returns true if the given right is maximal.
+		 * 
+		 * @param right The right.
+		 * @return True if the right is maximal.
+		 * @since 1.8
+		 */
+		private boolean isMaximalSecurityRight(
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right) {
+			return right != null
+					&& de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
+							.getMaximal().equals(right);
+		}
+
+		/**
+		 * Returns the maximal container right for given user and groups.
+		 * 
+		 * @param user   The user.
+		 * @param groups The user groups.
+		 * @return The container right.
+		 * @since 1.8
+		 */
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getMaxRight(
+				String user, Collection<String> groups) {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = null;
+
+			if (isMainConfigurationAvailable()) {
+				right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
+						.getMaximnal(right, container.getSecurity().getOther());
+
+				if (isMaximalSecurityRight(right))
+					return right;
+
+				if (container.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
+					user = user.trim().toLowerCase();
+
+					for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : container
+							.getSecurity().getUsers())
+						if (grant.getTargets().contains(user)) {
+							right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
+									.getMaximnal(right, grant.getRight());
+
+							if (isMaximalSecurityRight(right))
+								return right;
+						}
+				}
+
+				if (container.getSecurity().getGroups() != null && groups != null)
+					for (String group : groups) {
+						if (group != null && !group.isBlank()) {
+							group = group.trim().toLowerCase();
+
+							for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : container
+									.getSecurity().getGroups())
+								if (grant.getTargets().contains(group)) {
+									right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
+											.getMaximnal(right, grant.getRight());
+
+									if (isMaximalSecurityRight(right))
+										return right;
+								}
+						}
+
+					}
+			}
+
+			return right;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * isUserSet()
+		 */
+		@Override
+		public boolean isUserSet() {
+			return getUser() != null;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * getUser()
+		 */
+		@Override
+		public String getUser() {
+			return isMainConfigurationAvailable() ? container.getUser() : null;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * isCreatedSet()
+		 */
+		@Override
+		public boolean isCreatedSet() {
+			return getCreated() != null;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * getCreated()
+		 */
+		@Override
+		public Date getCreated() {
+			return isMainConfigurationAvailable() ? container.getDate() : null;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * isUpdatedSet()
+		 */
+		@Override
+		public boolean isUpdatedSet() {
+			return getUpdated() != null;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData#
+		 * getUpdated()
+		 */
+		@Override
+		public Date getUpdated() {
+			return isMainConfigurationAvailable() ? container.getUpdated() : null;
+		}
+
+		/**
+		 * BasicData is an immutable class that defines basic data for container
+		 * configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class BasicData {
+			/**
+			 * The user.
+			 */
+			private final String user;
+
+			/**
+			 * The name.
+			 */
+			private final String name;
+
+			/**
+			 * The description.
+			 */
+			private final String description;
+
+			/**
+			 * The keywords.
+			 */
+			private final Set<String> keywords;
+
+			/**
+			 * Creates basic data for a container configuration.
+			 * 
+			 * @param user        The user.
+			 * @param name        The name.
+			 * @param description The description.
+			 * @param keywords    The keywords.
+			 * @since 1.8
+			 */
+			public BasicData(String user, String name, String description, Set<String> keywords) {
+				super();
+
+				this.user = user;
+				this.name = name;
+				this.description = description;
+				this.keywords = keywords;
+			}
+
+			/**
+			 * Returns the user.
+			 *
+			 * @return The user.
+			 * @since 1.8
+			 */
+			public String getUser() {
+				return user;
+			}
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Returns the description.
+			 *
+			 * @return The description.
+			 * @since 1.8
+			 */
+			public String getDescription() {
+				return description;
+			}
+
+			/**
+			 * Returns the keywords.
+			 *
+			 * @return The keywords.
+			 * @since 1.8
+			 */
+			public Set<String> getKeywords() {
+				return keywords;
+			}
+
+		}
+
 	}
+
+	/**
+	 * Images is an immutable class that defines images folder for containers.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public class Images {
+
+		/**
+		 * The folder for folios.
+		 */
+		private final Path folios;
+
+		/**
+		 * The folder for folios derivatives.
+		 */
+		private final Derivatives derivatives;
+
+		/**
+		 * Creates images folder for a project.
+		 * 
+		 * @param properties The container properties.
+		 * @since 1.8
+		 */
+		public Images(Container properties) {
+			super();
+
+			// Initializes the folders
+			folios = getPath(null, properties.getFolios().getFolder(), "folios");
+
+			final String derivativesFolder = properties.getDerivatives().getFolder();
+
+			derivatives = new Derivatives(
+					ImageFormat.getImageFormat(properties.getDerivatives().getFormat(), ImageFormat.jpg),
+					getPath(derivativesFolder, properties.getDerivatives().getQuality().getThumbnail().getFolder(),
+							"thumbnail"),
+					getPath(derivativesFolder, properties.getDerivatives().getQuality().getDetail().getFolder(),
+							"detail"),
+					getPath(derivativesFolder, properties.getDerivatives().getQuality().getBest().getFolder(), "best"));
+		}
+
+		/**
+		 * Returns the path for given configuration folder. The folder is initialized.
+		 * 
+		 * @param derivatives The folder for derivatives. Null if not required.
+		 * @param folder      The folder.
+		 * @param name        The folder name.
+		 * @return The path.
+		 * @since 1.8
+		 */
+		private Path getPath(String derivatives, String folder, String name) {
+			Path path = derivatives == null
+					? Paths.get(ContainerConfiguration.this.folder.toString(), folder).normalize()
+					: Paths.get(ContainerConfiguration.this.folder.toString(), derivatives, folder).normalize();
+
+			ConfigurationService.initializeFolder(true, path,
+					"container '" + ContainerConfiguration.this.folder.getFileName() + "' " + name);
+
+			return path;
+		}
+
+		/**
+		 * Returns true if the folder for folios is a directory.
+		 *
+		 * @return True if the folder is a directory; false if the folder does not
+		 *         exist, is not a directory, or it cannot be determined if the folder
+		 *         is a directory or not.
+		 * 
+		 * @since 1.8
+		 */
+		public boolean isFoliosDirectory() {
+			return Files.isDirectory(folios);
+		}
+
+		/**
+		 * Returns the folder for folios.
+		 *
+		 * @return The folder for folios.
+		 * @since 1.8
+		 */
+		public Path getFolios() {
+			return folios;
+		}
+
+		/**
+		 * Returns the derivatives quality image folders for folios.
+		 *
+		 * @return The derivatives quality image folders for folios.
+		 * @since 1.8
+		 */
+		public Derivatives getDerivatives() {
+			return derivatives;
+		}
+
+		/**
+		 * Reset the folios.
+		 *
+		 * @return True if the folios could be reset.
+		 * @since 1.8
+		 */
+		public boolean resetFolios() {
+			return Files.exists(folios) ? deleteContents(folios) : true;
+		}
+
+		/**
+		 * Reset the images.
+		 *
+		 * @return True if the images could be reset.
+		 * @since 1.8
+		 */
+		public boolean reset() {
+			boolean isReset = resetFolios();
+
+			if (!derivatives.reset())
+				isReset = false;
+
+			return isReset;
+		}
+
+		/**
+		 * Derivatives is an immutable class that defines derivatives quality image
+		 * folders for folios.
+		 *
+		 * 
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class Derivatives {
+			/**
+			 * The folios derivatives format. The format must be suitable for use on web
+			 * pages.
+			 */
+			private final ImageFormat format;
+
+			/**
+			 * The folder for folios derivatives quality thumbnail.
+			 */
+			private final Path thumbnail;
+
+			/**
+			 * The folder for folios derivatives quality detail.
+			 */
+			private final Path detail;
+
+			/**
+			 * The folder for folios derivatives quality best.
+			 */
+			private final Path best;
+
+			/**
+			 * Creates derivatives quality image folders for folios.
+			 * 
+			 * @param format    The folios derivatives format. The format must be suitable
+			 *                  for use on web pages.
+			 * @param thumbnail The folder for folios derivatives quality thumbnail.
+			 * @param detail    The folder for folios derivatives quality detail.
+			 * @param best      The folder for folios derivatives quality best.
+			 * @since 1.8
+			 */
+			public Derivatives(ImageFormat format, Path thumbnail, Path detail, Path best) {
+				super();
+
+				this.format = format.isWebPages() ? format : ImageFormat.jpg;
+				this.thumbnail = thumbnail;
+				this.detail = detail;
+				this.best = best;
+			}
+
+			/**
+			 * Returns the folios derivatives format.
+			 *
+			 * @return The folios derivatives format.
+			 * @since 1.8
+			 */
+			public ImageFormat getFormat() {
+				return format;
+			}
+
+			/**
+			 * Returns true if the folder for folios derivatives quality thumbnail is a
+			 * directory.
+			 *
+			 * @return True if the folder is a directory; false if the folder does not
+			 *         exist, is not a directory, or it cannot be determined if the folder
+			 *         is a directory or not.
+			 * 
+			 * @since 1.8
+			 */
+			public boolean isThumbnailDirectory() {
+				return Files.isDirectory(thumbnail);
+			}
+
+			/**
+			 * Returns the folder for folios derivatives quality thumbnail.
+			 *
+			 * @return The folder for folios derivatives quality thumbnail.
+			 * @since 1.8
+			 */
+			public Path getThumbnail() {
+				return thumbnail;
+			}
+
+			/**
+			 * Reset the folios derivatives quality thumbnail.
+			 *
+			 * @return True if the folios derivatives quality thumbnail could be reset.
+			 * @since 1.8
+			 */
+			public boolean resetThumbnail() {
+				return Files.exists(thumbnail) ? deleteContents(thumbnail) : true;
+			}
+
+			/**
+			 * Returns true if the folder for folios derivatives quality detail is a
+			 * directory.
+			 *
+			 * @return True if the folder is a directory; false if the folder does not
+			 *         exist, is not a directory, or it cannot be determined if the folder
+			 *         is a directory or not.
+			 * 
+			 * @since 1.8
+			 */
+			public boolean isDetailDirectory() {
+				return Files.isDirectory(detail);
+			}
+
+			/**
+			 * Returns the folder for folios derivatives quality detail.
+			 *
+			 * @return The folder for folios derivatives quality detail.
+			 * @since 1.8
+			 */
+			public Path getDetail() {
+				return detail;
+			}
+
+			/**
+			 * Reset the folios derivatives quality detail.
+			 *
+			 * @return True if the folios derivatives quality detail could be reset.
+			 * @since 1.8
+			 */
+			public boolean resetDetail() {
+				return Files.exists(detail) ? deleteContents(detail) : true;
+			}
+
+			/**
+			 * Returns true if the folder for folios derivatives quality best is a
+			 * directory.
+			 *
+			 * @return True if the folder is a directory; false if the folder does not
+			 *         exist, is not a directory, or it cannot be determined if the folder
+			 *         is a directory or not.
+			 * 
+			 * @since 1.8
+			 */
+			public boolean isBestDirectory() {
+				return Files.isDirectory(best);
+			}
+
+			/**
+			 * Returns the folder for folios derivatives quality best.
+			 *
+			 * @return The folder for folios derivatives quality best.
+			 * @since 1.8
+			 */
+			public Path getBest() {
+				return best;
+			}
+
+			/**
+			 * Reset the folios derivatives quality best.
+			 *
+			 * @return True if the folios derivatives quality best could be reset.
+			 * @since 1.8
+			 */
+			public boolean resetBest() {
+				return Files.exists(best) ? deleteContents(best) : true;
+			}
+
+			/**
+			 * Reset the folios derivatives.
+			 *
+			 * @return True if the folios derivatives could be reset.
+			 * @since 1.8
+			 */
+			public boolean reset() {
+				boolean isReset = resetThumbnail();
+
+				if (!resetDetail())
+					isReset = false;
+
+				if (!resetDetail())
+					isReset = false;
+
+				return isReset;
+			}
+		}
+	}
+
 }

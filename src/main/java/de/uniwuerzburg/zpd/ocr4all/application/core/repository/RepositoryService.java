@@ -1,11 +1,13 @@
 /**
- * File:     Repository.java
+ * File:     RepositoryService.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.repository
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     23.11.2023
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
+
+import java.nio.file.Path;
 
 import org.springframework.stereotype.Service;
 
@@ -34,9 +36,9 @@ public class RepositoryService extends CoreService {
 	private final RepositoryConfiguration.Configuration configuration;
 
 	/**
-	 * The container service.
+	 * The folder.
 	 */
-	private final Container container = new Container();
+	protected final Path folder;
 
 	/**
 	 * Creates a repository service.
@@ -50,6 +52,7 @@ public class RepositoryService extends CoreService {
 
 		this.securityService = securityService;
 
+		folder = configurationService.getRepository().getFolder().normalize();
 		configuration = configurationService.getRepository().getConfiguration();
 	}
 
@@ -115,32 +118,14 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
-	 * Returns the container service.
-	 *
-	 * @return The container service.
+	 * Returns true if a container can be created.
+	 * 
+	 * @return True if a container can be created.
 	 * @since 1.8
 	 */
-	public Container getContainer() {
-		return container;
+	public boolean isCreateContainer() {
+		return isAdministrator()
+				|| configuration.isCreateContainer(securityService.getUser(), securityService.getActiveGroups());
 	}
 
-	/**
-	 * Defines container services.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public class Container {
-		/**
-		 * Returns true if a container can be created.
-		 * 
-		 * @return True if a container can be created.
-		 * @since 1.8
-		 */
-		public boolean isCreate() {
-			return securityService.isCoordinator()
-					|| configuration.isCreateContainer(securityService.getUser(), securityService.getActiveGroups());
-		}
-	}
 }
