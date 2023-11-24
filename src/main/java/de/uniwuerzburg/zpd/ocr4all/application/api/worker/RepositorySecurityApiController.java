@@ -204,7 +204,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 			super(service.getSecurity().isSecured(), service.getSecurity().getUsers(),
 					service.getSecurity().getGroups());
 
-			tracking = new TrackingResponse(service.getUser(), service.getCreated(), service.getUpdated());
+			tracking = new TrackingResponse(service.getConfiguration());
 		}
 
 		/**

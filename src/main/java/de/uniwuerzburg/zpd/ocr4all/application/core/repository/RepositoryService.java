@@ -7,8 +7,6 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
 
-import java.util.Date;
-
 import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
@@ -106,72 +104,14 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
-	 * Returns true if the tracking user is set and the administrator security
-	 * permission is achievable by the session user.
-	 *
-	 * @return True if the tracking user is set and the administrator security
+	 * Returns the repository configuration.
+	 * 
+	 * @return The repository configuration. Null if no administrator security
 	 *         permission is achievable by the session user.
 	 * @since 1.8
 	 */
-	public boolean isUserSet() {
-		return isAdministrator() && configuration.isUserSet();
-	}
-
-	/**
-	 * Returns the tracking user.
-	 *
-	 * @return The tracking user. Null if no administrator security permission is
-	 *         achievable by the session user.
-	 * @since 1.8
-	 */
-	public String getUser() {
-		return isAdministrator() ? configuration.getUser() : null;
-	}
-
-	/**
-	 * Returns true if the created time is set and the administrator security
-	 * permission is achievable by the session user.
-	 *
-	 * @return True if the created time is set and the administrator security
-	 *         permission is achievable by the session user.
-	 * @since 1.8
-	 */
-	public boolean isCreatedSet() {
-		return isAdministrator() && configuration.isCreatedSet();
-	}
-
-	/**
-	 * Returns the created time.
-	 *
-	 * @return The created time. Null if no administrator security permission is
-	 *         achievable by the session user.
-	 * @since 1.8
-	 */
-	public Date getCreated() {
-		return isAdministrator() ? configuration.getCreated() : null;
-	}
-
-	/**
-	 * Returns true if the updated time is set and the administrator security
-	 * permission is achievable by the session user.
-	 *
-	 * @return True if the updated time is set and the administrator security
-	 *         permission is achievable by the session user.
-	 * @since 1.8
-	 */
-	public boolean isUpdatedSet() {
-		return isAdministrator() && configuration.isUpdatedSet();
-	}
-
-	/**
-	 * Returns the updated time.
-	 *
-	 * @return The updated time. Null if no administrator security permission is
-	 *         achievable by the session user.
-	 * @since 1.8
-	 */
-	public Date getUpdated() {
-		return isAdministrator() ? configuration.getUpdated() : null;
+	public RepositoryConfiguration.Configuration getConfiguration() {
+		return isAdministrator() ? configuration : null;
 	}
 
 	/**

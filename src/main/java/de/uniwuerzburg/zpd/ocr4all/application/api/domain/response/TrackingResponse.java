@@ -10,6 +10,8 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response;
 import java.io.Serializable;
 import java.util.Date;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
+
 /**
  * Defines tracking responses for the api.
  *
@@ -53,6 +55,22 @@ public class TrackingResponse implements Serializable {
 		this.created = created;
 		this.updated = updated;
 
+	}
+
+	/**
+	 * Creates a tracking response for the api.
+	 * 
+	 * @param data The tracking data.
+	 * @since 1.8
+	 */
+	public TrackingResponse(TrackingData data) {
+		super();
+
+		if (data != null) {
+			user = data.getUser();
+			created = data.getCreated();
+			updated = data.getUpdated();
+		}
 	}
 
 	/**

@@ -126,8 +126,7 @@ public class SandboxResponse implements Serializable {
 
 		state = sandbox.getState().name();
 
-		tracking = new TrackingResponse(sandbox.getUser(), sandbox.getConfiguration().getConfiguration().getCreated(),
-				sandbox.getConfiguration().getConfiguration().getUpdated());
+		tracking = new TrackingResponse(sandbox.getConfiguration().getConfiguration());
 		keywords = sandbox.getConfiguration().getConfiguration().getKeywords();
 
 		done = sandbox.getConfiguration().getConfiguration().getDone();
