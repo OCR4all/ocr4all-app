@@ -68,6 +68,22 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
+	 * Returns the container folder.
+	 * 
+	 * @param uuid The container uuid.
+	 * @return The container folder. If the uuid is invalid, null is returned.
+	 * @since 1.8
+	 */
+	private Path getPath(String uuid) {
+		if (uuid == null || uuid.isBlank())
+			return null;
+		else {
+			Path folder = Paths.get(this.folder.toString(), uuid.trim());
+			return folder.normalize().getParent().equals(this.folder) && Files.isDirectory(folder) ? folder : null;
+		}
+	}
+
+	/**
 	 * Returns true if the administrator security permission is achievable by the
 	 * session user.
 	 *
