@@ -89,8 +89,7 @@ public class RepositoryService extends CoreService {
 	 * @return True if the security was updated and persisted.
 	 * @since 1.8
 	 */
-	public boolean updateSecurity(
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository.Security security) {
+	public boolean update(de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository.Security security) {
 		return isAdministrator() && configuration.updateSecurity(securityService.getUser(), security);
 	}
 

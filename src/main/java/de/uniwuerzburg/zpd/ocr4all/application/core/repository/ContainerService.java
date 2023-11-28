@@ -7,12 +7,14 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -68,33 +70,6 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Returns the container folder.
-	 * 
-	 * @param uuid The container uuid.
-	 * @return The container folder. If the uuid is invalid, null is returned.
-	 * @since 1.8
-	 */
-	private Path getPath(String uuid) {
-		if (uuid == null || uuid.isBlank())
-			return null;
-		else {
-			Path folder = Paths.get(this.folder.toString(), uuid.trim());
-			return folder.normalize().getParent().equals(this.folder) && Files.isDirectory(folder) ? folder : null;
-		}
-	}
-
-	/**
-	 * Returns true if the administrator security permission is achievable by the
-	 * session user.
-	 *
-	 * @return True if the administrator security permission is achievable.
-	 * @since 1.8
-	 */
-	public boolean isAdministrator() {
-		return repositoryService.isAdministrator();
-	}
-
-	/**
 	 * Returns true if a container can be created.
 	 * 
 	 * @return True if a container can be created.
@@ -132,17 +107,65 @@ public class ContainerService extends CoreService {
 			}
 
 			return new ContainerConfiguration(configurationService.getRepository().getContainer(), folder,
-					new Configuration.BasicData(user, name, description, keywords));
+					new Configuration.CoreData(user, name, description, keywords));
 		} else
 			return null;
 	}
 
 	/**
-	 * Returns the container sorted by name.
+	 * Returns the container folder.
 	 * 
-	 * @param isRightExist True if consider the given rights.
-	 * @param rights       The required rights.
-	 * @return The projects.
+	 * @param uuid The container uuid.
+	 * @return The container folder. If the uuid is invalid, null is returned.
+	 * @since 1.8
+	 */
+	private Path getPath(String uuid) {
+		if (uuid == null || uuid.isBlank())
+			return null;
+		else {
+			Path folder = Paths.get(this.folder.toString(), uuid.trim()).normalize();
+
+			// Ignore directories beginning with a dot
+			return Files.isDirectory(folder) && folder.getParent().equals(this.folder)
+					&& !folder.getFileName().toString().startsWith(".") ? folder : null;
+		}
+	}
+
+	/**
+	 * Returns the container.
+	 * 
+	 * @param path The container path.
+	 * @return The container.
+	 * @since 1.8
+	 */
+	private Container getContainer(Path path) {
+		ContainerConfiguration containerConfiguration = new ContainerConfiguration(
+				configurationService.getRepository().getContainer(), path);
+
+		return new Container(repositoryService.isAdministrator()
+				? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
+				: containerConfiguration.getConfiguration().getRight(securityService.getUser(),
+						securityService.getActiveGroups()),
+				containerConfiguration);
+	}
+
+	/**
+	 * Returns the container.
+	 * 
+	 * @param uuid The container uuid.
+	 * @return The container. Null if unknown.
+	 * @since 1.8
+	 */
+	public Container getContainer(String uuid) {
+		Path path = getPath(uuid);
+
+		return path == null ? null : getContainer(path);
+	}
+
+	/**
+	 * Returns the containers sorted by name.
+	 * 
+	 * @return The containers.
 	 * @since 1.8
 	 */
 	public List<Container> getContainers() {
@@ -151,16 +174,8 @@ public class ContainerService extends CoreService {
 		try {
 			Files.list(ContainerService.this.folder).filter(Files::isDirectory).forEach(path -> {
 				// Ignore directories beginning with a dot
-				if (!path.getFileName().toString().startsWith(".")) {
-					ContainerConfiguration containerConfiguration = new ContainerConfiguration(
-							configurationService.getRepository().getContainer(), path);
-					containers.add(new Container(isAdministrator()
-							? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
-									.getMaximal()
-							: containerConfiguration.getConfiguration().getMaxRight(securityService.getUser(),
-									securityService.getActiveGroups()),
-							containerConfiguration));
-				}
+				if (!path.getFileName().toString().startsWith("."))
+					containers.add(getContainer(path));
 			});
 		} catch (IOException e) {
 			logger.warn("Cannot not load containers - " + e.getMessage());
@@ -170,6 +185,105 @@ public class ContainerService extends CoreService {
 				.compareToIgnoreCase(p2.getConfiguration().getConfiguration().getName()));
 
 		return containers;
+	}
+
+	/**
+	 * Removes the container if the special right is fulfilled.
+	 * 
+	 * @param uuid The container uuid.
+	 * @return True if the container could be removed.
+	 * @since 1.8
+	 */
+	public boolean remove(String uuid) {
+		Path path = getPath(uuid);
+
+		if (path != null && getContainer(path).getRight().isSpecialFulfilled()) {
+			try {
+				Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+
+				if (!Files.exists(path)) {
+					logger.info("Removed container '" + path.toString() + "'.");
+
+					return true;
+				} else
+					logger.warn("Troubles removing the container '" + path.toString() + "'.");
+			} catch (Exception e) {
+				logger.warn("Cannot remove container '" + path.toString() + "' - " + e.getMessage() + ".");
+			}
+		} else {
+			logger.warn("Cannot remove container '" + uuid + "'.");
+		}
+
+		return false;
+	}
+
+	/**
+	 * Updates a container.
+	 * 
+	 * @param uuid        The container uuid.
+	 * @param name        The name.
+	 * @param description The description.
+	 * @param keywords    The keywords.
+	 * @return The container configuration. Null if the container can not be
+	 *         updated.
+	 * @since 1.8
+	 */
+	public ContainerConfiguration update(String uuid, String name, String description, Set<String> keywords) {
+		Path path = getPath(uuid);
+
+		if (path != null) {
+			Container container = getContainer(path);
+
+			if (container.getRight().isSpecialFulfilled()
+					&& container.getConfiguration().getConfiguration().update(securityService.getUser(),
+							new ContainerConfiguration.Configuration.Information(name, description, keywords)))
+				return container.getConfiguration();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the security.
+	 * 
+	 * @param uuid The container uuid.
+	 * @return The security. Null if not available.
+	 * @since 1.8
+	 */
+	public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security getSecurity(String uuid) {
+		Path path = getPath(uuid);
+
+		if (path != null) {
+			Container container = getContainer(path);
+
+			if (container.getRight().isSpecialFulfilled())
+				return container.getConfiguration().getConfiguration().getSecurity();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Updates the security.
+	 *
+	 * @param uuid     The container uuid.
+	 * @param security The container security.
+	 * @return The updated container security. Null if it can not be updated.
+	 * @since 1.8
+	 */
+	public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security update(String uuid,
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+		Path path = getPath(uuid);
+
+		if (path != null) {
+			Container container = getContainer(path);
+
+			if (container.getRight().isSpecialFulfilled()
+					&& container.getConfiguration().getConfiguration().update(securityService.getUser(), security))
+				return container.getConfiguration().getConfiguration().getSecurity();
+		}
+
+		return null;
 	}
 
 	/**
@@ -200,6 +314,7 @@ public class ContainerService extends CoreService {
 		public Container(de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right,
 				ContainerConfiguration configuration) {
 			super();
+
 			this.right = right;
 			this.configuration = configuration;
 		}

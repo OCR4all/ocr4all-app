@@ -63,15 +63,15 @@ public class ContainerConfiguration extends CoreFolder {
 	 * 
 	 * @param properties The ocr4all container properties.
 	 * @param folder     The container folder.
-	 * @param basicData  The basic data for a container configuration. If non null
+	 * @param coreData   The core data for a container configuration. If non null
 	 *                   and the main configuration is not available, then this
 	 *                   basic data is used to initialize the main configuration.
 	 * @since 1.8
 	 */
-	public ContainerConfiguration(Container properties, Path folder, Configuration.BasicData basicData) {
+	public ContainerConfiguration(Container properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
-		configuration = new Configuration(properties.getConfiguration(), basicData);
+		configuration = new Configuration(properties.getConfiguration(), coreData);
 		images = new Images(properties);
 	}
 
@@ -122,12 +122,12 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Creates a configuration for the repository.
 		 * 
 		 * @param properties The configuration properties for the repository.
-		 * @param basicData  The basic data for a container configuration. If non null
+		 * @param coreData   The core data for a container configuration. If non null
 		 *                   and the main configuration is not available, then this
 		 *                   basic data is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		Configuration(Container.Configuration properties, BasicData basicData) {
+		Configuration(Container.Configuration properties, CoreData coreData) {
 			super(Paths.get(ContainerConfiguration.this.folder.toString(), properties.getFolder()));
 
 			// Initialize the container configuration folder and consequently the
@@ -140,18 +140,18 @@ public class ContainerConfiguration extends CoreFolder {
 			// Loads the main configuration file
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
 					Type.repository_container_v1);
-			loadMainConfiguration(basicData);
+			loadMainConfiguration(coreData);
 		}
 
 		/**
 		 * Loads the main configuration file.
 		 * 
-		 * @param basicData The basic data for a container configuration. If non null
-		 *                  and the main configuration is not available, then this basic
-		 *                  data is used to initialize the main configuration.
+		 * @param coreData The core data for a container configuration. If non null and
+		 *                 the main configuration is not available, then this basic data
+		 *                 is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		private void loadMainConfiguration(BasicData basicData) {
+		private void loadMainConfiguration(CoreData coreData) {
 			// Load main configuration
 			try {
 				container = mainConfigurationManager.getEntity(
@@ -165,21 +165,22 @@ public class ContainerConfiguration extends CoreFolder {
 
 						container.setDate(currentTimeStamp);
 
-						if (basicData != null) {
-							container.setName(basicData.getName());
-							container.setDescription(basicData.getDescription());
-							container.setKeywords(basicData.getKeywords());
+						if (coreData != null) {
+							container.setName(coreData.getName());
+							container.setDescription(coreData.getDescription());
+							container.setKeywords(coreData.getKeywords());
 
-							if (basicData.getUser() != null)
+							if (coreData.getUser() != null)
 								container.setSecurity(
 										new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security(
-												basicData.getUser(),
-												de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.special));
+
+												de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal,
+												coreData.getUser()));
 
 						}
 					} else
 						// avoid using basic data if not creating a main configuration
-						basicData = null;
+						coreData = null;
 
 					if (container.getName() == null)
 						container.setName(ContainerConfiguration.this.folder.getFileName().toString());
@@ -188,7 +189,7 @@ public class ContainerConfiguration extends CoreFolder {
 						container.setSecurity(
 								new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security());
 
-					persist(basicData == null ? null : basicData.getUser(), currentTimeStamp);
+					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
@@ -238,6 +239,8 @@ public class ContainerConfiguration extends CoreFolder {
 
 					return true;
 				} catch (Exception e) {
+					reloadMainConfiguration();
+					
 					logger.warn("Could not persist the container configuration - " + e.getMessage());
 				}
 
@@ -277,49 +280,144 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the basic data without user.
+		 * Returns the container information.
 		 * 
-		 * @return The basic data without user.
+		 * @return The container information.
 		 * @since 1.8
 		 */
-		public BasicData getBasicData() {
+		public Information getInformation() {
 			return isMainConfigurationAvailable()
-					? new BasicData(null, container.getName(), container.getDescription(),
+					? new Information(container.getName(), container.getDescription(),
 							container.getKeywords() == null ? null : new HashSet<>(container.getKeywords()))
 					: null;
 		}
 
 		/**
-		 * Returns true if the given right is maximal.
-		 * 
-		 * @param right The right.
-		 * @return True if the right is maximal.
+		 * Updates the information and persists the main configuration if the main
+		 * configuration is available and the name is not null and empty.
+		 *
+		 * @param user        The user.
+		 * @param information The container information.
+		 * @return True if the container information was updated and persisted.
 		 * @since 1.8
 		 */
-		private boolean isMaximalSecurityRight(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right) {
-			return right != null
-					&& de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
-							.getMaximal().equals(right);
+		public boolean update(String user, Information information) {
+			if (isMainConfigurationAvailable() && information != null && information.getName() != null
+					&& !information.getName().isBlank()) {
+				container.setName(information.getName().trim());
+				container.setDescription(
+						information.getDescription() == null || information.getDescription().isBlank() ? null
+								: information.getDescription().trim());
+				container.setKeywords(information.getKeywords());
+
+				return persist(user);
+			} else
+				return false;
 		}
 
 		/**
-		 * Returns the maximal container right for given user and groups.
+		 * Clones the grants.
 		 * 
+		 * @param grants The grants to clone.
+		 * @return The cloned the grants.
+		 * @since 1.8
+		 */
+		private static Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> cloneGrant(
+				Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> grants) {
+			Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> clone = new HashSet<>();
+
+			if (grants != null)
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : grants) {
+					if (grant.getRight() != null && grant.getTargets() != null)
+						clone.add(
+								new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant(
+										grant.getRight(), grant.getTargets()));
+
+				}
+
+			return clone.isEmpty() ? null : clone;
+		}
+
+		/**
+		 * Clones the security.
+		 * 
+		 * @param grants The security grants to clone.
+		 * @return The cloned the security grants.
+		 * @since 1.8
+		 */
+		private static de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security cloneSecurity(
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+
+			return security == null ? null
+					: new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security(
+							cloneGrant(security.getUsers()), cloneGrant(security.getGroups()), security.getOther());
+		}
+
+		/**
+		 * Returns the security.
+		 * 
+		 * @return The security.
+		 * @since 1.8
+		 */
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security getSecurity() {
+			return cloneSecurity(container.getSecurity());
+		}
+
+		/**
+		 * Updates the security.
+		 *
+		 * @param user     The user.
+		 * @param security The container security.
+		 * @return True if the container security was updated and persisted.
+		 * @since 1.8
+		 */
+		public boolean update(String user,
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+			if (isMainConfigurationAvailable()) {
+				container.setSecurity(cloneSecurity(security));
+
+				return persist(user);
+			} else
+				return false;
+		}
+
+		/**
+		 * Returns true if the source right is fulfilled with the target right.
+		 * 
+		 * @param source The source right.
+		 * @param target The target right.
+		 * @return True if the source right is fulfilled with the target right.
+		 * @since 1.8
+		 */
+		private boolean isRightFulfilled(
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right source,
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right target) {
+			return source != null && source.iFulfilled(target);
+		}
+
+		/**
+		 * Returns the container right for given user and groups.
+		 * 
+		 * @param target If not null, the search is ended as soon as the target right is
+		 *               fulfilled. Otherwise search for the maximal fulfilled right.
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return The container right.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getMaxRight(
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRightFulfilled(
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right target,
 				String user, Collection<String> groups) {
+			if (target == null)
+				target = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal;
+
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
 				right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
 						.getMaximnal(right, container.getSecurity().getOther());
 
-				if (isMaximalSecurityRight(right))
+				if (isRightFulfilled(right, target))
 					return right;
 
 				if (container.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
@@ -331,7 +429,7 @@ public class ContainerConfiguration extends CoreFolder {
 							right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
 									.getMaximnal(right, grant.getRight());
 
-							if (isMaximalSecurityRight(right))
+							if (isRightFulfilled(right, target))
 								return right;
 						}
 				}
@@ -347,7 +445,7 @@ public class ContainerConfiguration extends CoreFolder {
 									right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
 											.getMaximnal(right, grant.getRight());
 
-									if (isMaximalSecurityRight(right))
+									if (isRightFulfilled(right, target))
 										return right;
 								}
 						}
@@ -356,6 +454,67 @@ public class ContainerConfiguration extends CoreFolder {
 			}
 
 			return right;
+		}
+
+		/**
+		 * Returns the maximal fulfilled container right for given user and groups.
+		 * 
+		 * @param user   The user.
+		 * @param groups The user groups.
+		 * @return The container right.
+		 * @since 1.8
+		 */
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRight(
+				String user, Collection<String> groups) {
+			return getRightFulfilled(null, user, groups);
+		}
+
+		/**
+		 * Returns true if the read right is fulfilled for given user and groups.
+		 * 
+		 * @param user   The user.
+		 * @param groups The user groups.
+		 * @return True if the read right is fulfilled for given user and groups.
+		 * @since 1.8
+		 */
+		public boolean isRightRead(String user, Collection<String> groups) {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
+					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.read, user,
+					groups);
+
+			return right != null && right.isReadFulfilled();
+		}
+
+		/**
+		 * Returns true if the write right is fulfilled for given user and groups.
+		 * 
+		 * @param user   The user.
+		 * @param groups The user groups.
+		 * @return True if the write right is fulfilled for given user and groups.
+		 * @since 1.8
+		 */
+		public boolean isRightWrite(String user, Collection<String> groups) {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
+					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.write, user,
+					groups);
+
+			return right != null && right.isWriteFulfilled();
+		}
+
+		/**
+		 * Returns true if the special right is fulfilled for given user and groups.
+		 * 
+		 * @param user   The user.
+		 * @param groups The user groups.
+		 * @return True if the special right is fulfilled for given user and groups.
+		 * @since 1.8
+		 */
+		public boolean isRightSpecial(String user, Collection<String> groups) {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
+					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.special,
+					user, groups);
+
+			return right != null && right.isSpecialFulfilled();
 		}
 
 		/*
@@ -425,19 +584,14 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * BasicData is an immutable class that defines basic data for container
+		 * Information is an immutable class that defines information for container
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 1.8
 		 */
-		public static class BasicData {
-			/**
-			 * The user.
-			 */
-			private final String user;
-
+		public static class Information {
 			/**
 			 * The name.
 			 */
@@ -454,31 +608,19 @@ public class ContainerConfiguration extends CoreFolder {
 			private final Set<String> keywords;
 
 			/**
-			 * Creates basic data for a container configuration.
+			 * Creates an information for a container configuration.
 			 * 
-			 * @param user        The user.
 			 * @param name        The name.
 			 * @param description The description.
 			 * @param keywords    The keywords.
 			 * @since 1.8
 			 */
-			public BasicData(String user, String name, String description, Set<String> keywords) {
+			public Information(String name, String description, Set<String> keywords) {
 				super();
 
-				this.user = user;
 				this.name = name;
 				this.description = description;
 				this.keywords = keywords;
-			}
-
-			/**
-			 * Returns the user.
-			 *
-			 * @return The user.
-			 * @since 1.8
-			 */
-			public String getUser() {
-				return user;
 			}
 
 			/**
@@ -511,6 +653,46 @@ public class ContainerConfiguration extends CoreFolder {
 				return keywords;
 			}
 
+		}
+
+		/**
+		 * CoreData is an immutable class that defines core data for container
+		 * configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class CoreData extends Information {
+			/**
+			 * The user.
+			 */
+			private final String user;
+
+			/**
+			 * Creates core data for a container configuration.
+			 * 
+			 * @param user        The user.
+			 * @param name        The name.
+			 * @param description The description.
+			 * @param keywords    The keywords.
+			 * @since 1.8
+			 */
+			public CoreData(String user, String name, String description, Set<String> keywords) {
+				super(name, description, keywords);
+
+				this.user = user;
+			}
+
+			/**
+			 * Returns the user.
+			 *
+			 * @return The user.
+			 * @since 1.8
+			 */
+			public String getUser() {
+				return user;
+			}
 		}
 
 	}

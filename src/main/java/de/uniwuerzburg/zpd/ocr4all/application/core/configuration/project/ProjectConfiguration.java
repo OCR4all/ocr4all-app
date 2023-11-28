@@ -281,6 +281,8 @@ public class ProjectConfiguration extends CoreFolder {
 
 					return true;
 				} catch (Exception e) {
+					reloadMainConfiguration();
+
 					logger.warn("Could not persist the configuration of the project '" + project.getName() + "' - "
 							+ e.getMessage());
 				}

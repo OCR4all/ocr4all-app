@@ -123,7 +123,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 		else
 			try {
-				service.updateSecurity(request);
+				service.update(request);
 
 				return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
 			} catch (Exception ex) {
