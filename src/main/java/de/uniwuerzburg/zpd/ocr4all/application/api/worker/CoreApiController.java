@@ -84,11 +84,6 @@ public class CoreApiController {
 	public static final String providerRequestMapping = "/provider";
 
 	/**
-	 * The security request mapping.
-	 */
-	public static final String securityRequestMapping = "/security";
-
-	/**
 	 * The create request mapping.
 	 */
 	public static final String createRequestMapping = "/create";

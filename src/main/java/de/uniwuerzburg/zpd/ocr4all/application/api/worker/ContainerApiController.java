@@ -16,10 +16,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -89,9 +89,9 @@ public class ContainerApiController extends CoreApiController {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerRightResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@GetMapping(entityRequestMapping + idPathVariable)
+	@GetMapping(entityRequestMapping)
 	public ResponseEntity<ContainerRightResponse> entity(
-			@Parameter(description = "the container id") @PathVariable String id) {
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id) {
 		try {
 			ContainerService.Container container = service.getContainer(id);
 
@@ -149,15 +149,13 @@ public class ContainerApiController extends CoreApiController {
 	public ResponseEntity<ContainerResponse> create(@RequestBody @Valid ContainerRequest request) {
 		if (!service.isCreate())
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-		else if (request == null)
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 		else
 			try {
-				ContainerConfiguration configuration = service.create(request.getName(), request.getDescription(),
+				ContainerService.Container container = service.create(request.getName(), request.getDescription(),
 						request.getKeywords());
 
-				return configuration == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new ContainerResponse(configuration));
+				return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+						: ResponseEntity.ok().body(new ContainerResponse(container));
 			} catch (Exception ex) {
 				log(ex);
 
@@ -205,8 +203,8 @@ public class ContainerApiController extends CoreApiController {
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@GetMapping(removeRequestMapping + idPathVariable)
-	public void remove(@Parameter(description = "the container id") @PathVariable String id,
+	@GetMapping(removeRequestMapping)
+	public void remove(@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
 			HttpServletResponse response) {
 		authorize(id);
 
@@ -239,18 +237,18 @@ public class ContainerApiController extends CoreApiController {
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(updateRequestMapping + idPathVariable)
+	@PostMapping(updateRequestMapping)
 	public ResponseEntity<ContainerResponse> update(
-			@Parameter(description = "the container id") @PathVariable String id,
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
 			@RequestBody @Valid ContainerRequest request) {
 		authorize(id);
 
 		try {
-			ContainerConfiguration configuration = service.update(id, request.getName(), request.getDescription(),
+			ContainerService.Container container = service.update(id, request.getName(), request.getDescription(),
 					request.getKeywords());
 
-			return configuration == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-					: ResponseEntity.ok().body(new ContainerResponse(configuration));
+			return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+					: ResponseEntity.ok().body(new ContainerResponse(container));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -261,8 +259,7 @@ public class ContainerApiController extends CoreApiController {
 	/**
 	 * Returns the container security in the response body.
 	 * 
-	 * @param id      The container id.
-	 * @param request The container security request.
+	 * @param id The container id.
 	 * @return The container security in the response body.
 	 * @since 1.8
 	 */
@@ -271,11 +268,42 @@ public class ContainerApiController extends CoreApiController {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content) })
-	@GetMapping(securityRequestMapping + entityRequestMapping + idPathVariable)
+	@GetMapping(securityRequestMapping)
 	public ResponseEntity<ContainerSecurityResponse> security(
-			@Parameter(description = "the container id") @PathVariable String id,
-			@RequestBody ContainerSecurityRequest request) {
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id) {
 		return ResponseEntity.ok().body(new ContainerSecurityResponse(authorize(id)));
+	}
+
+	/**
+	 * Updates the container security and returns it in the response body.
+	 * 
+	 * @param id      The container id.
+	 * @param request The container security request.
+	 * @return The container security in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "updates the container security and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Container Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerSecurityResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(securityRequestMapping + updateRequestMapping)
+	public ResponseEntity<ContainerSecurityResponse> updateSecurity(
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
+			@RequestBody ContainerSecurityRequest request) {
+		authorize(id);
+
+		try {
+			ContainerService.Container container = service.update(id, request);
+
+			return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+					: ResponseEntity.ok().body(new ContainerSecurityResponse(container));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
 	}
 
 	/**
@@ -429,18 +457,18 @@ public class ContainerApiController extends CoreApiController {
 		 * @param configuration The container configuration.
 		 * @since 1.8
 		 */
-		public ContainerResponse(ContainerConfiguration configuration) {
+		public ContainerResponse(ContainerService.Container container) {
 
-			id = configuration.getFolder().getFileName().toString();
+			id = container.getConfiguration().getFolder().getFileName().toString();
 
-			final ContainerConfiguration.Configuration.Information information = configuration.getConfiguration()
-					.getInformation();
+			final ContainerConfiguration.Configuration.Information information = container.getConfiguration()
+					.getConfiguration().getInformation();
 
 			name = information.getName();
 			description = information.getDescription();
 			keywords = information.getKeywords();
 
-			tracking = new TrackingResponse(configuration.getConfiguration());
+			tracking = new TrackingResponse(container.getConfiguration().getConfiguration());
 		}
 
 		/**
@@ -570,7 +598,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public ContainerRightResponse(ContainerService.Container container) {
-			super(container.getConfiguration());
+			super(container);
 
 			right = container.getRight();
 		}
@@ -623,7 +651,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public ContainerSecurityResponse(ContainerService.Container container) {
-			super(container.getConfiguration());
+			super(container);
 
 			security = container.getConfiguration().getConfiguration().getSecurity();
 		}

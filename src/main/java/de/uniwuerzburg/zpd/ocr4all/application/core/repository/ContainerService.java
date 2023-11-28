@@ -70,46 +70,18 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Returns true if a container can be created.
+	 * Returns the container.
 	 * 
-	 * @return True if a container can be created.
+	 * @param configuration The container configuration.
+	 * @return The container.
 	 * @since 1.8
 	 */
-	public boolean isCreate() {
-		return repositoryService.isCreateContainer();
-	}
-
-	/**
-	 * Creates a container.
-	 * 
-	 * @param name        The name.
-	 * @param description The description.
-	 * @param keywords    The keywords.
-	 * @return The container configuration. Null if the container can not be
-	 *         created.
-	 * @since 1.8
-	 */
-	public ContainerConfiguration create(String name, String description, Set<String> keywords) {
-		if (isCreate()) {
-			final String user = securityService.getUser();
-			final Path folder = Paths.get(ContainerService.this.folder.toString(), OCR4allUtils.getUUID()).normalize();
-
-			try {
-				Files.createDirectory(folder);
-
-				logger.info("Created container folder '" + folder.toString() + "'"
-						+ (user == null ? "" : ", user=" + user) + ".");
-			} catch (Exception e) {
-				logger.warn("Cannot create project '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
-						+ " - " + e.getMessage() + ".");
-
-				return null;
-			}
-
-			return new ContainerConfiguration(configurationService.getRepository().getContainer(), folder,
-					new Configuration.CoreData(user, name, description, keywords));
-		} else
-			return null;
+	private Container getContainer(ContainerConfiguration configuration) {
+		return new Container(repositoryService.isAdministrator()
+				? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
+				: configuration.getConfiguration().getRight(securityService.getUser(),
+						securityService.getActiveGroups()),
+				configuration);
 	}
 
 	/**
@@ -139,14 +111,57 @@ public class ContainerService extends CoreService {
 	 * @since 1.8
 	 */
 	private Container getContainer(Path path) {
-		ContainerConfiguration containerConfiguration = new ContainerConfiguration(
-				configurationService.getRepository().getContainer(), path);
+		return getContainer(new ContainerConfiguration(configurationService.getRepository().getContainer(), path));
+	}
 
-		return new Container(repositoryService.isAdministrator()
-				? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
-				: containerConfiguration.getConfiguration().getRight(securityService.getUser(),
-						securityService.getActiveGroups()),
-				containerConfiguration);
+	/**
+	 * Returns true if a container can be created.
+	 * 
+	 * @return True if a container can be created.
+	 * @since 1.8
+	 */
+	public boolean isCreate() {
+		return repositoryService.isCreateContainer();
+	}
+
+	/**
+	 * Creates a container.
+	 * 
+	 * @param name        The name.
+	 * @param description The description.
+	 * @param keywords    The keywords.
+	 * @return The container configuration. Null if the container can not be
+	 *         created.
+	 * @since 1.8
+	 */
+	public Container create(String name, String description, Set<String> keywords) {
+		if (isCreate()) {
+			final String user = securityService.getUser();
+			final Path folder = Paths.get(ContainerService.this.folder.toString(), OCR4allUtils.getUUID()).normalize();
+
+			try {
+				Files.createDirectory(folder);
+
+				logger.info("Created container folder '" + folder.toString() + "'"
+						+ (user == null ? "" : ", user=" + user) + ".");
+			} catch (Exception e) {
+				logger.warn("Cannot create project '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
+						+ " - " + e.getMessage() + ".");
+
+				return null;
+			}
+
+			ContainerConfiguration configuration = new ContainerConfiguration(
+					configurationService.getRepository().getContainer(), folder,
+					new Configuration.CoreData(user, name, description, keywords));
+
+			return new Container(repositoryService.isAdministrator()
+					? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
+					: configuration.getConfiguration().getRight(securityService.getUser(),
+							securityService.getActiveGroups()),
+					configuration);
+		} else
+			return null;
 	}
 
 	/**
@@ -224,11 +239,10 @@ public class ContainerService extends CoreService {
 	 * @param name        The name.
 	 * @param description The description.
 	 * @param keywords    The keywords.
-	 * @return The container configuration. Null if the container can not be
-	 *         updated.
+	 * @return The container. Null if the container can not be updated.
 	 * @since 1.8
 	 */
-	public ContainerConfiguration update(String uuid, String name, String description, Set<String> keywords) {
+	public Container update(String uuid, String name, String description, Set<String> keywords) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -237,27 +251,7 @@ public class ContainerService extends CoreService {
 			if (container.getRight().isSpecialFulfilled()
 					&& container.getConfiguration().getConfiguration().update(securityService.getUser(),
 							new ContainerConfiguration.Configuration.Information(name, description, keywords)))
-				return container.getConfiguration();
-		}
-
-		return null;
-	}
-
-	/**
-	 * Returns the security.
-	 * 
-	 * @param uuid The container uuid.
-	 * @return The security. Null if not available.
-	 * @since 1.8
-	 */
-	public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security getSecurity(String uuid) {
-		Path path = getPath(uuid);
-
-		if (path != null) {
-			Container container = getContainer(path);
-
-			if (container.getRight().isSpecialFulfilled())
-				return container.getConfiguration().getConfiguration().getSecurity();
+				return container;
 		}
 
 		return null;
@@ -268,10 +262,10 @@ public class ContainerService extends CoreService {
 	 *
 	 * @param uuid     The container uuid.
 	 * @param security The container security.
-	 * @return The updated container security. Null if it can not be updated.
+	 * @return The updated container. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security update(String uuid,
+	public Container update(String uuid,
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
 		Path path = getPath(uuid);
 
@@ -280,7 +274,7 @@ public class ContainerService extends CoreService {
 
 			if (container.getRight().isSpecialFulfilled()
 					&& container.getConfiguration().getConfiguration().update(securityService.getUser(), security))
-				return container.getConfiguration().getConfiguration().getSecurity();
+				return container;
 		}
 
 		return null;
