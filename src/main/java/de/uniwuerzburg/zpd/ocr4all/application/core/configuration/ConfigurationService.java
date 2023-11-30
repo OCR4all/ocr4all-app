@@ -115,6 +115,11 @@ public class ConfigurationService {
 	private final ApplicationConfiguration application;
 
 	/**
+	 * The configuration for the image.
+	 */
+	private final ImageConfiguration image;
+
+	/**
 	 * The configuration for the exchange.
 	 */
 	private final ExchangeConfiguration exchange;
@@ -171,6 +176,7 @@ public class ConfigurationService {
 		this.serverProperties = serverProperties;
 
 		application = new ApplicationConfiguration(properties.getApplication());
+		image = new ImageConfiguration(properties.getImage());
 		exchange = new ExchangeConfiguration(properties);
 		repository = new RepositoryConfiguration(properties);
 		opt = new OptConfiguration(properties);
@@ -302,6 +308,16 @@ public class ConfigurationService {
 	 */
 	public ApplicationConfiguration getApplication() {
 		return application;
+	}
+
+	/**
+	 * Returns the configuration for the image.
+	 *
+	 * @return The configuration for the image.
+	 * @since 1.8
+	 */
+	public ImageConfiguration getImage() {
+		return image;
 	}
 
 	/**

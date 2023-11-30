@@ -91,6 +91,16 @@ ocr4all:
         docker: C:/Program Files/Docker/docker.exe
         convert: C:/Program Files/ImageMagick-7.1.0/convert
         identify: C:/Program Files/ImageMagick-7.1.0/identify
+  image.derivatives:
+    best:
+      quality: 50
+      max-size: 1536x1536
+    detail:
+      quality: 50
+      max-size: 768x768
+    thumbnail:
+      quality: 50
+      max-size: 128x128
   exchange.folder: ${user.home}/ocr4all/exchange
   repository:
     folder: ${user.home}/ocr4all/repository

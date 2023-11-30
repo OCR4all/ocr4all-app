@@ -35,6 +35,11 @@ public class OCR4all {
 	private System system = new System();
 
 	/**
+	 * The image properties.
+	 */
+	private Image image = new Image();
+
+	/**
 	 * The exchange properties.
 	 */
 	private FolderRequired exchange = new FolderRequired();
@@ -102,6 +107,26 @@ public class OCR4all {
 	 */
 	public void setSystem(System system) {
 		this.system = system;
+	}
+
+	/**
+	 * Returns the image properties.
+	 *
+	 * @return The image properties.
+	 * @since 1.8
+	 */
+	public Image getImage() {
+		return image;
+	}
+
+	/**
+	 * Set the image properties.
+	 *
+	 * @param image The image properties to set.
+	 * @since 1.8
+	 */
+	public void setImage(Image image) {
+		this.image = image;
 	}
 
 	/**

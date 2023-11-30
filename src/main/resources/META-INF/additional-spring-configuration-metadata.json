@@ -126,6 +126,36 @@
 			"description": "ocr4all windows system command identify; the default value is 'C:/Program Files/ImageMagick-7.0.11/identify.exe'."
 		},
 		{
+			"name": "ocr4all.image.derivatives.best.quality",
+			"type": "java.lang.Integer",
+			"description": "ocr4all image derivatives best quality; the default value is 50."
+		},
+		{
+			"name": "ocr4all.image.derivatives.best.max-size",
+			"type": "java.lang.String",
+			"description": "ocr4all image derivatives best maximal size; the default value is '1536x1536'."
+		},
+		{
+			"name": "ocr4all.image.derivatives.detail.quality",
+			"type": "java.lang.Integer",
+			"description": "ocr4all image derivatives detail quality; the default value is 50."
+		},
+		{
+			"name": "ocr4all.image.derivatives.detail.max-size",
+			"type": "java.lang.String",
+			"description": "ocr4all image derivatives detail maximal size; the default value is '768x768'."
+		},
+		{
+			"name": "ocr4all.image.derivatives.thumbnail.quality",
+			"type": "java.lang.Integer",
+			"description": "ocr4all image derivatives thumbnail quality; the default value is 50."
+		},
+		{
+			"name": "ocr4all.image.derivatives.thumbnail.max-size",
+			"type": "java.lang.String",
+			"description": "ocr4all image derivatives thumbnail maximal size; the default value is '128x128'."
+		},
+		{
 			"name": "ocr4all.exchange.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all exchange directory."
