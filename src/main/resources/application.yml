@@ -18,7 +18,7 @@ spring:
       - development
   servlet.multipart:
     max-file-size: 256MB
-    max-request-size: 256MB
+    max-request-size: 2GB
     enabled: true
     location: ${java.io.tmpdir}
     

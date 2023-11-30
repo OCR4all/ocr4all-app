@@ -9,9 +9,11 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -278,6 +281,38 @@ public class ContainerService extends CoreService {
 		}
 
 		return null;
+	}
+
+	public int store(String uuid, MultipartFile[] files) {
+		int stored = 0;
+
+		if (files != null) {
+			Path path = getPath(uuid);
+
+			if (path != null) {
+				Container container = getContainer(path);
+
+				if (container.getRight().isWriteFulfilled()) {
+					Path foliosRootLocation = container.getConfiguration().getImages().getFolios();
+
+					for (MultipartFile file : files)
+						if (!file.isEmpty())
+							try {
+								Path destinationFile = foliosRootLocation
+										.resolve(Paths.get(file.getOriginalFilename()));
+								try (InputStream inputStream = file.getInputStream()) {
+									Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+									stored++;
+								}
+							} catch (IOException e) {
+								logger.warn("Failed to store file '" + file.getOriginalFilename() + "' - "
+										+ e.getMessage());
+							}
+				}
+			}
+		}
+
+		return stored;
 	}
 
 	/**
