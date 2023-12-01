@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.ProjectConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
@@ -163,6 +164,11 @@ public class Project implements Job.Cluster {
 	private final ProjectConfiguration configuration;
 
 	/**
+	 * The image configuration.
+	 */
+	private final ImageConfiguration imageConfiguration;
+
+	/**
 	 * The security level. The default level is user.
 	 */
 	private SecurityService.Level securityLevel = SecurityService.Level.user;
@@ -180,18 +186,21 @@ public class Project implements Job.Cluster {
 	/**
 	 * Creates a project.
 	 * 
-	 * @param configuration The configuration.
+	 * @param configuration      The configuration.
+	 * @param imageConfiguration The image configuration.
 	 * @throws IllegalArgumentException Thrown if the configuration is not
 	 *                                  available.
 	 * @since 1.8
 	 */
-	public Project(ProjectConfiguration configuration) throws IllegalArgumentException {
+	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration)
+			throws IllegalArgumentException {
 		super();
 
 		if (configuration == null)
 			throw new IllegalArgumentException("the configuration is a required argument.");
 
 		this.configuration = configuration;
+		this.imageConfiguration = imageConfiguration;
 	}
 
 	/**
@@ -341,9 +350,18 @@ public class Project implements Job.Cluster {
 	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
-						configuration.getImages().getDerivatives().getThumbnail(),
-						configuration.getImages().getDerivatives().getDetail(),
-						configuration.getImages().getDerivatives().getBest()));
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getThumbnail(),
+								imageConfiguration.getDerivatives().getThumbnail().getQuality(),
+								imageConfiguration.getDerivatives().getThumbnail().getMaxSize()),
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getDetail(),
+								imageConfiguration.getDerivatives().getDetail().getQuality(),
+								imageConfiguration.getDerivatives().getDetail().getMaxSize()),
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getBest(),
+								imageConfiguration.getDerivatives().getBest().getQuality(),
+								imageConfiguration.getDerivatives().getBest().getMaxSize())));
 
 		return new Target(configuration.getConfiguration().getExchange(), configuration.getConfiguration().getOpt(),
 				new Target.Project(configuration.getConfiguration().getFolder(),

@@ -641,9 +641,12 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				 */
 				updatedStandardOutput("Create derivatives.");
 
+				final Target.Project.Images images = framework.getTarget().getProject().getImages();
+
 				// quality best
 				ProcessServiceProvider.Processor.State state = createDerivatives(
-						new SystemProcess(folderFolios, convertCommand), folderBest, "1536x1536", 50);
+						new SystemProcess(folderFolios, convertCommand), folderBest,
+						images.getDerivatives().getBest().getMaxSize(), images.getDerivatives().getBest().getQuality());
 
 				if (state != null)
 					return state;
@@ -651,7 +654,9 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				callback.updatedProgress(0.40F);
 
 				// quality detail
-				state = createDerivatives(new SystemProcess(folderBest, convertCommand), folderDetail, "768x768", 50);
+				state = createDerivatives(new SystemProcess(folderBest, convertCommand), folderDetail,
+						images.getDerivatives().getDetail().getMaxSize(),
+						images.getDerivatives().getDetail().getQuality());
 
 				if (state != null)
 					return state;
@@ -659,8 +664,9 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				callback.updatedProgress(0.50F);
 
 				// quality thumbnail
-				state = createDerivatives(new SystemProcess(folderDetail, convertCommand), folderThumbnail, "128x128",
-						50);
+				state = createDerivatives(new SystemProcess(folderDetail, convertCommand), folderThumbnail,
+						images.getDerivatives().getThumbnail().getMaxSize(),
+						images.getDerivatives().getThumbnail().getQuality());
 
 				if (state != null)
 					return state;
@@ -675,7 +681,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				List<String> foliosFiles = new ArrayList<>();
 				List<String> derivativeFiles = new ArrayList<>();
 
-				final Target.Project.Images images = framework.getTarget().getProject().getImages();
 				final String foliosDerivativesImageFormat = images.getDerivatives().getFormat().name();
 				for (Folio folio : folios) {
 					try {
@@ -710,25 +715,25 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail());
+					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail().getFolder());
 					callback.updatedProgress(0.75F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail());
+					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail().getFolder());
 					callback.updatedProgress(0.8F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderBest, images.getDerivatives().getBest());
+					move(derivativeFiles, folderBest, images.getDerivatives().getBest().getFolder());
 					callback.updatedProgress(0.9F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 				} catch (IOException e) {
 					int remain = remove(foliosFiles, images.getFolios());
-					remain += remove(derivativeFiles, images.getDerivatives().getThumbnail());
-					remain += remove(derivativeFiles, images.getDerivatives().getDetail());
-					remain += remove(derivativeFiles, images.getDerivatives().getBest());
+					remain += remove(derivativeFiles, images.getDerivatives().getThumbnail().getFolder());
+					remain += remove(derivativeFiles, images.getDerivatives().getDetail().getFolder());
+					remain += remove(derivativeFiles, images.getDerivatives().getBest().getFolder());
 
 					updatedStandardError("Cannot move the folios to project"
 							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
