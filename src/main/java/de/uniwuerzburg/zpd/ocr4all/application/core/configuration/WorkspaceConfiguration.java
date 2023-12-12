@@ -245,14 +245,13 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 * Creates a configuration for the workspace.
 	 * 
 	 * @param properties               The workspace properties.
-	 * @param systemProperties         The system properties.
+	 * @param systemCommand            The system command.
 	 * @param applicationConfiguration The configuration for the application.
 	 * @param exchangeConfiguration    The configuration for the exchange.
 	 * @param optConfiguration         The configuration for the opt.
 	 * @since 1.8
 	 */
-	public WorkspaceConfiguration(Workspace properties,
-			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.System systemProperties,
+	public WorkspaceConfiguration(Workspace properties, ConfigurationService.SystemCommand systemCommand,
 			ApplicationConfiguration applicationConfiguration, ExchangeConfiguration exchangeConfiguration,
 			OptConfiguration optConfiguration) {
 		super(Paths.get(properties.getFolder()));
@@ -261,7 +260,7 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 		ConfigurationService.initializeFolder(true, folder, "workspace");
 
-		configuration = new Configuration(properties.getConfiguration(), systemProperties);
+		configuration = new Configuration(properties.getConfiguration(), systemCommand);
 		workflows = new WorkflowsConfiguration(properties.getWorkflows(), this);
 		projects = new ProjectsConfiguration(properties.getProjects(), exchangeConfiguration, optConfiguration, this);
 	}
@@ -529,9 +528,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 		private final Path passwordFile;
 
 		/**
-		 * The system properties.
+		 * The system command.
 		 */
-		private final de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.System systemProperties;
+		private final ConfigurationService.SystemCommand systemCommand;
 
 		/**
 		 * The system command docker.
@@ -580,15 +579,14 @@ public class WorkspaceConfiguration extends CoreFolder {
 		/**
 		 * Creates a configuration for the workspace.
 		 * 
-		 * @param properties       The configuration properties for the workspace.
-		 * @param systemProperties The system properties.
+		 * @param properties    The configuration properties for the workspace.
+		 * @param systemCommand The system command.
 		 * @since 1.8
 		 */
-		public Configuration(Workspace.Configuration properties,
-				de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.System systemProperties) {
+		public Configuration(Workspace.Configuration properties, ConfigurationService.SystemCommand systemCommand) {
 			super(Paths.get(WorkspaceConfiguration.this.folder.toString(), properties.getFolder()));
 
-			this.systemProperties = systemProperties;
+			this.systemCommand = systemCommand;
 
 			/*
 			 * Initialize the workspace configuration folder and consequently the workspace
@@ -759,71 +757,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 				logger.info("Configuration version " + version.getLabel() + ".");
 
 			configurationServiceProvider = new ConfigurationServiceProvider(serviceProviderProperties,
-					getSystemCommand(SystemCommand.Type.docker, systemCommandDocker, getPropertySystemCommandDocker()),
-					getSystemCommand(SystemCommand.Type.convert, systemCommandConvert,
-							getPropertySystemCommandConvert()),
-					getSystemCommand(SystemCommand.Type.identify, systemCommandIdentify,
-							getPropertySystemCommandIdentify()));
-		}
-
-		/**
-		 * Returns the system command docker depending on the running operation system
-		 * from the properties.
-		 * 
-		 * @return The system command docker depending on the running operation system
-		 *         from the properties.
-		 * @since 1.8
-		 */
-		private String getPropertySystemCommandDocker() {
-			switch (ConfigurationService.getOperatingSystem()) {
-			case mac:
-				return systemProperties.getMac().getCommand().getDocker();
-			case windows:
-				return systemProperties.getWindows().getCommand().getDocker();
-			case unix:
-			default:
-				return systemProperties.getUnix().getCommand().getDocker();
-			}
-		}
-
-		/**
-		 * Returns the system command convert depending on the running operation system
-		 * from the properties.
-		 * 
-		 * @return The system command convert depending on the running operation system
-		 *         from the properties.
-		 * @since 1.8
-		 */
-		private String getPropertySystemCommandConvert() {
-			switch (ConfigurationService.getOperatingSystem()) {
-			case mac:
-				return systemProperties.getMac().getCommand().getConvert();
-			case windows:
-				return systemProperties.getWindows().getCommand().getConvert();
-			case unix:
-			default:
-				return systemProperties.getUnix().getCommand().getConvert();
-			}
-		}
-
-		/**
-		 * Returns the system command identify depending on the running operation system
-		 * from the properties.
-		 * 
-		 * @return The system command identify depending on the running operation system
-		 *         from the properties.
-		 * @since 1.8
-		 */
-		private String getPropertySystemCommandIdentify() {
-			switch (ConfigurationService.getOperatingSystem()) {
-			case mac:
-				return systemProperties.getMac().getCommand().getIdentify();
-			case windows:
-				return systemProperties.getWindows().getCommand().getIdentify();
-			case unix:
-			default:
-				return systemProperties.getUnix().getCommand().getIdentify();
-			}
+					getSystemCommand(SystemCommand.Type.docker, systemCommandDocker, systemCommand.getDocker()),
+					getSystemCommand(SystemCommand.Type.convert, systemCommandConvert, systemCommand.getConvert()),
+					getSystemCommand(SystemCommand.Type.identify, systemCommandIdentify, systemCommand.getIdentify()));
 		}
 
 		/**
@@ -871,9 +807,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 			return new String[] {
 					MainConfigurationField.configurationVersion.getLabel() + ": " + Version.defaultVertsion.getLabel(),
 					MainConfigurationField.instanceName.getLabel() + ": <name>",
-					MainConfigurationField.systemCommandDocker.getLabel() + ": " + getPropertySystemCommandDocker(),
-					MainConfigurationField.systemCommandConvert.getLabel() + ": " + getPropertySystemCommandConvert(),
-					MainConfigurationField.systemCommandIdentify.getLabel() + ": " + getPropertySystemCommandIdentify(),
+					MainConfigurationField.systemCommandDocker.getLabel() + ": " + systemCommand.getDocker(),
+					MainConfigurationField.systemCommandConvert.getLabel() + ": " + systemCommand.getConvert(),
+					MainConfigurationField.systemCommandIdentify.getLabel() + ": " + systemCommand.getIdentify(),
 					MainConfigurationField.serviceProvider.getLabel() + "{collection.key}: [value]" };
 		}
 
@@ -892,11 +828,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 						if (identifier instanceof DisabledServiceProvider provider)
 							disabledServiceProviders.put(identifier.getId(), provider);
 						else if (identifier instanceof LazyInitializedServiceProvider provider)
-							lazyInitializedServiceProviders.put(identifier.getId(),
-									provider);
+							lazyInitializedServiceProviders.put(identifier.getId(), provider);
 						else if (identifier instanceof TaskExecutorServiceProvider provider)
-							taskExecutorServiceProviders.put(identifier.getId(),
-									provider);
+							taskExecutorServiceProviders.put(identifier.getId(), provider);
 						else
 							logger.warn("The class type '" + identifier.getClass().getName()
 									+ "' is not implemented for service provider configuration.");
