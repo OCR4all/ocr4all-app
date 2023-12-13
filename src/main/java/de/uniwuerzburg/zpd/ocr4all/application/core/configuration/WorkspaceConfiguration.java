@@ -773,10 +773,15 @@ public class WorkspaceConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		private SystemCommand getSystemCommand(SystemCommand.Type type, String command, String defaultCommand) {
-			Path path = Paths.get(command == null ? defaultCommand : command);
+			if (command == null || command.isBlank())
+				command = defaultCommand;
+			else
+				command = command.trim();
+
+			Path path = Paths.get(command);
 
 			SystemCommand systemCommand = new SystemCommand(type, path,
-					!Files.isDirectory(path) && Files.isExecutable(path));
+					ConfigurationService.SystemCommand.isAvailable(command));
 
 			if (systemCommand.isAvailable())
 				logger.info("The system command " + type.name() + " '" + path + "' is available.");

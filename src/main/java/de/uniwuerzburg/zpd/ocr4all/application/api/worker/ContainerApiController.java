@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
@@ -191,32 +190,6 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Authorizes the session user for write security operations.
-	 * 
-	 * @param id The container id.
-	 * @return The authorized container.
-	 * @throws ResponseStatusException Throw with http status:
-	 *                                 <ul>
-	 *                                 <li>400 (Bad Request): if the container is
-	 *                                 not available.</li>
-	 *                                 <li>401 (Unauthorized): if the write security
-	 *                                 permission is not achievable by the session
-	 *                                 user.</li>
-	 *                                 </ul>
-	 * @since 1.8
-	 */
-	private ContainerService.Container authorizeWrite(String id) throws ResponseStatusException {
-		ContainerService.Container container = service.getContainer(id);
-
-		if (container == null)
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		else if (!container.getRight().isWriteFulfilled())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-		else
-			return container;
-	}
-
-	/**
 	 * Removes the container.
 	 * 
 	 * @param id       The container id.
@@ -326,42 +299,6 @@ public class ContainerApiController extends CoreApiController {
 
 			return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
 					: ResponseEntity.ok().body(new ContainerSecurityResponse(container));
-		} catch (Exception ex) {
-			log(ex);
-
-			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-		}
-	}
-
-	/**
-	 * Updates folios order.
-	 * 
-	 * @param projectId The project id. This is the folder name.
-	 * @param file      The uploaded file received in a multipart request with the
-	 *                  new order.
-	 * @param response  The HTTP-specific functionality in sending a response to the
-	 *                  client.
-	 * @since 1.8
-	 */
-	@Operation(summary = "upload folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request Succeeded Normally"),
-			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
-			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping("/upload")
-	public void folioUpload(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
-			@RequestParam MultipartFile[] files, HttpServletResponse response) {
-		authorizeWrite(id);
-
-		try {
-			if (service.store(id, files) > 0)
-				response.setStatus(HttpServletResponse.SC_OK);
-			else
-				throw new ResponseStatusException(HttpStatus.NO_CONTENT);
-		} catch (ResponseStatusException ex) {
-			throw ex;
 		} catch (Exception ex) {
 			log(ex);
 

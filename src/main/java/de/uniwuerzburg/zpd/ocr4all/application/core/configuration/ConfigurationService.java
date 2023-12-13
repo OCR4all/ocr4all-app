@@ -463,7 +463,7 @@ public class ConfigurationService {
 		 * @return True if the system command is available.
 		 * @since 1.8
 		 */
-		private boolean isAvailable(String command) {
+		public static boolean isAvailable(String command) {
 			if (command == null || command.isBlank())
 				return false;
 			else {
