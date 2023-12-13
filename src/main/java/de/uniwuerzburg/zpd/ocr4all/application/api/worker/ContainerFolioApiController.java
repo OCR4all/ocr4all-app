@@ -139,7 +139,8 @@ public class ContainerFolioApiController extends CoreApiController {
 		authorizeWrite(id);
 
 		try {
-			if (service.store(id, files) > 0)
+			// TODO
+			if (service.store(id, files) != null)
 				response.setStatus(HttpServletResponse.SC_OK);
 			else
 				throw new ResponseStatusException(HttpStatus.NO_CONTENT);
