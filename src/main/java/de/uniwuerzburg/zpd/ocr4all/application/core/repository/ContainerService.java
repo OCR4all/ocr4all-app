@@ -367,31 +367,15 @@ public class ContainerService extends CoreService {
 				if (container.getRight().isWriteFulfilled()) {
 					// The system commands
 					final String identifyCommand = configurationService.getSystemCommand().getIdentify();
-					if (!configurationService.getSystemCommand().isIdentifyAvailable()) {
-						final String message = "the system identify command " + identifyCommand + " is not available.";
-						logger.warn(message);
-
-						throw new IOException(message);
-					}
+					if (!configurationService.getSystemCommand().isIdentifyAvailable())
+						throw new IOException("the system identify command " + identifyCommand + " is not available.");
 
 					final String convertCommand = configurationService.getSystemCommand().getConvert();
-					if (!configurationService.getSystemCommand().isConvertAvailable()) {
-						final String message = "the system convert command " + convertCommand + " is not available.";
-						logger.warn(message);
-
-						throw new IOException(message);
-					}
+					if (!configurationService.getSystemCommand().isConvertAvailable())
+						throw new IOException("the system convert command " + convertCommand + " is not available.");
 
 					// create tmp directories
-					Path temporaryDirectory;
-					try {
-						temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
-					} catch (IOException e) {
-						logger.warn("cannot create temporary directory for container uuid " + uuid + " - "
-								+ e.getMessage() + ".");
-
-						throw e;
-					}
+					Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
 
 					Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
 					Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
@@ -404,9 +388,6 @@ public class ContainerService extends CoreService {
 						Files.createDirectory(folderDetail);
 						Files.createDirectory(folderBest);
 					} catch (IOException e) {
-						logger.warn("cannot create temporary required directory for container uuid " + uuid + " - "
-								+ e.getMessage() + ".");
-
 						deleteRecursively(temporaryDirectory);
 
 						throw e;
@@ -463,6 +444,9 @@ public class ContainerService extends CoreService {
 									logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
 								}
 						}
+					
+					if (folios.isEmpty())
+						return folios;
 
 					/*
 					 * Create derivatives
@@ -490,12 +474,11 @@ public class ContainerService extends CoreService {
 								derivativeResolution.getThumbnail().getMaxSize(),
 								derivativeResolution.getThumbnail().getQuality());
 					} catch (Exception e) {
-						final String message = "Cannot create derivatives for container - " + e.getMessage() + ".";
-						logger.warn(message);
+						// deleteRecursively(temporaryDirectory);
+						logger.warn("Path folios " + folderFolios.toString());
+						logger.warn("Path best " + folderBest.toString());
 
-						deleteRecursively(temporaryDirectory);
-
-						throw new IOException(message);
+						throw new IOException("Cannot create derivatives for container - " + e.getMessage() + ".");
 					}
 
 					// set sizes
@@ -519,12 +502,9 @@ public class ContainerService extends CoreService {
 									ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
 									ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
 						} catch (IOException e) {
-							final String message = "Cannot restore derivatives information - " + e.getMessage() + ".";
-							logger.warn(message);
-
 							deleteRecursively(temporaryDirectory);
 
-							throw new IOException(message);
+							throw new IOException("Cannot restore derivatives information - " + e.getMessage() + ".");
 						}
 					}
 
@@ -548,7 +528,6 @@ public class ContainerService extends CoreService {
 						final String message = "Cannot move the folios to container"
 								+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
 								+ ".";
-						logger.warn(message);
 
 						deleteRecursively(temporaryDirectory);
 
@@ -566,11 +545,8 @@ public class ContainerService extends CoreService {
 					try {
 						folioManager.persist(true, folios);
 					} catch (Exception e) {
-						final String message = "Cannot persist container folios configuration file - " + e.getMessage()
-								+ ".";
-						logger.warn(message);
-
-						throw new IOException(message);
+						throw new IOException(
+								"Cannot persist container folios configuration file - " + e.getMessage() + ".");
 					}
 
 					return folios;

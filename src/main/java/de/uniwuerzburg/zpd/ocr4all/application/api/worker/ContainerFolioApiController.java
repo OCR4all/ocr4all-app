@@ -7,8 +7,12 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,7 +48,7 @@ public class ContainerFolioApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = ContainerApiController.contextPath + "/folio";
+	public static final String contextPath = ContainerApiController.contextPath + folioRequestMapping;
 
 	/**
 	 * The container service.
@@ -128,24 +134,27 @@ public class ContainerFolioApiController extends CoreApiController {
 	 */
 	@Operation(summary = "upload folios")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request Succeeded Normally"),
-			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping("/upload")
-	public void folioUpload(
+	@PostMapping(uploadRequestMapping)
+	public ResponseEntity<List<FolioResponse>> folioUpload(
 			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
 		authorizeWrite(id);
 
 		try {
-			// TODO
-			if (service.store(id, files) != null)
-				response.setStatus(HttpServletResponse.SC_OK);
-			else
-				throw new ResponseStatusException(HttpStatus.NO_CONTENT);
-		} catch (ResponseStatusException ex) {
-			throw ex;
+			final List<Folio> uploaded = service.store(id, files);
+
+			if (uploaded == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				final List<FolioResponse> folios = new ArrayList<>();
+				for (Folio folio : uploaded)
+					folios.add(new FolioResponse(folio));
+
+				return ResponseEntity.ok().body(folios);
+			}
 		} catch (Exception ex) {
 			log(ex);
 

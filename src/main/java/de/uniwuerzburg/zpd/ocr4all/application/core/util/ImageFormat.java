@@ -74,7 +74,7 @@ public enum ImageFormat {
 		if (extensions.length > 0)
 			pattern.append("}");
 
-		matcher = FileSystems.getDefault().getPathMatcher("glob:**/*." + pattern.toString());
+		matcher = FileSystems.getDefault().getPathMatcher("glob:**." + pattern.toString());
 	}
 
 	/**
@@ -126,7 +126,7 @@ public enum ImageFormat {
 	 * @since 1.8
 	 */
 	private boolean matches(String filename) {
-		return matcher.matches(Paths.get(filename.toLowerCase()));
+		return filename != null && matcher.matches(Paths.get(filename.toLowerCase()));
 	}
 
 	/**
@@ -271,6 +271,7 @@ public enum ImageFormat {
 	public static ImageFormat getImageFormatFilename(String name) {
 		if (name != null && !name.isBlank()) {
 			name = name.trim();
+			
 			for (ImageFormat imageFormat : ImageFormat.values())
 				if (imageFormat.matches(name))
 					return imageFormat;

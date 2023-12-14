@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
@@ -502,32 +503,6 @@ public class ProjectFolioApiController extends CoreApiController {
 		 */
 		public void setIdentifiers(Set<String> identifiers) {
 			this.identifiers = identifiers;
-		}
-
-	}
-
-	/**
-	 * Defines folio responses for the api.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class FolioResponse extends Folio {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Creates a folio response for the api.
-		 * 
-		 * @param folio The folio.
-		 * @since 1.8
-		 */
-		public FolioResponse(Folio folio) {
-			super(folio.getDate(), folio.getUser(), folio.getKeywords(), folio.getId(), folio.getName(),
-					folio.getFormat(), folio.getSize(), folio.getDerivatives());
 		}
 
 	}
