@@ -651,17 +651,17 @@ public class Project implements Job.Cluster {
 	/**
 	 * Returns the folios that are restricted to the specified IDs.
 	 *
-	 * @param ids The folios IDs. If null, returns all folios.
+	 * @param uuids The folios uuids. If null, returns all folios.
 	 * @return The folios. On troubles returns an empty array.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Set<String> ids) {
+	public List<Folio> getFolios(Set<String> uuids) {
 		try {
 			List<Folio> folios = new ArrayList<>();
 
 			for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
 					.getEntities(Folio.class))
-				if (ids == null || ids.contains(folio.getId()))
+				if (uuids == null || uuids.contains(folio.getId()))
 					folios.add(folio);
 
 			return folios;

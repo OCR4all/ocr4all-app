@@ -123,22 +123,22 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Updates folios order.
+	 * Upload the folios.
 	 * 
-	 * @param projectId The project id. This is the folder name.
-	 * @param file      The uploaded file received in a multipart request with the
-	 *                  new order.
-	 * @param response  The HTTP-specific functionality in sending a response to the
-	 *                  client.
+	 * @param id       The container id. This is the folder name.
+	 * @param files    The files to upload in a multipart request.
+	 * @param response The HTTP-specific functionality in sending a response to the
+	 *                 client.
+	 * @return The list of uploaded folios in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request Succeeded Normally"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Folios"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(uploadRequestMapping)
-	public ResponseEntity<List<FolioResponse>> folioUpload(
+	public ResponseEntity<List<FolioResponse>> upload(
 			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
 		authorizeWrite(id);

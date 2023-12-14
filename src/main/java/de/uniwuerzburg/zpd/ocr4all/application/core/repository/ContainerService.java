@@ -444,7 +444,7 @@ public class ContainerService extends CoreService {
 									logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
 								}
 						}
-					
+
 					if (folios.isEmpty())
 						return folios;
 
@@ -555,6 +555,43 @@ public class ContainerService extends CoreService {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns the folios.
+	 *
+	 * @param container The container.
+	 * @return The folios. Null if the container is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> getFolios(Container container) throws IOException {
+		return getFolios(container, null);
+	}
+
+	/**
+	 * Returns the folios that are restricted to the specified IDs.
+	 *
+	 * @param container The container.
+	 * @param uuids     The folios uuids. If null, returns all folios.
+	 * @return The folios. Null if the container is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> getFolios(Container container, Set<String> uuids) throws IOException {
+		if (container != null && container.getRight().isReadFulfilled()) {
+			List<Folio> folios = new ArrayList<>();
+
+			for (Folio folio : (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+					Type.folio_v1)).getEntities(Folio.class))
+				if (uuids == null || uuids.contains(folio.getId()))
+					folios.add(folio);
+
+			return folios;
+		} else
+			return null;
 	}
 
 	/**
