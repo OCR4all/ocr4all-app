@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -350,207 +351,200 @@ public class ContainerService extends CoreService {
 	/**
 	 * Store the folios.
 	 * 
-	 * @param uuid  The container uuid.
-	 * @param files The folios.
+	 * @param container The container.
+	 * @param files     The folios.
 	 * @return The stored folios. Null if container is unknown or the write right is
 	 *         not fulfilled.
 	 * @throws IOException Throws on storage troubles.
 	 * @since 1.8
 	 */
-	public List<Folio> store(String uuid, MultipartFile[] files) throws IOException {
-		if (files != null) {
-			Path path = getPath(uuid);
+	public List<Folio> store(Container container, MultipartFile[] files) throws IOException {
+		if (container != null && files != null) {
+			if (container.getRight().isWriteFulfilled()) {
+				// The system commands
+				final String identifyCommand = configurationService.getSystemCommand().getIdentify();
+				if (!configurationService.getSystemCommand().isIdentifyAvailable())
+					throw new IOException("the system identify command " + identifyCommand + " is not available.");
 
-			if (path != null) {
-				Container container = getContainer(path);
+				final String convertCommand = configurationService.getSystemCommand().getConvert();
+				if (!configurationService.getSystemCommand().isConvertAvailable())
+					throw new IOException("the system convert command " + convertCommand + " is not available.");
 
-				if (container.getRight().isWriteFulfilled()) {
-					// The system commands
-					final String identifyCommand = configurationService.getSystemCommand().getIdentify();
-					if (!configurationService.getSystemCommand().isIdentifyAvailable())
-						throw new IOException("the system identify command " + identifyCommand + " is not available.");
+				// create tmp directories
+				Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
 
-					final String convertCommand = configurationService.getSystemCommand().getConvert();
-					if (!configurationService.getSystemCommand().isConvertAvailable())
-						throw new IOException("the system convert command " + convertCommand + " is not available.");
+				Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
+				Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
+				Path folderDetail = Paths.get(temporaryDirectory.toString().toString(), "detail");
+				Path folderBest = Paths.get(temporaryDirectory.toString().toString(), "best");
 
-					// create tmp directories
-					Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
-
-					Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
-					Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
-					Path folderDetail = Paths.get(temporaryDirectory.toString().toString(), "detail");
-					Path folderBest = Paths.get(temporaryDirectory.toString().toString(), "best");
-
-					try {
-						Files.createDirectory(folderFolios);
-						Files.createDirectory(folderThumbnail);
-						Files.createDirectory(folderDetail);
-						Files.createDirectory(folderBest);
-					} catch (IOException e) {
-						deleteRecursively(temporaryDirectory);
-
-						throw e;
-					}
-
-					SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
-
-					// store the files
-					List<Folio> folios = new ArrayList<>();
-					for (MultipartFile file : files)
-						if (file != null && !file.isEmpty()) {
-							String fileName = file.getOriginalFilename();
-
-							final ImageFormat imageFormat = ImageFormat.getImageFormatFilename(fileName);
-
-							if (imageFormat != null)
-								try {
-									final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
-											.getPersistence();
-
-									if (format == null) {
-										logger.warn("The folio does not supports the image type " + imageFormat.name()
-												+ ".");
-
-										continue;
-									}
-
-									final String id = OCR4allUtils.getUUID();
-									final Path destinationFile = folderFolios
-											.resolve(Paths.get(id + "." + imageFormat.name()));
-
-									try (InputStream inputStream = file.getInputStream()) {
-										Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-									} catch (IOException e) {
-										logger.warn("Failed to store image '" + destinationFile + "' with uuid " + id
-												+ " - " + e.getMessage());
-
-										continue;
-									}
-
-									final Folio.Size size;
-									try {
-										size = ImageUtils.getSize(identifyJob, fileName, id + "." + imageFormat.name());
-									} catch (IOException e) {
-										Files.delete(destinationFile);
-
-										continue;
-									}
-
-									folios.add(new Folio(new Date(), securityService.getUser(), id,
-											FilenameUtils.removeExtension(fileName), format, size, null));
-
-								} catch (Exception e) {
-									logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
-								}
-						}
-
-					if (folios.isEmpty())
-						return folios;
-
-					/*
-					 * Create derivatives
-					 */
-					final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration()
-							.getImages().getDerivatives();
-					try {
-						final ImageConfiguration.Derivatives derivativeResolution = configurationService.getImage()
-								.getDerivatives();
-
-						// quality best
-						ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
-								derivatives.getFormat().name(), folderBest, derivativeResolution.getBest().getMaxSize(),
-								derivativeResolution.getBest().getQuality());
-
-						// quality detail
-						ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
-								derivatives.getFormat().name(), folderDetail,
-								derivativeResolution.getDetail().getMaxSize(),
-								derivativeResolution.getDetail().getQuality());
-
-						// quality thumbnail
-						ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
-								derivatives.getFormat().name(), folderThumbnail,
-								derivativeResolution.getThumbnail().getMaxSize(),
-								derivativeResolution.getThumbnail().getQuality());
-					} catch (Exception e) {
-						// deleteRecursively(temporaryDirectory);
-						logger.warn("Path folios " + folderFolios.toString());
-						logger.warn("Path best " + folderBest.toString());
-
-						throw new IOException("Cannot create derivatives for container - " + e.getMessage() + ".");
-					}
-
-					// set sizes
-					SystemProcess identifyThumbnailJob = new SystemProcess(folderThumbnail, identifyCommand);
-					SystemProcess identifyDetailJob = new SystemProcess(folderDetail, identifyCommand);
-					SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
-
-					List<String> foliosFiles = new ArrayList<>();
-					List<String> derivativeFiles = new ArrayList<>();
-
-					final String foliosDerivativesImageFormat = derivatives.getFormat().name();
-					for (Folio folio : folios) {
-						try {
-							foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
-
-							String target = folio.getId() + "." + foliosDerivativesImageFormat;
-							derivativeFiles.add(target);
-
-							folio.setDerivatives(new Folio.Derivatives(
-									ImageUtils.getSize(identifyThumbnailJob, folio.getName(), target),
-									ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
-									ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
-						} catch (IOException e) {
-							deleteRecursively(temporaryDirectory);
-
-							throw new IOException("Cannot restore derivatives information - " + e.getMessage() + ".");
-						}
-					}
-
-					/*
-					 * Move the folios to the project
-					 */
-					try {
-						move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
-
-						move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
-
-						move(derivativeFiles, folderDetail, derivatives.getDetail());
-
-						move(derivativeFiles, folderBest, derivatives.getBest());
-					} catch (IOException e) {
-						int remain = remove(foliosFiles, container.getConfiguration().getImages().getFolios());
-						remain += remove(derivativeFiles, derivatives.getThumbnail());
-						remain += remove(derivativeFiles, derivatives.getDetail());
-						remain += remove(derivativeFiles, derivatives.getBest());
-
-						final String message = "Cannot move the folios to container"
-								+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
-								+ ".";
-
-						deleteRecursively(temporaryDirectory);
-
-						throw new IOException(message);
-					}
-
-					// remove temporary data
+				try {
+					Files.createDirectory(folderFolios);
+					Files.createDirectory(folderThumbnail);
+					Files.createDirectory(folderDetail);
+					Files.createDirectory(folderBest);
+				} catch (IOException e) {
 					deleteRecursively(temporaryDirectory);
 
-					/*
-					 * Persist the configuration
-					 */
-					PersistenceManager folioManager = new PersistenceManager(
-							container.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1);
-					try {
-						folioManager.persist(true, folios);
-					} catch (Exception e) {
-						throw new IOException(
-								"Cannot persist container folios configuration file - " + e.getMessage() + ".");
+					throw e;
+				}
+
+				SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
+
+				// store the files
+				List<Folio> folios = new ArrayList<>();
+				for (MultipartFile file : files)
+					if (file != null && !file.isEmpty()) {
+						String fileName = file.getOriginalFilename();
+
+						final ImageFormat imageFormat = ImageFormat.getImageFormatFilename(fileName);
+
+						if (imageFormat != null)
+							try {
+								final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
+										.getPersistence();
+
+								if (format == null) {
+									logger.warn(
+											"The folio does not supports the image type " + imageFormat.name() + ".");
+
+									continue;
+								}
+
+								final String id = OCR4allUtils.getUUID();
+								final Path destinationFile = folderFolios
+										.resolve(Paths.get(id + "." + imageFormat.name()));
+
+								try (InputStream inputStream = file.getInputStream()) {
+									Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+								} catch (IOException e) {
+									logger.warn("Failed to store image '" + destinationFile + "' with uuid " + id
+											+ " - " + e.getMessage());
+
+									continue;
+								}
+
+								final Folio.Size size;
+								try {
+									size = ImageUtils.getSize(identifyJob, fileName, id + "." + imageFormat.name());
+								} catch (IOException e) {
+									Files.delete(destinationFile);
+
+									continue;
+								}
+
+								folios.add(new Folio(new Date(), securityService.getUser(), id,
+										FilenameUtils.removeExtension(fileName), format, size, null));
+
+							} catch (Exception e) {
+								logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
+							}
 					}
 
+				if (folios.isEmpty())
 					return folios;
+
+				/*
+				 * Create derivatives
+				 */
+				final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
+						.getDerivatives();
+				try {
+					final ImageConfiguration.Derivatives derivativeResolution = configurationService.getImage()
+							.getDerivatives();
+
+					// quality best
+					ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
+							derivatives.getFormat().name(), folderBest, derivativeResolution.getBest().getMaxSize(),
+							derivativeResolution.getBest().getQuality());
+
+					// quality detail
+					ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
+							derivatives.getFormat().name(), folderDetail, derivativeResolution.getDetail().getMaxSize(),
+							derivativeResolution.getDetail().getQuality());
+
+					// quality thumbnail
+					ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
+							derivatives.getFormat().name(), folderThumbnail,
+							derivativeResolution.getThumbnail().getMaxSize(),
+							derivativeResolution.getThumbnail().getQuality());
+				} catch (Exception e) {
+					// deleteRecursively(temporaryDirectory);
+					logger.warn("Path folios " + folderFolios.toString());
+					logger.warn("Path best " + folderBest.toString());
+
+					throw new IOException("Cannot create derivatives for container - " + e.getMessage() + ".");
 				}
+
+				// set sizes
+				SystemProcess identifyThumbnailJob = new SystemProcess(folderThumbnail, identifyCommand);
+				SystemProcess identifyDetailJob = new SystemProcess(folderDetail, identifyCommand);
+				SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
+
+				List<String> foliosFiles = new ArrayList<>();
+				List<String> derivativeFiles = new ArrayList<>();
+
+				final String foliosDerivativesImageFormat = derivatives.getFormat().name();
+				for (Folio folio : folios) {
+					try {
+						foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
+
+						String target = folio.getId() + "." + foliosDerivativesImageFormat;
+						derivativeFiles.add(target);
+
+						folio.setDerivatives(
+								new Folio.Derivatives(ImageUtils.getSize(identifyThumbnailJob, folio.getName(), target),
+										ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
+										ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
+					} catch (IOException e) {
+						deleteRecursively(temporaryDirectory);
+
+						throw new IOException("Cannot restore derivatives information - " + e.getMessage() + ".");
+					}
+				}
+
+				/*
+				 * Move the folios to the project
+				 */
+				try {
+					move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
+
+					move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
+
+					move(derivativeFiles, folderDetail, derivatives.getDetail());
+
+					move(derivativeFiles, folderBest, derivatives.getBest());
+				} catch (IOException e) {
+					int remain = remove(foliosFiles, container.getConfiguration().getImages().getFolios());
+					remain += remove(derivativeFiles, derivatives.getThumbnail());
+					remain += remove(derivativeFiles, derivatives.getDetail());
+					remain += remove(derivativeFiles, derivatives.getBest());
+
+					final String message = "Cannot move the folios to container"
+							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
+							+ ".";
+
+					deleteRecursively(temporaryDirectory);
+
+					throw new IOException(message);
+				}
+
+				// remove temporary data
+				deleteRecursively(temporaryDirectory);
+
+				/*
+				 * Persist the configuration
+				 */
+				PersistenceManager folioManager = new PersistenceManager(
+						container.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1);
+				try {
+					folioManager.persist(true, folios);
+				} catch (Exception e) {
+					throw new IOException(
+							"Cannot persist container folios configuration file - " + e.getMessage() + ".");
+				}
+
+				return folios;
 			}
 		}
 
@@ -588,6 +582,65 @@ public class ContainerService extends CoreService {
 					Type.folio_v1)).getEntities(Folio.class))
 				if (uuids == null || uuids.contains(folio.getId()))
 					folios.add(folio);
+
+			return folios;
+		} else
+			return null;
+	}
+
+	/**
+	 * Persist the folios.
+	 * 
+	 * @param container The container.
+	 * @param folios    The folios to persist.
+	 * @return The number of persisted folios.
+	 * @throws IOException Throws if the folios metadata file can not be persisted.
+	 * @since 1.8
+	 */
+	private int persist(Container container, List<Folio> folios) throws IOException {
+		return (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1))
+				.persist(folios);
+	}
+
+	/**
+	 * Sorts the folios.
+	 * 
+	 * @param container The container.
+	 * @param order     The order to sort, that is list of folios ids.
+	 * @param isAfter   True if the folios that do not belong to the order are to be
+	 *                  inserted after the folios that belong to the order.
+	 *                  Otherwise, they are placed at the beginning.
+	 * @return The sorted folios. Null if the container is null or the write right
+	 *         is not fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> sortFolios(Container container, List<String> order, boolean isAfter) throws IOException {
+		if (container != null && container.getRight().isWriteFulfilled()) {
+			List<Folio> folios = ImageUtils.sort(getFolios(container), order, isAfter);
+
+			persist(container, folios);
+
+			return folios;
+		} else
+			return null;
+
+	}
+
+	/**
+	 * Update the folios metadata.
+	 * 
+	 * @param container The container.
+	 * @param metadata  The metadata of the folios to update.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> updateFolios(Container container, Collection<ImageUtils.Metadata> metadata) throws IOException {
+		if (container != null && container.getRight().isWriteFulfilled()) {
+			List<Folio> folios = ImageUtils.update(getFolios(container), metadata);
+
+			persist(container, folios);
 
 			return folios;
 		} else

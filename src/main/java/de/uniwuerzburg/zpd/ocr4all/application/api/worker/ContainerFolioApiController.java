@@ -7,31 +7,42 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 /**
  * Defines container folio repository controllers for the api.
@@ -125,10 +136,10 @@ public class ContainerFolioApiController extends CoreApiController {
 	/**
 	 * Upload the folios.
 	 * 
-	 * @param id       The container id. This is the folder name.
-	 * @param files    The files to upload in a multipart request.
-	 * @param response The HTTP-specific functionality in sending a response to the
-	 *                 client.
+	 * @param containerId The container id. This is the folder name.
+	 * @param files       The files to upload in a multipart request.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
 	 * @return The list of uploaded folios in the response body.
 	 * @since 1.8
 	 */
@@ -137,14 +148,14 @@ public class ContainerFolioApiController extends CoreApiController {
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(uploadRequestMapping)
+	@PostMapping(uploadRequestMapping + containerPathVariable)
 	public ResponseEntity<List<FolioResponse>> upload(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
-		authorizeWrite(id);
+		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
-			final List<Folio> uploaded = service.store(id, files);
+			final List<Folio> uploaded = service.store(container, files);
 
 			if (uploaded == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -160,6 +171,229 @@ public class ContainerFolioApiController extends CoreApiController {
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
+	}
+
+	// TODO: remove list folios
+
+	/**
+	 * Returns the folio of given container in the response body.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The folio id.
+	 * @return The folio in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the folio of given container in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = FolioResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(entityRequestMapping + containerPathVariable)
+	public ResponseEntity<FolioResponse> entity(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the folio id") @RequestParam String id) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			List<Folio> folio = service.getFolios(container, Set.of(id));
+
+			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new FolioResponse(folio.get(0)));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the list of folios of given project in the response body.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @return The list of folios of given project in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the list of folios of given container in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(listRequestMapping + containerPathVariable)
+	public ResponseEntity<List<FolioResponse>> list(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : service.getFolios(container))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Sorts the folios.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param request     The folios sort request.
+	 * @return The sorted folios in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "sort folios")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sorted Folios"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(sortRequestMapping + containerPathVariable)
+	public ResponseEntity<List<FolioResponse>> sort(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@RequestBody @Valid FolioSortRequest request) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : service.sortFolios(container, request.getOrder(), request.isAfter()))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Updates the folios.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param request     The folios update request.
+	 * @return The folios in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "updates the required folios and returns all folios in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(updateRequestMapping + containerPathVariable)
+	public ResponseEntity<List<FolioResponse>> update(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@RequestBody @Valid FolioUpdateRequest request) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			List<ImageUtils.Metadata> metadata = new ArrayList<>();
+			for (FolioUpdateRequest.Metadata update : request.getMetadata())
+				if (update != null)
+					metadata.add(new ImageUtils.Metadata(update.getId(), update.getName(), update.getKeywords(),
+							update.getPageXMLType()));
+
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : service.updateFolios(container, metadata))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the derivative with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param folder      The image derivative folder.
+	 * @param imageId     The image id.
+	 * @param response    The HTTP response.
+	 * @throws ResponseStatusException Throws if the image does not exists with http
+	 *                                 status not found (404).
+	 * @since 1.8
+	 */
+	private void getDerivative(ContainerService.Container container, Path folder, String imageId,
+			HttpServletResponse response) throws ResponseStatusException {
+		getImage(folder, imageId, container.getConfiguration().getImages().getDerivatives().getFormat().name(),
+				response);
+	}
+
+	/**
+	 * Returns the thumbnail derivative with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The image id.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the thumbnail derivative with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Thumbnail Derivative"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(derivativeThumbnailRequestMapping + containerPathVariable)
+	public void getDerivativeThumbnail(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		getDerivative(container, container.getConfiguration().getImages().getDerivatives().getThumbnail(), id,
+				response);
+	}
+
+	/**
+	 * Returns the detail derivative with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The image id.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the detail derivative with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Detail Derivative"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(derivativeDetailRequestMapping + containerPathVariable)
+	public void getDerivativeDetail(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		getDerivative(container, container.getConfiguration().getImages().getDerivatives().getDetail(), id, response);
+	}
+
+	/**
+	 * Returns the best derivative with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The image id.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the best derivative with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Best Derivative"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(derivativeBestRequestMapping + containerPathVariable)
+	public void getDerivativeBest(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		getDerivative(container, container.getConfiguration().getImages().getDerivatives().getBest(), id, response);
 	}
 
 }

@@ -139,6 +139,11 @@ public class CoreApiController {
 	public static final String uploadRequestMapping = "/upload";
 
 	/**
+	 * The sort request mapping.
+	 */
+	public static final String sortRequestMapping = "/sort";
+
+	/**
 	 * The history request mapping.
 	 */
 	public static final String historyRequestMapping = "/history";
@@ -157,6 +162,26 @@ public class CoreApiController {
 	 * The image request mapping.
 	 */
 	public static final String imageRequestMapping = "/image";
+
+	/**
+	 * The derivative request mapping.
+	 */
+	public static final String derivativeRequestMapping = "/derivative";
+
+	/**
+	 * The thumbnail image derivative request mapping.
+	 */
+	public static final String derivativeThumbnailRequestMapping = derivativeRequestMapping + "/thumbnail";
+
+	/**
+	 * The detail image derivative request mapping.
+	 */
+	public static final String derivativeDetailRequestMapping = derivativeRequestMapping + "/detail";
+
+	/**
+	 * The best image derivative request mapping.
+	 */
+	public static final String derivativeBestRequestMapping = derivativeRequestMapping + "/best";
 
 	/**
 	 * The file request mapping.
@@ -222,6 +247,11 @@ public class CoreApiController {
 	 * The workflow id path variable.
 	 */
 	public static final String workflowPathVariable = "/{workflowId}";
+
+	/**
+	 * The container id path variable.
+	 */
+	public static final String containerPathVariable = "/{containerId}";
 
 	/**
 	 * The action path variable.

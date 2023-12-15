@@ -7,18 +7,12 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,15 +22,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.Keyword;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,7 +43,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines project folio controllers for the api.
@@ -66,41 +60,6 @@ public class ProjectFolioApiController extends CoreApiController {
 	 * The context path.
 	 */
 	public static final String contextPath = ProjectApiController.contextPath + folioRequestMapping;
-
-	/**
-	 * The order request mapping.
-	 */
-	public static final String orderRequestMapping = "/order";
-
-	/**
-	 * The order download request mapping.
-	 */
-	public static final String orderDownloadRequestMapping = orderRequestMapping + downloadRequestMapping;
-
-	/**
-	 * The order upload request mapping.
-	 */
-	public static final String orderUploadRequestMapping = orderRequestMapping + uploadRequestMapping;
-
-	/**
-	 * The derivative request mapping.
-	 */
-	public static final String derivativeRequestMapping = "/derivative";
-
-	/**
-	 * The thumbnail image derivative request mapping.
-	 */
-	public static final String derivativeThumbnailRequestMapping = derivativeRequestMapping + "/thumbnail";
-
-	/**
-	 * The detail image derivative request mapping.
-	 */
-	public static final String derivativeDetailRequestMapping = derivativeRequestMapping + "/detail";
-
-	/**
-	 * The best image derivative request mapping.
-	 */
-	public static final String derivativeBestRequestMapping = derivativeRequestMapping + "/best";
 
 	/**
 	 * Creates a folio controller for the api.
@@ -136,6 +95,7 @@ public class ProjectFolioApiController extends CoreApiController {
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the folio id") @RequestParam String id) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
+
 		try {
 			List<Folio> folio = authorization.project.getFolios(Set.of(id));
 
@@ -152,27 +112,25 @@ public class ProjectFolioApiController extends CoreApiController {
 	 * Returns the list of folios of given project in the response body.
 	 * 
 	 * @param projectId The project id. This is the folder name.
-	 * @param request   The folio list request. An empty list returns all folios.
 	 * @return The list of folios of given project in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "returns the list of folios of given project in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
 			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(listRequestMapping + projectPathVariable)
+	@GetMapping(listRequestMapping + projectPathVariable)
 	public ResponseEntity<List<FolioResponse>> list(
-			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@RequestBody @Valid FolioListRequest request) {
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId) {
 		Authorization authorization = authorizationFactory.authorize(projectId);
+
 		try {
 			final List<FolioResponse> folios = new ArrayList<>();
-			for (Folio folio : authorization.project
-					.getFolios(request.getIdentifiers().isEmpty() ? null : request.getIdentifiers()))
+			for (Folio folio : authorization.project.getFolios())
 				folios.add(new FolioResponse(folio));
 
 			return ResponseEntity.ok().body(folios);
@@ -184,102 +142,31 @@ public class ProjectFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Downloads the folio order.
+	 * Sorts the folios.
 	 * 
 	 * @param projectId The project id. This is the folder name.
-	 * @param response  The HTTP-specific functionality in sending a response to the
-	 *                  client.
-	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @param request   The folios sort request.
+	 * @return The sorted folios in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "downloads the folio order")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Folio"),
+	@Operation(summary = "sort folios")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sorted Folios"),
 			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@GetMapping(value = orderDownloadRequestMapping + projectPathVariable, produces = CoreApiController.applicationText)
-	public void orderDownload(
+	@PostMapping(sortRequestMapping + projectPathVariable)
+	public ResponseEntity<List<FolioResponse>> sort(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			HttpServletResponse response) throws IOException {
+			@RequestBody @Valid FolioSortRequest request) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
-			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
-					"attachment; filename=\"" + projectId + "-folios.txt\"");
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : authorization.project.sortFolios(request.getOrder(), request.isAfter()))
+				folios.add(new FolioResponse(folio));
 
-			authorization.project.foliosOrder(response.getOutputStream());
-		} catch (Exception ex) {
-			log(ex);
-
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
-		}
-	}
-
-	/**
-	 * Updates folios order.
-	 * 
-	 * @param projectId The project id. This is the folder name.
-	 * @param file      The uploaded file received in a multipart request with the
-	 *                  new order.
-	 * @param response  The HTTP-specific functionality in sending a response to the
-	 *                  client.
-	 * @since 1.8
-	 */
-	@Operation(summary = "updates folios order")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request Succeeded Normally"),
-			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
-			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(orderUploadRequestMapping + projectPathVariable)
-	public void orderUpload(
-			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@RequestParam MultipartFile file, HttpServletResponse response) {
-		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
-		try {
-			List<String> order = new ArrayList<>();
-			Set<String> addedFolioId = new HashSet<>();
-			for (String line : (new String(file.getBytes(), StandardCharsets.UTF_8)).split("\\r?\\n"))
-				try {
-					String folioId = line.split("\t", 2)[0].trim();
-					if (!folioId.isEmpty() && addedFolioId.add(folioId))
-						order.add(folioId);
-				} catch (Exception e) {
-					// Ignore wrong line
-				}
-
-			if (order.isEmpty() || authorization.project.getFolios().isEmpty())
-				return;
-
-			List<Folio> folios = authorization.project.getFolios();
-
-			Hashtable<String, Folio> idFolios = new Hashtable<String, Folio>();
-			for (Folio folio : folios)
-				idFolios.put(folio.getId(), folio);
-
-			// Set the new order
-			List<Folio> newOrder = new ArrayList<>();
-			for (String id : order)
-				if (idFolios.containsKey(id))
-					newOrder.add(idFolios.get(id));
-
-			/*
-			 * Adds the remainder folios at the end of the new order list preserving the
-			 * original order
-			 */
-			Set<String> orderSet = new HashSet<>(order);
-			for (Folio folio : folios)
-				if (!orderSet.contains(folio.getId()))
-					newOrder.add(folio);
-
-			if (authorization.project.persist(newOrder) < 0)
-				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-			else
-				response.setStatus(HttpServletResponse.SC_OK);
-		} catch (ResponseStatusException ex) {
-			throw ex;
+			return ResponseEntity.ok().body(folios);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -291,12 +178,12 @@ public class ProjectFolioApiController extends CoreApiController {
 	 * Updates the folios.
 	 * 
 	 * @param projectId The project id. This is the folder name.
-	 * @param request   The folios request.
-	 * @return The updated folios in the response body.
+	 * @param request   The folios update request.
+	 * @return The folios in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "updates the folios and returns then in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Folios", content = {
+	@Operation(summary = "updates the required folios and returns all folios in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
 			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
@@ -304,67 +191,22 @@ public class ProjectFolioApiController extends CoreApiController {
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping + projectPathVariable)
-	public ResponseEntity<List<FolioResponse>> update(@PathVariable String projectId,
-			@RequestBody @Valid FolioRequest request) {
+	public ResponseEntity<List<FolioResponse>> update(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@RequestBody @Valid FolioUpdateRequest request) {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
-			if (request.getIdentifiers().isEmpty())
-				return ResponseEntity.status(HttpStatus.OK).build();
+			List<ImageUtils.Metadata> metadata = new ArrayList<>();
+			for (FolioUpdateRequest.Metadata update : request.getMetadata())
+				if (update != null)
+					metadata.add(new ImageUtils.Metadata(update.getId(), update.getName(), update.getKeywords(),
+							update.getPageXMLType()));
 
-			List<Folio> folios = authorization.project.getFolios();
-			if (folios.isEmpty())
-				return ResponseEntity.status(HttpStatus.OK).build();
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : authorization.project.updateFolios(metadata))
+				folios.add(new FolioResponse(folio));
 
-			Set<String> keywords = null;
-			if (!FolioRequest.Action.pageXMLType_set.equals(request.getAction()))
-				keywords = request.getKeywords() == null ? new HashSet<>()
-						: Keyword.normalizeKeywords(request.getKeywords());
-
-			Set<String> updated = new HashSet<>();
-
-			for (Folio folio : folios)
-				if (request.getIdentifiers().contains(folio.getId())) {
-					updated.add(folio.getId());
-
-					switch (request.getAction()) {
-					case pageXMLType_set:
-						folio.setPageXMLType(request.getPageXMLType());
-
-						break;
-					case keywords_add:
-						if (!keywords.isEmpty()) {
-							if (folio.getKeywords() == null)
-								folio.setKeywords(keywords);
-							else
-								folio.getKeywords().addAll(keywords);
-						}
-
-						break;
-					case keywords_set:
-						folio.setKeywords(keywords);
-
-						break;
-					case keywords_remove:
-						if (!keywords.isEmpty() && folio.getKeywords() != null)
-							folio.getKeywords().removeAll(keywords);
-
-						break;
-					case keywords_remove_all:
-						folio.setKeywords(null);
-
-						break;
-					}
-				}
-
-			if (authorization.project.persist(folios) < 0)
-				return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
-			else {
-				final List<FolioResponse> updatedFolios = new ArrayList<>();
-				for (Folio folio : authorization.project.getFolios(updated))
-					updatedFolios.add(new FolioResponse(folio));
-
-				return ResponseEntity.ok().body(updatedFolios);
-			}
+			return ResponseEntity.ok().body(folios);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -408,7 +250,7 @@ public class ProjectFolioApiController extends CoreApiController {
 	public void getDerivativeThumbnail(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
-		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.read);
 
 		getDerivative(authorization.project,
 				authorization.project.getConfiguration().getImages().getDerivatives().getThumbnail(), id, response);
@@ -434,7 +276,7 @@ public class ProjectFolioApiController extends CoreApiController {
 	public void getDerivativeDetail(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
-		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.read);
 
 		getDerivative(authorization.project,
 				authorization.project.getConfiguration().getImages().getDerivatives().getDetail(), id, response);
@@ -460,181 +302,10 @@ public class ProjectFolioApiController extends CoreApiController {
 	public void getDerivativeBest(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
-		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.read);
 
 		getDerivative(authorization.project,
 				authorization.project.getConfiguration().getImages().getDerivatives().getBest(), id, response);
-	}
-
-	/**
-	 * Defines folio list requests for the api.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class FolioListRequest implements Serializable {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * The identifiers.
-		 */
-		@NotNull
-		private Set<String> identifiers;
-
-		/**
-		 * Returns the identifiers.
-		 *
-		 * @return The identifiers.
-		 * @since 1.8
-		 */
-		public Set<String> getIdentifiers() {
-			return identifiers;
-		}
-
-		/**
-		 * Set the identifiers.
-		 *
-		 * @param identifiers The identifiers to set.
-		 * @since 1.8
-		 */
-		public void setIdentifiers(Set<String> identifiers) {
-			this.identifiers = identifiers;
-		}
-
-	}
-
-	/**
-	 * Defines folio requests for the api. It includes project identification, name,
-	 * state, description and keywords.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class FolioRequest implements Serializable {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Defines folio actions.
-		 *
-		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-		 * @version 1.0
-		 * @since 1.8
-		 */
-		public enum Action {
-			pageXMLType_set, keywords_add, keywords_set, keywords_remove, keywords_remove_all
-		}
-
-		/**
-		 * The action to perform.
-		 */
-		@NotNull
-		private Action action;
-
-		/**
-		 * The PAGE XML type.
-		 */
-		private Folio.PageXMLType pageXMLType;
-
-		/**
-		 * The keywords.
-		 */
-		private Set<String> keywords;
-
-		/**
-		 * The image identifiers to perform the action
-		 */
-		@NotNull
-		private Set<String> identifiers;
-
-		/**
-		 * Returns the action to perform.
-		 *
-		 * @return The action.
-		 * @since 1.8
-		 */
-		public Action getAction() {
-			return action;
-		}
-
-		/**
-		 * Set the action to perform. Allowed actions are: type_set, keywords_add,
-		 * keywords_set, keywords_remove, keywords_remove_all.
-		 *
-		 * @param action The action to set.
-		 * @since 1.8
-		 */
-		public void setAction(Action action) {
-			this.action = action;
-		}
-
-		/**
-		 * Returns the PAGE XML type.
-		 *
-		 * @return The PAGE XML type.
-		 * @since 1.8
-		 */
-		public Folio.PageXMLType getPageXMLType() {
-			return pageXMLType;
-		}
-
-		/**
-		 * Set the PAGE XML type.
-		 *
-		 * @param pageXMLType The PAGE XML type to set.
-		 * @since 1.8
-		 */
-		public void setPageXMLType(Folio.PageXMLType pageXMLType) {
-			this.pageXMLType = pageXMLType;
-		}
-
-		/**
-		 * Returns the keywords.
-		 *
-		 * @return The keywords.
-		 * @since 1.8
-		 */
-		public Set<String> getKeywords() {
-			return keywords;
-		}
-
-		/**
-		 * Set the keywords.
-		 *
-		 * @param keywords The keywords to set.
-		 * @since 1.8
-		 */
-		public void setKeywords(Set<String> keywords) {
-			this.keywords = keywords;
-		}
-
-		/**
-		 * Returns the image identifiers to perform the action.
-		 *
-		 * @return The identifiers.
-		 * @since 1.8
-		 */
-		public Set<String> getIdentifiers() {
-			return identifiers;
-		}
-
-		/**
-		 * Set the image identifiers to perform the action.
-		 *
-		 * @param images The identifiers to set.
-		 * @since 1.8
-		 */
-		public void setIdentifiers(Set<String> images) {
-			this.identifiers = images;
-		}
-
 	}
 
 }

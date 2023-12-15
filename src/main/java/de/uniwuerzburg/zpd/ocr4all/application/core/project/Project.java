@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.project;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +26,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Process;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -641,10 +641,11 @@ public class Project implements Job.Cluster {
 	/**
 	 * Returns the folios.
 	 *
-	 * @return The folios. On troubles returns an empty array.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios() {
+	public List<Folio> getFolios() throws IOException {
 		return getFolios(null);
 	}
 
@@ -652,59 +653,66 @@ public class Project implements Job.Cluster {
 	 * Returns the folios that are restricted to the specified IDs.
 	 *
 	 * @param uuids The folios uuids. If null, returns all folios.
-	 * @return The folios. On troubles returns an empty array.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Set<String> uuids) {
-		try {
-			List<Folio> folios = new ArrayList<>();
+	public List<Folio> getFolios(Set<String> uuids) throws IOException {
+		List<Folio> folios = new ArrayList<>();
 
-			for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
-					.getEntities(Folio.class))
-				if (uuids == null || uuids.contains(folio.getId()))
-					folios.add(folio);
+		for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
+				.getEntities(Folio.class))
+			if (uuids == null || uuids.contains(folio.getId()))
+				folios.add(folio);
 
-			return folios;
-		} catch (Exception e) {
-			logger.warn(e.getMessage());
-
-			return new ArrayList<>();
-		}
-	}
-
-	/**
-	 * Writes the folios order to given output stream.
-	 *
-	 * @param outputStream The output stream for writing the folios order.
-	 * @since 1.8
-	 */
-	public void foliosOrder(OutputStream outputStream) {
-		if (outputStream != null) {
-			PrintWriter writer = new PrintWriter(outputStream);
-
-			for (Folio folio : getFolios())
-				writer.println(folio.getId() + "\t" + folio.getName());
-
-			writer.flush();
-		}
+		return folios;
 	}
 
 	/**
 	 * Persist the folios.
 	 * 
 	 * @param folios The folios to persist.
-	 * @return The number of persisted folios. On troubles returns -1.
+	 * @return The number of persisted folios.
+	 * @throws IOException Throws if the folios metadata file can not be persisted.
 	 * @since 1.8
 	 */
-	public int persist(List<Folio> folios) {
-		try {
-			return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
-					.persist(folios);
-		} catch (Exception e) {
-			logger.warn(e.getMessage());
+	private int persist(List<Folio> folios) throws IOException {
+		return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1)).persist(folios);
+	}
 
-			return -1;
-		}
+	/**
+	 * Sorts the folios.
+	 * 
+	 * @param order   The order to sort, that is list of folios ids.
+	 * @param isAfter True if the folios that do not belong to the order are to be
+	 *                inserted after the folios that belong to the order. Otherwise,
+	 *                they are placed at the beginning.
+	 * @return The sorted folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> sortFolios(List<String> order, boolean isAfter) throws IOException {
+		List<Folio> folios = ImageUtils.sort(getFolios(), order, isAfter);
+
+		persist(folios);
+
+		return folios;
+	}
+
+	/**
+	 * Update the folios metadata.
+	 * 
+	 * @param metadata The metadata of the folios to update.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> updateFolios(Collection<ImageUtils.Metadata> metadata) throws IOException {
+		List<Folio> folios = ImageUtils.update(getFolios(), metadata);
+
+		persist(folios);
+
+		return folios;
 	}
 
 	/**
