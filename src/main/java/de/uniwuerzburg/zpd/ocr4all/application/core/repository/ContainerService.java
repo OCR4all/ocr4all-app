@@ -20,9 +20,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
@@ -504,7 +506,7 @@ public class ContainerService extends CoreService {
 				}
 
 				/*
-				 * Move the folios to the project
+				 * Move the folios to the container
 				 */
 				try {
 					move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
@@ -612,7 +614,8 @@ public class ContainerService extends CoreService {
 	 *                  Otherwise, they are placed at the beginning.
 	 * @return The sorted folios. Null if the container is null or the write right
 	 *         is not fulfilled.
-	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @throws IOException Throws if the folios metadata file can not be read or
+	 *                     persisted.
 	 * @since 1.8
 	 */
 	public List<Folio> sortFolios(Container container, List<String> order, boolean isAfter) throws IOException {
@@ -633,7 +636,8 @@ public class ContainerService extends CoreService {
 	 * @param container The container.
 	 * @param metadata  The metadata of the folios to update.
 	 * @return The folios.
-	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @throws IOException Throws if the folios metadata file can not be read or
+	 *                     persisted.
 	 * @since 1.8
 	 */
 	public List<Folio> updateFolios(Container container, Collection<ImageUtils.Metadata> metadata) throws IOException {
@@ -645,6 +649,67 @@ public class ContainerService extends CoreService {
 			return folios;
 		} else
 			return null;
+	}
+
+	/**
+	 * Removed the folios.
+	 * 
+	 * @param container The container.
+	 * @param ids       The ids of the folios to remove. If null, remove all folios.
+	 * @return The folios. Null if the container is null or the write right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read or
+	 *                     persisted.
+	 * @since 1.8
+	 */
+	public List<Folio> removeFolios(Container container, Collection<String> ids) throws IOException {
+		if (container != null && container.getRight().isWriteFulfilled()) {
+			final List<Folio> folios = new ArrayList<>();
+
+			final Path foliosFolder = container.getConfiguration().getImages().getFolios();
+
+			final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
+					.getDerivatives();
+			final Path thumbnailFolder = derivatives.getThumbnail();
+			final Path detailFolder = derivatives.getDetail();
+			final Path bestFolder = derivatives.getBest();
+
+			if (ids == null) {
+				// Clear all folios and derivatives
+				FileUtils.cleanDirectory(foliosFolder.toFile());
+
+				FileUtils.cleanDirectory(thumbnailFolder.toFile());
+				FileUtils.cleanDirectory(detailFolder.toFile());
+				FileUtils.cleanDirectory(bestFolder.toFile());
+			} else {
+				// Clear desired folios and the respective derivatives
+				final Set<String> removeIds = new HashSet<>();
+
+				for (String id : ids)
+					if (id != null && !id.isBlank())
+						removeIds.add(id.trim());
+
+				for (Folio folio : getFolios(container))
+					if (removeIds.contains(folio.getId()))
+						try {
+							Files.delete(Paths.get(foliosFolder.toString(), folio.getId()));
+
+							Files.delete(Paths.get(thumbnailFolder.toString(), folio.getId()));
+							Files.delete(Paths.get(detailFolder.toString(), folio.getId()));
+							Files.delete(Paths.get(bestFolder.toString(), folio.getId()));
+						} catch (Exception e) {
+							// Ignore troubles removing files
+						}
+					else
+						folios.add(folio);
+			}
+
+			persist(container, folios);
+
+			return folios;
+		} else
+			return null;
+
 	}
 
 	/**

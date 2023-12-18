@@ -163,7 +163,7 @@ public class ProjectFolioApiController extends CoreApiController {
 		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
 		try {
 			final List<FolioResponse> folios = new ArrayList<>();
-			for (Folio folio : authorization.project.sortFolios(request.getOrder(), request.isAfter()))
+			for (Folio folio : authorization.project.sortFolios(request.getIds(), request.isAfter()))
 				folios.add(new FolioResponse(folio));
 
 			return ResponseEntity.ok().body(folios);

@@ -8,6 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.util;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,7 +17,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentificationRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio.PageXMLType;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
@@ -208,7 +208,7 @@ public class ImageUtils {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class Metadata extends IdentificationRequest {
+	public static class Metadata implements Serializable {
 		/**
 		 * The serial version UID.
 		 */

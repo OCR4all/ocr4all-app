@@ -224,6 +224,11 @@ public class CoreApiController {
 	public static final String folioRequestMapping = "/folio";
 
 	/**
+	 * The all request mapping.
+	 */
+	public static final String allRequestMapping = "/all";
+
+	/**
 	 * The spi id path variable.
 	 */
 	public static final String spiPathVariable = "/{spiId}";

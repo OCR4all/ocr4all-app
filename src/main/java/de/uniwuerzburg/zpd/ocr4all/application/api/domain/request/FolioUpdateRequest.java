@@ -61,7 +61,7 @@ public class FolioUpdateRequest implements Serializable {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class Metadata extends IdentificationRequest {
+	public static class Metadata extends IdentifierRequest {
 		/**
 		 * The serial version UID.
 		 */

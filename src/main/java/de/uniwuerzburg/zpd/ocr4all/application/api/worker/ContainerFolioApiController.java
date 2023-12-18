@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
@@ -208,10 +209,10 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the list of folios of given project in the response body.
+	 * Returns the list of folios of given container in the response body.
 	 * 
 	 * @param containerId The container id. This is the folder name.
-	 * @return The list of folios of given project in the response body.
+	 * @return The list of folios of given container in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "returns the list of folios of given container in the response body")
@@ -255,11 +256,11 @@ public class ContainerFolioApiController extends CoreApiController {
 	public ResponseEntity<List<FolioResponse>> sort(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@RequestBody @Valid FolioSortRequest request) {
-		ContainerService.Container container = authorizeRead(containerId);
+		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
 			final List<FolioResponse> folios = new ArrayList<>();
-			for (Folio folio : service.sortFolios(container, request.getOrder(), request.isAfter()))
+			for (Folio folio : service.sortFolios(container, request.getIds(), request.isAfter()))
 				folios.add(new FolioResponse(folio));
 
 			return ResponseEntity.ok().body(folios);
@@ -288,7 +289,7 @@ public class ContainerFolioApiController extends CoreApiController {
 	public ResponseEntity<List<FolioResponse>> update(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@RequestBody @Valid FolioUpdateRequest request) {
-		ContainerService.Container container = authorizeRead(containerId);
+		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
 			List<ImageUtils.Metadata> metadata = new ArrayList<>();
@@ -302,6 +303,103 @@ public class ContainerFolioApiController extends CoreApiController {
 				folios.add(new FolioResponse(folio));
 
 			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Removes the folio.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The folio id to remove.
+	 * @return The folios in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "removes the folio and returns the folios in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = FolioResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(removeRequestMapping + entityRequestMapping + containerPathVariable)
+	public ResponseEntity<List<FolioResponse>> removeEntity(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the folio id") @RequestParam String id) {
+		ContainerService.Container container = authorizeWrite(containerId);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : service.removeFolios(container, Set.of(id)))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Removes the folios.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param request     The folios remove request.
+	 * @return The list of folios of given container in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "removes the folios and returns the folios in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(removeRequestMapping + listRequestMapping + containerPathVariable)
+	public ResponseEntity<List<FolioResponse>> removeList(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@RequestBody @Valid IdentifiersRequest request) {
+		ContainerService.Container container = authorizeWrite(containerId);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : service.removeFolios(container, request.getIds()))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Removes all folios.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "removes all folios")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(removeRequestMapping + allRequestMapping + containerPathVariable)
+	public void removeAll(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			HttpServletResponse response) {
+		ContainerService.Container container = authorizeWrite(containerId);
+
+		try {
+			service.removeFolios(container, null);
+
+			response.setStatus(HttpServletResponse.SC_OK);
 		} catch (Exception ex) {
 			log(ex);
 
