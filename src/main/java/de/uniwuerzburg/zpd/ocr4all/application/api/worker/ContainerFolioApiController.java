@@ -385,8 +385,7 @@ public class ContainerFolioApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "removes all folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Folios"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })

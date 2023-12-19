@@ -534,13 +534,10 @@ public class ContainerService extends CoreService {
 				// remove temporary data
 				deleteRecursively(temporaryDirectory);
 
-				/*
-				 * Persist the configuration
-				 */
-				PersistenceManager folioManager = new PersistenceManager(
-						container.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1);
+				// Persist the configuration
 				try {
-					folioManager.persist(true, folios);
+					(new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+							Type.folio_v1)).persist(true, folios);
 				} catch (Exception e) {
 					throw new IOException(
 							"Cannot persist container folios configuration file - " + e.getMessage() + ".");

@@ -26,10 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
@@ -62,16 +64,24 @@ public class ProjectFolioApiController extends CoreApiController {
 	public static final String contextPath = ProjectApiController.contextPath + folioRequestMapping;
 
 	/**
+	 * The container service.
+	 */
+	private final ContainerService containerService;
+
+	/**
 	 * Creates a folio controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
+	 * @param containerService     The container service.
 	 * @since 1.8
 	 */
 	public ProjectFolioApiController(ConfigurationService configurationService, SecurityService securityService,
-			ProjectService projectService) {
+			ProjectService projectService, ContainerService containerService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService);
+
+		this.containerService = containerService;
 	}
 
 	/**
@@ -306,6 +316,146 @@ public class ProjectFolioApiController extends CoreApiController {
 
 		getDerivative(authorization.project,
 				authorization.project.getConfiguration().getImages().getDerivatives().getBest(), id, response);
+	}
+
+	/**
+	 * Authorizes the session user for read security operations on container.
+	 * 
+	 * @param id The container id.
+	 * @return The authorized container.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the container is
+	 *                                 not available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	private ContainerService.Container authorizeContainerRead(String id) throws ResponseStatusException {
+		ContainerService.Container container = containerService.getContainer(id);
+
+		if (container == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!container.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return container;
+	}
+
+	/**
+	 * Import a folio from container.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The container id. This is the folder name.
+	 * @param folio     The folio id to import.
+	 * @return The imported folio in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "import a folio from a container and returns it")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Imported Folio", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = FolioResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(importRequestMapping + entityRequestMapping + projectPathVariable)
+	public ResponseEntity<FolioResponse> importFolioEntity(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
+			@Parameter(description = "the folio id") @RequestParam String folio) {
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		ContainerService.Container container = authorizeContainerRead(id);
+
+		try {
+			if (folio.isBlank())
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+			final List<Folio> folios = authorization.project.importFolios(container, Set.of(folio));
+
+			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new FolioResponse(folios.get(0)));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Import folios from container.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The container id. This is the folder name.
+	 * @param request   The folios import request.
+	 * @return The imported project folios in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "import folios from a container and returns them")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Imported Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(importRequestMapping + listRequestMapping + projectPathVariable)
+	public ResponseEntity<List<FolioResponse>> importFolioList(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
+			@RequestBody @Valid IdentifiersRequest request) {
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		ContainerService.Container container = authorizeContainerRead(id);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : authorization.project.importFolios(container, request.getIds()))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Import all folios from container.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The container id. This is the folder name.
+	 * @return The list of project folios in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "import all folios from a container and returns thzem")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Imported Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FolioResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(importRequestMapping + allRequestMapping + projectPathVariable)
+	public ResponseEntity<List<FolioResponse>> importFolioAll(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the container id - this is the folder name") @RequestParam String id) {
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.special);
+		ContainerService.Container container = authorizeContainerRead(id);
+
+		try {
+			final List<FolioResponse> folios = new ArrayList<>();
+			for (Folio folio : authorization.project.importFolios(container, null))
+				folios.add(new FolioResponse(folio));
+
+			return ResponseEntity.ok().body(folios);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
 	}
 
 }

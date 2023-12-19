@@ -139,6 +139,11 @@ public class CoreApiController {
 	public static final String uploadRequestMapping = "/upload";
 
 	/**
+	 * The import request mapping.
+	 */
+	public static final String importRequestMapping = "/import";
+
+	/**
 	 * The sort request mapping.
 	 */
 	public static final String sortRequestMapping = "/sort";

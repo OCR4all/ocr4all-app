@@ -10,6 +10,9 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.project;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.Snapsh
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Process;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
@@ -713,6 +717,91 @@ public class Project implements Job.Cluster {
 		persist(folios);
 
 		return folios;
+	}
+
+	/**
+	 * Copy the file from source folder to the target folder.
+	 * 
+	 * @param fileName The file name.
+	 * @param source   The source folder.
+	 * @param target   The target folder.
+	 * @throws IOException Throws if an I/O error occurs.
+	 * @since 1.8
+	 */
+	private static void copy(String fileName, Path source, Path target) throws IOException {
+		Files.copy(Paths.get(source.toString(), fileName), Paths.get(target.toString(), fileName),
+				StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	/**
+	 * Import the folios.
+	 * 
+	 * @param container The container.
+	 * @param ids       The folios ids to import. If null, import all folios from
+	 *                  container.
+	 * @return The imported folios. Null if the container is null or the read right
+	 *         is not fulfilled.
+	 * @throws IOException Throws if the folios can not be imported.
+	 * @since 1.8
+	 */
+	public List<Folio> importFolios(ContainerService.Container container, Collection<String> ids) throws IOException {
+		if (container != null && container.getRight().isReadFulfilled()) {
+			// Project folios
+			final Set<String> projectFolios = new HashSet<>();
+			for (Folio folio : getFolios())
+				projectFolios.add(folio.getId());
+
+			// folios to import
+			final Set<String> importFolios = new HashSet<>();
+			if (ids != null)
+				for (String id : ids)
+					if (id != null && !id.isBlank())
+						importFolios.add(id.trim());
+
+			// container folders
+			final Path foliosContainerFolder = container.getConfiguration().getImages().getFolios();
+
+			final Path thumbnailContainerFolder = container.getConfiguration().getImages().getDerivatives()
+					.getThumbnail();
+			final Path detailContainerFolder = container.getConfiguration().getImages().getDerivatives().getDetail();
+			final Path bestContainerFolder = container.getConfiguration().getImages().getDerivatives().getBest();
+
+			// project folders
+			final Path foliosProjectFolder = configuration.getImages().getFolios();
+
+			final Path thumbnailProjectFolder = configuration.getImages().getDerivatives().getThumbnail();
+			final Path detailProjectFolder = configuration.getImages().getDerivatives().getDetail();
+			final Path bestProjectFolder = configuration.getImages().getDerivatives().getBest();
+
+			// import folios
+			final List<Folio> folios = new ArrayList<>();
+			for (Folio folio : (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+					Type.folio_v1)).getEntities(Folio.class))
+				if (!projectFolios.contains(folio.getId()) && (ids == null || importFolios.contains(folio.getId())))
+					try {
+						copy(folio.getId(), foliosContainerFolder, foliosProjectFolder);
+
+						copy(folio.getId(), thumbnailContainerFolder, thumbnailProjectFolder);
+						copy(folio.getId(), detailContainerFolder, detailProjectFolder);
+						copy(folio.getId(), bestContainerFolder, bestProjectFolder);
+
+						folios.add(folio);
+					} catch (Exception e) {
+						// ignore folio
+					}
+
+			// Persist the configuration
+			try {
+				(new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1)).persist(true,
+						folios);
+			} catch (Exception e) {
+				throw new IOException("Cannot persist project folios configuration file - " + e.getMessage() + ".");
+			}
+
+			return folios;
+
+		} else
+			return null;
 	}
 
 	/**
