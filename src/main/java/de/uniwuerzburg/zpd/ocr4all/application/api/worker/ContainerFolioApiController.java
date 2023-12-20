@@ -174,8 +174,6 @@ public class ContainerFolioApiController extends CoreApiController {
 		}
 	}
 
-	// TODO: remove list folios
-
 	/**
 	 * Returns the folio of given container in the response body.
 	 * 
@@ -197,10 +195,10 @@ public class ContainerFolioApiController extends CoreApiController {
 		ContainerService.Container container = authorizeRead(containerId);
 
 		try {
-			List<Folio> folio = service.getFolios(container, Set.of(id));
+			List<Folio> folios = service.getFolios(container, Set.of(id));
 
-			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
-					: ResponseEntity.ok().body(new FolioResponse(folio.get(0)));
+			return folios.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new FolioResponse(folios.get(0)));
 		} catch (Exception ex) {
 			log(ex);
 

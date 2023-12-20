@@ -107,10 +107,10 @@ public class ProjectFolioApiController extends CoreApiController {
 		Authorization authorization = authorizationFactory.authorize(projectId);
 
 		try {
-			List<Folio> folio = authorization.project.getFolios(Set.of(id));
+			List<Folio> folios = authorization.project.getFolios(Set.of(id));
 
-			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
-					: ResponseEntity.ok().body(new FolioResponse(folio.get(0)));
+			return folios.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new FolioResponse(folios.get(0)));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -375,7 +375,7 @@ public class ProjectFolioApiController extends CoreApiController {
 
 			final List<Folio> folios = authorization.project.importFolios(container, Set.of(folio));
 
-			return folio.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+			return folios.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
 					: ResponseEntity.ok().body(new FolioResponse(folios.get(0)));
 		} catch (Exception ex) {
 			log(ex);
