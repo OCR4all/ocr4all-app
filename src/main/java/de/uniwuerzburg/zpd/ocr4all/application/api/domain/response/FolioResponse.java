@@ -30,7 +30,7 @@ public class FolioResponse extends Folio {
 	 */
 	public FolioResponse(Folio folio) {
 		super(folio.getDate(), folio.getUser(), folio.getKeywords(), folio.getId(), folio.getName(), folio.getFormat(),
-				folio.getSize(), folio.getDerivatives());
+				folio.getSize(), folio.getDerivatives(), folio.getPageXMLType());
 	}
 
 }

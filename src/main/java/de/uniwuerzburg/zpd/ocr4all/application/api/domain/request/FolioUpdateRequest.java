@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -81,6 +83,7 @@ public class FolioUpdateRequest implements Serializable {
 		/**
 		 * The PAGE XML type.
 		 */
+		@JsonProperty("page-xml-type")
 		private Folio.PageXMLType pageXMLType;
 
 		/**

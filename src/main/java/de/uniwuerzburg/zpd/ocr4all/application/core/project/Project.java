@@ -766,6 +766,9 @@ public class Project implements Job.Cluster {
 			final Path detailContainerFolder = container.getConfiguration().getImages().getDerivatives().getDetail();
 			final Path bestContainerFolder = container.getConfiguration().getImages().getDerivatives().getBest();
 
+			final String derivativesFormat = container.getConfiguration().getImages().getDerivatives().getFormat()
+					.name();
+
 			// project folders
 			final Path foliosProjectFolder = configuration.getImages().getFolios();
 
@@ -779,11 +782,12 @@ public class Project implements Job.Cluster {
 					Type.folio_v1)).getEntities(Folio.class))
 				if (!projectFolios.contains(folio.getId()) && (ids == null || importFolios.contains(folio.getId())))
 					try {
-						copy(folio.getId(), foliosContainerFolder, foliosProjectFolder);
+						copy(folio.getId() + "." + folio.getFormat().name(), foliosContainerFolder,
+								foliosProjectFolder);
 
-						copy(folio.getId(), thumbnailContainerFolder, thumbnailProjectFolder);
-						copy(folio.getId(), detailContainerFolder, detailProjectFolder);
-						copy(folio.getId(), bestContainerFolder, bestProjectFolder);
+						copy(folio.getId() + "." + derivativesFormat, thumbnailContainerFolder, thumbnailProjectFolder);
+						copy(folio.getId() + "." + derivativesFormat, detailContainerFolder, detailProjectFolder);
+						copy(folio.getId() + "." + derivativesFormat, bestContainerFolder, bestProjectFolder);
 
 						folios.add(folio);
 					} catch (Exception e) {

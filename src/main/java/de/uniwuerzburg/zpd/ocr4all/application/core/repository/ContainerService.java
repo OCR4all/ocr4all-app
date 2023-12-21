@@ -685,15 +685,17 @@ public class ContainerService extends CoreService {
 				for (String id : ids)
 					if (id != null && !id.isBlank())
 						removeIds.add(id.trim());
+				
+				final String derivativesFormat = derivatives.getFormat().name();
 
 				for (Folio folio : getFolios(container))
 					if (removeIds.contains(folio.getId()))
 						try {
-							Files.delete(Paths.get(foliosFolder.toString(), folio.getId()));
+							Files.delete(Paths.get(foliosFolder.toString(), folio.getId() + "." + folio.getFormat().name()));
 
-							Files.delete(Paths.get(thumbnailFolder.toString(), folio.getId()));
-							Files.delete(Paths.get(detailFolder.toString(), folio.getId()));
-							Files.delete(Paths.get(bestFolder.toString(), folio.getId()));
+							Files.delete(Paths.get(thumbnailFolder.toString(), folio.getId() + "." + derivativesFormat));
+							Files.delete(Paths.get(detailFolder.toString(), folio.getId() + "." + derivativesFormat));
+							Files.delete(Paths.get(bestFolder.toString(), folio.getId() + "." + derivativesFormat));
 						} catch (Exception e) {
 							// Ignore troubles removing files
 						}
