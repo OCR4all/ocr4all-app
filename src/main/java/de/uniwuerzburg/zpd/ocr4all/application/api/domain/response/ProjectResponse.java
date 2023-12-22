@@ -96,8 +96,7 @@ public class ProjectResponse implements Serializable {
 
 		state = project.getState().name();
 
-		tracking = new TrackingResponse(project.getUser(), project.getConfiguration().getConfiguration().getCreated(),
-				project.getConfiguration().getConfiguration().getUpdated());
+		tracking = new TrackingResponse(project.getConfiguration().getConfiguration());
 
 		done = project.getConfiguration().getConfiguration().getDone();
 		keywords = project.getConfiguration().getConfiguration().getKeywords();

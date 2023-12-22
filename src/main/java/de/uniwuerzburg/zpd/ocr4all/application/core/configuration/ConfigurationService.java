@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.configuration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
@@ -109,14 +111,29 @@ public class ConfigurationService {
 	}
 
 	/**
+	 * The system command.
+	 */
+	private final SystemCommand systemCommand;
+
+	/**
 	 * The configuration for the application.
 	 */
 	private final ApplicationConfiguration application;
 
 	/**
+	 * The configuration for the image.
+	 */
+	private final ImageConfiguration image;
+
+	/**
 	 * The configuration for the exchange.
 	 */
 	private final ExchangeConfiguration exchange;
+
+	/**
+	 * The configuration for the repository.
+	 */
+	private final RepositoryConfiguration repository;
 
 	/**
 	 * The configuration for the workspace.
@@ -164,11 +181,13 @@ public class ConfigurationService {
 		this.environment = environment;
 		this.serverProperties = serverProperties;
 
+		systemCommand = new SystemCommand(properties.getSystem());
 		application = new ApplicationConfiguration(properties.getApplication());
+		image = new ImageConfiguration(properties.getImage());
 		exchange = new ExchangeConfiguration(properties);
+		repository = new RepositoryConfiguration(properties);
 		opt = new OptConfiguration(properties);
-		workspace = new WorkspaceConfiguration(properties.getWorkspace(), properties.getSystem(), application, exchange,
-				opt);
+		workspace = new WorkspaceConfiguration(properties.getWorkspace(), systemCommand, application, exchange, opt);
 		api = new ApiConfiguration(properties.getApi());
 		temporary = new TemporaryConfiguration(properties.getTemporary());
 	}
@@ -288,6 +307,16 @@ public class ConfigurationService {
 	}
 
 	/**
+	 * Returns the system command.
+	 *
+	 * @return The system command.
+	 * @since 1.8
+	 */
+	public SystemCommand getSystemCommand() {
+		return systemCommand;
+	}
+
+	/**
 	 * Returns the configuration for the application.
 	 *
 	 * @return The configuration for the application.
@@ -298,6 +327,16 @@ public class ConfigurationService {
 	}
 
 	/**
+	 * Returns the configuration for the image.
+	 *
+	 * @return The configuration for the image.
+	 * @since 1.8
+	 */
+	public ImageConfiguration getImage() {
+		return image;
+	}
+
+	/**
 	 * Returns the configuration for the exchange.
 	 *
 	 * @return The configuration for the exchange.
@@ -305,6 +344,16 @@ public class ConfigurationService {
 	 */
 	public ExchangeConfiguration getExchange() {
 		return exchange;
+	}
+
+	/**
+	 * Returns the configuration for the repository.
+	 *
+	 * @return The configuration for the repository.
+	 * @since 1.8
+	 */
+	public RepositoryConfiguration getRepository() {
+		return repository;
 	}
 
 	/**
@@ -381,4 +430,137 @@ public class ConfigurationService {
 		return Optional.of(path);
 	}
 
+	/**
+	 * SystemCommand is an immutable class that defines system commands.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SystemCommand {
+		/**
+		 * The system properties.
+		 */
+		private final de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.System systemProperties;
+
+		/**
+		 * Creates system command.
+		 * 
+		 * @param systemProperties The system properties.
+		 * @since 1.8
+		 */
+		public SystemCommand(
+				de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.System systemProperties) {
+			super();
+
+			this.systemProperties = systemProperties;
+		}
+
+		/**
+		 * Returns true if the system command is available.
+		 * 
+		 * @param command The command.
+		 * @return True if the system command is available.
+		 * @since 1.8
+		 */
+		public static boolean isAvailable(String command) {
+			if (command == null || command.isBlank())
+				return false;
+			else {
+				Path path = Paths.get(command.trim());
+
+				return !Files.isDirectory(path) && Files.isExecutable(path);
+			}
+		}
+
+		/**
+		 * Returns true if the system command docker is available.
+		 * 
+		 * @return True if the system command docker is available.
+		 * @since 1.8
+		 */
+		public boolean isDockerAvailable() {
+			return isAvailable(getDocker());
+		}
+
+		/**
+		 * Returns the system command docker depending on the running operation system
+		 * from the properties.
+		 * 
+		 * @return The system command docker depending on the running operation system
+		 *         from the properties.
+		 * @since 1.8
+		 */
+		public String getDocker() {
+			switch (getOperatingSystem()) {
+			case mac:
+				return systemProperties.getMac().getCommand().getDocker();
+			case windows:
+				return systemProperties.getWindows().getCommand().getDocker();
+			case unix:
+			default:
+				return systemProperties.getUnix().getCommand().getDocker();
+			}
+		}
+
+		/**
+		 * Returns true if the system command convert is available.
+		 * 
+		 * @return True if the system command convert is available.
+		 * @since 1.8
+		 */
+		public boolean isConvertAvailable() {
+			return isAvailable(getConvert());
+		}
+
+		/**
+		 * Returns the system command convert depending on the running operation system
+		 * from the properties.
+		 * 
+		 * @return The system command convert depending on the running operation system
+		 *         from the properties.
+		 * @since 1.8
+		 */
+		public String getConvert() {
+			switch (getOperatingSystem()) {
+			case mac:
+				return systemProperties.getMac().getCommand().getConvert();
+			case windows:
+				return systemProperties.getWindows().getCommand().getConvert();
+			case unix:
+			default:
+				return systemProperties.getUnix().getCommand().getConvert();
+			}
+		}
+
+		/**
+		 * Returns true if the system command identify is available.
+		 * 
+		 * @return True if the system command identify is available.
+		 * @since 1.8
+		 */
+		public boolean isIdentifyAvailable() {
+			return isAvailable(getIdentify());
+		}
+
+		/**
+		 * Returns the system command identify depending on the running operation system
+		 * from the properties.
+		 * 
+		 * @return The system command identify depending on the running operation system
+		 *         from the properties.
+		 * @since 1.8
+		 */
+		public String getIdentify() {
+			switch (getOperatingSystem()) {
+			case mac:
+				return systemProperties.getMac().getCommand().getIdentify();
+			case windows:
+				return systemProperties.getWindows().getCommand().getIdentify();
+			case unix:
+			default:
+				return systemProperties.getUnix().getCommand().getIdentify();
+			}
+		}
+	}
 }

@@ -152,11 +152,6 @@ public class ProjectConfiguration extends CoreFolder {
 		private de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Project project = null;
 
 		/**
-		 * The main configuration file.
-		 */
-		private final Path mainFile;
-
-		/**
 		 * The folio configuration file.
 		 */
 		private final Path folioFile;
@@ -180,7 +175,7 @@ public class ProjectConfiguration extends CoreFolder {
 		 * @param user                  The user.
 		 * @since 1.8
 		 */
-		public Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
+		Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
 				OptConfiguration optConfiguration, String user) {
 			super(Paths.get(ProjectConfiguration.this.folder.toString(), properties.getFolder()));
 
@@ -189,17 +184,18 @@ public class ProjectConfiguration extends CoreFolder {
 			this.user = user;
 
 			/*
-			 * Initialize the project configuration folder
+			 * Initialize the project configuration folder and consequently the project
+			 * folder
 			 */
 			ConfigurationService.initializeFolder(true, folder, "project '" + getId() + "' configuration");
 
 			// Initializes the configuration files
-			mainFile = getPath(properties.getFiles().getMain());
 			folioFile = getPath(properties.getFiles().getFolio());
 			historyFile = getPath(properties.getFiles().getHistory());
 
 			// Loads the main configuration file
-			mainConfigurationManager = new PersistenceManager(mainFile, Type.project_v1);
+			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
+					Type.project_v1);
 			loadMainConfiguration();
 		}
 
@@ -285,6 +281,8 @@ public class ProjectConfiguration extends CoreFolder {
 
 					return true;
 				} catch (Exception e) {
+					reloadMainConfiguration();
+
 					logger.warn("Could not persist the configuration of the project '" + project.getName() + "' - "
 							+ e.getMessage());
 				}
@@ -552,12 +550,12 @@ public class ProjectConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Set the security and persists the main configuration if it is available.
+		 * Updates the security and persists the main configuration if it is available.
 		 *
 		 * @param users  The user grants.
-		 * @param groups The groups grants.
+		 * @param groups The group grants.
 		 * @param other  The other.
-		 * @return True if the basic data was updated and persisted.
+		 * @return True if the security was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean updateSecurity(Collection<Grant> users, Collection<Grant> groups, Right other) {
@@ -1047,7 +1045,7 @@ public class ProjectConfiguration extends CoreFolder {
 		private final Path folios;
 
 		/**
-		 * The folder for folios derivatives quality thumbnail.
+		 * The folder for folios derivatives.
 		 */
 		private final Derivatives derivatives;
 

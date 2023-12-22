@@ -9,8 +9,10 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.project;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,12 +22,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.ProjectConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Process;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
+import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -163,6 +168,11 @@ public class Project implements Job.Cluster {
 	private final ProjectConfiguration configuration;
 
 	/**
+	 * The image configuration.
+	 */
+	private final ImageConfiguration imageConfiguration;
+
+	/**
 	 * The security level. The default level is user.
 	 */
 	private SecurityService.Level securityLevel = SecurityService.Level.user;
@@ -180,18 +190,21 @@ public class Project implements Job.Cluster {
 	/**
 	 * Creates a project.
 	 * 
-	 * @param configuration The configuration.
+	 * @param configuration      The configuration.
+	 * @param imageConfiguration The image configuration.
 	 * @throws IllegalArgumentException Thrown if the configuration is not
 	 *                                  available.
 	 * @since 1.8
 	 */
-	public Project(ProjectConfiguration configuration) throws IllegalArgumentException {
+	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration)
+			throws IllegalArgumentException {
 		super();
 
 		if (configuration == null)
 			throw new IllegalArgumentException("the configuration is a required argument.");
 
 		this.configuration = configuration;
+		this.imageConfiguration = imageConfiguration;
 	}
 
 	/**
@@ -341,9 +354,18 @@ public class Project implements Job.Cluster {
 	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
-						configuration.getImages().getDerivatives().getThumbnail(),
-						configuration.getImages().getDerivatives().getDetail(),
-						configuration.getImages().getDerivatives().getBest()));
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getThumbnail(),
+								imageConfiguration.getDerivatives().getThumbnail().getQuality(),
+								imageConfiguration.getDerivatives().getThumbnail().getMaxSize()),
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getDetail(),
+								imageConfiguration.getDerivatives().getDetail().getQuality(),
+								imageConfiguration.getDerivatives().getDetail().getMaxSize()),
+						new Target.Project.Images.Derivatives.Resolution(
+								configuration.getImages().getDerivatives().getBest(),
+								imageConfiguration.getDerivatives().getBest().getQuality(),
+								imageConfiguration.getDerivatives().getBest().getMaxSize())));
 
 		return new Target(configuration.getConfiguration().getExchange(), configuration.getConfiguration().getOpt(),
 				new Target.Project(configuration.getConfiguration().getFolder(),
@@ -623,70 +645,167 @@ public class Project implements Job.Cluster {
 	/**
 	 * Returns the folios.
 	 *
-	 * @return The folios. On troubles returns an empty array.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios() {
+	public List<Folio> getFolios() throws IOException {
 		return getFolios(null);
 	}
 
 	/**
 	 * Returns the folios that are restricted to the specified IDs.
 	 *
-	 * @param ids The folios IDs. If null, returns all folios.
-	 * @return The folios. On troubles returns an empty array.
+	 * @param uuids The folios uuids. If null, returns all folios.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Set<String> ids) {
-		try {
-			List<Folio> folios = new ArrayList<>();
+	public List<Folio> getFolios(Set<String> uuids) throws IOException {
+		List<Folio> folios = new ArrayList<>();
 
-			for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
-					.getEntities(Folio.class))
-				if (ids == null || ids.contains(folio.getId()))
-					folios.add(folio);
+		for (Folio folio : (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
+				.getEntities(Folio.class))
+			if (uuids == null || uuids.contains(folio.getId()))
+				folios.add(folio);
 
-			return folios;
-		} catch (Exception e) {
-			logger.warn(e.getMessage());
-
-			return new ArrayList<>();
-		}
-	}
-
-	/**
-	 * Writes the folios order to given output stream.
-	 *
-	 * @param outputStream The output stream for writing the folios order.
-	 * @since 1.8
-	 */
-	public void foliosOrder(OutputStream outputStream) {
-		if (outputStream != null) {
-			PrintWriter writer = new PrintWriter(outputStream);
-
-			for (Folio folio : getFolios())
-				writer.println(folio.getId() + "\t" + folio.getName());
-
-			writer.flush();
-		}
+		return folios;
 	}
 
 	/**
 	 * Persist the folios.
 	 * 
 	 * @param folios The folios to persist.
-	 * @return The number of persisted folios. On troubles returns -1.
+	 * @return The number of persisted folios.
+	 * @throws IOException Throws if the folios metadata file can not be persisted.
 	 * @since 1.8
 	 */
-	public int persist(List<Folio> folios) {
-		try {
-			return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1))
-					.persist(folios);
-		} catch (Exception e) {
-			logger.warn(e.getMessage());
+	private int persist(List<Folio> folios) throws IOException {
+		return (new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1)).persist(folios);
+	}
 
-			return -1;
-		}
+	/**
+	 * Sorts the folios.
+	 * 
+	 * @param order   The order to sort, that is list of folios ids.
+	 * @param isAfter True if the folios that do not belong to the order are to be
+	 *                inserted after the folios that belong to the order. Otherwise,
+	 *                they are placed at the beginning.
+	 * @return The sorted folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> sortFolios(List<String> order, boolean isAfter) throws IOException {
+		List<Folio> folios = ImageUtils.sort(getFolios(), order, isAfter);
+
+		persist(folios);
+
+		return folios;
+	}
+
+	/**
+	 * Update the folios metadata.
+	 * 
+	 * @param metadata The metadata of the folios to update.
+	 * @return The folios.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<Folio> updateFolios(Collection<ImageUtils.Metadata> metadata) throws IOException {
+		List<Folio> folios = ImageUtils.update(getFolios(), metadata);
+
+		persist(folios);
+
+		return folios;
+	}
+
+	/**
+	 * Copy the file from source folder to the target folder.
+	 * 
+	 * @param fileName The file name.
+	 * @param source   The source folder.
+	 * @param target   The target folder.
+	 * @throws IOException Throws if an I/O error occurs.
+	 * @since 1.8
+	 */
+	private static void copy(String fileName, Path source, Path target) throws IOException {
+		Files.copy(Paths.get(source.toString(), fileName), Paths.get(target.toString(), fileName),
+				StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	/**
+	 * Import the folios.
+	 * 
+	 * @param container The container.
+	 * @param ids       The folios ids to import. If null, import all folios from
+	 *                  container.
+	 * @return The imported folios. Null if the container is null or the read right
+	 *         is not fulfilled.
+	 * @throws IOException Throws if the folios can not be imported.
+	 * @since 1.8
+	 */
+	public List<Folio> importFolios(ContainerService.Container container, Collection<String> ids) throws IOException {
+		if (container != null && container.getRight().isReadFulfilled()) {
+			// Project folios
+			final Set<String> projectFolios = new HashSet<>();
+			for (Folio folio : getFolios())
+				projectFolios.add(folio.getId());
+
+			// folios to import
+			final Set<String> importFolios = new HashSet<>();
+			if (ids != null)
+				for (String id : ids)
+					if (id != null && !id.isBlank())
+						importFolios.add(id.trim());
+
+			// container folders
+			final Path foliosContainerFolder = container.getConfiguration().getImages().getFolios();
+
+			final Path thumbnailContainerFolder = container.getConfiguration().getImages().getDerivatives()
+					.getThumbnail();
+			final Path detailContainerFolder = container.getConfiguration().getImages().getDerivatives().getDetail();
+			final Path bestContainerFolder = container.getConfiguration().getImages().getDerivatives().getBest();
+
+			final String derivativesFormat = container.getConfiguration().getImages().getDerivatives().getFormat()
+					.name();
+
+			// project folders
+			final Path foliosProjectFolder = configuration.getImages().getFolios();
+
+			final Path thumbnailProjectFolder = configuration.getImages().getDerivatives().getThumbnail();
+			final Path detailProjectFolder = configuration.getImages().getDerivatives().getDetail();
+			final Path bestProjectFolder = configuration.getImages().getDerivatives().getBest();
+
+			// import folios
+			final List<Folio> folios = new ArrayList<>();
+			for (Folio folio : (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+					Type.folio_v1)).getEntities(Folio.class))
+				if (!projectFolios.contains(folio.getId()) && (ids == null || importFolios.contains(folio.getId())))
+					try {
+						copy(folio.getId() + "." + folio.getFormat().name(), foliosContainerFolder,
+								foliosProjectFolder);
+
+						copy(folio.getId() + "." + derivativesFormat, thumbnailContainerFolder, thumbnailProjectFolder);
+						copy(folio.getId() + "." + derivativesFormat, detailContainerFolder, detailProjectFolder);
+						copy(folio.getId() + "." + derivativesFormat, bestContainerFolder, bestProjectFolder);
+
+						folios.add(folio);
+					} catch (Exception e) {
+						// ignore folio
+					}
+
+			// Persist the configuration
+			try {
+				(new PersistenceManager(configuration.getConfiguration().getFolioFile(), Type.folio_v1)).persist(true,
+						folios);
+			} catch (Exception e) {
+				throw new IOException("Cannot persist project folios configuration file - " + e.getMessage() + ".");
+			}
+
+			return folios;
+
+		} else
+			return null;
 	}
 
 	/**

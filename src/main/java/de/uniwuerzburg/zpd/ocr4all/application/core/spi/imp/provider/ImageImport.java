@@ -30,6 +30,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
@@ -285,13 +286,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			/**
 			 * Returns the folio size.
 			 * 
-			 * @param size The size in the form [width]x[height].
-			 * @return The folio size.
-			 * @since 1.8
-			 */
-			/**
-			 * Returns the folio size.
-			 * 
 			 * @param identifyJob The identify job.
 			 * @param source      The source name.
 			 * @param target      The target name.
@@ -300,42 +294,19 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 * @since 1.8
 			 */
 			private Folio.Size getSize(SystemProcess identifyJob, String source, String target) throws IOException {
-				identifyJob.execute("-format", "%[fx:w]x%[fx:h]", target);
+				try {
+					return ImageUtils.getSize(identifyJob, source, target);
+				} catch (IOException e) {
+					updatedStandardError(e.getMessage());
 
-				if (identifyJob.getExitValue() != 0) {
-					String error = identifyJob.getStandardError();
-					updatedStandardError("Could not determine the folio size of '" + source + "'"
-							+ (error.isBlank() ? "" : " - " + error.trim()) + ".");
-
-					throw new IOException(
-							"could not determine the folio size" + (error.isBlank() ? "" : " - " + error.trim()));
+					throw e;
 				}
-
-				Folio.Size size = null;
-				String[] split = identifyJob.getStandardOutput().split("x");
-				if (split.length == 2)
-					try {
-						size = new Folio.Size(Integer.parseInt(split[0].trim()), Integer.parseInt(split[1].trim()));
-					} catch (Exception e) {
-						// Nothing to do
-					}
-
-				if (size == null) {
-					String error = identifyJob.getStandardError();
-					updatedStandardError("Could not determine the size of the folio '" + source + "'"
-							+ (error.isBlank() ? "" : " - " + error.trim()) + ".");
-
-					throw new IOException(
-							"could not determine the folio size" + (error.isBlank() ? "" : " - " + error.trim()));
-				} else
-					return size;
 			}
 
 			/**
 			 * Creates the derivatives quality image for folios.
 			 * 
 			 * @param convertJob The convert job.
-			 * @param format     The folios derivatives format.
 			 * @param target     The target folder.
 			 * @param resize     The maximal size.
 			 * @param quality    The compression quality.
@@ -345,29 +316,18 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 */
 			private ProcessServiceProvider.Processor.State createDerivatives(SystemProcess convertJob, Path target,
 					String resize, int quality) {
-				final String format = getFramework().getTarget().getProject().getImages().getDerivatives().getFormat()
-						.name();
-				final String label = target.getFileName().toString();
 
 				try {
-					convertJob.execute("*", "-format", format, "-resize", resize + ">", "-quality", "" + quality,
-							"-set", "filename:t", "%t", "+adjoin", target.toString() + "/%[filename:t]." + format);
+					ImageUtils.createDerivatives(convertJob,
+							getFramework().getTarget().getProject().getImages().getDerivatives().getFormat().name(),
+							target, resize, quality);
 
-					if (convertJob.getExitValue() != 0) {
-						String error = convertJob.getStandardError();
-						updatedStandardError("Cannot create derivatives " + label + " quality image for folios"
-								+ (error.isBlank() ? "" : " - " + error.trim()) + ".");
-
-						return ProcessServiceProvider.Processor.State.interrupted;
-					}
+					return isCanceled() ? ProcessServiceProvider.Processor.State.canceled : null;
 				} catch (IOException e) {
-					updatedStandardError("Cannot create derivatives " + label + " quality image for folios - "
-							+ e.getMessage() + ".");
+					updatedStandardError(e.getMessage());
 
 					return ProcessServiceProvider.Processor.State.interrupted;
 				}
-
-				return isCanceled() ? ProcessServiceProvider.Processor.State.canceled : null;
 			}
 
 			/**
@@ -648,9 +608,12 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				 */
 				updatedStandardOutput("Create derivatives.");
 
+				final Target.Project.Images images = framework.getTarget().getProject().getImages();
+
 				// quality best
 				ProcessServiceProvider.Processor.State state = createDerivatives(
-						new SystemProcess(folderFolios, convertCommand), folderBest, "1536x1536", 50);
+						new SystemProcess(folderFolios, convertCommand), folderBest,
+						images.getDerivatives().getBest().getMaxSize(), images.getDerivatives().getBest().getQuality());
 
 				if (state != null)
 					return state;
@@ -658,7 +621,9 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				callback.updatedProgress(0.40F);
 
 				// quality detail
-				state = createDerivatives(new SystemProcess(folderBest, convertCommand), folderDetail, "768x768", 50);
+				state = createDerivatives(new SystemProcess(folderBest, convertCommand), folderDetail,
+						images.getDerivatives().getDetail().getMaxSize(),
+						images.getDerivatives().getDetail().getQuality());
 
 				if (state != null)
 					return state;
@@ -666,8 +631,9 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				callback.updatedProgress(0.50F);
 
 				// quality thumbnail
-				state = createDerivatives(new SystemProcess(folderDetail, convertCommand), folderThumbnail, "128x128",
-						50);
+				state = createDerivatives(new SystemProcess(folderDetail, convertCommand), folderThumbnail,
+						images.getDerivatives().getThumbnail().getMaxSize(),
+						images.getDerivatives().getThumbnail().getQuality());
 
 				if (state != null)
 					return state;
@@ -682,7 +648,6 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				List<String> foliosFiles = new ArrayList<>();
 				List<String> derivativeFiles = new ArrayList<>();
 
-				final Target.Project.Images images = framework.getTarget().getProject().getImages();
 				final String foliosDerivativesImageFormat = images.getDerivatives().getFormat().name();
 				for (Folio folio : folios) {
 					try {
@@ -717,25 +682,25 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail());
+					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail().getFolder());
 					callback.updatedProgress(0.75F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail());
+					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail().getFolder());
 					callback.updatedProgress(0.8F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 
-					move(derivativeFiles, folderBest, images.getDerivatives().getBest());
+					move(derivativeFiles, folderBest, images.getDerivatives().getBest().getFolder());
 					callback.updatedProgress(0.9F);
 					if (isCanceled())
 						return ProcessServiceProvider.Processor.State.canceled;
 				} catch (IOException e) {
 					int remain = remove(foliosFiles, images.getFolios());
-					remain += remove(derivativeFiles, images.getDerivatives().getThumbnail());
-					remain += remove(derivativeFiles, images.getDerivatives().getDetail());
-					remain += remove(derivativeFiles, images.getDerivatives().getBest());
+					remain += remove(derivativeFiles, images.getDerivatives().getThumbnail().getFolder());
+					remain += remove(derivativeFiles, images.getDerivatives().getDetail().getFolder());
+					remain += remove(derivativeFiles, images.getDerivatives().getBest().getFolder());
 
 					updatedStandardError("Cannot move the folios to project"
 							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()

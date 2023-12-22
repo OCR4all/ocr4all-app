@@ -14,7 +14,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.request;
  * @version 1.0
  * @since 1.8
  */
-public class NameStateRequest extends IdentificationRequest {
+public class NameStateRequest extends IdentifierRequest {
 	/**
 	 * The serial version UID.
 	 */

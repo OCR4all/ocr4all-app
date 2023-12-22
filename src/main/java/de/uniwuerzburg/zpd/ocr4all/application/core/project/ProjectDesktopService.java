@@ -45,7 +45,8 @@ public class ProjectDesktopService extends ProjectService {
 	 */
 	@Override
 	protected Project loadProject(Path path) {
-		Project project = new Project(configurationService.getWorkspace().getProjects().getProject(path, null));
+		Project project = new Project(configurationService.getWorkspace().getProjects().getProject(path, null),
+				configurationService.getImage());
 
 		project.setSecurityLevel(securityService.getSecurityLevel());
 		project.addAllRights();

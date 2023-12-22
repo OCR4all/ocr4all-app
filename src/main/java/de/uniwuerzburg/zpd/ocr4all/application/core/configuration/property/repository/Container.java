@@ -1,42 +1,42 @@
 /**
- * File:     Project.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.projects
+ * File:     Container.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.03.2021
+ * Date:     22.11.2023
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project;
+package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.FolderDefault;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
 
 /**
- * Defines ocr4all project properties.
+ * Defines ocr4all container properties.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class Project {
+public class Container {
 	/**
 	 * The configuration.
 	 */
 	private Configuration configuration = new Configuration();
 
 	/**
-	 * The images.
+	 * The default folios folder.
 	 */
-	private Images images = new Images();
+	private static final String defaultFoliosFolder = "folios";
 
 	/**
-	 * The models.
+	 * The folios.
 	 */
-	private Models models = new Models();
+	private FolderDefault folios = new FolderDefault(defaultFoliosFolder);
 
 	/**
-	 * The sandboxes.
+	 * The derivatives.
 	 */
-	private Sandboxes sandboxes = new Sandboxes();
+	private Derivatives derivatives = new Derivatives();
 
 	/**
 	 * Returns the configuration.
@@ -59,67 +59,47 @@ public class Project {
 	}
 
 	/**
-	 * Returns the images.
+	 * Returns the folios.
 	 *
-	 * @return The images.
+	 * @return The folios.
 	 * @since 1.8
 	 */
-	public Images getImages() {
-		return images;
+	public FolderDefault getFolios() {
+		return folios;
 	}
 
 	/**
-	 * Set the images.
+	 * Set the folios.
 	 *
-	 * @param images The images to set.
+	 * @param folios The folios to set.
 	 * @since 1.8
 	 */
-	public void setImages(Images images) {
-		this.images = images;
+	public void setFolios(FolderDefault folios) {
+		this.folios = folios;
 	}
 
 	/**
-	 * Returns the models.
+	 * Returns the derivatives.
 	 *
-	 * @return The models.
+	 * @return The derivatives.
 	 * @since 1.8
 	 */
-	public Models getModels() {
-		return models;
+	public Derivatives getDerivatives() {
+		return derivatives;
 	}
 
 	/**
-	 * Set the models.
+	 * Set the derivatives.
 	 *
-	 * @param models The models to set.
+	 * @param derivatives The derivatives to set.
 	 * @since 1.8
 	 */
-	public void setModels(Models models) {
-		this.models = models;
+	public void setDerivatives(Derivatives derivatives) {
+		this.derivatives = derivatives;
 	}
 
 	/**
-	 * Returns the sandboxes.
-	 *
-	 * @return The sandboxes.
-	 * @since 1.8
-	 */
-	public Sandboxes getSandboxes() {
-		return sandboxes;
-	}
-
-	/**
-	 * Set the sandboxes.
-	 *
-	 * @param sandboxes The sandboxes to set.
-	 * @since 1.8
-	 */
-	public void setSandboxes(Sandboxes sandboxes) {
-		this.sandboxes = sandboxes;
-	}
-
-	/**
-	 * Defines configuration properties for ocr4all projects.
+	 * Defines configuration properties for ocr4all repository.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -129,10 +109,10 @@ public class Project {
 		/**
 		 * The default folder.
 		 */
-		private static final String defaultFolder = ".project";
+		private static final String defaultFolder = ".container";
 
 		/**
-		 * The folder. The default value is .project.
+		 * The folder. The default value is .container.
 		 */
 		private String folder = defaultFolder;
 
@@ -193,7 +173,7 @@ public class Project {
 		/**
 		 * The default main file name.
 		 */
-		private static final String defaultMainFileName = "project";
+		private static final String defaultMainFileName = "container";
 
 		/**
 		 * The default folio file name.
@@ -201,12 +181,7 @@ public class Project {
 		private static final String defaultFolioFileName = "folio";
 
 		/**
-		 * The default history file name.
-		 */
-		private static final String defaultHistoryFileName = "history";
-
-		/**
-		 * The main file name. The default value is project.
+		 * The main file name. The default value is container.
 		 */
 		private String main = defaultMainFileName;
 
@@ -214,11 +189,6 @@ public class Project {
 		 * The folio file name. The default value is folio.
 		 */
 		private String folio = defaultFolioFileName;
-
-		/**
-		 * The history file name. The default value is history.
-		 */
-		private String history = defaultHistoryFileName;
 
 		/**
 		 * Returns the main file name.
@@ -258,120 +228,6 @@ public class Project {
 		 */
 		public void setFolio(String fileName) {
 			folio = fileName;
-		}
-
-		/**
-		 * Returns the history file name.
-		 *
-		 * @return The history file name.
-		 * @since 1.8
-		 */
-		public String getHistory() {
-			return OCR4all.getNotEmpty(history, defaultHistoryFileName);
-		}
-
-		/**
-		 * Set the history file name.
-		 *
-		 * @param fileName The file name to set.
-		 * @since 1.8
-		 */
-		public void setHistory(String fileName) {
-			history = fileName;
-		}
-	}
-
-	/**
-	 * Defines images.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class Images {
-		/**
-		 * The default folder.
-		 */
-		private static final String defaultFolder = "images";
-
-		/**
-		 * The default folios folder.
-		 */
-		private static final String defaultFoliosFolder = "folios";
-
-		/**
-		 * The folder. The default folder is images.
-		 */
-		private String folder = defaultFolder;
-
-		/**
-		 * The folios.
-		 */
-		private FolderDefault folios = new FolderDefault(defaultFoliosFolder);
-
-		/**
-		 * The derivatives.
-		 */
-		private Derivatives derivatives = new Derivatives();
-
-		/**
-		 * Returns the folder.
-		 *
-		 * @return The folder.
-		 * @since 1.8
-		 */
-		public String getFolder() {
-			return OCR4all.getNotEmpty(folder, defaultFolder);
-		}
-
-		/**
-		 * Set the folder.
-		 *
-		 * @param folder The folder to set.
-		 * @since 1.8
-		 */
-		public void setFolder(String folder) {
-			this.folder = folder;
-		}
-
-		/**
-		 * Returns the folios.
-		 *
-		 * @return The folios.
-		 * @since 1.8
-		 */
-		public FolderDefault getFolios() {
-			return folios;
-		}
-
-		/**
-		 * Set the folios.
-		 *
-		 * @param folios The folios to set.
-		 * @since 1.8
-		 */
-		public void setFolios(FolderDefault folios) {
-			this.folios = folios;
-		}
-
-		/**
-		 * Returns the derivatives.
-		 *
-		 * @return The derivatives.
-		 * @since 1.8
-		 */
-		public Derivatives getDerivatives() {
-			return derivatives;
-		}
-
-		/**
-		 * Set the derivatives.
-		 *
-		 * @param derivatives The derivatives to set.
-		 * @since 1.8
-		 */
-		public void setDerivatives(Derivatives derivatives) {
-			this.derivatives = derivatives;
 		}
 
 	}
@@ -570,4 +426,5 @@ public class Project {
 		}
 
 	}
+
 }

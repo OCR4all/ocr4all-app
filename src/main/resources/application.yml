@@ -18,7 +18,7 @@ spring:
       - development
   servlet.multipart:
     max-file-size: 256MB
-    max-request-size: 256MB
+    max-request-size: 2GB
     enabled: true
     location: ${java.io.tmpdir}
     
@@ -91,7 +91,36 @@ ocr4all:
         docker: C:/Program Files/Docker/docker.exe
         convert: C:/Program Files/ImageMagick-7.1.0/convert
         identify: C:/Program Files/ImageMagick-7.1.0/identify
+  image.derivatives:
+    best:
+      quality: 50
+      max-size: 1536x1536
+    detail:
+      quality: 50
+      max-size: 768x768
+    thumbnail:
+      quality: 50
+      max-size: 128x128
   exchange.folder: ${user.home}/ocr4all/exchange
+  repository:
+    folder: ${user.home}/ocr4all/repository
+    configuration:
+      folder: .repository
+      files.main: repository
+    container:
+        configuration:
+          folder: .container
+          files:
+            main: container
+            folio: folio
+        folios.folder: folios
+        derivatives:
+          folder: derivatives
+          format: jpg
+          quality:
+            thumbnail.folder: thumbnail
+            detail.folder: detail
+            best.folder: best
   workspace:
     folder: ${user.home}/ocr4all/workspace
     configuration:
@@ -121,7 +150,6 @@ ocr4all:
           folder: .project
           files:
             main: project
-            security: security
             folio: folio
             history: history
         images:
@@ -211,6 +239,7 @@ logging:
 
 ocr4all:
   exchange.folder: /srv/ocr4all/exchange
+  repository.folder: /srv/ocr4al/repository
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -233,7 +262,32 @@ logging:
 
 ocr4all:
   application.security.administrator.create: true
-  exchange.folder: ${user.home}/ocr4all/exchange
-  workspace.folder: ${user.home}/ocr4all/workspace
-  opt.folder: ${user.home}/ocr4all/opt
-  temporary.folder: ${user.home}/ocr4all/tmp
+  exchange.folder: ${user.home}/ocr4all/dev/exchange
+  repository.folder: ${user.home}/ocr4all/dev/repository
+  workspace.folder: ${user.home}/ocr4all/dev/workspace
+  opt.folder: ${user.home}/ocr4all/dev/opt
+  temporary.folder: ${user.home}/ocr4all/dev/tmp
+
+---
+spring:
+    config.activate.on-profile: test
+
+server:
+  port: 9091
+  error.include-stacktrace: always
+
+logging:
+  file:
+    path:
+    name:
+  level:
+    "[org.springframework.security]": INFO
+    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
+
+ocr4all:
+  application.security.administrator.create: true
+  exchange.folder: ${user.home}/ocr4all/test/exchange
+  repository.folder: ${user.home}/ocr4all/test/repository
+  workspace.folder: ${user.home}/ocr4all/test/workspace
+  opt.folder: ${user.home}/ocr4all/test/opt
+  temporary.folder: ${user.home}/ocr4all/test/tmp

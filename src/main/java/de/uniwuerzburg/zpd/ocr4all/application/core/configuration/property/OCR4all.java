@@ -11,6 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
+
 /**
  * Defines ocr4all properties.
  *
@@ -33,9 +35,19 @@ public class OCR4all {
 	private System system = new System();
 
 	/**
+	 * The image properties.
+	 */
+	private Image image = new Image();
+
+	/**
 	 * The exchange properties.
 	 */
 	private FolderRequired exchange = new FolderRequired();
+
+	/**
+	 * The repository properties.
+	 */
+	private Repository repository = new Repository();
 
 	/**
 	 * The workspace properties.
@@ -98,6 +110,26 @@ public class OCR4all {
 	}
 
 	/**
+	 * Returns the image properties.
+	 *
+	 * @return The image properties.
+	 * @since 1.8
+	 */
+	public Image getImage() {
+		return image;
+	}
+
+	/**
+	 * Set the image properties.
+	 *
+	 * @param image The image properties to set.
+	 * @since 1.8
+	 */
+	public void setImage(Image image) {
+		this.image = image;
+	}
+
+	/**
 	 * Returns the exchange properties.
 	 *
 	 * @return The exchange properties.
@@ -115,6 +147,26 @@ public class OCR4all {
 	 */
 	public void setExchange(FolderRequired exchange) {
 		this.exchange = exchange;
+	}
+
+	/**
+	 * Returns the repository properties.
+	 *
+	 * @return The repository properties.
+	 * @since 1.8
+	 */
+	public Repository getRepository() {
+		return repository;
+	}
+
+	/**
+	 * Set the repository properties.
+	 *
+	 * @param repository The repository properties to set.
+	 * @since 1.8
+	 */
+	public void setRepository(Repository repository) {
+		this.repository = repository;
 	}
 
 	/**

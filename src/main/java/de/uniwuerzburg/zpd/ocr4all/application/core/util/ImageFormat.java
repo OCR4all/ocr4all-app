@@ -74,7 +74,7 @@ public enum ImageFormat {
 		if (extensions.length > 0)
 			pattern.append("}");
 
-		matcher = FileSystems.getDefault().getPathMatcher("glob:**/*." + pattern.toString());
+		matcher = FileSystems.getDefault().getPathMatcher("glob:**." + pattern.toString());
 	}
 
 	/**
@@ -125,8 +125,19 @@ public enum ImageFormat {
 	 * @return True if the given file name matches the image format.
 	 * @since 1.8
 	 */
+	private boolean matches(String filename) {
+		return filename != null && matcher.matches(Paths.get(filename.toLowerCase()));
+	}
+
+	/**
+	 * Returns true if the given file name matches the image format.
+	 * 
+	 * @param filename The file name.
+	 * @return True if the given file name matches the image format.
+	 * @since 1.8
+	 */
 	public boolean matches(Path filename) {
-		return filename != null && matcher.matches(Paths.get(filename.toString().toLowerCase()));
+		return filename != null && matches(filename.toString());
 	}
 
 	/**
@@ -248,6 +259,25 @@ public enum ImageFormat {
 				return imageFormat;
 
 		return defaultFormat;
+	}
+
+	/**
+	 * Returns the image format for given file name.
+	 * 
+	 * @param name The file name.
+	 * @return The image format for given file name. Null if not supported.
+	 * @since 1.8
+	 */
+	public static ImageFormat getImageFormatFilename(String name) {
+		if (name != null && !name.isBlank()) {
+			name = name.trim();
+			
+			for (ImageFormat imageFormat : ImageFormat.values())
+				if (imageFormat.matches(name))
+					return imageFormat;
+		}
+
+		return null;
 	}
 
 }

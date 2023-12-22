@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.ProjectConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Application;
 
 /**
@@ -29,7 +28,7 @@ public class ApplicationConfiguration {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ProjectConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ApplicationConfiguration.class);
 
 	/**
 	 * The label.
@@ -452,7 +451,7 @@ public class ApplicationConfiguration {
 		 */
 		public DefaultAdministrator(boolean isCreate, String login, String password) {
 			super();
-			
+
 			this.isCreate = isCreate;
 			this.login = login;
 			this.password = password;

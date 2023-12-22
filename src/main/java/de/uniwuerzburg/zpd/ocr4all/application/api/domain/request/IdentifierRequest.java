@@ -1,5 +1,5 @@
 /**
- * File:     IdentificationRequest.java
+ * File:     IdentifierRequest.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.domain.request
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -12,13 +12,13 @@ import java.io.Serializable;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Defines requests with identification for the api.
+ * Defines requests with identifier for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class IdentificationRequest implements Serializable {
+public class IdentifierRequest implements Serializable {
 	/**
 	 * The serial version UID.
 	 */
