@@ -8,9 +8,11 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Defines ocr4all utilities.
@@ -178,5 +182,50 @@ public class OCR4allUtils {
 	 */
 	public static String getUUID() {
 		return UUID.randomUUID().toString();
+	}
+
+	/**
+	 * Zips the entry and writes it to the output stream.
+	 * 
+	 * @param entry        The entry to zip if non null.
+	 * @param outputStream The output stream for writing the zipped entry.
+	 * @throws IOException Throws if the entry can not be zipped.
+	 * @since 1.8
+	 */
+	public static void zip(Path entry, OutputStream outputStream) throws IOException {
+		if (entry != null)
+			try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);) {
+				zipEntry(entry.toFile(), entry.getFileName().toString(), zipOutputStream);
+
+				outputStream.flush();
+			}
+	}
+
+	/**
+	 * Zips the entry.
+	 * 
+	 * @param file            The source file.
+	 * @param fileName        The source file name.
+	 * @param zipOutputStream The output stream filter for writing files in the ZIP.
+	 * @throws IOException Throws if the entry can not be zipped.
+	 * @since 1.8
+	 */
+	private static void zipEntry(File file, String fileName, ZipOutputStream zipOutputStream) throws IOException {
+		if (!file.isHidden()) {
+			if (file.isDirectory()) {
+				zipOutputStream.putNextEntry(new ZipEntry(fileName + (fileName.endsWith("/") ? "" : "/")));
+				zipOutputStream.closeEntry();
+
+				for (File child : file.listFiles())
+					zipEntry(child, fileName + "/" + child.getName(), zipOutputStream);
+			} else {
+				zipOutputStream.putNextEntry(new ZipEntry(fileName));
+
+				if (Files.isReadable(file.toPath()))
+					Files.copy(file.toPath(), zipOutputStream);
+
+				zipOutputStream.closeEntry();
+			}
+		}
 	}
 }

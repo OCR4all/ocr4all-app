@@ -134,6 +134,11 @@ public class CoreApiController {
 	public static final String downloadRequestMapping = "/download";
 
 	/**
+	 * The zip request mapping.
+	 */
+	public static final String zipRequestMapping = "/zip";
+
+	/**
 	 * The upload request mapping.
 	 */
 	public static final String uploadRequestMapping = "/upload";

@@ -33,6 +33,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -428,7 +429,7 @@ public class SnapshotApiController extends CoreApiController {
 	 * 
 	 * @param projectId The project id. This is the folder name.
 	 * @param sandboxId The sandbox id. This is the folder name.
-	 * @param request   The sandbox request.
+	 * @param request   The sandbox file request.
 	 * @param response  The HTTP-specific functionality in sending a response to the
 	 *                  client.
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
@@ -446,7 +447,7 @@ public class SnapshotApiController extends CoreApiController {
 	public void sandboxDownload(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
-			@RequestBody @Valid SandboxRequest request, HttpServletResponse response) throws IOException {
+			@RequestBody @Valid SandboxFileRequest request, HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
 			Snapshot snapshot = authorization.sandbox.getSnapshot(request.getTrack());
@@ -461,6 +462,50 @@ public class SnapshotApiController extends CoreApiController {
 
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"");
 			response.getOutputStream().write(content, 0, content.length);
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Zips the files in the sandbox of the leaf snapshot in the track of the
+	 * request.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot request.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "zips the files in the sandbox of the leaf snapshot in the track of the request")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Zip Leaf Track Snapshot"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(sandboxRequestMapping + zipRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void sandboxZip(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotRequest request, HttpServletResponse response) throws IOException {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			Path sandbox = authorization.sandbox.getSnapshot(request.getTrack()).getConfiguration().getSandbox()
+					.getFolder();
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"" + sandbox.getFileName().toString() + ".zip\"");
+			OCR4allUtils.zip(sandbox, response.getOutputStream());
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		} catch (ResponseStatusException ex) {
@@ -663,7 +708,7 @@ public class SnapshotApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class SandboxRequest extends SnapshotRequest {
+	public static class SandboxFileRequest extends SnapshotRequest {
 		/**
 		 * The serial version UID.
 		 */
