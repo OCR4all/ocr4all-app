@@ -1,7 +1,7 @@
 /**
  * File:     CoreApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     02.02.2022
  */
@@ -286,7 +286,30 @@ public class CoreApiController {
 	 * @since 1.8
 	 */
 	protected enum ProjectRight {
-		none, any, read, write, execute, special
+		/**
+		 * The none project right.
+		 */
+		none,
+		/**
+		 * The any project right.
+		 */
+		any,
+		/**
+		 * The read project right.
+		 */
+		read,
+		/**
+		 * The write project right.
+		 */
+		write,
+		/**
+		 * The 'execute' project right
+		 */
+		execute,
+		/**
+		 * The 'special' project right
+		 */
+		special
 	}
 
 	/**
@@ -311,7 +334,7 @@ public class CoreApiController {
 
 	/**
 	 * Creates a core controller for the api.
-	 * 
+	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
@@ -324,7 +347,7 @@ public class CoreApiController {
 
 	/**
 	 * Creates a core controller for the api.
-	 * 
+	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
@@ -338,7 +361,7 @@ public class CoreApiController {
 
 	/**
 	 * Creates a core controller for the api.
-	 * 
+	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
@@ -359,7 +382,7 @@ public class CoreApiController {
 
 	/**
 	 * Logs the exception.
-	 * 
+	 *
 	 * @param exception The exception to log.
 	 * @since 1.8
 	 */
@@ -369,7 +392,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns the application preferred locale.
-	 * 
+	 *
 	 * @return The application preferred locale.
 	 * @since 1.8
 	 */
@@ -379,7 +402,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns the locale.
-	 * 
+	 *
 	 * @param language The desired language for the locale.
 	 * @return The locale. If the given language is not defined or not supported,
 	 *         then returns the application preferred locale.
@@ -417,7 +440,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns true if the application is secured.
-	 * 
+	 *
 	 * @return True if the application is secured.
 	 * @since 1.8
 	 */
@@ -460,7 +483,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns the image media type.
-	 * 
+	 *
 	 * @param format The image format.
 	 * @return The image media type.
 	 * @since 1.8
@@ -483,7 +506,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns the image media type value.
-	 * 
+	 *
 	 * @param format The image format.
 	 * @return The image media type value.
 	 * @since 1.8
@@ -506,7 +529,7 @@ public class CoreApiController {
 
 	/**
 	 * Returns the image with given id.
-	 * 
+	 *
 	 * @param folder   The image derivative folder.
 	 * @param id       The id.
 	 * @param format   The format.
@@ -548,7 +571,7 @@ public class CoreApiController {
 
 		/**
 		 * Creates an authorization for project actions.
-		 * 
+		 *
 		 * @param projectId      The project id. This is the folder name.
 		 * @param projectService The project service.
 		 * @throws ResponseStatusException Throws on authorization troubles.
@@ -560,7 +583,7 @@ public class CoreApiController {
 
 		/**
 		 * Creates an authorization for project actions.
-		 * 
+		 *
 		 * @param projectId      The project id. This is the folder name.
 		 * @param projectRight   The right required on the project. If null, no right is
 		 *                       required.
@@ -575,7 +598,7 @@ public class CoreApiController {
 
 		/**
 		 * Creates an authorization for project and sandbox actions.
-		 * 
+		 *
 		 * @param projectId      The project id. This is the folder name.
 		 * @param sandboxId      The sandbox id. This is the folder name.
 		 * @param projectService The project service.
@@ -591,7 +614,7 @@ public class CoreApiController {
 
 		/**
 		 * Creates an authorization for project and sandbox actions.
-		 * 
+		 *
 		 * @param projectId      The project id. This is the folder name.
 		 * @param sandboxId      The sandbox id. This is the folder name.
 		 * @param projectRight   The right required on the project. If null, no right is
@@ -676,7 +699,7 @@ public class CoreApiController {
 		/**
 		 * Creates a factory for authorizations. Only project authorizations is
 		 * available.
-		 * 
+		 *
 		 * @param projectService The project service.
 		 * @throws IllegalArgumentException The project service is mandatory and can not
 		 *                                  be null.
@@ -688,7 +711,7 @@ public class CoreApiController {
 
 		/**
 		 * Creates a factory for authorizations.
-		 * 
+		 *
 		 * @param projectService The project service.
 		 * @param sandboxService The sandbox service. Null if only project
 		 *                       authorizations is available.
@@ -709,7 +732,7 @@ public class CoreApiController {
 
 		/**
 		 * Returns true if the sandbox service is available.
-		 * 
+		 *
 		 * @return True if the sandbox service is available.
 		 * @since 1.8
 		 */
@@ -719,7 +742,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for project actions.
-		 * 
+		 *
 		 * @param projectId The project id. This is the folder name.
 		 * @return The authorization.
 		 * @throws ResponseStatusException Throws on authorization troubles.
@@ -731,7 +754,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for project actions.
-		 * 
+		 *
 		 * @param projectId    The project id. This is the folder name.
 		 * @param projectRight The right required on the project. If null, no right is
 		 *                     required.
@@ -746,7 +769,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for project and sandbox actions.
-		 * 
+		 *
 		 * @param projectId The project id. This is the folder name.
 		 * @param sandboxId The sandbox id. This is the folder name.
 		 * @return The authorization. Null if no sandbox service is available.
@@ -759,7 +782,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for project and sandbox actions.
-		 * 
+		 *
 		 * @param projectId    The project id. This is the folder name.
 		 * @param sandboxId    The sandbox id. This is the folder name.
 		 * @param projectRight The right required on the project. If null, no right is
@@ -777,7 +800,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for actions on snapshots.
-		 * 
+		 *
 		 * @param projectId The project id. This is the folder name.
 		 * @param sandboxId The sandbox id. This is the folder name.
 		 * @return The authorization. Null if no sandbox service is available.
@@ -790,7 +813,7 @@ public class CoreApiController {
 
 		/**
 		 * Authorizes for actions on snapshots.
-		 * 
+		 *
 		 * @param projectId    The project id. This is the folder name.
 		 * @param sandboxId    The sandbox id. This is the folder name.
 		 * @param projectRight The right required on the project. If null, no right is

@@ -1,7 +1,7 @@
 /**
  * File:     ImageFormat.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.spi
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     13.07.2021
  */
@@ -22,7 +22,18 @@ import java.util.Set;
  * @since 1.8
  */
 public enum ImageFormat {
-	tif("TIFF", false, "tiff"), jpg("JPEG", true, "jpeg"), png("PNG", true);
+	/**
+	 * The tif image format.
+	 */
+	tif("TIFF", false, "tiff"),
+	/**
+	 * The jpg image format.
+	 */
+	jpg("JPEG", true, "jpeg"),
+	/**
+	 * The png image format.
+	 */
+	png("PNG", true);
 
 	/**
 	 * The mime type prefix.
@@ -51,7 +62,7 @@ public enum ImageFormat {
 
 	/**
 	 * Creates an image format.
-	 * 
+	 *
 	 * @param label      The label.
 	 * @param isWebPages True if the image is suitable for using on web pages.
 	 * @param extensions The extensions.
@@ -79,7 +90,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the mime type.
-	 * 
+	 *
 	 * @return The mime type.
 	 * @since 1.8
 	 */
@@ -109,7 +120,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns true if the given extension is valid for this image format.
-	 * 
+	 *
 	 * @param extension The extension.
 	 * @return True if the given extension is valid for this image format.
 	 * @since 1.8
@@ -120,7 +131,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns true if the given file name matches the image format.
-	 * 
+	 *
 	 * @param filename The file name.
 	 * @return True if the given file name matches the image format.
 	 * @since 1.8
@@ -131,7 +142,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns true if the given file name matches the image format.
-	 * 
+	 *
 	 * @param filename The file name.
 	 * @return True if the given file name matches the image format.
 	 * @since 1.8
@@ -142,7 +153,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the respective persistence image format.
-	 * 
+	 *
 	 * @return The respective persistence image format. Null if not available.
 	 * @since 1.8
 	 */
@@ -164,7 +175,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the respective image format for given persistence image format.
-	 * 
+	 *
 	 * @param format The persistence image format.
 	 * @return The respective image format. Null if not available.
 	 * @since 1.8
@@ -188,7 +199,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the respective spi image format.
-	 * 
+	 *
 	 * @return The respective persistence spi format. Null if not available.
 	 * @since 1.8
 	 */
@@ -210,7 +221,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the respective image format for given spi image format.
-	 * 
+	 *
 	 * @param format The spi image format.
 	 * @return The respective image format. Null if not available.
 	 * @since 1.8
@@ -233,7 +244,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the image format for given extension.
-	 * 
+	 *
 	 * @param extension The extension.
 	 * @return The image format for given extension. Null if no image format matches
 	 *         the extension.
@@ -245,7 +256,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the image format for given extension.
-	 * 
+	 *
 	 * @param extension     The extension.
 	 * @param defaultFormat The default format to return if no image format matches
 	 *                      the extension. If null, then returns null if no image
@@ -263,7 +274,7 @@ public enum ImageFormat {
 
 	/**
 	 * Returns the image format for given file name.
-	 * 
+	 *
 	 * @param name The file name.
 	 * @return The image format for given file name. Null if not supported.
 	 * @since 1.8
@@ -271,7 +282,7 @@ public enum ImageFormat {
 	public static ImageFormat getImageFormatFilename(String name) {
 		if (name != null && !name.isBlank()) {
 			name = name.trim();
-			
+
 			for (ImageFormat imageFormat : ImageFormat.values())
 				if (imageFormat.matches(name))
 					return imageFormat;

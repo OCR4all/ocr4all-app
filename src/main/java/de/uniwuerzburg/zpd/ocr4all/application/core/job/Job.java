@@ -1,7 +1,7 @@
 /**
  * File:     Job.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.job
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     22.01.2021
  */
@@ -34,11 +34,34 @@ public abstract class Job {
 	 * @since 1.8
 	 */
 	public enum State {
-		initialized, scheduled, running, completed, canceled, interrupted;
+		/**
+		 * The initialized state.
+		 */
+		initialized,
+		/**
+		 * The scheduled state.
+		 */
+		scheduled,
+		/**
+		 * The running state.
+		 */
+		running,
+		/**
+		 * The completed state.
+		 */
+		completed,
+		/**
+		 * The canceled state.
+		 */
+		canceled,
+		/**
+		 * The interrupted state.
+		 */
+		interrupted;
 
 		/**
 		 * Returns the respective persistence state.
-		 * 
+		 *
 		 * @return The persistence state.
 		 * @since 1.8
 		 */
@@ -63,7 +86,7 @@ public abstract class Job {
 
 		/**
 		 * Returns the respective state for given persistence state.
-		 * 
+		 *
 		 * @param state The persistence state.
 		 * @return The state. Null if the given state is null.
 		 * @since 1.8
@@ -99,7 +122,14 @@ public abstract class Job {
 	 * @since 1.8
 	 */
 	public enum Processing {
-		sequential, parallel
+		/**
+		 * Sequential processing.
+		 */
+		sequential,
+		/**
+		 * Parallel processing.
+		 */
+		parallel
 	}
 
 	/**
@@ -155,7 +185,7 @@ public abstract class Job {
 
 	/**
 	 * Creates a job
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @param locale               The application locale.
 	 * @param processing           The processing mode.
@@ -180,7 +210,7 @@ public abstract class Job {
 
 	/**
 	 * Returns the short description.
-	 * 
+	 *
 	 * @return The short description.
 	 * @since 1.8
 	 */
@@ -188,7 +218,7 @@ public abstract class Job {
 
 	/**
 	 * Returns the thread pool.
-	 * 
+	 *
 	 * @return The thread pool.
 	 * @since 1.8
 	 */
@@ -196,7 +226,7 @@ public abstract class Job {
 
 	/**
 	 * Returns true if the workspace thread pool is set.
-	 * 
+	 *
 	 * @return True if the workspace thread pool is set.
 	 * @since 1.8
 	 */
@@ -207,7 +237,7 @@ public abstract class Job {
 	/**
 	 * Returns the workspace thread pool. Extending classes can overwrite this
 	 * method to set a pool.
-	 * 
+	 *
 	 * @return The thread pool. Null if not set.
 	 * @since 1.8
 	 */
@@ -233,7 +263,7 @@ public abstract class Job {
 
 	/**
 	 * Returns the journal.
-	 * 
+	 *
 	 * @return The journal.
 	 * @since 1.8
 	 */
@@ -245,7 +275,7 @@ public abstract class Job {
 	 * Returns the jobs in the given collection that the current job depends on,
 	 * this means the jobs that the current job must wait for to finish before it
 	 * can run.
-	 * 
+	 *
 	 * @param jobs The jobs to test.
 	 * @return The jobs in the given collection that the current job depends on.
 	 * @since 1.8
@@ -254,7 +284,7 @@ public abstract class Job {
 
 	/**
 	 * Executes the job if it is in scheduled state.
-	 * 
+	 *
 	 * @return The end state of the execution, this means, canceled, completed or
 	 *         interrupted.
 	 * @since 1.8
@@ -263,7 +293,7 @@ public abstract class Job {
 
 	/**
 	 * Kills the job if it is not done.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	protected abstract void kill();
@@ -322,7 +352,7 @@ public abstract class Job {
 	/**
 	 * Schedules the job if it is not under the control of the scheduler and the
 	 * given id is greater than 0.
-	 * 
+	 *
 	 * @param id The job id.
 	 * @return True if the job was scheduled.
 	 * @since 1.8
@@ -339,7 +369,7 @@ public abstract class Job {
 
 	/**
 	 * Returns true if the state is scheduled.
-	 * 
+	 *
 	 * @return True if the state is scheduled.
 	 * @since 1.8
 	 */
@@ -349,7 +379,7 @@ public abstract class Job {
 
 	/**
 	 * Returns true if the state is running.
-	 * 
+	 *
 	 * @return True if the state is running.
 	 * @since 1.8
 	 */
@@ -359,7 +389,7 @@ public abstract class Job {
 
 	/**
 	 * Returns true if the job is done.
-	 * 
+	 *
 	 * @return True if the job is done.
 	 * @since 1.8
 	 */
@@ -417,7 +447,7 @@ public abstract class Job {
 
 	/**
 	 * Starts the job in a new thread if it is in scheduled state.
-	 * 
+	 *
 	 * @param taskExecutor The task executor.
 	 * @param callback     The callback method when the job finishes. If null, no
 	 *                     callback is performed.
@@ -452,7 +482,7 @@ public abstract class Job {
 
 	/**
 	 * Cancels the job in a new thread if it is not done.
-	 * 
+	 *
 	 * @return The state of the job. It is cancelled if the job was not done.
 	 *         Otherwise, the state of the done job is returned.
 	 * @since 1.8
@@ -468,7 +498,7 @@ public abstract class Job {
 				new Thread(new Runnable() {
 					/*
 					 * (non-Javadoc)
-					 * 
+					 *
 					 * @see java.lang.Runnable#run()
 					 */
 					@Override
@@ -492,7 +522,7 @@ public abstract class Job {
 	public interface Callback {
 		/**
 		 * Callback method at the end of the job.
-		 * 
+		 *
 		 * @param job The job that has been done.
 		 * @since 1.8
 		 */
@@ -510,7 +540,7 @@ public abstract class Job {
 	public interface Cluster {
 		/**
 		 * Returns the jobs that are associated of the entity.
-		 * 
+		 *
 		 * @param jobs The jobs to be reviewed.
 		 * @return The jobs that are associated of the entity.
 		 * @since 1.8
@@ -549,7 +579,7 @@ public abstract class Job {
 
 		/**
 		 * Creates a job journal.
-		 * 
+		 *
 		 * @param steps The number of steps. This is a positive number.
 		 * @throws IllegalArgumentException Throw if the number of steps is not a
 		 *                                  positive number.
@@ -570,7 +600,7 @@ public abstract class Job {
 		/**
 		 * Returns true if the journal is completed, this means, all its steps are
 		 * completed.
-		 * 
+		 *
 		 * @return True if the journal is completed.
 		 * @since 1.8
 		 */
@@ -584,7 +614,7 @@ public abstract class Job {
 
 		/**
 		 * Initializes the journal.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		void initialize() {
@@ -596,7 +626,7 @@ public abstract class Job {
 
 		/**
 		 * Completes the journal.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		void complete() {
@@ -606,7 +636,7 @@ public abstract class Job {
 
 		/**
 		 * Returns the size, this means, the number of steps.
-		 * 
+		 *
 		 * @return The size.
 		 * @since 1.8
 		 */
@@ -616,7 +646,7 @@ public abstract class Job {
 
 		/**
 		 * Returns the steps.
-		 * 
+		 *
 		 * @return The steps.
 		 * @since 1.8
 		 */
@@ -627,7 +657,7 @@ public abstract class Job {
 		/**
 		 * Returns the running step. In a journal with exactly one step, the running
 		 * step is this one.
-		 * 
+		 *
 		 * @return The running step. Null if not set.
 		 * @since 1.8
 		 */
@@ -701,7 +731,7 @@ public abstract class Job {
 
 		/**
 		 * Returns the expected journal progress taking into account all steps.
-		 * 
+		 *
 		 * @return The expected journal progress.
 		 * @since 1.8
 		 */
@@ -755,7 +785,7 @@ public abstract class Job {
 
 			/**
 			 * Default constructor for a step in a journal.
-			 * 
+			 *
 			 * @param index The index. The first index is 0.
 			 * @since 1.8
 			 */
@@ -779,7 +809,7 @@ public abstract class Job {
 
 			/**
 			 * Returns true if the progress is completed, this means, its progress is 1.
-			 * 
+			 *
 			 * @return True if the progress is completed.
 			 * @since 1.8
 			 */
@@ -814,7 +844,7 @@ public abstract class Job {
 
 			/**
 			 * Resets the progress.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			void resetProgress() {
@@ -993,7 +1023,7 @@ public abstract class Job {
 
 			/**
 			 * Initializes the step.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			void initialize() {
@@ -1009,7 +1039,7 @@ public abstract class Job {
 
 			/**
 			 * Completes the step, this means, sets the progress to 1.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			void complete() {

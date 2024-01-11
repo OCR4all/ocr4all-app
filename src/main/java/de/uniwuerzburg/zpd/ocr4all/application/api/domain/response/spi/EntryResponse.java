@@ -1,7 +1,7 @@
 /**
  * File:     EntryResponse.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     23.02.2022
  */
@@ -33,7 +33,38 @@ public class EntryResponse implements Serializable {
 	 * @since 1.8
 	 */
 	protected enum Type {
-		group, bool("boolean"), integer, decimal, recognition, select, string, image;
+		/**
+		 * The group type.
+		 */
+		group,
+		/**
+		 * The bool type.
+		 */
+		bool("boolean"),
+		/**
+		 * The integer type.
+		 */
+		integer,
+		/**
+		 * The decimal type.
+		 */
+		decimal,
+		/**
+		 * The recognition type.
+		 */
+		recognition,
+		/**
+		 * The select type.
+		 */
+		select,
+		/**
+		 * The string type.
+		 */
+		string,
+		/**
+		 * The image type.
+		 */
+		image;
 
 		/**
 		 * The label.
@@ -42,7 +73,7 @@ public class EntryResponse implements Serializable {
 
 		/**
 		 * Default constructor for a field type.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		private Type() {
@@ -51,7 +82,7 @@ public class EntryResponse implements Serializable {
 
 		/**
 		 * Creates a field type.
-		 * 
+		 *
 		 * @param label The label.
 		 * @since 1.8
 		 */
@@ -87,7 +118,7 @@ public class EntryResponse implements Serializable {
 
 	/**
 	 * Creates an entry response for the api.
-	 * 
+	 *
 	 * @param locale The locale.
 	 * @param type   The field type.
 	 * @param entry  The entry.

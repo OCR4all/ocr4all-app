@@ -1,7 +1,7 @@
 /**
  * File:     ConfigurationService.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     03.11.2020
  */
@@ -47,11 +47,26 @@ public class ConfigurationService {
 	 * Defines operating systems.
 	 */
 	public enum OperatingSystem {
-		unix, mac, windows, notSupported;
+		/**
+		 * The unix operating system.
+		 */
+		unix,
+		/**
+		 * The mac operating system.
+		 */
+		mac,
+		/**
+		 * The windows operating system.
+		 */
+		windows,
+		/**
+		 * A notSupported operating system.
+		 */
+		notSupported;
 
 		/**
 		 * Returns the respective operating systems for frameworks.
-		 * 
+		 *
 		 * @return The respective operating systems for frameworks.
 		 * @since 1.8
 		 */
@@ -168,7 +183,7 @@ public class ConfigurationService {
 
 	/**
 	 * Creates a configuration service.
-	 * 
+	 *
 	 * @param environment      The environment that this component runs.
 	 * @param serverProperties The server properties for a web server (e.g. port and
 	 *                         path settings).
@@ -194,7 +209,7 @@ public class ConfigurationService {
 
 	/**
 	 * Returns the effective system user/group IDs.
-	 * 
+	 *
 	 * @param isUser True if returns the user ID. Otherwise, returns the group ID.
 	 * @return The effective system user/group IDs. On troubles, returns -1.
 	 * @since 1.8
@@ -229,7 +244,7 @@ public class ConfigurationService {
 
 	/**
 	 * Returns the server port.
-	 * 
+	 *
 	 * @return The server port.
 	 * @since 1.8
 	 */
@@ -298,7 +313,7 @@ public class ConfigurationService {
 
 	/**
 	 * Returns the instance.
-	 * 
+	 *
 	 * @return The instance.
 	 * @since 1.8
 	 */
@@ -399,7 +414,7 @@ public class ConfigurationService {
 
 	/**
 	 * Initializes the folder. If it is not available, then creates it.
-	 * 
+	 *
 	 * @param isCreateParent True if create all nonexistent parent directories
 	 *                       first.
 	 * @param path           The folder to initialize.
@@ -445,7 +460,7 @@ public class ConfigurationService {
 
 		/**
 		 * Creates system command.
-		 * 
+		 *
 		 * @param systemProperties The system properties.
 		 * @since 1.8
 		 */
@@ -458,7 +473,7 @@ public class ConfigurationService {
 
 		/**
 		 * Returns true if the system command is available.
-		 * 
+		 *
 		 * @param command The command.
 		 * @return True if the system command is available.
 		 * @since 1.8
@@ -475,7 +490,7 @@ public class ConfigurationService {
 
 		/**
 		 * Returns true if the system command docker is available.
-		 * 
+		 *
 		 * @return True if the system command docker is available.
 		 * @since 1.8
 		 */
@@ -486,7 +501,7 @@ public class ConfigurationService {
 		/**
 		 * Returns the system command docker depending on the running operation system
 		 * from the properties.
-		 * 
+		 *
 		 * @return The system command docker depending on the running operation system
 		 *         from the properties.
 		 * @since 1.8
@@ -505,7 +520,7 @@ public class ConfigurationService {
 
 		/**
 		 * Returns true if the system command convert is available.
-		 * 
+		 *
 		 * @return True if the system command convert is available.
 		 * @since 1.8
 		 */
@@ -516,7 +531,7 @@ public class ConfigurationService {
 		/**
 		 * Returns the system command convert depending on the running operation system
 		 * from the properties.
-		 * 
+		 *
 		 * @return The system command convert depending on the running operation system
 		 *         from the properties.
 		 * @since 1.8
@@ -535,7 +550,7 @@ public class ConfigurationService {
 
 		/**
 		 * Returns true if the system command identify is available.
-		 * 
+		 *
 		 * @return True if the system command identify is available.
 		 * @since 1.8
 		 */
@@ -546,7 +561,7 @@ public class ConfigurationService {
 		/**
 		 * Returns the system command identify depending on the running operation system
 		 * from the properties.
-		 * 
+		 *
 		 * @return The system command identify depending on the running operation system
 		 *         from the properties.
 		 * @since 1.8

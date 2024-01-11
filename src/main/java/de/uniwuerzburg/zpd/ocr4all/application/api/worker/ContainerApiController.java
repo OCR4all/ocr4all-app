@@ -1,7 +1,7 @@
 /**
  * File:     ContainerApiController.java
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * 
+ *
  * Author:   Herbert Baier
  * Date:     24.11.2023
  */
@@ -64,7 +64,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Creates a container repository controller for the api.
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param service              The container service.
@@ -79,7 +79,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Returns the container in the response body.
-	 * 
+	 *
 	 * @param id The container id.
 	 * @return The container in the response body.
 	 * @since 1.8
@@ -107,7 +107,7 @@ public class ContainerApiController extends CoreApiController {
 	/**
 	 * Returns the list of containers sorted by name with rights in the response
 	 * body.
-	 * 
+	 *
 	 * @return The list of containers sorted by name with rights in the response
 	 *         body.
 	 * @since 1.8
@@ -133,7 +133,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Creates the container and returns it in the response body.
-	 * 
+	 *
 	 * @param request The container request.
 	 * @return The container in the response body.
 	 * @since 1.8
@@ -165,7 +165,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Authorizes the session user for special security operations.
-	 * 
+	 *
 	 * @param id The container id.
 	 * @return The authorized container.
 	 * @throws ResponseStatusException Throw with http status:
@@ -191,7 +191,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Removes the container.
-	 * 
+	 *
 	 * @param id       The container id.
 	 * @param response The HTTP-specific functionality in sending a response to the
 	 *                 client.
@@ -224,7 +224,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Updates the container information and returns it in the response body.
-	 * 
+	 *
 	 * @param id      The container id.
 	 * @param request The container request.
 	 * @return The container in the response body.
@@ -258,7 +258,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Returns the container security in the response body.
-	 * 
+	 *
 	 * @param id The container id.
 	 * @return The container security in the response body.
 	 * @since 1.8
@@ -276,7 +276,7 @@ public class ContainerApiController extends CoreApiController {
 
 	/**
 	 * Updates the container security and returns it in the response body.
-	 * 
+	 *
 	 * @param id      The container id.
 	 * @param request The container security request.
 	 * @return The container security in the response body.
@@ -453,8 +453,8 @@ public class ContainerApiController extends CoreApiController {
 
 		/**
 		 * Creates a container response for the api without security.
-		 * 
-		 * @param configuration The container configuration.
+		 *
+		 * @param container The container configuration.
 		 * @since 1.8
 		 */
 		public ContainerResponse(ContainerService.Container container) {
@@ -593,7 +593,7 @@ public class ContainerApiController extends CoreApiController {
 
 		/**
 		 * Creates a container with right response for the api without security.
-		 * 
+		 *
 		 * @param container The container.
 		 * @since 1.8
 		 */
@@ -646,7 +646,7 @@ public class ContainerApiController extends CoreApiController {
 
 		/**
 		 * Creates a container with right response for the api without security.
-		 * 
+		 *
 		 * @param container The container.
 		 * @since 1.8
 		 */

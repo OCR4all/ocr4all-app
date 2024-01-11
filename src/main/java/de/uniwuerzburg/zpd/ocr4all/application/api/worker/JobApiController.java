@@ -1,7 +1,7 @@
 /**
  * File:     JobApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     18.02.2022
  */
@@ -103,7 +103,18 @@ public class JobApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public enum ReschedulerAction {
-		begin, end, swap
+		/**
+		 * The begin rescheduler action.
+		 */
+		begin,
+		/**
+		 * The end rescheduler action.
+		 */
+		end,
+		/**
+		 * The swap rescheduler action.
+		 */
+		swap
 	}
 
 	/**
@@ -129,7 +140,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Creates a folio controller for the api.
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param service              The scheduler service.
@@ -146,7 +157,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Returns the scheduler information in the response body.
-	 * 
+	 *
 	 * @return The scheduler information in the response body.
 	 * @since 1.8
 	 */
@@ -168,7 +179,7 @@ public class JobApiController extends CoreApiController {
 	/**
 	 * Performs the scheduler action and returns its information in the response
 	 * body.
-	 * 
+	 *
 	 * @param action The action to perform. Available actions: run, pause, expunge.
 	 * @return The scheduler information in the response body.
 	 * @since 1.8
@@ -219,7 +230,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Returns the job.
-	 * 
+	 *
 	 * @param id The job id.
 	 * @return The job.
 	 * @throws ResponseStatusException Throws if the user is not authorized.
@@ -244,7 +255,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Removes the job and returns it in the response body.
-	 * 
+	 *
 	 * @param id The job id.
 	 * @return The removed job in the response body.
 	 * @since 1.8
@@ -273,7 +284,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Returns the job in the response body.
-	 * 
+	 *
 	 * @param id The job id.
 	 * @return The job in the response body.
 	 * @since 1.8
@@ -299,7 +310,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Returns the overview of the jobs of given type in the response body.
-	 * 
+	 *
 	 * @param type The overview type. Available types: project, domain,
 	 *             administration.
 	 * @param id   The id of the project for the associated jobs. This parameter is
@@ -364,7 +375,7 @@ public class JobApiController extends CoreApiController {
 	/**
 	 * Secures the job task. Users with coordinator security permission are
 	 * authorized immediately.
-	 * 
+	 *
 	 * @param schedulerSnapshotType The scheduler snapshot type. It is required for
 	 *                              users without coordinator security permission
 	 *                              and is either project or domain.
@@ -420,7 +431,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Cancels the job.
-	 * 
+	 *
 	 * @param jobId    The job id.
 	 * @param type     The snapshot type. It is required for users without
 	 *                 coordinator security permission and is either project or
@@ -460,7 +471,7 @@ public class JobApiController extends CoreApiController {
 
 	/**
 	 * Reschedules the job.
-	 * 
+	 *
 	 * @param action   The action to perform. Available actions are: begin, end,
 	 *                 swap.
 	 * @param jobId    The job id.
@@ -579,7 +590,7 @@ public class JobApiController extends CoreApiController {
 
 		/**
 		 * Creates a scheduler information response for the api.
-		 * 
+		 *
 		 * @param service The scheduler service.
 		 * @since 1.8
 		 */
@@ -683,7 +694,7 @@ public class JobApiController extends CoreApiController {
 
 		/**
 		 * Creates a job overview response for the api.
-		 * 
+		 *
 		 * @param service  The scheduler service.
 		 * @param clusters The clusters to select the jobs under control of the
 		 *                 scheduler. If null, all jobs are selected.
@@ -701,7 +712,7 @@ public class JobApiController extends CoreApiController {
 
 		/**
 		 * Returns the job responses for given jobs.
-		 * 
+		 *
 		 * @param jobs The jobs.
 		 * @return The job responses.
 		 * @since 1.8

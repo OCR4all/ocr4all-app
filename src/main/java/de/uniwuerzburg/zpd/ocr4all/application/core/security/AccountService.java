@@ -1,7 +1,7 @@
 /**
  * File:     AccountService.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.security
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     03.11.2020
  */
@@ -66,7 +66,18 @@ public class AccountService extends CoreService implements UserDetailsService {
 	 * @since 1.8
 	 */
 	public enum Role {
-		ADMIN, COORD, USER;
+		/**
+		 * The admin role.
+		 */
+		ADMIN,
+		/**
+		 * The coord role.
+		 */
+		COORD,
+		/**
+		 * The user role.
+		 */
+		USER;
 
 		/**
 		 * The role prefix.
@@ -75,7 +86,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 		/**
 		 * Returns the granted authority representation of the role.
-		 * 
+		 *
 		 * @return The granted authority representation of the role.
 		 * @since 1.8
 		 */
@@ -85,7 +96,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 		/**
 		 * Returns true if the given granted authority is represented by the role.
-		 * 
+		 *
 		 * @param grantedAuthority The granted authority.
 		 * @return True if the given granted authority is represented by the role.
 		 * @since 1.8
@@ -124,7 +135,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Creates an account service.
-	 * 
+	 *
 	 * @param configurationService The configuration service.
 	 * @since 1.8
 	 */
@@ -167,7 +178,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Creates the default administrator user if not available.
-	 * 
+	 *
 	 * @param login    The login.
 	 * @param password The password.
 	 * @throws IllegalArgumentException Thrown if the login is null or empty.
@@ -220,7 +231,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the service to encode the passwords.
-	 * 
+	 *
 	 * @return The service to encode the passwords.
 	 * @since 1.8
 	 */
@@ -231,7 +242,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the service to encode the passwords.
-	 * 
+	 *
 	 * @return The service to encode the passwords.
 	 * @since 1.8
 	 */
@@ -241,7 +252,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the user authentication.
-	 * 
+	 *
 	 * @return The user authentication. Null if no authentication information is
 	 *         available.
 	 * @since 1.8
@@ -252,7 +263,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the user authentication name.
-	 * 
+	 *
 	 * @return The user authentication name. Null if anonymous, this means, no user
 	 *         is authenticated.
 	 * @since 1.8
@@ -269,7 +280,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 	/**
 	 * Adds the configuration file to the monitoring and file filters if it is
 	 * available.
-	 * 
+	 *
 	 * @param monitoring The monitoring buffer.
 	 * @param files      The file filters.
 	 * @param file       The file to add.
@@ -287,7 +298,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Starts the application file monitor.
-	 * 
+	 *
 	 * @param directory The directory to observe.
 	 * @since 1.8
 	 */
@@ -310,7 +321,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 			observer.addListener(new FileAlterationListenerAdaptor() {
 				/*
 				 * (non-Javadoc)
-				 * 
+				 *
 				 * @see
 				 * org.apache.commons.io.monitor.FileAlterationListenerAdaptor#onFileCreate(java
 				 * .io.File)
@@ -324,7 +335,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 				/*
 				 * (non-Javadoc)
-				 * 
+				 *
 				 * @see
 				 * org.apache.commons.io.monitor.FileAlterationListenerAdaptor#onFileDelete(java
 				 * .io.File)
@@ -351,7 +362,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 				/*
 				 * (non-Javadoc)
-				 * 
+				 *
 				 * @see
 				 * org.apache.commons.io.monitor.FileAlterationListenerAdaptor#onFileChange(java
 				 * .io.File)
@@ -390,7 +401,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Loads the users.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	private synchronized void loadUsers() {
@@ -431,7 +442,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Loads the passwords.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	private synchronized void loadPasswords() {
@@ -481,7 +492,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Loads the groups.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	private synchronized void loadGroups() {
@@ -554,7 +565,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the users sorted by login.
-	 * 
+	 *
 	 * @return The users sorted by login.
 	 * @since 1.8
 	 */
@@ -568,7 +579,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns true if the user is available.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return True if the user is available.
 	 * @since 1.8
@@ -581,7 +592,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the user.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return The user. Null if unknown.
 	 * @since 1.8
@@ -594,7 +605,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns true if the password is available.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return True if the password is available.
 	 * @since 1.8
@@ -607,7 +618,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the groups sorted by label.
-	 * 
+	 *
 	 * @return The groups sorted by label.
 	 * @since 1.8
 	 */
@@ -621,7 +632,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns true if the group is available.
-	 * 
+	 *
 	 * @param label The group label.
 	 * @return True if the group is available.
 	 * @since 1.8
@@ -634,7 +645,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the group.
-	 * 
+	 *
 	 * @param label The group label.
 	 * @return The group. Null if unknown.
 	 * @since 1.8
@@ -647,7 +658,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns the active groups for given user.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return The active groups.
 	 * @since 1.8
@@ -658,7 +669,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns true if the user belongs to the administrator groups.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return True if the user belongs to the administrator groups.
 	 * @since 1.8
@@ -676,7 +687,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Returns true if the user belongs to the coordinator groups.
-	 * 
+	 *
 	 * @param login The user login.
 	 * @return True if the user belongs to the coordinator groups.
 	 * @since 1.8
@@ -694,7 +705,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Persists the item in the file. If the item is available, then updates it.
-	 * 
+	 *
 	 * @param label    The file label.
 	 * @param file     The file to be updated. If it is not available, then it will
 	 *                 be created with the item.
@@ -754,7 +765,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Persists the user.
-	 * 
+	 *
 	 * @param user The user to persist.
 	 * @return True iff the user could be persisted.
 	 * @since 1.8
@@ -772,7 +783,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Persists the password.
-	 * 
+	 *
 	 * @param password The password to persist.
 	 * @return True iff the password could be persisted.
 	 * @since 1.8
@@ -791,7 +802,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Persists the group.
-	 * 
+	 *
 	 * @param group The group to persist.
 	 * @return True iff the group could be persisted.
 	 * @since 1.8
@@ -809,7 +820,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Reset the groups of the given user.
-	 * 
+	 *
 	 * @param user The user.
 	 * @return True if updated.
 	 * @since 1.8
@@ -820,7 +831,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Set the groups of the given user.
-	 * 
+	 *
 	 * @param user   The user.
 	 * @param groups The group labels to set. If null or empty, remove all groups
 	 *               from user.
@@ -905,7 +916,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Removes the item from the file if available.
-	 * 
+	 *
 	 * @param label    The file label.
 	 * @param file     The file.
 	 * @param entityID The entity ID to be removed. This is the term before the
@@ -955,7 +966,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Removes the user.
-	 * 
+	 *
 	 * @param user The user to remove.
 	 * @return True iff the user could be removed.
 	 * @since 1.8
@@ -972,7 +983,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Removes the password.
-	 * 
+	 *
 	 * @param password The password to remove.
 	 * @return True iff the password could be removed.
 	 * @since 1.8
@@ -989,7 +1000,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/**
 	 * Removes the group.
-	 * 
+	 *
 	 * @param group The group to remove.
 	 * @return True iff the group could be removed.
 	 * @since 1.8
@@ -1006,7 +1017,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.springframework.security.core.userdetails.UserDetailsService#
 	 * loadUserByUsername(java.lang.String)
 	 */
@@ -1037,7 +1048,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see org.springframework.security.core.userdetails.UserDetails#isEnabled()
 			 */
 			@Override
@@ -1047,7 +1058,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see org.springframework.security.core.userdetails.UserDetails#
 			 * isCredentialsNonExpired()
 			 */
@@ -1058,7 +1069,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see
 			 * org.springframework.security.core.userdetails.UserDetails#isAccountNonLocked(
 			 * )
@@ -1070,7 +1081,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see
 			 * org.springframework.security.core.userdetails.UserDetails#isAccountNonExpired
 			 * ()
@@ -1082,7 +1093,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see org.springframework.security.core.userdetails.UserDetails#getUsername()
 			 */
 			@Override
@@ -1092,7 +1103,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see org.springframework.security.core.userdetails.UserDetails#getPassword()
 			 */
 			@Override
@@ -1102,7 +1113,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see
 			 * org.springframework.security.core.userdetails.UserDetails#getAuthorities()
 			 */
@@ -1133,7 +1144,7 @@ public class AccountService extends CoreService implements UserDetailsService {
 	public interface Credential {
 		/**
 		 * Returns the user name.
-		 * 
+		 *
 		 * @return The user name.
 		 * @since 1.8
 		 */

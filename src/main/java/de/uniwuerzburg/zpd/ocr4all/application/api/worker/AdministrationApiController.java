@@ -1,7 +1,7 @@
 /**
  * File:     AdministrationApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     28.02.2022
  */
@@ -136,7 +136,7 @@ public class AdministrationApiController extends CoreApiController {
 
 	/**
 	 * Creates an administration controller for the api.
-	 * 
+	 *
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
 	 * @param importService         The import service.
@@ -191,7 +191,7 @@ public class AdministrationApiController extends CoreApiController {
 
 	/**
 	 * Returns the administration overview in the response body.
-	 * 
+	 *
 	 * @return The administration overview in the response body.
 	 * @since 1.8
 	 */
@@ -213,7 +213,7 @@ public class AdministrationApiController extends CoreApiController {
 	/**
 	 * Returns the administration service overview for the providers in the response
 	 * body.
-	 * 
+	 *
 	 * @param lang The language. If null, then use the application preferred locale.
 	 * @return The administration service overview for the providers in the response
 	 *         body.
@@ -239,7 +239,7 @@ public class AdministrationApiController extends CoreApiController {
 	 * Configures the service provider. Allowed actions are: eager, lazy, enable,
 	 * disable, start, restart, stop, thread_pool_set and thread_pool_reset. The
 	 * action thread_pool_set requires name and size.
-	 * 
+	 *
 	 * @param request The provider request.
 	 * @return The provider journal entry in the response body.
 	 * @since 1.8
@@ -384,7 +384,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Default constructor for an administration response for the api.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		public AdministrationResponse() {
@@ -625,7 +625,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for an application response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public ApplicationResponse() {
@@ -853,7 +853,7 @@ public class AdministrationApiController extends CoreApiController {
 
 				/**
 				 * Creates a thread pool size.
-				 * 
+				 *
 				 * @param task     The task pool size.
 				 * @param workflow The workflow pool size.
 				 * @since 1.8
@@ -935,7 +935,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for an application secured response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public ApplicationSecuredResponse() {
@@ -1026,7 +1026,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for a system response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public SystemResponse() {
@@ -1138,7 +1138,7 @@ public class AdministrationApiController extends CoreApiController {
 
 				/**
 				 * Creates a command response for the api.
-				 * 
+				 *
 				 * @param command The command.
 				 * @since 1.8
 				 */
@@ -1255,7 +1255,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for a workspace response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public WorkspaceResponse() {
@@ -1388,7 +1388,7 @@ public class AdministrationApiController extends CoreApiController {
 
 				/**
 				 * Creates a thread pool.
-				 * 
+				 *
 				 * @param name The thread name.
 				 * @param size The core pool size.
 				 * @since 1.8
@@ -1475,7 +1475,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for a workspace secured response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public WorkspaceSecuredResponse() {
@@ -1569,7 +1569,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for an exchange response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public ExchangeResponse() {
@@ -1619,7 +1619,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for an exchange response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public OptResponse() {
@@ -1674,7 +1674,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for a temporary response for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public TemporaryResponse() {
@@ -1747,7 +1747,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Creates a service provider property response for the api.
-			 * 
+			 *
 			 * @param property The property.
 			 * @since 1.8
 			 */
@@ -1881,7 +1881,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Default constructor for a provider container response for the api.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		public ProviderContainerResponse() {
@@ -1890,7 +1890,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Creates a provider container response for the api.
-		 * 
+		 *
 		 * @param locale The locale.
 		 * @since 1.8
 		 */
@@ -2186,7 +2186,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Default constructor for a provider responses for the api.
-			 * 
+			 *
 			 * @since 1.8
 			 */
 			public ProviderResponse() {
@@ -2195,7 +2195,7 @@ public class AdministrationApiController extends CoreApiController {
 
 			/**
 			 * Creates a provider responses for the api.
-			 * 
+			 *
 			 * @param locale   The locale.
 			 * @param provider The provider
 			 * @since 1.8
@@ -2590,7 +2590,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Default constructor for a provider journal entry responses for the api.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		public JournalEntryResponse() {
@@ -2599,7 +2599,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Creates a provider journal entry responses for the api.
-		 * 
+		 *
 		 * @param entry The journal entry.
 		 * @since 1.8
 		 */
@@ -2779,7 +2779,42 @@ public class AdministrationApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public enum Action {
-			eager, lazy, enable, disable, start, restart, stop, thread_pool_set, thread_pool_reset
+			/**
+			 * Eager action
+			 */
+			eager,
+			/**
+			 * Lazy action
+			 */
+			lazy,
+			/**
+			 * Enable action
+			 */
+			enable,
+			/**
+			 * Disable action
+			 */
+			disable,
+			/**
+			 * Start action
+			 */
+			start,
+			/**
+			 * Restart action
+			 */
+			restart,
+			/**
+			 * Stop action
+			 */
+			stop,
+			/**
+			 * Thread Pool Set action
+			 */
+			thread_pool_set,
+			/**
+			 * Thread Pool Reset action
+			 */
+			thread_pool_reset
 		}
 
 		/**
@@ -2806,7 +2841,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		/**
 		 * Default constructor for an authentication request.
-		 * 
+		 *
 		 * @since 1.8
 		 */
 		public ProviderRequest() {

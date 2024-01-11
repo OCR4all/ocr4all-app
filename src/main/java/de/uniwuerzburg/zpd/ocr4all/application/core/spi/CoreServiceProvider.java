@@ -1,7 +1,7 @@
 /**
  * File:     CoreServiceProvider.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.spi
- * 
+ *
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * Date:     19.11.2020
  */
@@ -40,7 +40,14 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @since 1.8
 	 */
 	public enum CoreData {
-		project, sandbox
+		/**
+		 * The project core data.
+		 */
+		project,
+		/**
+		 * The sandbox core data.
+		 */
+		sandbox
 	}
 
 	/**
@@ -55,7 +62,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Creates a core service provider.
-	 * 
+	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param service              The interface or abstract class representing the
@@ -144,7 +151,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Initializes the service provider.
-	 * 
+	 *
 	 * @param provider                        The provider.
 	 * @param id                              The provider id.
 	 * @param lazyInitializedServiceProviders The lazy initialized service
@@ -170,7 +177,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Returns the core data.
-	 * 
+	 *
 	 * @return The core data.
 	 * @since 1.8
 	 */
@@ -196,7 +203,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Returns true if there are registered active providers.
-	 * 
+	 *
 	 * @return True if there are registered active providers.
 	 * @since 1.8
 	 */
@@ -210,7 +217,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Returns the registered active providers sorted by name.
-	 * 
+	 *
 	 * @return The registered active providers sorted by name.
 	 * @since 1.8
 	 */
@@ -226,7 +233,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 	/**
 	 * Returns the registered providers sorted by name.
-	 * 
+	 *
 	 * @return The registered providers sorted by name.
 	 * @since 1.8
 	 */
@@ -255,7 +262,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 		/**
 		 * Creates a process service provider.
-		 * 
+		 *
 		 * @param id              The id.
 		 * @param serviceProvider The service provider.
 		 * @since 1.8
