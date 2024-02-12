@@ -7,7 +7,9 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -66,6 +70,11 @@ public class SandboxApiController extends CoreApiController {
 	 * The mets request mapping.
 	 */
 	public static final String metsRequestMapping = "/mets";
+
+	/**
+	 * The file to be ignored in the zip export.
+	 */
+	public static final String zipIgnoreFile = "ocrd.log";
 
 	/**
 	 * The sandbox service.
@@ -410,6 +419,54 @@ public class SandboxApiController extends CoreApiController {
 			log(ex);
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+		}
+	}
+
+	/**
+	 * Zips the files in the sandbox. The metadata is not included.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The sandbox id. This is the folder name.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "zips the files in the sandbox")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Zip Leaf Track Snapshot"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(zipRequestMapping + projectPathVariable)
+	public void zip(@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id,
+			HttpServletResponse response) throws IOException {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, id);
+		try {
+			StringBuffer buffer = new StringBuffer();
+			for (Folio folio : authorization.project.getFolios())
+				buffer.append(folio.getId() + "\t" + folio.getName() + System.lineSeparator());
+
+			Path sandbox = authorization.sandbox.getSnapshot().getConfiguration().getFolder();
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + ".zip\"");
+
+			OCR4allUtils.zip(sandbox, true, response.getOutputStream(),
+					entry -> !entry.isHidden() && (entry.isDirectory() || !zipIgnoreFile.equals(entry.getName())),
+					new OCR4allUtils.ZipMetadata("filename-mapping.tsv",
+							new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8))));
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
 

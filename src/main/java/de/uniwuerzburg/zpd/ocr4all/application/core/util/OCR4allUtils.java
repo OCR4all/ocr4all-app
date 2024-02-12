@@ -293,36 +293,61 @@ public class OCR4allUtils {
 	/**
 	 * Zips the entry and writes it to the output stream.
 	 * 
-	 * @param entry        The entry to zip if non null.
-	 * @param outputStream The output stream for writing the zipped entry.
-	 * @param filter       The filter for the entries to be compressed. Null if no
-	 *                     filter is used..
+	 * @param entry               The entry to zip if non null.
+	 * @param isSkipRootDirectory True if skip the root directory.
+	 * @param outputStream        The output stream for writing the zipped entry.
+	 * @param filter              The filter for the entries to be compressed. Null
+	 *                            if no filter is used..
 	 * @throws IOException Throws if the entry can not be zipped.
 	 * @since 17
 	 */
-	public static void zip(Path entry, OutputStream outputStream, ZipFilter filter) throws IOException {
-		zip(entry, outputStream, filter, null);
+	public static void zip(Path entry, boolean isSkipRootDirectory, OutputStream outputStream) throws IOException {
+		zip(entry, isSkipRootDirectory, outputStream, null);
 	}
 
 	/**
 	 * Zips the entry and writes it to the output stream.
 	 * 
-	 * @param entry        The entry to zip if non null.
-	 * @param outputStream The output stream for writing the zipped entry.
-	 * @param filter       The filter for the entries to be compressed. Null if no
-	 *                     filter is used..
+	 * @param entry               The entry to zip if non null.
+	 * @param isSkipRootDirectory True if skip the root directory.
+	 * @param outputStream        The output stream for writing the zipped entry.
+	 * @param filter              The filter for the entries to be compressed. Null
+	 *                            if no filter is used..
 	 * @throws IOException Throws if the entry can not be zipped.
 	 * @since 17
 	 */
-	public static void zip(Path entry, OutputStream outputStream, ZipFilter filter, ZipMetadata metadata)
+	public static void zip(Path entry, boolean isSkipRootDirectory, OutputStream outputStream, ZipFilter filter)
 			throws IOException {
+		zip(entry, isSkipRootDirectory, outputStream, filter, null);
+	}
+
+	/**
+	 * Zips the entry and writes it to the output stream.
+	 * 
+	 * @param entry               The entry to zip if non null.
+	 * @param isSkipRootDirectory True if skip the root directory.
+	 * @param outputStream        The output stream for writing the zipped entry.
+	 * @param filter              The filter for the entries to be compressed. Null
+	 *                            if no filter is used.
+	 * @param metadata            The metadata to be compressed in a zipped file.
+	 *                            Null if no metadata is required.
+	 * @throws IOException Throws if the entry can not be zipped.
+	 * @since 17
+	 */
+	public static void zip(Path entry, boolean isSkipRootDirectory, OutputStream outputStream, ZipFilter filter,
+			ZipMetadata metadata) throws IOException {
 		if (entry != null)
 			try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);) {
 				if (metadata != null)
 					for (String fileName : metadata.getFileNames())
 						zipEntry(metadata.getInputStream(fileName), fileName, zipOutputStream);
 
-				zipEntry(entry.toFile(), entry.getFileName().toString(), zipOutputStream, filter);
+				File file = entry.toFile();
+				if (isSkipRootDirectory && file.isDirectory())
+					for (File child : file.listFiles())
+						zipEntry(child, child.getName(), zipOutputStream, filter);
+				else
+					zipEntry(file, entry.getFileName().toString(), zipOutputStream, filter);
 
 				outputStream.flush();
 			}
