@@ -18,6 +18,9 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -185,17 +188,141 @@ public class OCR4allUtils {
 	}
 
 	/**
+	 * Defines the metadata to be compressed in a zipped file.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class ZipMetadata {
+		/**
+		 * The metadata. The key is the file name, which must not contain the character
+		 * "/". The value is an input stream that is not null.
+		 */
+		private final Hashtable<String, InputStream> metadata = new Hashtable<>();
+
+		/**
+		 * Default constructor for metadata to be compressed in a zipped file.
+		 * 
+		 * @since 17
+		 */
+		public ZipMetadata() {
+			super();
+		}
+
+		/**
+		 * Creates metadata to be compressed in a zipped file.
+		 * 
+		 * @param fileName The non blank file name, which must not contain the character
+		 *                 "/".
+		 * @param data     The input stream that is not null.
+		 * @throws IllegalArgumentException Throws if the the arguments are not
+		 *                                  consistent.
+		 * @since 17
+		 */
+		public ZipMetadata(String fileName, InputStream data) throws IllegalArgumentException {
+			super();
+
+			if (!add(fileName, data))
+				throw new IllegalArgumentException("ZipMetadata: the arguments are not consistent.");
+		}
+
+		/**
+		 * Adds the metadata.
+		 * 
+		 * @param fileName The non blank file name, which must not contain the character
+		 *                 "/".
+		 * @param data     The input stream that is not null.
+		 * @return True if the metadata is consistent.
+		 * @since 17
+		 */
+		public boolean add(String fileName, InputStream data) {
+			if (fileName != null && !fileName.isBlank() && !fileName.contains("/") && data != null) {
+				metadata.put(fileName.trim(), data);
+
+				return true;
+			} else
+				return false;
+		}
+
+		/**
+		 * Return the sorted file names.
+		 * 
+		 * @return The sorted file names.
+		 * @since 17
+		 */
+		List<String> getFileNames() {
+			List<String> fileNames = new ArrayList<>(metadata.keySet());
+
+			Collections.sort(fileNames, String.CASE_INSENSITIVE_ORDER);
+
+			return fileNames;
+		}
+
+		/**
+		 * Returns the input stream of given file name.
+		 * 
+		 * @param fileName The file name.
+		 * @return Null if unknown.
+		 * @since 17
+		 */
+		InputStream getInputStream(String fileName) {
+			return fileName == null ? null : metadata.get(fileName);
+		}
+	}
+
+	/**
+	 * Defines functional interfaces to filter zip entries.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	@FunctionalInterface
+	public interface ZipFilter {
+		/**
+		 * Returns true if the entry is to be compressed.
+		 * 
+		 * @param entry The entry to compress.
+		 * @return True if the entry is to be compressed.
+		 * @since 17
+		 */
+		public boolean accept(File entry);
+	}
+
+	/**
 	 * Zips the entry and writes it to the output stream.
 	 * 
 	 * @param entry        The entry to zip if non null.
 	 * @param outputStream The output stream for writing the zipped entry.
+	 * @param filter       The filter for the entries to be compressed. Null if no
+	 *                     filter is used..
 	 * @throws IOException Throws if the entry can not be zipped.
-	 * @since 1.8
+	 * @since 17
 	 */
-	public static void zip(Path entry, OutputStream outputStream) throws IOException {
+	public static void zip(Path entry, OutputStream outputStream, ZipFilter filter) throws IOException {
+		zip(entry, outputStream, filter, null);
+	}
+
+	/**
+	 * Zips the entry and writes it to the output stream.
+	 * 
+	 * @param entry        The entry to zip if non null.
+	 * @param outputStream The output stream for writing the zipped entry.
+	 * @param filter       The filter for the entries to be compressed. Null if no
+	 *                     filter is used..
+	 * @throws IOException Throws if the entry can not be zipped.
+	 * @since 17
+	 */
+	public static void zip(Path entry, OutputStream outputStream, ZipFilter filter, ZipMetadata metadata)
+			throws IOException {
 		if (entry != null)
 			try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);) {
-				zipEntry(entry.toFile(), entry.getFileName().toString(), zipOutputStream);
+				if (metadata != null)
+					for (String fileName : metadata.getFileNames())
+						zipEntry(metadata.getInputStream(fileName), fileName, zipOutputStream);
+
+				zipEntry(entry.toFile(), entry.getFileName().toString(), zipOutputStream, filter);
 
 				outputStream.flush();
 			}
@@ -204,20 +331,40 @@ public class OCR4allUtils {
 	/**
 	 * Zips the entry.
 	 * 
+	 * @param inputStream     The entry input stream.
+	 * @param fileName        The file name.
+	 * @param zipOutputStream The output stream filter for writing files in the ZIP.
+	 * @throws IOException Throws if the entry can not be zipped.
+	 * @since 17
+	 */
+	private static void zipEntry(InputStream inputStream, String fileName, ZipOutputStream zipOutputStream)
+			throws IOException {
+		zipOutputStream.putNextEntry(new ZipEntry(fileName));
+
+		inputStream.transferTo(zipOutputStream);
+
+		zipOutputStream.closeEntry();
+	}
+
+	/**
+	 * Zips the entry.
+	 * 
 	 * @param file            The source file.
 	 * @param fileName        The source file name.
 	 * @param zipOutputStream The output stream filter for writing files in the ZIP.
+	 * @param filter          The filter for the entries to be compressed.
 	 * @throws IOException Throws if the entry can not be zipped.
-	 * @since 1.8
+	 * @since 17
 	 */
-	private static void zipEntry(File file, String fileName, ZipOutputStream zipOutputStream) throws IOException {
-		if (!file.isHidden()) {
+	private static void zipEntry(File file, String fileName, ZipOutputStream zipOutputStream, ZipFilter filter)
+			throws IOException {
+		if (filter == null || filter.accept(file)) {
 			if (file.isDirectory()) {
 				zipOutputStream.putNextEntry(new ZipEntry(fileName + (fileName.endsWith("/") ? "" : "/")));
 				zipOutputStream.closeEntry();
 
 				for (File child : file.listFiles())
-					zipEntry(child, fileName + "/" + child.getName(), zipOutputStream);
+					zipEntry(child, fileName + "/" + child.getName(), zipOutputStream, filter);
 			} else {
 				zipOutputStream.putNextEntry(new ZipEntry(fileName));
 
