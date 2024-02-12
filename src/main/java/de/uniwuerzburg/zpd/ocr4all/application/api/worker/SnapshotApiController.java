@@ -74,11 +74,6 @@ public class SnapshotApiController extends CoreApiController {
 	public static final String pathRequestMapping = "/path";
 
 	/**
-	 * The sandbox request mapping.
-	 */
-	public static final String sandboxRequestMapping = "/sandbox";
-
-	/**
 	 * Creates a snapshot controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
