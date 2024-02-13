@@ -7,9 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +35,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -446,10 +443,6 @@ public class SandboxApiController extends CoreApiController {
 			HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, id);
 		try {
-			StringBuffer buffer = new StringBuffer();
-			for (Folio folio : authorization.project.getFolios())
-				buffer.append(folio.getId() + "\t" + folio.getName() + System.lineSeparator());
-
 			Path sandbox = authorization.sandbox.getSnapshot().getConfiguration().getFolder();
 
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
@@ -457,8 +450,7 @@ public class SandboxApiController extends CoreApiController {
 
 			OCR4allUtils.zip(sandbox, true, response.getOutputStream(),
 					entry -> !entry.isHidden() && (entry.isDirectory() || !zipIgnoreFile.equals(entry.getName())),
-					new OCR4allUtils.ZipMetadata("filename-mapping.tsv",
-							new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8))));
+					getZipMetadataFilenameMappingTSV(authorization.project));
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		} catch (ResponseStatusException ex) {

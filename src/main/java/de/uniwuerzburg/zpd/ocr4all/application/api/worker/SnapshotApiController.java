@@ -500,7 +500,8 @@ public class SnapshotApiController extends CoreApiController {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
 					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
 
-			OCR4allUtils.zip(sandbox, true, response.getOutputStream());
+			OCR4allUtils.zip(sandbox, true, response.getOutputStream(), null,
+					getZipMetadataFilenameMappingTSV(authorization.project));
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		} catch (ResponseStatusException ex) {

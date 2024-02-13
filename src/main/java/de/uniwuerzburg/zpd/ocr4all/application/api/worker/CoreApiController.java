@@ -7,12 +7,13 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +25,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Defines core controllers for the api.
@@ -277,6 +281,12 @@ public class CoreApiController {
 	 * The type path variable.
 	 */
 	public static final String typePathVariable = "/{type}";
+
+	/**
+	 * The name of the file containing name mappings in a tab-separated values
+	 * format.
+	 */
+	public static final String filenameMappingTSV = "filename-mapping.tsv";
 
 	/**
 	 * Defines project rights.
@@ -549,6 +559,25 @@ public class CoreApiController {
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
+	}
+
+	/**
+	 * Returns metadata to be compressed in a zipped file containing the file name
+	 * mapping of the project folios in a tab-separated values format.
+	 * 
+	 * @param project The project.
+	 * @return The metadata to be compressed in a zipped file.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 17
+	 */
+	protected static OCR4allUtils.ZipMetadata getZipMetadataFilenameMappingTSV(Project project) throws IOException {
+		StringBuffer buffer = new StringBuffer();
+
+		for (Folio folio : project.getFolios())
+			buffer.append(folio.getId() + "\t" + folio.getName() + System.lineSeparator());
+
+		return new OCR4allUtils.ZipMetadata(filenameMappingTSV,
+				new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8)));
 	}
 
 	/**
