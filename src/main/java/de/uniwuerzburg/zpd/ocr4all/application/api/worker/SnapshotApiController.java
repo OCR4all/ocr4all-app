@@ -74,11 +74,6 @@ public class SnapshotApiController extends CoreApiController {
 	public static final String pathRequestMapping = "/path";
 
 	/**
-	 * The sandbox request mapping.
-	 */
-	public static final String sandboxRequestMapping = "/sandbox";
-
-	/**
 	 * Creates a snapshot controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
@@ -405,8 +400,8 @@ public class SnapshotApiController extends CoreApiController {
 			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(sandboxRequestMapping + fileRequestMapping + projectPathVariable + sandboxPathVariable)
-	public ResponseEntity<SandboxResponse> sandboxFileList(
+	@PostMapping(fileRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<SandboxResponse> fileList(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request) {
@@ -443,8 +438,8 @@ public class SnapshotApiController extends CoreApiController {
 			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(sandboxRequestMapping + downloadRequestMapping + projectPathVariable + sandboxPathVariable)
-	public void sandboxDownload(
+	@PostMapping(downloadRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void download(
 			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SandboxFileRequest request, HttpServletResponse response) throws IOException {
@@ -493,9 +488,8 @@ public class SnapshotApiController extends CoreApiController {
 			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(sandboxRequestMapping + zipRequestMapping + projectPathVariable + sandboxPathVariable)
-	public void sandboxZip(
-			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+	@PostMapping(zipRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void zip(@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
 			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
 			@RequestBody @Valid SnapshotRequest request, HttpServletResponse response) throws IOException {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
@@ -503,9 +497,11 @@ public class SnapshotApiController extends CoreApiController {
 			Path sandbox = authorization.sandbox.getSnapshot(request.getTrack()).getConfiguration().getSandbox()
 					.getFolder();
 
-			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
-					"attachment; filename=\"" + sandbox.getFileName().toString() + ".zip\"");
-			OCR4allUtils.zip(sandbox, response.getOutputStream());
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
+
+			OCR4allUtils.zip(sandbox, true, response.getOutputStream(), null,
+					getZipMetadataFilenameMappingTSV(authorization.project));
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		} catch (ResponseStatusException ex) {
