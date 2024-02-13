@@ -126,7 +126,14 @@ public class SelectResponse extends FieldResponse<Object, SelectField> {
 		 * @since 1.8
 		 */
 		protected enum Type {
-			association, option
+			/**
+			 * The association type.
+			 */
+			association, 
+			/**
+			 * The option type.
+			 */
+			option
 		}
 
 		/**

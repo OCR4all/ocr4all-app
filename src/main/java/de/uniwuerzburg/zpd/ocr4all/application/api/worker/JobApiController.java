@@ -92,7 +92,18 @@ public class JobApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public enum SchedulerAction {
-		run, pause, expunge
+		/**
+		 * The run scheduler action.
+		 */
+		run,
+		/**
+		 * The pause scheduler action.
+		 */
+		pause,
+		/**
+		 * The expunge scheduler action.
+		 */
+		expunge
 	}
 
 	/**
@@ -125,7 +136,18 @@ public class JobApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public enum SchedulerSnapshotType {
-		project, domain, administration
+		/**
+		 * The project scheduler snapshot type.
+		 */
+		project,
+		/**
+		 * The domain scheduler snapshot type.
+		 */
+		domain,
+		/**
+		 * The administration scheduler snapshot type.
+		 */
+		administration
 	}
 
 	/**
@@ -570,7 +592,14 @@ public class JobApiController extends CoreApiController {
 		 * @since 1.8
 		 */
 		public enum State {
-			running, paused
+			/**
+			 * The running state.
+			 */
+			running,
+			/**
+			 * The running state.
+			 */
+			paused
 		}
 
 		/**

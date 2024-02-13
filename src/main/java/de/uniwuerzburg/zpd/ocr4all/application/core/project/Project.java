@@ -62,7 +62,22 @@ public class Project implements Job.Cluster {
 	 * @since 1.8
 	 */
 	public enum Right {
-		read('r'), write('w'), execute('x'), special('s');
+		/**
+		 * The read right.
+		 */
+		read('r'),
+		/**
+		 * The write right.
+		 */
+		write('w'),
+		/**
+		 * The execute right.
+		 */
+		execute('x'),
+		/**
+		 * The special right.
+		 */
+		special('s');
 
 		/**
 		 * The label.

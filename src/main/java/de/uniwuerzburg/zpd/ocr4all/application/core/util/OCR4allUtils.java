@@ -296,7 +296,6 @@ public class OCR4allUtils {
 	 * @param entry               The entry to zip if non null.
 	 * @param isSkipRootDirectory True if skip the root directory.
 	 * @param outputStream        The output stream for writing the zipped entry.
-	 * @param filter              The filter for the entries to be compressed. Null
 	 *                            if no filter is used..
 	 * @throws IOException Throws if the entry can not be zipped.
 	 * @since 17

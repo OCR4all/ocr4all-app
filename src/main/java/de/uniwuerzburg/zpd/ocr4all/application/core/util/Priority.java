@@ -19,7 +19,22 @@ import java.util.List;
  * @since 1.8
  */
 public enum Priority {
-	critical, high, medium, low;
+	/**
+	 * The critical priority.
+	 */
+	critical,
+	/**
+	 * The high priority.
+	 */
+	high,
+	/**
+	 * The medium priority.
+	 */
+	medium,
+	/**
+	 * The low priority.
+	 */
+	low;
 
 	/**
 	 * Insert your text here

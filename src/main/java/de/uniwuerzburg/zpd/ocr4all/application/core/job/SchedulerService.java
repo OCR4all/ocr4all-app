@@ -48,7 +48,18 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public enum ThreadPool {
-		task("tk"), workflow("wf"), workspace("ws");
+		/**
+		 * The task thread pool.
+		 */
+		task("tk"),
+		/**
+		 * The workflow thread pool.
+		 */
+		workflow("wf"),
+		/**
+		 * The workspace thread pool.
+		 */
+		workspace("ws");
 
 		/**
 		 * The label.
@@ -85,7 +96,18 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public enum Position {
-		first, last, index
+		/**
+		 * The first queue position.
+		 */
+		first,
+		/**
+		 * The last queue position.
+		 */
+		last,
+		/**
+		 * The index queue position.
+		 */
+		index
 	}
 
 	/**

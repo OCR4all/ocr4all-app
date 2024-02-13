@@ -29,7 +29,18 @@ public abstract class SecurityService extends CoreService {
 	 * @since 1.8
 	 */
 	public enum Level {
-		administrator, coordinator, user;
+		/**
+		 * The running security level.
+		 */
+		administrator,
+		/**
+		 * The coordinator security level.
+		 */
+		coordinator,
+		/**
+		 * The user security level.
+		 */
+		user;
 
 		/**
 		 * Returns true if the required security level is achievable on actual security
