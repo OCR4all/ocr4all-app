@@ -75,7 +75,38 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @since 1.8
 	 */
 	public enum Type {
-		imp, launcher, preprocessing, olr, ocr, postcorrection, tool, export;
+		/**
+		 * The imp type.
+		 */
+		imp,
+		/**
+		 * The launcher type.
+		 */
+		launcher,
+		/**
+		 * The preprocessing type.
+		 */
+		preprocessing,
+		/**
+		 * The olr type.
+		 */
+		olr,
+		/**
+		 * The ocr type.
+		 */
+		ocr,
+		/**
+		 * The postcorrection type.
+		 */
+		postcorrection,
+		/**
+		 * The tool type.
+		 */
+		tool,
+		/**
+		 * The export type.
+		 */
+		export;
 
 		/**
 		 * Returns the respective persistence snapshot type.

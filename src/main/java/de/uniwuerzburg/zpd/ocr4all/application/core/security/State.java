@@ -15,7 +15,14 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.security;
  * @since 1.8
  */
 public enum State {
-	active, blocked;
+	/**
+	 * The active state.
+	 */
+	active,
+	/**
+	 * The blocked state.
+	 */
+	blocked;
 
 	/**
 	 * The default state.

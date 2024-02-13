@@ -57,6 +57,9 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 * @since 1.8
 	 */
 	public enum Version {
+		/**
+		 * The 1.0 version.
+		 */
 		_1_0("1.0");
 
 		/**

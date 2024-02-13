@@ -256,7 +256,14 @@ public class MetsResponse implements Serializable {
 		 * @since 1.8
 		 */
 		public enum Type {
-			software, unknown
+			/**
+			 * The software type.
+			 */
+			software,
+			/**
+			 * The unknown type.
+			 */
+			unknown
 		}
 
 		/**
@@ -580,7 +587,14 @@ public class MetsResponse implements Serializable {
 			 * @since 1.8
 			 */
 			public enum Location {
-				file, unknown
+				/**
+				 * The file location.
+				 */
+				file,
+				/**
+				 * The unknown location.
+				 */
+				unknown
 			}
 
 			/**
