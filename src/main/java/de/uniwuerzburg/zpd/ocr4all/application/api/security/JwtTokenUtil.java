@@ -22,9 +22,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.Keys;
 
 /**
  * Defines JWT access token utilities.
@@ -38,9 +36,9 @@ import io.jsonwebtoken.security.Keys;
 public class JwtTokenUtil {
 	/**
 	 * The {@link SecretKey} instance suitable for use with the specified
-	 * {@link SignatureAlgorithm} HS512.
+	 * {@link Jwts.SIG#HS512}.
 	 */
-	private static final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+	private static final SecretKey secretKey = Jwts.SIG.HS512.key().build();
 
 	/**
 	 * The logger.
@@ -82,8 +80,8 @@ public class JwtTokenUtil {
 		final Date createdDate = new Date();
 		final Date expirationDate = getExpiration(createdDate);
 
-		return Jwts.builder().setSubject(username).setIssuer(configuration.getIssuer()).setIssuedAt(createdDate)
-				.setExpiration(expirationDate).signWith(secretKey).compact();
+		return Jwts.builder().subject(username).issuer(configuration.getIssuer()).issuedAt(createdDate)
+				.expiration(expirationDate).signWith(secretKey).compact();
 //				.setExpiration(expirationDate).signWith(SignatureAlgorithm.HS512, configuration.getSecret()).compact();
 	}
 
@@ -106,8 +104,8 @@ public class JwtTokenUtil {
 	 * @since 17
 	 */
 	public String getUsername(String token) {
-		return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
-//		return Jwts.parserBuilder().setSigningKey(configuration.getSecret()).parseClaimsJws(token).getBody().getSubject();
+		return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getSubject();
+//		return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
 	}
 
 	/**
@@ -118,7 +116,7 @@ public class JwtTokenUtil {
 	 * @since 17
 	 */
 	public Date getExpirationDate(String token) {
-		return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getExpiration();
+		return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration();
 	}
 
 	/**
@@ -130,7 +128,7 @@ public class JwtTokenUtil {
 	 */
 	public UserDetails validate(String token) {
 		try {
-			Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
+			Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
 
 			return accountService.loadUserByUsername(getUsername(token));
 		} catch (MalformedJwtException ex) {
