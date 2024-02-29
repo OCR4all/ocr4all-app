@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -137,6 +138,21 @@ public class OCR4allUtils {
 		else {
 			int dotIndex = fileName.lastIndexOf('.');
 			return (dotIndex <= 0) ? fileName : fileName.substring(0, dotIndex);
+		}
+	}
+
+	/**
+	 * Returns the file names in the given folder.
+	 * 
+	 * @param folder The folder.
+	 * @return The file names.
+	 * @throws IOException Throws if an I/O error occurs when opening the folder.
+	 * @since 17
+	 */
+	public static Set<String> getFileNames(Path folder) throws IOException {
+		try (Stream<Path> stream = Files.list(folder)) {
+			return stream.filter(file -> !Files.isDirectory(file)).map(Path::getFileName).map(Path::toString)
+					.collect(Collectors.toSet());
 		}
 	}
 
@@ -295,8 +311,8 @@ public class OCR4allUtils {
 	 * 
 	 * @param entry               The entry to zip if non null.
 	 * @param isSkipRootDirectory True if skip the root directory.
-	 * @param outputStream        The output stream for writing the zipped entry.
-	 *                            if no filter is used..
+	 * @param outputStream        The output stream for writing the zipped entry. if
+	 *                            no filter is used..
 	 * @throws IOException Throws if the entry can not be zipped.
 	 * @since 17
 	 */

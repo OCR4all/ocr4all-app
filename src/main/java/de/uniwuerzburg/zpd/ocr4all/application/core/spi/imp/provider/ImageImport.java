@@ -307,6 +307,8 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 * Creates the derivatives quality image for folios.
 			 * 
 			 * @param convertJob The convert job.
+			 * @param fileNames  The name of the files to convert in the convert job
+			 *                   directory.
 			 * @param target     The target folder.
 			 * @param resize     The maximal size.
 			 * @param quality    The compression quality.
@@ -314,13 +316,13 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 *         interrupted on troubles or canceled if the process was canceled.
 			 * @since 1.8
 			 */
-			private ProcessServiceProvider.Processor.State createDerivatives(SystemProcess convertJob, Path target,
-					String resize, int quality) {
+			private ProcessServiceProvider.Processor.State createDerivatives(SystemProcess convertJob,
+					Set<String> fileNames, Path target, String resize, int quality) {
 
 				try {
 					ImageUtils.createDerivatives(convertJob,
 							getFramework().getTarget().getProject().getImages().getDerivatives().getFormat().name(),
-							target, resize, quality);
+							fileNames, target, resize, quality);
 
 					return isCanceled() ? ProcessServiceProvider.Processor.State.canceled : null;
 				} catch (IOException e) {
@@ -610,30 +612,41 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 
 				final Target.Project.Images images = framework.getTarget().getProject().getImages();
 
+				ProcessServiceProvider.Processor.State state;
 				// quality best
-				ProcessServiceProvider.Processor.State state = createDerivatives(
-						new SystemProcess(folderFolios, convertCommand), folderBest,
-						images.getDerivatives().getBest().getMaxSize(), images.getDerivatives().getBest().getQuality());
+				try {
+					state = createDerivatives(new SystemProcess(folderFolios, convertCommand),
+							OCR4allUtils.getFileNames(folderFolios), folderBest,
+							images.getDerivatives().getBest().getMaxSize(),
+							images.getDerivatives().getBest().getQuality());
 
-				if (state != null)
-					return state;
+					if (state != null)
+						return state;
 
-				callback.updatedProgress(0.40F);
+					callback.updatedProgress(0.40F);
 
-				// quality detail
-				state = createDerivatives(new SystemProcess(folderBest, convertCommand), folderDetail,
-						images.getDerivatives().getDetail().getMaxSize(),
-						images.getDerivatives().getDetail().getQuality());
+					// quality detail
+					state = createDerivatives(new SystemProcess(folderBest, convertCommand),
+							OCR4allUtils.getFileNames(folderBest), folderDetail,
+							images.getDerivatives().getDetail().getMaxSize(),
+							images.getDerivatives().getDetail().getQuality());
 
-				if (state != null)
-					return state;
+					if (state != null)
+						return state;
 
-				callback.updatedProgress(0.50F);
+					callback.updatedProgress(0.50F);
 
-				// quality thumbnail
-				state = createDerivatives(new SystemProcess(folderDetail, convertCommand), folderThumbnail,
-						images.getDerivatives().getThumbnail().getMaxSize(),
-						images.getDerivatives().getThumbnail().getQuality());
+					// quality thumbnail
+					state = createDerivatives(new SystemProcess(folderDetail, convertCommand),
+							OCR4allUtils.getFileNames(folderDetail), folderThumbnail,
+							images.getDerivatives().getThumbnail().getMaxSize(),
+							images.getDerivatives().getThumbnail().getQuality());
+
+				} catch (Exception e) {
+					updatedStandardError("Cannot create derivatives - " + e.getMessage());
+
+					return ProcessServiceProvider.Processor.State.interrupted;
+				}
 
 				if (state != null)
 					return state;
