@@ -99,6 +99,13 @@
 			<scope>runtime</scope>
 		</dependency>
 		
+		<!-- ocr4all application communication -->
+		<dependency>
+			<groupId>de.uni-wuerzburg.zpd</groupId>
+			<artifactId>ocr4all-app-communication</artifactId>
+			<version>${de.uni-wuerzburg.zpd.ocr4all.version}</version>
+		</dependency>
+
 		<!-- ocr4all application service provider interface -->
 		<dependency>
 			<groupId>de.uni-wuerzburg.zpd</groupId>
