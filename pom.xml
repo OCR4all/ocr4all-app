@@ -17,11 +17,11 @@
 	</parent>
 	<groupId>de.uni-wuerzburg.zpd</groupId>
 	<artifactId>ocr4all-app</artifactId>
+	<packaging>jar</packaging>
 	<version>1.0-SNAPSHOT</version>
 	<name>ocr4all app</name>
 	<url>http://www.ocr4all.org</url>
 	<description>ocr4all application</description>
-	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
