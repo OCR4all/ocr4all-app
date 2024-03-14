@@ -457,27 +457,28 @@ public abstract class Job {
 	 * @since 1.8
 	 */
 	synchronized State start(ThreadPoolTaskExecutor taskExecutor, Callback callback) {
-		taskExecutor.execute(() -> {
-			if (isStateScheduled()) {
-				state = State.running;
-				start = new Date();
+		if (isStateScheduled())
+			taskExecutor.execute(() -> {
+				if (isStateScheduled()) {
+					state = State.running;
+					start = new Date();
 
-				logger.info("start execution of job ID " + getId() + ".");
+					logger.info("start execution of job ID " + getId() + ".");
 
-				State executionState = execute();
+					State executionState = execute();
 
-				if (!State.canceled.equals(state)) {
-					state = State.completed.equals(executionState) ? State.completed : State.interrupted;
+					if (!State.canceled.equals(state)) {
+						state = State.completed.equals(executionState) ? State.completed : State.interrupted;
 
-					end = new Date();
+						end = new Date();
+					}
+
+					if (callback != null)
+						callback.done(Job.this);
+
+					logger.info("end execution of the job ID " + getId() + " with state '" + state.name() + "'.");
 				}
-
-				if (callback != null)
-					callback.done(Job.this);
-
-				logger.info("end execution of the job ID " + getId() + " with state '" + state.name() + "'.");
-			}
-		});
+			});
 
 		return state;
 	}
@@ -497,7 +498,7 @@ public abstract class Job {
 			end = new Date();
 
 			logger.info("canceled job ID " + getId() + ".");
-			
+
 			if (isRunning)
 				new Thread(new Runnable() {
 					/*
