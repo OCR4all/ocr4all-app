@@ -1,0 +1,28 @@
+---
+version: "3.4"
+
+services:
+  ocrd:
+    build: ../ocr4all-app-ocrd-msa/Dockerfile
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,msa-api}
+    volumes:
+      - ${WORKSPACE_PROJECT:-~/ocr4all/dev/workspace/projects}:${MSA_PROJECT:-/home/ocr4all/projects}
+      - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/dev/opt/ocr-d/resources}:${MSA_RESOURCES_ORCD:-/usr/local/share/ocrd-resources}
+      - ${WORKSPACE_RESOURCES_ORCD_TESSEROCR:-~/ocr4all/dev/opt/ocr-d/resources/ocrd-tesserocr-recognize}:/usr/local/share/tessdata
+    env_file:
+      - .env
+  ocr4all:
+    build: ./Dockerfile
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,api,documentation}
+    volumes:
+      - ${WORKSPACE:-~/ocr4all/dev}:/srv/ocr4all
+    env_file:
+      - .env
+    ports:
+      - "${PORT_API:-8080}:8080"
+    depends_on:
+      - ocrd

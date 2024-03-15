@@ -217,6 +217,28 @@ ocr4all:
         tos: https://www.uni-wuerzburg.de/en/sonstiges/imprint-privacy-policy
         contact: http://www.ocr4all.org
         license: https://opensource.org/licenses/MIT
+
+---
+spring:
+    config.activate.on-profile: docker
+
+server:
+  port: 8080
+
+logging:
+  file:
+    path:
+    name:
+  level:
+    root: INFO
+
+ocr4all:
+  exchange.folder: /srv/ocr4all/exchange
+  repository.folder: /srv/ocr4al/repository
+  workspace.folder: /srv/ocr4all/workspace
+  opt.folder: /srv/ocr4all/opt
+  temporary.folder: /srv/ocr4all/tmp
+
 ---
 spring:
     config.activate.on-profile: desktop
