@@ -22,6 +22,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.MicroserviceArchitecture;
 
 /**
  * Defines core service providers.
@@ -76,6 +77,10 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
 				.getConfigurationServiceProvider();
+
+		// TODO
+		final MicroserviceArchitecture microserviceArchitecture = null;
+
 		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
 				.getDisabledServiceProviders();
 
@@ -84,7 +89,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 		final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = configurationService
 				.getWorkspace().getConfiguration().getTaskExecutorServiceProviders();
-
+		
 		for (P provider : ServiceLoader.load(service)) {
 			String id = provider.getClass().getName();
 
@@ -96,7 +101,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 				provider.configure(!lazyInitializedServiceProviders.contains(id),
 						!disabledServiceProviders.contains(id),
 						taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
-						configuration);
+						configuration, microserviceArchitecture);
 
 				if (provider.getName(configurationService.getApplication().getLocale()) == null
 						|| provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty())
@@ -113,12 +118,10 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					 */
 					if (provider.isEnabled()) {
 						if (provider.isEagerInitialized())
-							initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
-									configuration);
+							initialize(provider);
 						else
 							taskExecutor.execute(() -> {
-								initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
-										configuration);
+								initialize(provider);
 							});
 					}
 				}
@@ -160,8 +163,9 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @param configuration                   The configuration.
 	 * @since 1.8
 	 */
-	private void initialize(P provider, String id, Set<String> lazyInitializedServiceProviders,
-			Set<String> disabledServiceProviders, ConfigurationServiceProvider configuration) {
+	private void initialize(P provider) {
+		String id = provider.getClass().getName();
+
 		try {
 			Date begin = new Date();
 			provider.initialize();
