@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
  * Defines ocr4all application properties.
@@ -69,6 +70,11 @@ public class Application {
 	 * The thread properties.
 	 */
 	private Thread thread = new Thread();
+
+	/**
+	 * The SPI properties.
+	 */
+	private SPI spi = new SPI();
 
 	/**
 	 * The security properties.
@@ -233,6 +239,26 @@ public class Application {
 	 */
 	public void setThread(Thread thread) {
 		this.thread = thread;
+	}
+
+	/**
+	 * Returns the spi properties.
+	 *
+	 * @return The spi properties.
+	 * @since 17
+	 */
+	public SPI getSpi() {
+		return spi;
+	}
+
+	/**
+	 * Set the spi properties.
+	 *
+	 * @param spi The spi properties to set.
+	 * @since 17
+	 */
+	public void setSpi(SPI spi) {
+		this.spi = spi;
 	}
 
 	/**
@@ -585,6 +611,161 @@ public class Application {
 				 */
 				public void setWorkflow(int size) {
 					workflow = size;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Defines SPI properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SPI {
+		/**
+		 * The microservice architecture (MSA) properties.
+		 */
+		private List<MSA> msa = new ArrayList<>();
+
+		/**
+		 * Returns the microservice architecture (MSA) properties.
+		 *
+		 * @return The microservice architecture (MSA) properties.
+		 * @since 17
+		 */
+		public List<MSA> getMsa() {
+			return msa;
+		}
+
+		/**
+		 * Set the microservice architecture (MSA) properties.
+		 *
+		 * @param msa The microservice architecture (MSA) properties to set.
+		 * @since 17
+		 */
+		public void setMsa(List<MSA> msa) {
+			this.msa = msa;
+		}
+
+		/**
+		 * Defines microservice architecture (MSA) properties.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class MSA {
+			/**
+			 * The id.
+			 */
+			@NotEmpty(message = "the microservice architecture (MSA) id cannot be null nor empty")
+			private String id;
+
+			/**
+			 * The url.
+			 */
+			@NotEmpty(message = "the microservice architecture (MSA) url cannot be null nor empty")
+			private String url;
+
+			/**
+			 * The Websocket property.
+			 */
+			private Websocket websocket = new Websocket();
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the url.
+			 *
+			 * @return The url.
+			 * @since 17
+			 */
+			public String getUrl() {
+				return url;
+			}
+
+			/**
+			 * Set the url.
+			 *
+			 * @param url The url to set.
+			 * @since 17
+			 */
+			public void setUrl(String url) {
+				this.url = url;
+			}
+
+			/**
+			 * Returns the Websocket property.
+			 *
+			 * @return The Websocket property.
+			 * @since 17
+			 */
+			public Websocket getWebsocket() {
+				return websocket;
+			}
+
+			/**
+			 * Set the Websocket property.
+			 *
+			 * @param websocket The Websocket property to set.
+			 * @since 17
+			 */
+			public void setWebsocket(Websocket websocket) {
+				this.websocket = websocket;
+			}
+
+			/**
+			 * Defines Websocket properties.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 17
+			 */
+
+			public static class Websocket {
+				/**
+				 * The event topic end point.
+				 */
+				private String event;
+
+				/**
+				 * Returns the event.
+				 *
+				 * @return The event.
+				 * @since 17
+				 */
+				public String getEvent() {
+					return event;
+				}
+
+				/**
+				 * Set the event.
+				 *
+				 * @param event The event to set.
+				 * @since 17
+				 */
+				public void setEvent(String event) {
+					this.event = event;
 				}
 			}
 		}

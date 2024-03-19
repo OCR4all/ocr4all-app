@@ -67,6 +67,10 @@ ocr4all:
     thread.pool.size: 
       task: 6
       workflow: 12
+    spi.msa:
+      - id: ocrd
+        url: localhost:9091
+        websocket.event: /spi-event
     security:
       groups:
         administrator: admin
@@ -233,6 +237,11 @@ logging:
     root: INFO
 
 ocr4all:
+  application:
+    spi.msa:
+    - id: ocrd
+      url: localhost:8080
+      websocket.event: /spi-event
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4al/repository
   workspace.folder: /srv/ocr4all/workspace

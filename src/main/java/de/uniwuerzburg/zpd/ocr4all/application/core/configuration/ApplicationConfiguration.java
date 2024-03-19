@@ -77,6 +77,11 @@ public class ApplicationConfiguration {
 	private final ThreadPoolSizeProperties threadPoolSizeProperties;
 
 	/**
+	 * The SPI configuration.
+	 */
+	private final SPI spi;
+
+	/**
 	 * The administrator group.
 	 */
 	private final String administratorGroup;
@@ -166,6 +171,9 @@ public class ApplicationConfiguration {
 
 		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getTask(),
 				properties.getThread().getPool().getSize().getWorkflow());
+
+		// The spi
+		spi = new SPI(properties.getSpi());
 
 		// The security groups group
 		String securityGroup = properties.getSecurity().getGroups().getAdministrator();
@@ -314,6 +322,16 @@ public class ApplicationConfiguration {
 	}
 
 	/**
+	 * Returns the spi configuration.
+	 *
+	 * @return The spi configuration.
+	 * @since 17
+	 */
+	public SPI getSpi() {
+		return spi;
+	}
+
+	/**
 	 * Returns true if the administrator group is set.
 	 * 
 	 * @return True if the administrator group is set.
@@ -414,7 +432,112 @@ public class ApplicationConfiguration {
 		public int getWorkflow() {
 			return workflow;
 		}
+	}
 
+	/**
+	 * Defines SPI configurations.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SPI {
+		/**
+		 * The microservice architectures (MSA).
+		 */
+		private final List<MSA> msa = new ArrayList<>();
+
+		/**
+		 * Creates a SPI configuration.
+		 * 
+		 * @since 17
+		 */
+		public SPI(Application.SPI spi) {
+			super();
+
+			if (spi != null && spi.getMsa() != null)
+				for (Application.SPI.MSA msa : spi.getMsa())
+					this.msa.add(new MSA(msa));
+		}
+
+		/**
+		 * Returns the microservice architectures (MSA).
+		 *
+		 * @return The microservice architectures (MSA).
+		 * @since 17
+		 */
+		public List<MSA> getMsa() {
+			return msa;
+		}
+
+		/**
+		 * Defines microservice architecture (MSA) configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class MSA {
+			/**
+			 * The id.
+			 */
+			private final String id;
+
+			/**
+			 * The url.
+			 */
+			private final String url;
+
+			/**
+			 * The Websocket.
+			 */
+			private final String websocket;
+
+			/**
+			 * Creates a microservice architecture (MSA) configuration.
+			 * 
+			 * @param msa The microservice architecture property.
+			 * @since 17
+			 */
+			public MSA(Application.SPI.MSA msa) {
+				super();
+				id = msa.getId().trim();
+				url = msa.getUrl().trim();
+				websocket = msa.getWebsocket() != null && msa.getWebsocket().getEvent() != null
+						&& !msa.getWebsocket().getEvent().isBlank() ? msa.getWebsocket().getEvent().trim() : null;
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Returns the url.
+			 *
+			 * @return The url.
+			 * @since 17
+			 */
+			public String getUrl() {
+				return url;
+			}
+
+			/**
+			 * Returns the websocket.
+			 *
+			 * @return The websocket.
+			 * @since 17
+			 */
+			public String getWebsocket() {
+				return websocket;
+			}
+
+		}
 	}
 
 	/**

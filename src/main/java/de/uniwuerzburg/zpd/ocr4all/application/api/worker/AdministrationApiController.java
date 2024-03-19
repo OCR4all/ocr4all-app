@@ -244,7 +244,6 @@ public class AdministrationApiController extends CoreApiController {
 	 * @return The provider journal entry in the response body.
 	 * @since 1.8
 	 */
-	// TODO
 	@Operation(summary = "configures the service provider and returns the provider journal entry in the response body; allowed actions are: eager, lazy, enable, disable, start, restart, stop, thread_pool_set (requires name and size) and thread_pool_reset")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Provider Journal Entry", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JournalEntryResponse.class)) }),
