@@ -18,11 +18,11 @@ import java.util.Set;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.MicroserviceArchitecture;
 
 /**
  * Defines core service providers.
@@ -66,20 +66,19 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param service              The interface or abstract class representing the
 	 *                             service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	protected CoreServiceProvider(Class<? extends CoreServiceProvider<P>> logger,
-			ConfigurationService configurationService, Class<P> service, ThreadPoolTaskExecutor taskExecutor) {
+			ConfigurationService configurationService, CommunicationService communicationService, Class<P> service,
+			ThreadPoolTaskExecutor taskExecutor) {
 		super(logger, configurationService);
 
 		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
 				.getConfigurationServiceProvider();
-
-		// TODO
-		final MicroserviceArchitecture microserviceArchitecture = null;
 
 		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
 				.getDisabledServiceProviders();
@@ -89,7 +88,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 
 		final Hashtable<String, TaskExecutorServiceProvider> taskExecutorServiceProviders = configurationService
 				.getWorkspace().getConfiguration().getTaskExecutorServiceProviders();
-		
+
 		for (P provider : ServiceLoader.load(service)) {
 			String id = provider.getClass().getName();
 
@@ -101,7 +100,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 				provider.configure(!lazyInitializedServiceProviders.contains(id),
 						!disabledServiceProviders.contains(id),
 						taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
-						configuration, microserviceArchitecture);
+						configuration, communicationService.getMicroserviceArchitecture());
 
 				if (provider.getName(configurationService.getApplication().getLocale()) == null
 						|| provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty())

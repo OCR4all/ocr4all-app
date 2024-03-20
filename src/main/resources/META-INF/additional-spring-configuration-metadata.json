@@ -62,17 +62,17 @@
 		},
 		{
 			"name": "ocr4all.application.spi.msa.id",
-			"type": "java.lang.String",
+			"type": "java.util.List<java.lang.String>",
 			"description": "ocr4all application spi microservice architectures (MSA) id. This belongs to a list."
 		},
 		{
 			"name": "ocr4all.application.spi.msa.url",
-			"type": "java.lang.String",
+			"type": "java.util.List<java.lang.String>",
 			"description": "ocr4all application spi microservice architectures (MSA) url. This belongs to a list."
 		},
 		{
 			"name": "ocr4all.application.spi.msa.websocket.event",
-			"type": "java.lang.String",
+			"type": "java.util.List<java.lang.String>",
 			"description": "ocr4all application spi microservice architectures (MSA) websocket event. This belongs to a list."
 		},
 		{

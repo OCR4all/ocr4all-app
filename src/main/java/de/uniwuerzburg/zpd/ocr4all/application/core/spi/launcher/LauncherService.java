@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
@@ -27,11 +28,14 @@ public class LauncherService extends CoreServiceProvider<LauncherServiceProvider
 	 * Creates a launcher service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	public LauncherService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
-		super(LauncherService.class, configurationService, LauncherServiceProvider.class, taskExecutor);
+	public LauncherService(ConfigurationService configurationService, CommunicationService communicationService,
+			ThreadPoolTaskExecutor taskExecutor) {
+		super(LauncherService.class, configurationService, communicationService, LauncherServiceProvider.class,
+				taskExecutor);
 	}
 
 	/*

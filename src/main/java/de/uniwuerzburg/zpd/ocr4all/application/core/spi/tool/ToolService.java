@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
@@ -27,11 +28,13 @@ public class ToolService extends CoreServiceProvider<ToolServiceProvider> {
 	 * Creates a tool service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	public ToolService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
-		super(ToolService.class, configurationService, ToolServiceProvider.class, taskExecutor);
+	public ToolService(ConfigurationService configurationService, CommunicationService communicationService,
+			ThreadPoolTaskExecutor taskExecutor) {
+		super(ToolService.class, configurationService, communicationService, ToolServiceProvider.class, taskExecutor);
 	}
 
 	/*

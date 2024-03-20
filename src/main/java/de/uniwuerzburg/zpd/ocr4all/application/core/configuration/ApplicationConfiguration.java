@@ -489,7 +489,7 @@ public class ApplicationConfiguration {
 			private final String url;
 
 			/**
-			 * The Websocket.
+			 * The WebSocket.
 			 */
 			private final String websocket;
 
@@ -528,9 +528,19 @@ public class ApplicationConfiguration {
 			}
 
 			/**
-			 * Returns the websocket.
+			 * Returns true if the WebSocket is set.
 			 *
-			 * @return The websocket.
+			 * @return True if the WebSocket is set.
+			 * @since 17
+			 */
+			public boolean isWebsocketSet() {
+				return websocket != null;
+			}
+
+			/**
+			 * Returns the Websocket.
+			 *
+			 * @return The Websocket.
 			 * @since 17
 			 */
 			public String getWebsocket() {

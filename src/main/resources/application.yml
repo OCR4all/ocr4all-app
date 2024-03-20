@@ -70,7 +70,7 @@ ocr4all:
     spi.msa:
       - id: ocrd
         url: localhost:9091
-        websocket.event: /spi-event
+        websocket.event: /topic/spi-event
     security:
       groups:
         administrator: admin
@@ -241,7 +241,7 @@ ocr4all:
     spi.msa:
     - id: ocrd
       url: localhost:8080
-      websocket.event: /spi-event
+      websocket.event: /topic/spi-event
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4al/repository
   workspace.folder: /srv/ocr4all/workspace
