@@ -70,7 +70,9 @@ ocr4all:
     spi.msa:
       - id: ocrd
         url: localhost:9091
-        websocket.event: /topic/spi-event
+        websocket:
+          end-point: /event
+          topic: /topic/spi
     security:
       groups:
         administrator: admin

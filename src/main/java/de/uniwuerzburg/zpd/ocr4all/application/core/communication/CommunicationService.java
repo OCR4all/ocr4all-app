@@ -70,18 +70,23 @@ public class CommunicationService extends CoreService
 		final Hashtable<String, MicroserviceArchitecture.Host> hosts = new Hashtable<>();
 
 		for (ApplicationConfiguration.SPI.MSA msa : configurationService.getApplication().getSpi().getMsa())
-			if (msa.isWebsocketSet()) {
-				final String message = "ID '" + msa.getId() + "' (url " + msa.getUrl() + " / Websocket "
-						+ msa.getWebsocket() + ")";
+			if (msa.isWebSocketSet()) {
+				final String url = "ws://" + msa.getUrl() + msa.getWebSocket().getEndPoint();
+
+				final String message = "ID '" + msa.getId() + "', url " + url + ", topic "
+						+ msa.getWebSocket().getTopic();
 
 				if (hosts.containsKey(msa.getId()))
-					logger.warn("ignored SPI microservice architecture - duplicate " + message);
-				else {
-					connectWebSocket(msa.getUrl(), msa.getWebsocket());
-					hosts.put(msa.getId(), new MicroserviceArchitecture.Host(msa.getId(), msa.getUrl()));
+					logger.warn("ignored SPI microservice architecture " + message + " - duplicated ID");
+				else
+					try {
+						connectWebSocket(url, msa.getWebSocket().getTopic());
+						hosts.put(msa.getId(), new MicroserviceArchitecture.Host(msa.getId(), msa.getUrl()));
 
-					logger.info("registered SPI microservice architecture " + message);
-				}
+						logger.info("registered SPI microservice architecture " + message);
+					} catch (Exception e) {
+						logger.warn("ignored SPI microservice architecture " + message + " - " + e.getMessage());
+					}
 			}
 
 		microserviceArchitecture = new MicroserviceArchitecture(this, hosts.values());
@@ -100,7 +105,8 @@ public class CommunicationService extends CoreService
 
 		stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-		EventSPIMessageStompSessionHandler sessionHandler = new EventSPIMessageStompSessionHandler(topic, this);
+		EventSPIMessageStompSessionHandler sessionHandler = new EventSPIMessageStompSessionHandler(stompClient, url,
+				topic, this);
 		stompClient.connectAsync(url, sessionHandler);
 	}
 
@@ -113,10 +119,16 @@ public class CommunicationService extends CoreService
 	 */
 	@Override
 	synchronized public void handle(EventSPI event) {
-		List<Handler> workers = handlers.get(event.getKey());
-		
+		List<Handler> workers;
+		synchronized (handlers) {
+			workers = handlers.get(event.getKey());
+
+			if (workers != null)
+				workers = new ArrayList<>(workers);
+		}
+
 		if (workers != null)
-			for (Handler handler: new ArrayList<>(workers))
+			for (Handler handler : new ArrayList<>(workers))
 				handler.getEventHandler().handle(event);
 	}
 
@@ -169,7 +181,7 @@ public class CommunicationService extends CoreService
 				synchronized (handlers) {
 					List<Handler> workers = handlers.get(key);
 					workers.removeIf(handler -> handler.isId(id));
-					
+
 					if (workers.isEmpty()) {
 						handlerMapping.remove(id);
 						handlers.remove(key);

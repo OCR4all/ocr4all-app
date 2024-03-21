@@ -670,9 +670,9 @@ public class Application {
 			private String url;
 
 			/**
-			 * The Websocket property.
+			 * The WebSocket property.
 			 */
-			private Websocket websocket = new Websocket();
+			private WebSocket webSocket = new WebSocket();
 
 			/**
 			 * Returns the id.
@@ -715,57 +715,82 @@ public class Application {
 			}
 
 			/**
-			 * Returns the Websocket property.
+			 * Returns the WebSocket property.
 			 *
-			 * @return The Websocket property.
+			 * @return The WebSocket property.
 			 * @since 17
 			 */
-			public Websocket getWebsocket() {
-				return websocket;
+			public WebSocket getWebsocket() {
+				return webSocket;
 			}
 
 			/**
-			 * Set the Websocket property.
+			 * Set the WebSocket property.
 			 *
-			 * @param websocket The Websocket property to set.
+			 * @param webSocket The WebSocket property to set.
 			 * @since 17
 			 */
-			public void setWebsocket(Websocket websocket) {
-				this.websocket = websocket;
+			public void setWebsocket(WebSocket webSocket) {
+				this.webSocket = webSocket;
 			}
 
 			/**
-			 * Defines Websocket properties.
+			 * Defines WebSocket properties.
 			 *
 			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 			 * @version 1.0
 			 * @since 17
 			 */
 
-			public static class Websocket {
+			public static class WebSocket {
 				/**
-				 * The event topic end point.
+				 * The end point.
 				 */
-				private String event;
+				private String endPoint;
 
 				/**
-				 * Returns the event.
+				 * The topic.
+				 */
+				private String topic;
+
+				/**
+				 * Returns the end point.
 				 *
-				 * @return The event.
+				 * @return The end point.
 				 * @since 17
 				 */
-				public String getEvent() {
-					return event;
+				public String getEndPoint() {
+					return endPoint;
 				}
 
 				/**
-				 * Set the event.
+				 * Set the end point.
 				 *
-				 * @param event The event to set.
+				 * @param endPoint The end point to set.
 				 * @since 17
 				 */
-				public void setEvent(String event) {
-					this.event = event;
+				public void setEndPoint(String endPoint) {
+					this.endPoint = endPoint;
+				}
+
+				/**
+				 * Returns the topic.
+				 *
+				 * @return The topic.
+				 * @since 17
+				 */
+				public String getTopic() {
+					return topic;
+				}
+
+				/**
+				 * Set the topic.
+				 *
+				 * @param topic The topic to set.
+				 * @since 17
+				 */
+				public void setTopic(String topic) {
+					this.topic = topic;
 				}
 			}
 		}

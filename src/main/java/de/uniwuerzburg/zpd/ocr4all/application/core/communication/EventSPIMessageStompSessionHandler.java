@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import de.uniwuerzburg.zpd.ocr4all.application.communication.message.spi.EventSPI;
 
@@ -32,6 +33,16 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 			.getLogger(EventSPIMessageStompSessionHandler.class);
 
 	/**
+	 * The STOMP over WebSocket client.
+	 */
+	private final WebSocketStompClient stompClient;
+
+	/**
+	 * The url.
+	 */
+	private final String url;
+
+	/**
 	 * The topic.
 	 */
 	private final String topic;
@@ -44,14 +55,19 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 	/**
 	 * Creates a message handler for STOMP.
 	 * 
+	 * @param stompClient  The STOMP over WebSocket client.
+	 * @param url          The url.
 	 * @param topic        The topic to subscribe once a connection is established.
 	 * @param eventHandler The SPI event handler. Null if no events are to be
 	 *                     handled.
 	 * @since 17
 	 */
-	public EventSPIMessageStompSessionHandler(String topic, EventHandler eventHandler) {
+	public EventSPIMessageStompSessionHandler(WebSocketStompClient stompClient, String url, String topic,
+			EventHandler eventHandler) {
 		super();
 
+		this.stompClient = stompClient;
+		this.url = url;
 		this.topic = topic;
 		this.eventHandler = eventHandler;
 	}
@@ -69,7 +85,7 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 
 		session.subscribe(topic, this);
 
-		logger.info("STOMP session " + session.getSessionId() + ": subscribed to " + topic);
+		logger.info("STOMP session " + session.getSessionId() + ": subscribed to topic " + topic);
 	}
 
 	/*
@@ -84,7 +100,37 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 	@Override
 	public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload,
 			Throwable exception) {
-		logger.error("STOMP session " + session.getSessionId() + ": exception", exception);
+		logger.warn("STOMP session " + session.getSessionId() + ": exception", exception);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter#
+	 * handleTransportError(org.springframework.messaging.simp.stomp.StompSession,
+	 * java.lang.Throwable)
+	 */
+	@Override
+	public void handleTransportError(StompSession session, Throwable exception) {
+		logger.warn("STOMP session " + session.getSessionId() + ": transport error - " + exception.getMessage());
+
+		new Thread(new Runnable() {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Runnable#run()
+			 */
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// Nothing to do
+				}
+				stompClient.connectAsync(url, EventSPIMessageStompSessionHandler.this);
+			}
+		}).start();
+
 	}
 
 	/*

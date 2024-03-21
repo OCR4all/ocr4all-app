@@ -491,7 +491,7 @@ public class ApplicationConfiguration {
 			/**
 			 * The WebSocket.
 			 */
-			private final String websocket;
+			private final WebSocket webSocket;
 
 			/**
 			 * Creates a microservice architecture (MSA) configuration.
@@ -503,8 +503,10 @@ public class ApplicationConfiguration {
 				super();
 				id = msa.getId().trim();
 				url = msa.getUrl().trim();
-				websocket = msa.getWebsocket() != null && msa.getWebsocket().getEvent() != null
-						&& !msa.getWebsocket().getEvent().isBlank() ? msa.getWebsocket().getEvent().trim() : null;
+
+				Application.SPI.MSA.WebSocket socket = msa.getWebsocket();
+				webSocket = socket != null && socket.getEndPoint() != null && !socket.getEndPoint().isBlank()
+						&& socket.getTopic() != null && !socket.getTopic().isBlank() ? new WebSocket(socket) : null;
 			}
 
 			/**
@@ -533,20 +535,74 @@ public class ApplicationConfiguration {
 			 * @return True if the WebSocket is set.
 			 * @since 17
 			 */
-			public boolean isWebsocketSet() {
-				return websocket != null;
+			public boolean isWebSocketSet() {
+				return webSocket != null;
 			}
 
 			/**
-			 * Returns the Websocket.
+			 * Returns the WebSocket.
 			 *
-			 * @return The Websocket.
+			 * @return The EebSocket.
 			 * @since 17
 			 */
-			public String getWebsocket() {
-				return websocket;
+			public WebSocket getWebSocket() {
+				return webSocket;
 			}
 
+			/**
+			 * Defines WebSocket configurations.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 17
+			 */
+
+			public static class WebSocket {
+				/**
+				 * The end point.
+				 */
+				private final String endPoint;
+
+				/**
+				 * The topic.
+				 */
+				private final String topic;
+
+				/**
+				 * Creates a WebSocket configuration.
+				 * 
+				 * @param endPoint
+				 * @param topic
+				 * @since 17
+				 */
+				public WebSocket(Application.SPI.MSA.WebSocket socket) {
+					super();
+
+					this.endPoint = socket.getEndPoint().trim();
+					this.topic = socket.getTopic().trim();
+				}
+
+				/**
+				 * Returns the end point.
+				 *
+				 * @return The end point.
+				 * @since 17
+				 */
+				public String getEndPoint() {
+					return endPoint;
+				}
+
+				/**
+				 * Returns the topic.
+				 *
+				 * @return The topic.
+				 * @since 17
+				 */
+				public String getTopic() {
+					return topic;
+				}
+
+			}
 		}
 	}
 
