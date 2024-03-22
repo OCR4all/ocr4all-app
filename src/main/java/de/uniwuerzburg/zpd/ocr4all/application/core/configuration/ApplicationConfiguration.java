@@ -629,7 +629,7 @@ public class ApplicationConfiguration {
 				public static class Resilience {
 					/**
 					 * The number of attempts before giving up, including the first call. This is a
-					 * positive integer
+					 * positive integer.
 					 */
 					private final int maxAttempts;
 
