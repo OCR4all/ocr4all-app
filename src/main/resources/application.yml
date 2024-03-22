@@ -73,6 +73,10 @@ ocr4all:
         websocket:
           end-point: /event
           topic: /topic/spi
+          resilience:
+            max-attempts: 3
+            delay-between-attempts: 1000
+            wait-duration: 15000
     security:
       groups:
         administrator: admin

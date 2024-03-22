@@ -62,18 +62,38 @@
 		},
 		{
 			"name": "ocr4all.application.spi.msa.id",
-			"type": "java.util.List<java.lang.String>",
-			"description": "ocr4all application spi microservice architectures (MSA) id. This belongs to a list."
+			"type": "java.lang.String",
+			"description": "ocr4all application spi microservice architectures (MSA) id. Belongs to a list."
 		},
 		{
 			"name": "ocr4all.application.spi.msa.url",
-			"type": "java.util.List<java.lang.String>",
-			"description": "ocr4all application spi microservice architectures (MSA) url. This belongs to a list."
+			"type": "java.lang.String",
+			"description": "ocr4all application spi microservice architectures (MSA) url. Belongs to a list."
 		},
 		{
-			"name": "ocr4all.application.spi.msa.websocket.event",
-			"type": "java.util.List<java.lang.String>",
-			"description": "ocr4all application spi microservice architectures (MSA) websocket event. This belongs to a list."
+			"name": "ocr4all.application.spi.msa.websocket.end-point",
+			"type": "java.lang.String",
+			"description": "ocr4all application spi microservice architectures (MSA) websocket end point. Belongs to a list."
+		},
+		{
+			"name": "ocr4all.application.spi.msa.websocket.topic",
+			"type": "java.lang.String",
+			"description": "ocr4all application spi microservice architectures (MSA) websocket topic. Belongs to a list."
+		},
+		{
+			"name": "ocr4all.application.spi.msa.websocket.resilience.max-attempts",
+			"type": "java.lang.Integer",
+			"description": "ocr4all application spi microservice architectures (MSA) websocket resilience maximal attempts. This means, the number of attempts before giving up, including the first call. This is a positive integer with default value 3. Belongs to a list."
+		},
+		{
+			"name": "ocr4all.application.spi.msa.websocket.resilience.delay-between-attempts",
+			"type": "java.lang.Long",
+			"description": "ocr4all application spi microservice architectures (MSA) websocket resilience delay between attempts. This means, the delay time in milliseconds between the attempt. This is a non negative integer with default value 1000 ms. Belongs to a list."
+		},
+		{
+			"name": "ocr4all.application.spi.msa.websocket.resilience.wait-duration",
+			"type": "java.lang.Long",
+			"description": "ocr4all application spi microservice architectures (MSA) websocket resilience wait duration. This means, the wait time in milliseconds before the next retry attempt. This is a positive integer with default value 15000 ms. Belongs to a list."
 		},
 		{
 			"name": "ocr4all.application.security.groups.coordinator",

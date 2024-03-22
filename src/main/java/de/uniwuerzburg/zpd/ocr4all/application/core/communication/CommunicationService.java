@@ -37,6 +37,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.MicroserviceArchitecture.
 public class CommunicationService extends CoreService
 		implements EventSPIMessageStompSessionHandler.EventHandler, MicroserviceArchitecture.EventController {
 	/**
+	 * The STOMP message handlers.
+	 */
+	private final List<EventSPIMessageStompSessionHandler> stompSessionHandler = new ArrayList<>();
+
+	/**
 	 * The microservice architecture.
 	 */
 	private final MicroserviceArchitecture microserviceArchitecture;
@@ -80,7 +85,9 @@ public class CommunicationService extends CoreService
 					logger.warn("ignored SPI microservice architecture " + message + " - duplicated ID");
 				else
 					try {
-						connectWebSocket(url, msa.getWebSocket().getTopic());
+						stompSessionHandler.add(connectWebSocket(msa.getId(), url, msa.getWebSocket().getTopic(),
+								msa.getWebSocket().getResilience()));
+
 						hosts.put(msa.getId(), new MicroserviceArchitecture.Host(msa.getId(), msa.getUrl()));
 
 						logger.info("registered SPI microservice architecture " + message);
@@ -95,19 +102,25 @@ public class CommunicationService extends CoreService
 	/**
 	 * Connects to the WebSocket.
 	 * 
-	 * @param url   The url.
-	 * @param topic The topic.
+	 * @param id         The id.
+	 * @param url        The url.
+	 * @param topic      The topic.
+	 * @param resilience The WebSocket resilience.
+	 * @return The STOMP message handler.
 	 * @since 17
 	 */
-	private void connectWebSocket(String url, String topic) {
+	private EventSPIMessageStompSessionHandler connectWebSocket(String id, String url, String topic,
+			ApplicationConfiguration.SPI.MSA.WebSocket.Resilience resilience) {
 		WebSocketClient client = new StandardWebSocketClient();
 		WebSocketStompClient stompClient = new WebSocketStompClient(client);
 
 		stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-		EventSPIMessageStompSessionHandler sessionHandler = new EventSPIMessageStompSessionHandler(stompClient, url,
-				topic, this);
+		EventSPIMessageStompSessionHandler sessionHandler = new EventSPIMessageStompSessionHandler(stompClient, id, url,
+				topic, this, resilience);
 		stompClient.connectAsync(url, sessionHandler);
+
+		return sessionHandler;
 	}
 
 	/*
@@ -188,6 +201,21 @@ public class CommunicationService extends CoreService
 					}
 				}
 			}
+	}
+
+	/**
+	 * Returns the STOMP message handler monitors.
+	 * 
+	 * @return The STOMP message handler monitors.
+	 * @since 17
+	 */
+	public List<EventSPIMessageStompSessionHandler.Monitor> getStompSessionHandlerMonitors() {
+		List<EventSPIMessageStompSessionHandler.Monitor> monitors = new ArrayList<>();
+
+		for (EventSPIMessageStompSessionHandler handler : stompSessionHandler)
+			monitors.add(handler.getMonitor());
+
+		return monitors;
 	}
 
 	/**

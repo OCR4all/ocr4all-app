@@ -83,6 +83,11 @@ public class CoreApiController {
 	public static final String overviewRequestMapping = "/overview";
 
 	/**
+	 * The communication request mapping.
+	 */
+	public static final String communicationRequestMapping = "/communication";
+
+	/**
 	 * The provider request mapping.
 	 */
 	public static final String providerRequestMapping = "/provider";

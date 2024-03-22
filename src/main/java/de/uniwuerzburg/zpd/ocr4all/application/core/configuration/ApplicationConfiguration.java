@@ -569,10 +569,14 @@ public class ApplicationConfiguration {
 				private final String topic;
 
 				/**
+				 * The resilience.
+				 */
+				private final Resilience resilience;
+
+				/**
 				 * Creates a WebSocket configuration.
 				 * 
-				 * @param endPoint
-				 * @param topic
+				 * @param socket The WebSocket property.
 				 * @since 17
 				 */
 				public WebSocket(Application.SPI.MSA.WebSocket socket) {
@@ -580,6 +584,8 @@ public class ApplicationConfiguration {
 
 					this.endPoint = socket.getEndPoint().trim();
 					this.topic = socket.getTopic().trim();
+
+					resilience = new Resilience(socket.getResilience());
 				}
 
 				/**
@@ -602,6 +608,89 @@ public class ApplicationConfiguration {
 					return topic;
 				}
 
+				/**
+				 * Returns the resilience.
+				 *
+				 * @return The resilience.
+				 * @since 17
+				 */
+				public Resilience getResilience() {
+					return resilience;
+				}
+
+				/**
+				 * Defines resilience configurations.
+				 *
+				 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+				 * @version 1.0
+				 * @since 17
+				 */
+
+				public static class Resilience {
+					/**
+					 * The number of attempts before giving up, including the first call. This is a
+					 * positive integer
+					 */
+					private final int maxAttempts;
+
+					/**
+					 * The delay time in milliseconds between the attempt. This is a non negative
+					 * integer.
+					 */
+					private final long delayBetweenAttempts;
+
+					/**
+					 * The wait time in milliseconds before the next retry attempt. This is a
+					 * positive integer.
+					 */
+					private final long waitDuration;
+
+					/**
+					 * Creates a resilience configuration.
+					 * 
+					 * @param resilience The resilience property.
+					 * @since 17
+					 */
+					public Resilience(Application.SPI.MSA.WebSocket.Resilience resilience) {
+						super();
+						this.maxAttempts = resilience.getMaxAttempts();
+						this.delayBetweenAttempts = resilience.getDelayBetweenAttempts();
+						this.waitDuration = resilience.getWaitDuration();
+					}
+
+					/**
+					 * Returns the number of attempts before giving up, including the first call.
+					 * This is a positive integer.
+					 *
+					 * @return The number of attempts before giving up, including the first call.
+					 * @since 17
+					 */
+					public int getMaxAttempts() {
+						return maxAttempts;
+					}
+
+					/**
+					 * Returns the delay time in milliseconds between the attempt. This is a non
+					 * negative integer.
+					 *
+					 * @return The delay time in milliseconds between the attempt.
+					 * @since 17
+					 */
+					public long getDelayBetweenAttempts() {
+						return delayBetweenAttempts;
+					}
+
+					/**
+					 * Returns the wait time in milliseconds before the next retry attempt. This is
+					 * a positive integer.
+					 *
+					 * @return The wait time in milliseconds before the next retry attempt.
+					 * @since 17
+					 */
+					public long getWaitDuration() {
+						return waitDuration;
+					}
+				}
 			}
 		}
 	}
