@@ -169,10 +169,12 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 			Date begin = new Date();
 			provider.initialize();
 
-			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
-					+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
-							: " (lazy / launched on " + configurationService.getApplication().format(begin) + ")")
-					+ ": " + id + ".");
+			logger.debug(
+					"Provider " + id + ": status " + provider.getStatus().name() + ", initialization time "
+							+ ((new Date()).getTime() - begin.getTime()) + " ms"
+							+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
+									: " , lazy / launched on " + configurationService.getApplication().format(begin))
+							+ ".");
 		} catch (Exception e) {
 			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
 		}
