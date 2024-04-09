@@ -1,12 +1,21 @@
 ---
-version: "3.4"
+#
+# UID: set the user id variable if not available in your  environment
+# - .env file
+#   UID=1000
+# - alternatively: extend your ~/.bashrc:
+#   export UID=$(id -u)
+#
+
+version: "3.9"
 
 services:
   ocrd:
     build: ../ocr4all-app-ocrd-msa
+    user: "${UID}" # set a specific user id so the container can write in the data dir
     restart: unless-stopped
     environment:
-      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,msa-api}
+      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,development, msa-api}
     volumes:
       - ${WORKSPACE_PROJECT:-~/ocr4all/dev/workspace/projects}:${MSA_PROJECT:-/home/ocr4all/projects}
       - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/dev/opt/ocr-d/resources}:${MSA_RESOURCES_ORCD:-/usr/local/share/ocrd-resources}
@@ -15,6 +24,7 @@ services:
       - "9091:8080"
   ocr4all:
     build: .
+    user: "${UID}" # set a specific user id so the container can write in the data dir
     restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,api,documentation}
