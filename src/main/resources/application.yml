@@ -246,7 +246,7 @@ ocr4all:
   application:
     spi.msa:
       - id: ocrd
-        url: ocrd:8080
+        url: ocrd-msa:8080
         websocket:
           end-point: /event
           topic: /topic/spi

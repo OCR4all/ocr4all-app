@@ -1,8 +1,25 @@
-FROM openjdk:17-jdk-alpine
+#
+# File: Dockerfile
+#
+# Assembles a Docker image to run ocr4all on a openjdk container.
+#
+# Author: Herbert Baier (baier@itbaier.de)
+# Date: 16.04.2024
+#
+ARG TAG
+FROM openjdk:${TAG}
+
 WORKDIR application
 
-COPY target/ocr4all-app-1.0-SNAPSHOT.jar app.jar
+#
+# install application
+#
+ARG APP_VERSION
+COPY target/ocr4all-app-${APP_VERSION}.jar app.jar
 
+#
+# start application
+#
 EXPOSE 8080
 
 ENTRYPOINT ["java","-jar","/app.jar"]

@@ -138,7 +138,7 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 
 		session.subscribe(topic, this);
 
-		logger.info("STOMP session " + session.getSessionId() + "established: subscribed to topic " + topic);
+		logger.info("STOMP session " + session.getSessionId() + " established: subscribed to topic " + topic);
 	}
 
 	/*

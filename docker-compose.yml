@@ -1,36 +1,48 @@
 ---
 #
-# UID: set the user id variable if not available in your  environment
-# - .env file
-#   UID=1000
-# - alternatively: extend your ~/.bashrc:
-#   export UID=$(id -u)
+# File: docker-compose.yml
 #
-
+# Assembles Docker images to run the ocr4all containers.
+#
+# Author: Herbert Baier (baier@itbaier.de)
+# Date: 16.04.2024
+#
 version: "3.9"
 
 services:
   ocrd:
-    build: ../ocr4all-app-ocrd-msa
-    user: "${UID}" # set a specific user id so the container can write in the data dir
+    container_name: ocrd-msa
+    build:
+      context: ../ocr4all-app-ocrd-msa
+      dockerfile: Dockerfile
+      args:
+        - TAG=${OCRD_TAG:-2023-04-02}
+        - APP_VERSION=${OCRD_APP_VERSION:-1.0-SNAPSHOT}
+    user: "${UID}" # set a specific user id so the container can write in the data dir (defined in .env - UID=1000)
     restart: unless-stopped
     environment:
-      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,development, msa-api}
+      - SPRING_PROFILES_ACTIVE=${OCRD_PROFILES:-docker,development,msa-api}
     volumes:
-      - ${WORKSPACE_PROJECT:-~/ocr4all/dev/workspace/projects}:${MSA_PROJECT:-/home/ocr4all/projects}
-      - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/dev/opt/ocr-d/resources}:${MSA_RESOURCES_ORCD:-/usr/local/share/ocrd-resources}
+      - ${WORKSPACE_PROJECT:-~/ocr4all/dev/workspace/projects}:/home/ocr4all/projects
+      - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/dev/opt/ocr-d/resources}:/usr/local/share/ocrd-resources
       - ${WORKSPACE_RESOURCES_ORCD_TESSEROCR:-~/ocr4all/dev/opt/ocr-d/resources/ocrd-tesserocr-recognize}:/usr/local/share/tessdata
     ports:
-      - "9091:8080"
+      - "${OCRD_API_PORT:-9091}:8080"
   ocr4all:
-    build: .
-    user: "${UID}" # set a specific user id so the container can write in the data dir
+    container_name: ocr4all-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TAG=${OCR4ALL_TAG:-17-jdk-alpine}
+        - APP_VERSION=${OCR4ALL_APP_VERSION:-1.0-SNAPSHOT}
+    user: "${UID}" # set a specific user id so the container can write in the data dir (defined in .env - UID=1000)
     restart: unless-stopped
     environment:
-      - SPRING_PROFILES_ACTIVE=${MSA_PROFILES:-docker,api,documentation}
+      - SPRING_PROFILES_ACTIVE=${OCR4ALL_PROFILES:-docker,api,documentation}
     volumes:
       - ${WORKSPACE:-~/ocr4all/dev}:/srv/ocr4all
     ports:
-      - "${PORT_API:-8080}:8080"
+      - "${OCR4ALL_API_PORT:-9090}:8080"
     depends_on:
       - ocrd
