@@ -12,6 +12,14 @@ FROM openjdk:${TAG}
 WORKDIR application
 
 #
+# install required packages
+#
+RUN apt-get -y update
+
+# install 
+RUN apt-get install -y imagemagick
+
+#
 # install application
 #
 ARG APP_VERSION
@@ -22,4 +30,4 @@ COPY target/ocr4all-app-${APP_VERSION}.jar app.jar
 #
 EXPOSE 8080
 
-ENTRYPOINT ["java","-jar","/app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]

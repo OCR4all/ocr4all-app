@@ -17,15 +17,16 @@ services:
       dockerfile: Dockerfile
       args:
         - TAG=${OCRD_TAG:-2023-04-02}
+        - JAVA_VERSION=${OCRD_JAVA_VERSION:-17}
         - APP_VERSION=${OCRD_APP_VERSION:-1.0-SNAPSHOT}
-    user: "${UID}" # set a specific user id so the container can write in the data dir (defined in .env - UID=1000)
+#    user: "${UID}" # set a specific user id so the container can write in the data dir
     restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=${OCRD_PROFILES:-docker,development,msa-api}
     volumes:
-      - ${WORKSPACE_PROJECT:-~/ocr4all/dev/workspace/projects}:/home/ocr4all/projects
-      - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/dev/opt/ocr-d/resources}:/usr/local/share/ocrd-resources
-      - ${WORKSPACE_RESOURCES_ORCD_TESSEROCR:-~/ocr4all/dev/opt/ocr-d/resources/ocrd-tesserocr-recognize}:/usr/local/share/tessdata
+      - ${WORKSPACE_PROJECT:-~/ocr4all/docker/workspace/projects}:/home/ocr4all/projects
+      - ${WORKSPACE_RESOURCES_ORCD:-~/ocr4all/docker/opt/ocr-d/resources}:/usr/local/share/ocrd-resources
+      - ${WORKSPACE_RESOURCES_ORCD_TESSEROCR:-~/ocr4all/docker/opt/ocr-d/resources/ocrd-tesserocr-recognize}:/usr/local/share/tessdata
     ports:
       - "${OCRD_API_PORT:-9091}:8080"
   ocr4all:
@@ -34,14 +35,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - TAG=${OCR4ALL_TAG:-17-jdk-alpine}
+        - TAG=${OCR4ALL_TAG:-17-jdk-slim}
         - APP_VERSION=${OCR4ALL_APP_VERSION:-1.0-SNAPSHOT}
-    user: "${UID}" # set a specific user id so the container can write in the data dir (defined in .env - UID=1000)
+#    user: "${UID}" # set a specific user id so the container can write in the data dir
     restart: unless-stopped
     environment:
-      - SPRING_PROFILES_ACTIVE=${OCR4ALL_PROFILES:-docker,api,documentation}
+      - SPRING_PROFILES_ACTIVE=${OCR4ALL_PROFILES:-server,api,documentation,docker}
     volumes:
-      - ${WORKSPACE:-~/ocr4all/dev}:/srv/ocr4all
+      - ${WORKSPACE:-~/ocr4all/docker}:/srv/ocr4all
     ports:
       - "${OCR4ALL_API_PORT:-9090}:8080"
     depends_on:

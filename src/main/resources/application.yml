@@ -234,13 +234,15 @@ spring:
 
 server:
   port: 8080
+  error.include-stacktrace: always
 
 logging:
   file:
     path:
     name:
   level:
-    root: INFO
+    "[org.springframework.security]": INFO
+    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application:
