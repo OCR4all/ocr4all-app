@@ -12,6 +12,7 @@
 spring:
   profiles:
     active:
+      - logging-debug
       - server
       - api
       - documentation
@@ -228,21 +229,41 @@ ocr4all:
         contact: http://www.ocr4all.org
         license: https://opensource.org/licenses/MIT
 
+#
+# logging configuration: console / level info
+#
+logging:
+  file:
+    path:
+    name:
+  level:
+    root: INFO
+
+---
+spring:
+    config.activate.on-profile: logging-file
+
+logging:
+  file:
+    path: /var/log/ocr4all
+    name: ocr4all.log
+
+---
+spring:
+    config.activate.on-profile: logging-debug
+
+server.error.include-stacktrace: always
+  
+logging.level:
+  "[org.springframework.security]": INFO
+  "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
+
 ---
 spring:
     config.activate.on-profile: docker
 
 server:
   port: 8080
-  error.include-stacktrace: always
-
-logging:
-  file:
-    path:
-    name:
-  level:
-    "[org.springframework.security]": INFO
-    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application:
@@ -256,31 +277,15 @@ ocr4all:
             max-attempts: 3
             delay-between-attempts: 1000
             wait-duration: 15000
-  exchange.folder: /srv/ocr4all/exchange
-  repository.folder: /srv/ocr4al/repository
-  workspace.folder: /srv/ocr4all/workspace
-  opt.folder: /srv/ocr4all/opt
-  temporary.folder: /srv/ocr4all/tmp
 
 ---
 spring:
     config.activate.on-profile: desktop
     security.user.password: no-password-required
 
-logging:
-  level:
-    root: WARN
-
 ---
 spring:
     config.activate.on-profile: server
-
-logging:
-  file:
-    path: /var/log/ocr4all
-    name: ocr4all.log
-  level:
-    root: INFO
 
 ocr4all:
   exchange.folder: /srv/ocr4all/exchange
@@ -295,15 +300,6 @@ spring:
 
 server:
   port: 9090
-  error.include-stacktrace: always
-
-logging:
-  file:
-    path:
-    name:
-  level:
-    "[org.springframework.security]": INFO
-    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application.security.administrator.create: true
@@ -319,15 +315,6 @@ spring:
 
 server:
   port: 9091
-  error.include-stacktrace: always
-
-logging:
-  file:
-    path:
-    name:
-  level:
-    "[org.springframework.security]": INFO
-    "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
 
 ocr4all:
   application.security.administrator.create: true

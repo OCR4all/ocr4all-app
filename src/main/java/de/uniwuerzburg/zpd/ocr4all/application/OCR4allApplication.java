@@ -63,5 +63,4 @@ public class OCR4allApplication {
 					+ configurationService.getApplication().getViewLanguages() + ".");
 		}
 	}
-
 }

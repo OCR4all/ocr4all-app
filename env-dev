@@ -1,0 +1,4 @@
+UID=1000:100
+WORKSPACE_PROJECT=~/ocr4all/dev/workspace/projects
+WORKSPACE_RESOURCES_ORCD=~/ocr4all/dev/opt/ocr-d/resources
+WORKSPACE_RESOURCES_ORCD_TESSEROCR=~/ocr4all/dev/opt/ocr-d/resources/ocrd-tesserocr-recognize
