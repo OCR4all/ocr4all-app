@@ -11,7 +11,7 @@ version: "3.9"
 
 services:
   ocrd:
-    container_name: ocrd-msa
+    hostname: ocrd-msa
     build:
       context: ../ocr4all-app-ocrd-msa
       dockerfile: Dockerfile
@@ -30,7 +30,6 @@ services:
     ports:
       - "${OCRD_API_PORT:-127.0.0.1:9091}:8080"
   ocr4all:
-    container_name: ocr4all-backend
     build:
       context: .
       dockerfile: Dockerfile
