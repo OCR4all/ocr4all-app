@@ -10,8 +10,8 @@
 version: "3.9"
 
 services:
-  ocrd:
-    hostname: ocrd-msa
+  msa-ocrd:
+    hostname: msa-ocrd
     build:
       context: ../ocr4all-app-ocrd-msa
       dockerfile: Dockerfile
@@ -29,7 +29,7 @@ services:
       - ${WORKSPACE_RESOURCES_ORCD_TESSEROCR:-~/ocr4all/docker/opt/ocr-d/resources/ocrd-tesserocr-recognize}:/usr/local/share/tessdata
     ports:
       - "${OCRD_API_PORT:-127.0.0.1:9091}:8080"
-  ocr4all:
+  server:
     build:
       context: .
       dockerfile: Dockerfile
@@ -45,4 +45,4 @@ services:
     ports:
       - "${OCR4ALL_API_PORT:-9090}:8080"
     depends_on:
-      - ocrd
+      - msa-ocrd
