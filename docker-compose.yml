@@ -20,7 +20,7 @@ services:
         - JAVA_VERSION=${OCRD_JAVA_VERSION:-17}
         - APP_VERSION=${OCRD_APP_VERSION:-1.0-SNAPSHOT}
     user: "${UID:-}"
-    restart: unless-stopped
+    restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=${OCRD_PROFILES:-logging-debug,msa-api,docker}
     volumes:
@@ -37,7 +37,7 @@ services:
         - TAG=${OCR4ALL_TAG:-17-jdk-slim}
         - APP_VERSION=${OCR4ALL_APP_VERSION:-1.0-SNAPSHOT}
     user: "${UID:-}"
-    restart: unless-stopped
+    restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=${OCR4ALL_PROFILES:-logging-debug,server,api,documentation,docker}
     volumes:
