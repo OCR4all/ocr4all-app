@@ -289,7 +289,7 @@ spring:
 
 ocr4all:
   exchange.folder: /srv/ocr4all/exchange
-  repository.folder: /srv/ocr4al/repository
+  repository.folder: /srv/ocr4all/repository
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp

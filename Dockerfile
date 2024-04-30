@@ -9,19 +9,19 @@
 ARG TAG
 FROM openjdk:${TAG}
 
-WORKDIR application
-
 #
 # install required packages
 #
 RUN apt-get -y update
 
-# install 
+# install imagemagick
 RUN apt-get install -y imagemagick
 
 #
 # install application
 #
+WORKDIR /application
+
 ARG APP_VERSION
 COPY target/ocr4all-app-${APP_VERSION}.jar app.jar
 
