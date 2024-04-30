@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
@@ -27,11 +28,14 @@ public class ImportService extends CoreServiceProvider<ImportServiceProvider> {
 	 * Creates an import service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	public ImportService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
-		super(ImportService.class, configurationService, ImportServiceProvider.class, taskExecutor);
+	public ImportService(ConfigurationService configurationService, CommunicationService communicationService,
+			ThreadPoolTaskExecutor taskExecutor) {
+		super(ImportService.class, configurationService, communicationService, ImportServiceProvider.class,
+				taskExecutor);
 	}
 
 	/*

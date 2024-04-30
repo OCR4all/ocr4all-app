@@ -18,6 +18,7 @@ import java.util.Set;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
@@ -65,17 +66,20 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 *
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param service              The interface or abstract class representing the
 	 *                             service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	protected CoreServiceProvider(Class<? extends CoreServiceProvider<P>> logger,
-			ConfigurationService configurationService, Class<P> service, ThreadPoolTaskExecutor taskExecutor) {
+			ConfigurationService configurationService, CommunicationService communicationService, Class<P> service,
+			ThreadPoolTaskExecutor taskExecutor) {
 		super(logger, configurationService);
 
 		final ConfigurationServiceProvider configuration = configurationService.getWorkspace().getConfiguration()
 				.getConfigurationServiceProvider();
+
 		final Set<String> disabledServiceProviders = configurationService.getWorkspace().getConfiguration()
 				.getDisabledServiceProviders();
 
@@ -96,7 +100,7 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 				provider.configure(!lazyInitializedServiceProviders.contains(id),
 						!disabledServiceProviders.contains(id),
 						taskExecutorServiceProvider == null ? null : taskExecutorServiceProvider.getThreadName(),
-						configuration);
+						configuration, communicationService.getMicroserviceArchitecture());
 
 				if (provider.getName(configurationService.getApplication().getLocale()) == null
 						|| provider.getName(configurationService.getApplication().getLocale()).trim().isEmpty())
@@ -113,12 +117,10 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 					 */
 					if (provider.isEnabled()) {
 						if (provider.isEagerInitialized())
-							initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
-									configuration);
+							initialize(provider);
 						else
 							taskExecutor.execute(() -> {
-								initialize(provider, id, lazyInitializedServiceProviders, disabledServiceProviders,
-										configuration);
+								initialize(provider);
 							});
 					}
 				}
@@ -160,16 +162,19 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 	 * @param configuration                   The configuration.
 	 * @since 1.8
 	 */
-	private void initialize(P provider, String id, Set<String> lazyInitializedServiceProviders,
-			Set<String> disabledServiceProviders, ConfigurationServiceProvider configuration) {
+	private void initialize(P provider) {
+		String id = provider.getClass().getName();
+
 		try {
 			Date begin = new Date();
 			provider.initialize();
 
-			logger.debug("Initialized provider in " + ((new Date()).getTime() - begin.getTime()) + " ms"
-					+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
-							: " (lazy / launched on " + configurationService.getApplication().format(begin) + ")")
-					+ ": " + id + ".");
+			logger.debug(
+					"Provider " + id + ": status " + provider.getStatus().name() + ", initialization time "
+							+ ((new Date()).getTime() - begin.getTime()) + " ms"
+							+ (provider.isEagerInitialized() && provider.isEnabled() ? ""
+									: " , lazy / launched on " + configurationService.getApplication().format(begin))
+							+ ".");
 		} catch (Exception e) {
 			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
 		}

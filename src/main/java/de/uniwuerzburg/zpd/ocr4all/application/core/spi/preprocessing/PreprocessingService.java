@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
@@ -27,11 +28,14 @@ public class PreprocessingService extends CoreServiceProvider<PreprocessingServi
 	 * Creates a preprocessing service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	public PreprocessingService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
-		super(PreprocessingService.class, configurationService, PreprocessingServiceProvider.class, taskExecutor);
+	public PreprocessingService(ConfigurationService configurationService, CommunicationService communicationService,
+			ThreadPoolTaskExecutor taskExecutor) {
+		super(PreprocessingService.class, configurationService, communicationService,
+				PreprocessingServiceProvider.class, taskExecutor);
 	}
 
 	/*

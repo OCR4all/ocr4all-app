@@ -457,25 +457,24 @@ public class ContainerService extends CoreService {
 
 					// quality best
 					ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
-							derivatives.getFormat().name(), folderBest, derivativeResolution.getBest().getMaxSize(),
-							derivativeResolution.getBest().getQuality());
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderFolios), folderBest,
+							derivativeResolution.getBest().getMaxSize(), derivativeResolution.getBest().getQuality());
 
 					// quality detail
 					ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
-							derivatives.getFormat().name(), folderDetail, derivativeResolution.getDetail().getMaxSize(),
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderBest), folderDetail,
+							derivativeResolution.getDetail().getMaxSize(),
 							derivativeResolution.getDetail().getQuality());
 
 					// quality thumbnail
 					ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
-							derivatives.getFormat().name(), folderThumbnail,
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderDetail), folderThumbnail,
 							derivativeResolution.getThumbnail().getMaxSize(),
 							derivativeResolution.getThumbnail().getQuality());
 				} catch (Exception e) {
-					// deleteRecursively(temporaryDirectory);
-					logger.warn("Path folios " + folderFolios.toString());
-					logger.warn("Path best " + folderBest.toString());
+					deleteRecursively(temporaryDirectory);
 
-					throw new IOException("Cannot create derivatives for container - " + e.getMessage() + ".");
+					throw new IOException("Cannot create derivatives for container - " + e.getMessage());
 				}
 
 				// set sizes
@@ -685,15 +684,17 @@ public class ContainerService extends CoreService {
 				for (String id : ids)
 					if (id != null && !id.isBlank())
 						removeIds.add(id.trim());
-				
+
 				final String derivativesFormat = derivatives.getFormat().name();
 
 				for (Folio folio : getFolios(container))
 					if (removeIds.contains(folio.getId()))
 						try {
-							Files.delete(Paths.get(foliosFolder.toString(), folio.getId() + "." + folio.getFormat().name()));
+							Files.delete(
+									Paths.get(foliosFolder.toString(), folio.getId() + "." + folio.getFormat().name()));
 
-							Files.delete(Paths.get(thumbnailFolder.toString(), folio.getId() + "." + derivativesFormat));
+							Files.delete(
+									Paths.get(thumbnailFolder.toString(), folio.getId() + "." + derivativesFormat));
 							Files.delete(Paths.get(detailFolder.toString(), folio.getId() + "." + derivativesFormat));
 							Files.delete(Paths.get(bestFolder.toString(), folio.getId() + "." + derivativesFormat));
 						} catch (Exception e) {

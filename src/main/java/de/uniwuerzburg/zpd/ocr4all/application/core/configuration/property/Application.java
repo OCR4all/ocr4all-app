@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
  * Defines ocr4all application properties.
@@ -69,6 +70,11 @@ public class Application {
 	 * The thread properties.
 	 */
 	private Thread thread = new Thread();
+
+	/**
+	 * The SPI properties.
+	 */
+	private SPI spi = new SPI();
 
 	/**
 	 * The security properties.
@@ -233,6 +239,26 @@ public class Application {
 	 */
 	public void setThread(Thread thread) {
 		this.thread = thread;
+	}
+
+	/**
+	 * Returns the spi properties.
+	 *
+	 * @return The spi properties.
+	 * @since 17
+	 */
+	public SPI getSpi() {
+		return spi;
+	}
+
+	/**
+	 * Set the spi properties.
+	 *
+	 * @param spi The spi properties to set.
+	 * @since 17
+	 */
+	public void setSpi(SPI spi) {
+		this.spi = spi;
 	}
 
 	/**
@@ -585,6 +611,308 @@ public class Application {
 				 */
 				public void setWorkflow(int size) {
 					workflow = size;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Defines SPI properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SPI {
+		/**
+		 * The microservice architecture (MSA) properties.
+		 */
+		private List<MSA> msa = new ArrayList<>();
+
+		/**
+		 * Returns the microservice architecture (MSA) properties.
+		 *
+		 * @return The microservice architecture (MSA) properties.
+		 * @since 17
+		 */
+		public List<MSA> getMsa() {
+			return msa;
+		}
+
+		/**
+		 * Set the microservice architecture (MSA) properties.
+		 *
+		 * @param msa The microservice architecture (MSA) properties to set.
+		 * @since 17
+		 */
+		public void setMsa(List<MSA> msa) {
+			this.msa = msa;
+		}
+
+		/**
+		 * Defines microservice architecture (MSA) properties.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class MSA {
+			/**
+			 * The id.
+			 */
+			@NotEmpty(message = "the microservice architecture (MSA) id cannot be null nor empty")
+			private String id;
+
+			/**
+			 * The url.
+			 */
+			@NotEmpty(message = "the microservice architecture (MSA) url cannot be null nor empty")
+			private String url;
+
+			/**
+			 * The WebSocket property.
+			 */
+			private WebSocket webSocket = new WebSocket();
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the url.
+			 *
+			 * @return The url.
+			 * @since 17
+			 */
+			public String getUrl() {
+				return url;
+			}
+
+			/**
+			 * Set the url.
+			 *
+			 * @param url The url to set.
+			 * @since 17
+			 */
+			public void setUrl(String url) {
+				this.url = url;
+			}
+
+			/**
+			 * Returns the WebSocket property.
+			 *
+			 * @return The WebSocket property.
+			 * @since 17
+			 */
+			public WebSocket getWebsocket() {
+				return webSocket;
+			}
+
+			/**
+			 * Set the WebSocket property.
+			 *
+			 * @param webSocket The WebSocket property to set.
+			 * @since 17
+			 */
+			public void setWebsocket(WebSocket webSocket) {
+				this.webSocket = webSocket;
+			}
+
+			/**
+			 * Defines WebSocket properties.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 17
+			 */
+
+			public static class WebSocket {
+				/**
+				 * The end point.
+				 */
+				private String endPoint;
+
+				/**
+				 * The topic.
+				 */
+				private String topic;
+
+				/**
+				 * The resilience.
+				 */
+				private Resilience resilience = new Resilience();
+
+				/**
+				 * Returns the end point.
+				 *
+				 * @return The end point.
+				 * @since 17
+				 */
+				public String getEndPoint() {
+					return endPoint;
+				}
+
+				/**
+				 * Set the end point.
+				 *
+				 * @param endPoint The end point to set.
+				 * @since 17
+				 */
+				public void setEndPoint(String endPoint) {
+					this.endPoint = endPoint;
+				}
+
+				/**
+				 * Returns the topic.
+				 *
+				 * @return The topic.
+				 * @since 17
+				 */
+				public String getTopic() {
+					return topic;
+				}
+
+				/**
+				 * Set the topic.
+				 *
+				 * @param topic The topic to set.
+				 * @since 17
+				 */
+				public void setTopic(String topic) {
+					this.topic = topic;
+				}
+
+				/**
+				 * Returns the resilience.
+				 *
+				 * @return The resilience.
+				 * @since 17
+				 */
+				public Resilience getResilience() {
+					return resilience;
+				}
+
+				/**
+				 * Set the resilience.
+				 *
+				 * @param resilience The resilience to set.
+				 * @since 17
+				 */
+				public void setResilience(Resilience resilience) {
+					this.resilience = resilience;
+				}
+
+				/**
+				 * Defines resilience properties.
+				 *
+				 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+				 * @version 1.0
+				 * @since 17
+				 */
+
+				public static class Resilience {
+					/**
+					 * The number of attempts before giving up, including the first call. This is a
+					 * positive integer with default value 3.
+					 */
+					private int maxAttempts = 3;
+
+					/**
+					 * The delay time in milliseconds between the attempt. This is a non negative
+					 * integer with default value 1000 ms.
+					 */
+					private long delayBetweenAttempts = 1000;
+
+					/**
+					 * The wait time in milliseconds before the next retry attempt. This is a
+					 * positive integer with default value 15000 ms.
+					 */
+					private long waitDuration = 15000;
+
+					/**
+					 * Returns the number of attempts before giving up, including the first call.
+					 * This is a positive integer.
+					 *
+					 * @return The number of attempts before giving up, including the first call.
+					 * @since 17
+					 */
+					public int getMaxAttempts() {
+						return maxAttempts;
+					}
+
+					/**
+					 * Set the number of attempts before giving up, including the first call.
+					 *
+					 * @param maxAttempts The number of attempts to set. This is a positive integer.
+					 * @since 17
+					 */
+					public void setMaxAttempts(int maxAttempts) {
+						if (maxAttempts > 0)
+							this.maxAttempts = maxAttempts;
+					}
+
+					/**
+					 * Returns the delay time in milliseconds between the attempt. This is a non
+					 * negative integer.
+					 *
+					 * @return The delay time in milliseconds between the attempt.
+					 * @since 17
+					 */
+					public long getDelayBetweenAttempts() {
+						return delayBetweenAttempts;
+					}
+
+					/**
+					 * Set the delay time between in milliseconds the attempt.
+					 *
+					 * @param delayBetweenAttempts The delay time in milliseconds to set. This is a
+					 *                             non negative integer.
+					 * @since 17
+					 */
+					public void setDelayBetweenAttempts(long delayBetweenAttempts) {
+						if (delayBetweenAttempts >= 0)
+							this.delayBetweenAttempts = delayBetweenAttempts;
+					}
+
+					/**
+					 * Returns the wait time in milliseconds before the next retry attempt. This is
+					 * a positive integer.
+					 *
+					 * @return The wait time in milliseconds before the next retry attempt.
+					 * @since 17
+					 */
+					public long getWaitDuration() {
+						return waitDuration;
+					}
+
+					/**
+					 * Set the wait time before in milliseconds the next retry attempt.
+					 *
+					 * @param waitDuration The wait time in milliseconds to set. This is a positive
+					 *                     integer.
+					 * @since 17
+					 */
+					public void setWaitDuration(long waitDuration) {
+						if (waitDuration > 0)
+							this.waitDuration = waitDuration;
+					}
+
 				}
 			}
 		}

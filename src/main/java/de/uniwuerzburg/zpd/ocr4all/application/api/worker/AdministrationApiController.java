@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -32,6 +33,9 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.uniwuerzburg.zpd.ocr4all.application.communication.message.spi.EventSPI;
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.EventSPIMessageStompSessionHandler;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
@@ -58,6 +62,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvi
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.MicroserviceArchitecture;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -86,6 +91,21 @@ public class AdministrationApiController extends CoreApiController {
 	 * The context path.
 	 */
 	public static final String contextPath = apiContextPathVersion_1_0 + "/administration";
+
+	/**
+	 * The hosts request mapping.
+	 */
+	private static final String hostsRequestMapping = "/hosts";
+
+	/**
+	 * The monitors request mapping.
+	 */
+	private static final String monitorsRequestMapping = "/monitors";
+
+	/**
+	 * The communication service.
+	 */
+	private final CommunicationService communicationService;
 
 	/**
 	 * The registered import service providers sorted by name.
@@ -147,13 +167,17 @@ public class AdministrationApiController extends CoreApiController {
 	 * @param postcorrectionService The post-correction service.
 	 * @param toolService           The tool service.
 	 * @param exportService         The export service.
+	 * @param communicationService  The communication service.
 	 * @since 1.8
 	 */
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
 			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
-			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService) {
+			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
+			CommunicationService communicationService) {
 		super(AdministrationApiController.class, configurationService, securityService);
+
+		this.communicationService = communicationService;
 
 		importProviders = importService.getProviders();
 		launcherProviders = launcherService.getProviders();
@@ -244,7 +268,6 @@ public class AdministrationApiController extends CoreApiController {
 	 * @return The provider journal entry in the response body.
 	 * @since 1.8
 	 */
-	// TODO
 	@Operation(summary = "configures the service provider and returns the provider journal entry in the response body; allowed actions are: eager, lazy, enable, disable, start, restart, stop, thread_pool_set (requires name and size) and thread_pool_reset")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Provider Journal Entry", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JournalEntryResponse.class)) }),
@@ -326,6 +349,57 @@ public class AdministrationApiController extends CoreApiController {
 			}
 		} catch (ResponseStatusException ex) {
 			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the communication hosts in the response body.
+	 *
+	 * @return The communication hosts in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the communication hosts in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Communication Hosts", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CommunicationHostResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(communicationRequestMapping + hostsRequestMapping)
+	public ResponseEntity<List<CommunicationHostResponse>> communicationHosts() {
+		try {
+			List<CommunicationHostResponse> hosts = new ArrayList<>();
+			for (MicroserviceArchitecture.Host host : communicationService.getMicroserviceArchitecture().getHosts())
+				hosts.add(new CommunicationHostResponse(host));
+
+			return ResponseEntity.ok().body(hosts);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the communication monitors in the response body.
+	 *
+	 * @return The communication monitors in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the communication monitors in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Communication Monitors", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CommunicationMonitorResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(communicationRequestMapping + monitorsRequestMapping)
+	public ResponseEntity<List<CommunicationMonitorResponse>> communicationMonitors() {
+		try {
+			List<CommunicationMonitorResponse> monitors = new ArrayList<>();
+			for (EventSPIMessageStompSessionHandler.Monitor monitor : communicationService
+					.getStompSessionHandlerMonitors())
+				monitors.add(new CommunicationMonitorResponse(monitor));
+
+			return ResponseEntity.ok().body(monitors);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -2926,6 +3000,331 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setSize(int size) {
 			this.size = size;
+		}
+
+	}
+
+	/**
+	 * Defines communication host responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class CommunicationHostResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The id.
+		 */
+		private final String id;
+
+		/**
+		 * The url.
+		 */
+		private final String url;
+
+		/**
+		 * Creates a host.
+		 * 
+		 * @param host The microservice architecture host.
+		 * @since 17
+		 */
+		public CommunicationHostResponse(MicroserviceArchitecture.Host host) {
+			super();
+
+			id = host.getId();
+			url = host.getUrl();
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 17
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Returns the url.
+		 *
+		 * @return The url.
+		 * @since 17
+		 */
+		public String getUrl() {
+			return url;
+		}
+
+	}
+
+	/**
+	 * Defines communication monitor responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class CommunicationMonitorResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The id.
+		 */
+		private final String id;
+
+		/**
+		 * The url.
+		 */
+		private final String url;
+
+		/**
+		 * The topic.
+		 */
+		private final String topic;
+
+		/**
+		 * The creation time.
+		 */
+		@JsonProperty("created-at")
+		private final Date createdAt;
+
+		/**
+		 * The connected time.
+		 */
+		@JsonProperty("connected-at")
+		private final Date connectedAt;
+
+		/**
+		 * The error time.
+		 */
+		@JsonProperty("error-at")
+		private final Date errorAt;
+
+		/**
+		 * The number of connection attempts, since creation or last successful
+		 * connection.
+		 */
+		@JsonProperty("connection-attempts")
+		private final int connectionAttempts;
+
+		/**
+		 * The session id.
+		 */
+		@JsonProperty("session-id")
+		private final String sessionId;
+
+		/**
+		 * True if session is connected.
+		 */
+		private final boolean isConnected;
+
+		/**
+		 * The number of events by type.
+		 */
+		private final List<EventResponse> events = new ArrayList<>();
+
+		/**
+		 * Creates a communication monitor response for the api.
+		 * 
+		 * @param monitor The monitor.
+		 * @since 17
+		 */
+		public CommunicationMonitorResponse(EventSPIMessageStompSessionHandler.Monitor monitor) {
+			super();
+
+			id = monitor.getId();
+			url = monitor.getUrl();
+			topic = monitor.getTopic();
+			createdAt = monitor.getCreatedAt();
+			connectedAt = monitor.getConnectedAt();
+			errorAt = monitor.getErrorAt();
+			connectionAttempts = monitor.getConnectionAttempts();
+			sessionId = monitor.getSessionId();
+			isConnected = monitor.isConnected();
+
+			for (EventSPI.Type type : monitor.getEvents().keySet())
+				events.add(new EventResponse(type, monitor.getEvents().get(type)));
+
+			Collections.sort(events, new Comparator<EventResponse>() {
+
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+				 */
+				@Override
+				public int compare(EventResponse e1, EventResponse e2) {
+					return e1.getType().compareTo(e2.getType());
+				}
+			});
+		}
+
+		/**
+		 * Returns the session id.
+		 *
+		 * @return The session id.
+		 * @since 17
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Returns the url.
+		 *
+		 * @return The url.
+		 * @since 17
+		 */
+		public String getUrl() {
+			return url;
+		}
+
+		/**
+		 * Returns the topic.
+		 *
+		 * @return The topic.
+		 * @since 17
+		 */
+		public String getTopic() {
+			return topic;
+		}
+
+		/**
+		 * Returns the creation time.
+		 *
+		 * @return The creation time.
+		 * @since 17
+		 */
+		public Date getCreatedAt() {
+			return createdAt;
+		}
+
+		/**
+		 * Returns the connected time.
+		 *
+		 * @return The connected time.
+		 * @since 17
+		 */
+		public Date getConnectedAt() {
+			return connectedAt;
+		}
+
+		/**
+		 * Returns the error time.
+		 *
+		 * @return The error time.
+		 * @since 17
+		 */
+		public Date getErrorAt() {
+			return errorAt;
+		}
+
+		/**
+		 * Returns the number of connection attempts, since creation or last successful
+		 * connection.
+		 *
+		 * @return The number of connection attempts.
+		 * @since 17
+		 */
+		public int getConnectionAttempts() {
+			return connectionAttempts;
+		}
+
+		/**
+		 * Returns the sessionId.
+		 *
+		 * @return The sessionId.
+		 * @since 17
+		 */
+		public String getSessionId() {
+			return sessionId;
+		}
+
+		/**
+		 * Returns true if session is connected.
+		 *
+		 * @return True if session is connected.
+		 * @since 17
+		 */
+		public boolean isConnected() {
+			return isConnected;
+		}
+
+		/**
+		 * Returns the events.
+		 *
+		 * @return The events.
+		 * @since 17
+		 */
+		public List<EventResponse> getEvents() {
+			return events;
+		}
+
+		/**
+		 * Defines event responses for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public class EventResponse implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The type.
+			 */
+			private final EventSPI.Type type;
+
+			/**
+			 * The number.
+			 */
+			private final int number;
+
+			/**
+			 * Creates an event response for the api.
+			 * 
+			 * @param type   The type.
+			 * @param number The number.
+			 * @since 17
+			 */
+			public EventResponse(EventSPI.Type type, int number) {
+				super();
+
+				this.type = type;
+				this.number = number;
+			}
+
+			/**
+			 * Returns the type.
+			 *
+			 * @return The type.
+			 * @since 17
+			 */
+			public EventSPI.Type getType() {
+				return type;
+			}
+
+			/**
+			 * Returns the number.
+			 *
+			 * @return The number.
+			 * @since 17
+			 */
+			public int getNumber() {
+				return number;
+			}
+
 		}
 
 	}

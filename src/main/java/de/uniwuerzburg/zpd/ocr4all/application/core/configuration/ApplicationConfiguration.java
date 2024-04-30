@@ -77,6 +77,11 @@ public class ApplicationConfiguration {
 	private final ThreadPoolSizeProperties threadPoolSizeProperties;
 
 	/**
+	 * The SPI configuration.
+	 */
+	private final SPI spi;
+
+	/**
 	 * The administrator group.
 	 */
 	private final String administratorGroup;
@@ -166,6 +171,9 @@ public class ApplicationConfiguration {
 
 		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getTask(),
 				properties.getThread().getPool().getSize().getWorkflow());
+
+		// The spi
+		spi = new SPI(properties.getSpi());
 
 		// The security groups group
 		String securityGroup = properties.getSecurity().getGroups().getAdministrator();
@@ -314,6 +322,16 @@ public class ApplicationConfiguration {
 	}
 
 	/**
+	 * Returns the spi configuration.
+	 *
+	 * @return The spi configuration.
+	 * @since 17
+	 */
+	public SPI getSpi() {
+		return spi;
+	}
+
+	/**
 	 * Returns true if the administrator group is set.
 	 * 
 	 * @return True if the administrator group is set.
@@ -414,7 +432,267 @@ public class ApplicationConfiguration {
 		public int getWorkflow() {
 			return workflow;
 		}
+	}
 
+	/**
+	 * Defines SPI configurations.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SPI {
+		/**
+		 * The microservice architectures (MSA).
+		 */
+		private final List<MSA> msa = new ArrayList<>();
+
+		/**
+		 * Creates a SPI configuration.
+		 * 
+		 * @since 17
+		 */
+		public SPI(Application.SPI spi) {
+			super();
+
+			if (spi != null && spi.getMsa() != null)
+				for (Application.SPI.MSA msa : spi.getMsa())
+					this.msa.add(new MSA(msa));
+		}
+
+		/**
+		 * Returns the microservice architectures (MSA).
+		 *
+		 * @return The microservice architectures (MSA).
+		 * @since 17
+		 */
+		public List<MSA> getMsa() {
+			return msa;
+		}
+
+		/**
+		 * Defines microservice architecture (MSA) configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class MSA {
+			/**
+			 * The id.
+			 */
+			private final String id;
+
+			/**
+			 * The url.
+			 */
+			private final String url;
+
+			/**
+			 * The WebSocket.
+			 */
+			private final WebSocket webSocket;
+
+			/**
+			 * Creates a microservice architecture (MSA) configuration.
+			 * 
+			 * @param msa The microservice architecture property.
+			 * @since 17
+			 */
+			public MSA(Application.SPI.MSA msa) {
+				super();
+				id = msa.getId().trim();
+				url = msa.getUrl().trim();
+
+				Application.SPI.MSA.WebSocket socket = msa.getWebsocket();
+				webSocket = socket != null && socket.getEndPoint() != null && !socket.getEndPoint().isBlank()
+						&& socket.getTopic() != null && !socket.getTopic().isBlank() ? new WebSocket(socket) : null;
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Returns the url.
+			 *
+			 * @return The url.
+			 * @since 17
+			 */
+			public String getUrl() {
+				return url;
+			}
+
+			/**
+			 * Returns true if the WebSocket is set.
+			 *
+			 * @return True if the WebSocket is set.
+			 * @since 17
+			 */
+			public boolean isWebSocketSet() {
+				return webSocket != null;
+			}
+
+			/**
+			 * Returns the WebSocket.
+			 *
+			 * @return The EebSocket.
+			 * @since 17
+			 */
+			public WebSocket getWebSocket() {
+				return webSocket;
+			}
+
+			/**
+			 * Defines WebSocket configurations.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 17
+			 */
+
+			public static class WebSocket {
+				/**
+				 * The end point.
+				 */
+				private final String endPoint;
+
+				/**
+				 * The topic.
+				 */
+				private final String topic;
+
+				/**
+				 * The resilience.
+				 */
+				private final Resilience resilience;
+
+				/**
+				 * Creates a WebSocket configuration.
+				 * 
+				 * @param socket The WebSocket property.
+				 * @since 17
+				 */
+				public WebSocket(Application.SPI.MSA.WebSocket socket) {
+					super();
+
+					this.endPoint = socket.getEndPoint().trim();
+					this.topic = socket.getTopic().trim();
+
+					resilience = new Resilience(socket.getResilience());
+				}
+
+				/**
+				 * Returns the end point.
+				 *
+				 * @return The end point.
+				 * @since 17
+				 */
+				public String getEndPoint() {
+					return endPoint;
+				}
+
+				/**
+				 * Returns the topic.
+				 *
+				 * @return The topic.
+				 * @since 17
+				 */
+				public String getTopic() {
+					return topic;
+				}
+
+				/**
+				 * Returns the resilience.
+				 *
+				 * @return The resilience.
+				 * @since 17
+				 */
+				public Resilience getResilience() {
+					return resilience;
+				}
+
+				/**
+				 * Defines resilience configurations.
+				 *
+				 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+				 * @version 1.0
+				 * @since 17
+				 */
+
+				public static class Resilience {
+					/**
+					 * The number of attempts before giving up, including the first call. This is a
+					 * positive integer.
+					 */
+					private final int maxAttempts;
+
+					/**
+					 * The delay time in milliseconds between the attempt. This is a non negative
+					 * integer.
+					 */
+					private final long delayBetweenAttempts;
+
+					/**
+					 * The wait time in milliseconds before the next retry attempt. This is a
+					 * positive integer.
+					 */
+					private final long waitDuration;
+
+					/**
+					 * Creates a resilience configuration.
+					 * 
+					 * @param resilience The resilience property.
+					 * @since 17
+					 */
+					public Resilience(Application.SPI.MSA.WebSocket.Resilience resilience) {
+						super();
+						this.maxAttempts = resilience.getMaxAttempts();
+						this.delayBetweenAttempts = resilience.getDelayBetweenAttempts();
+						this.waitDuration = resilience.getWaitDuration();
+					}
+
+					/**
+					 * Returns the number of attempts before giving up, including the first call.
+					 * This is a positive integer.
+					 *
+					 * @return The number of attempts before giving up, including the first call.
+					 * @since 17
+					 */
+					public int getMaxAttempts() {
+						return maxAttempts;
+					}
+
+					/**
+					 * Returns the delay time in milliseconds between the attempt. This is a non
+					 * negative integer.
+					 *
+					 * @return The delay time in milliseconds between the attempt.
+					 * @since 17
+					 */
+					public long getDelayBetweenAttempts() {
+						return delayBetweenAttempts;
+					}
+
+					/**
+					 * Returns the wait time in milliseconds before the next retry attempt. This is
+					 * a positive integer.
+					 *
+					 * @return The wait time in milliseconds before the next retry attempt.
+					 * @since 17
+					 */
+					public long getWaitDuration() {
+						return waitDuration;
+					}
+				}
+			}
+		}
 	}
 
 	/**

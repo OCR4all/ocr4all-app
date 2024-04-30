@@ -132,12 +132,9 @@ public abstract class Process extends Job {
 
 		if (jobs != null)
 			for (Job job : jobs)
-				if (job != null && (job instanceof Process process)
-						&& (this == job
-								|| (isProjectType() && process.isProjectType()
-										&& project.isSame(process.getProject()))
-								|| (isSandboxType() && process.isSandboxType()
-										&& sandbox.isSame(process.getSandbox()))))
+				if (job != null && (job instanceof Process process) && (this == job
+						|| (isProjectType() && process.isProjectType() && project.isSame(process.getProject()))
+						|| (isSandboxType() && process.isSandboxType() && sandbox.isSame(process.getSandbox()))))
 					dependencies.add(job);
 
 		return dependencies;
@@ -572,7 +569,7 @@ public abstract class Process extends Job {
 							snapshot == null || snapshot.getConfiguration().isRoot() ? null
 									: snapshot.getConfiguration().getParent()),
 					snapshot == null ? null : snapshot.getConfiguration().getSandbox().getFolder(), getSnapshotTrack(),
-					temporaryDirectory);
+					configurationService.getWorkspace().getProjects().getFolder(), temporaryDirectory);
 		}
 
 		/**

@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.export;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
@@ -27,11 +28,14 @@ public class ExportService extends CoreServiceProvider<ExportServiceProvider> {
 	 * Creates an export service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
-	public ExportService(ConfigurationService configurationService, ThreadPoolTaskExecutor taskExecutor) {
-		super(ExportService.class, configurationService, ExportServiceProvider.class, taskExecutor);
+	public ExportService(ConfigurationService configurationService, CommunicationService communicationService,
+			ThreadPoolTaskExecutor taskExecutor) {
+		super(ExportService.class, configurationService, communicationService, ExportServiceProvider.class,
+				taskExecutor);
 	}
 
 	/*

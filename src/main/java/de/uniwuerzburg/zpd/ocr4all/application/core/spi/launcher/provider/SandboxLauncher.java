@@ -849,8 +849,8 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					return ProcessServiceProvider.Processor.State.canceled;
 
 				try {
-					SystemProcess preprocessJob = new SystemProcess(folderProjectFolios, convertCommand);
-					List<String> arguments = new ArrayList<>(Arrays.asList("*", "-format", imageFormat.name()));
+					List<String> arguments = new ArrayList<>(
+							Arrays.asList("REPLACE_IMAGE_NAME", "-format", imageFormat.name()));
 
 					switch (method) {
 					case monochrome:
@@ -893,14 +893,22 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 							folderSandboxFolios.toString() + "/%[filename:t]." + imageFormat.name()));
 
 					updatedStandardOutput("Preprocess images.");
-					preprocessJob.execute(arguments);
+					SystemProcess preprocessJob = new SystemProcess(folderProjectFolios, convertCommand);
 
-					if (preprocessJob.getExitValue() != 0) {
-						String error = preprocessJob.getStandardError();
-						updatedStandardError(
-								"Cannot preprocess images" + (error.isBlank() ? "" : " - " + error.trim()) + ".");
+					for (String fileName : OCR4allUtils.getFileNames(folderProjectFolios)) {
+						// set image name
+						arguments.set(0, fileName);
+						
+						// process image
+						preprocessJob.execute(arguments);
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						if (preprocessJob.getExitValue() != 0) {
+							String error = preprocessJob.getStandardError();
+							updatedStandardError(
+									"Cannot preprocess images" + (error.isBlank() ? "" : " - " + error.trim()) + ".");
+
+							return ProcessServiceProvider.Processor.State.interrupted;
+						}
 					}
 				} catch (IOException e) {
 					updatedStandardError("Sandbox images cannot be created - " + e.getMessage() + ".");

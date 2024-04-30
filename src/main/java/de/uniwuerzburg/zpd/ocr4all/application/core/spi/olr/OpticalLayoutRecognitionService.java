@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
@@ -27,12 +28,13 @@ public class OpticalLayoutRecognitionService extends CoreServiceProvider<Optical
 	 * Creates an optical layout recognition (OLR) service.
 	 * 
 	 * @param configurationService The configuration service.
+	 * @param communicationService The communication service.
 	 * @param taskExecutor         The task executor.
 	 * @since 1.8
 	 */
 	public OpticalLayoutRecognitionService(ConfigurationService configurationService,
-			ThreadPoolTaskExecutor taskExecutor) {
-		super(OpticalLayoutRecognitionService.class, configurationService,
+			CommunicationService communicationService, ThreadPoolTaskExecutor taskExecutor) {
+		super(OpticalLayoutRecognitionService.class, configurationService, communicationService,
 				OpticalLayoutRecognitionServiceProvider.class, taskExecutor);
 	}
 

@@ -73,6 +73,8 @@ public class ImageUtils {
 	 * 
 	 * @param convertJob The convert job.
 	 * @param format     The folios derivatives format.
+	 * @param fileNames  The name of the files to convert in the convert job
+	 *                   directory.
 	 * @param target     The target folder.
 	 * @param resize     The maximal size.
 	 * @param quality    The compression quality.
@@ -80,25 +82,30 @@ public class ImageUtils {
 	 *                     images.
 	 * @since 1.8
 	 */
-	public static void createDerivatives(SystemProcess convertJob, String format, Path target, String resize,
-			int quality) throws IOException {
+	public static void createDerivatives(SystemProcess convertJob, String format, Set<String> fileNames, Path target,
+			String resize, int quality) throws IOException {
 		final String label = target.getFileName().toString();
+		
+		if (fileNames != null)
+			for (String fileName : fileNames)
+				if (!fileName.isBlank()) {
+					try {
+						convertJob.execute(fileName.trim(), "-format", format, "-resize", resize + ">", "-quality",
+								"" + quality, "-set", "filename:t", "%t", "+adjoin",
+								target.toString() + "/%[filename:t]." + format);
 
-		try {
-			convertJob.execute("*", "-format", format, "-resize", resize + ">", "-quality", "" + quality, "-set",
-					"filename:t", "%t", "+adjoin", target.toString() + "/%[filename:t]." + format);
+					} catch (IOException e) {
+						throw new IOException("Cannot create derivatives " + label + " quality image for folios - "
+								+ e.getMessage() + ".");
+					}
 
-		} catch (IOException e) {
-			throw new IOException(
-					"Cannot create derivatives " + label + " quality image for folios - " + e.getMessage() + ".");
-		}
+					if (convertJob.getExitValue() != 0) {
+						final String error = convertJob.getStandardError();
 
-		if (convertJob.getExitValue() != 0) {
-			final String error = convertJob.getStandardError();
-
-			throw new IOException("Cannot create derivatives " + label + " quality image for folios"
-					+ (error.isBlank() ? "" : " - " + error.trim()) + ".");
-		}
+						throw new IOException("Cannot create derivatives " + label + " quality image for folios"
+								+ (error.isBlank() ? "" : " - " + error.trim()) + ".");
+					}
+				}
 
 	}
 
