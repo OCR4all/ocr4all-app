@@ -277,11 +277,23 @@ ocr4all:
             max-attempts: 3
             delay-between-attempts: 1000
             wait-duration: 15000
+  exchange.folder: /srv/ocr4all/exchange
+  repository.folder: /srv/ocr4all/repository
+  workspace.folder: /srv/ocr4all/workspace
+  opt.folder: /srv/ocr4all/opt
+  temporary.folder: /srv/ocr4all/tmp
 
 ---
 spring:
     config.activate.on-profile: desktop
     security.user.password: no-password-required
+
+ocr4all:
+  exchange.folder: ${user.home}/ocr4all/exchange
+  repository.folder: ${user.home}/ocr4all/repository
+  workspace.folder: ${user.home}/ocr4all/workspace
+  opt.folder: ${user.home}/ocr4all/opt
+  temporary.folder: ${user.home}/ocr4all/tmp
 
 ---
 spring:
