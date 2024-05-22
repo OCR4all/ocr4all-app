@@ -1,11 +1,11 @@
 /**
- * File:     RepositoryConfiguration.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration
+ * File:     DataConfiguration.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.11.2023
+ * Date:     22.05.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository;
+package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -17,24 +17,23 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Container;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Data;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 
 /**
- * Defines configurations for the repository.
+ * Defines configurations for the data.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
-public class RepositoryConfiguration extends CoreFolder {
+public class DataConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RepositoryConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DataConfiguration.class);
 
 	/**
 	 * The configuration.
@@ -42,21 +41,21 @@ public class RepositoryConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
-	 * The container properties.
+	 * The collection properties.
 	 */
-	private final Container container;
+	private final de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection collection;
 
 	/**
-	 * Creates a configuration for the repository.
+	 * Creates a configuration for the data.
 	 * 
 	 * @param properties The ocr4all properties.
 	 * @since 1.8
 	 */
-	public RepositoryConfiguration(OCR4all properties) {
-		super(Paths.get(properties.getRepository().getFolder()));
+	public DataConfiguration(OCR4all properties) {
+		super(Paths.get(properties.getData().getFolder()));
 
-		configuration = new Configuration(properties.getRepository().getConfiguration());
-		container = properties.getRepository().getContainer();
+		configuration = new Configuration(properties.getData().getConfiguration());
+		collection = properties.getData().getCollection();
 	}
 
 	/**
@@ -70,17 +69,17 @@ public class RepositoryConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Returns the container properties.
+	 * Returns the collection properties.
 	 *
-	 * @return The container properties.
+	 * @return The collection properties.
 	 * @since 1.8
 	 */
-	public Container getContainer() {
-		return container;
+	public de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection getCollection() {
+		return collection;
 	}
 
 	/**
-	 * Defines configurations for the repository.
+	 * Defines configurations for the data.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -93,26 +92,25 @@ public class RepositoryConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The repository.
+		 * The data.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository repository = null;
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Data data = null;
 
 		/**
-		 * Creates a configuration for the repository.
+		 * Creates a configuration for the data.
 		 * 
-		 * @param properties The configuration properties for the repository.
+		 * @param properties The configuration properties for the data.
 		 * @since 1.8
 		 */
-		Configuration(Repository.Configuration properties) {
-			super(Paths.get(RepositoryConfiguration.this.folder.toString(), properties.getFolder()));
+		Configuration(Data.Configuration properties) {
+			super(Paths.get(DataConfiguration.this.folder.toString(), properties.getFolder()));
 
-			// Initialize the repository configuration folder and consequently the
-			// repository
-			ConfigurationService.initializeFolder(true, folder, "repository configuration");
+			// Initialize the data configuration folder and consequently the
+			// data
+			ConfigurationService.initializeFolder(true, folder, "data configuration");
 
 			// Loads the main configuration file
-			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
-					Type.repository_v1);
+			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()), Type.data_v1);
 			loadMainConfiguration();
 		}
 
@@ -124,27 +122,27 @@ public class RepositoryConfiguration extends CoreFolder {
 		private void loadMainConfiguration() {
 			// Load main configuration
 			try {
-				repository = mainConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository.class, null,
+				data = mainConfigurationManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Data.class, null,
 						message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || repository.getSecurity() == null) {
+				if (!isMainConfigurationAvailable() || data.getSecurity() == null) {
 					Date currentTimeStamp = new Date();
 					if (!isMainConfigurationAvailable()) {
-						repository = new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository();
+						data = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Data();
 
-						repository.setDate(currentTimeStamp);
+						data.setDate(currentTimeStamp);
 					}
 
-					if (repository.getSecurity() == null)
-						repository.setSecurity(new SecurityOwner());
+					if (data.getSecurity() == null)
+						data.setSecurity(new SecurityOwner());
 
 					persist(null, currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
 
-				repository = null;
+				data = null;
 			}
 		}
 
@@ -155,7 +153,7 @@ public class RepositoryConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isMainConfigurationAvailable() {
-			return repository != null;
+			return data != null;
 		}
 
 		/**
@@ -180,16 +178,16 @@ public class RepositoryConfiguration extends CoreFolder {
 		private boolean persist(String user, Date updated) {
 			if (isMainConfigurationAvailable())
 				try {
-					repository.setUser(user);
-					repository.setUpdated(updated == null ? new Date() : updated);
+					data.setUser(user);
+					data.setUpdated(updated == null ? new Date() : updated);
 
-					mainConfigurationManager.persist(repository);
+					mainConfigurationManager.persist(data);
 
-					logger.info("Persisted the repository configuration.");
+					logger.info("Persisted the data configuration.");
 
 					return true;
 				} catch (Exception e) {
-					logger.warn("Could not persist the repository configuration - " + e.getMessage());
+					logger.warn("Could not persist the data configuration - " + e.getMessage());
 				}
 
 			return false;
@@ -208,18 +206,16 @@ public class RepositoryConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the repository security.
+		 * Returns the data security.
 		 * 
-		 * @return The repository security.
+		 * @return The data security.
 		 * @since 1.8
 		 */
 		public SecurityOwner getSecurity() {
 			if (isMainConfigurationAvailable())
-				return new SecurityOwner(repository.getSecurity().isSecured(),
-						repository.getSecurity().getUsers() == null ? null
-								: new HashSet<>(repository.getSecurity().getUsers()),
-						repository.getSecurity().getGroups() == null ? null
-								: new HashSet<>(repository.getSecurity().getGroups()));
+				return new SecurityOwner(data.getSecurity().isSecured(),
+						data.getSecurity().getUsers() == null ? null : new HashSet<>(data.getSecurity().getUsers()),
+						data.getSecurity().getGroups() == null ? null : new HashSet<>(data.getSecurity().getGroups()));
 			else
 				return null;
 		}
@@ -234,9 +230,9 @@ public class RepositoryConfiguration extends CoreFolder {
 		 */
 		public boolean updateSecurity(String user, SecurityOwner security) {
 			if (security != null && isMainConfigurationAvailable()) {
-				repository.getSecurity().setSecured(security.isSecured());
-				repository.getSecurity().setUsers(security.getUsers());
-				repository.getSecurity().setGroups(security.getGroups());
+				data.getSecurity().setSecured(security.isSecured());
+				data.getSecurity().setUsers(security.getUsers());
+				data.getSecurity().setGroups(security.getGroups());
 
 				return persist(user);
 			} else
@@ -244,17 +240,17 @@ public class RepositoryConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Secures the repository and persists the main configuration if it is
+		 * Secures the data and persists the main configuration if it is
 		 * available.
 		 *
 		 * @param user      The user.
-		 * @param isSecured True if the repository is secured.
+		 * @param isSecured True if the data is secured.
 		 * @return True if the security was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean secure(String user, boolean isSecured) {
 			if (isMainConfigurationAvailable()) {
-				repository.getSecurity().setSecured(isSecured);
+				data.getSecurity().setSecured(isSecured);
 
 				return persist(user);
 			} else
@@ -262,26 +258,26 @@ public class RepositoryConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns true if the user is allowed to create containers take into account
-		 * only the repository security and not the system security.
+		 * Returns true if the user is allowed to create collections take into account
+		 * only the data security and not the system security.
 		 * 
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return True if the user is allowed to create containers.
+		 * @return True if the user is allowed to create collections.
 		 * @since 1.8
 		 */
-		public boolean isCreateContainer(String user, Collection<String> groups) {
-			if (!repository.getSecurity().isSecured())
+		public boolean isCreateCollection(String user, Collection<String> groups) {
+			if (!data.getSecurity().isSecured())
 				return true;
 			else {
 				if (user != null && !user.isBlank())
-					if (repository.getSecurity().getUsers().contains(user.trim().toLowerCase()))
+					if (data.getSecurity().getUsers().contains(user.trim().toLowerCase()))
 						return true;
 
 				if (groups != null)
 					for (String group : groups)
 						if (group != null && !group.isBlank())
-							if (repository.getSecurity().getGroups().contains(group.trim().toLowerCase()))
+							if (data.getSecurity().getGroups().contains(group.trim().toLowerCase()))
 								return true;
 
 				return false;
@@ -307,7 +303,7 @@ public class RepositoryConfiguration extends CoreFolder {
 		 */
 		@Override
 		public String getUser() {
-			return isMainConfigurationAvailable() ? repository.getUser() : null;
+			return isMainConfigurationAvailable() ? data.getUser() : null;
 		}
 
 		/*
@@ -329,7 +325,7 @@ public class RepositoryConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getCreated() {
-			return isMainConfigurationAvailable() ? repository.getDate() : null;
+			return isMainConfigurationAvailable() ? data.getDate() : null;
 		}
 
 		/*
@@ -351,8 +347,9 @@ public class RepositoryConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getUpdated() {
-			return isMainConfigurationAvailable() ? repository.getUpdated() : null;
+			return isMainConfigurationAvailable() ? data.getUpdated() : null;
 		}
 
 	}
+
 }

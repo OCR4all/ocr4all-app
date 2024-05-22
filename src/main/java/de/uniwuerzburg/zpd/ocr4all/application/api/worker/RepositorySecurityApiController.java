@@ -21,6 +21,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.RepositoryService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -193,8 +194,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class RepositorySecurityResponse
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository.Security {
+	public static class RepositorySecurityResponse extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */
@@ -247,8 +247,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class RepositorySecurityRequest
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Repository.Security {
+	public static class RepositorySecurityRequest extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */

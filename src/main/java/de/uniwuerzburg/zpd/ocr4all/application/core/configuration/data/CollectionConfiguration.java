@@ -1,14 +1,13 @@
 /**
- * File:     ContainerConfiguration.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository
+ * File:     CollectionConfiguration.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.11.2023
+ * Date:     22.05.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository;
+package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -19,24 +18,22 @@ import java.util.Set;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Container;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 
 /**
- * Defines configurations for the container.
+ * Defines configurations for the collection.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
-public class ContainerConfiguration extends CoreFolder {
+public class CollectionConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ContainerConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CollectionConfiguration.class);
 
 	/**
 	 * The configuration.
@@ -44,36 +41,34 @@ public class ContainerConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
-	 * The images.
-	 */
-	private final Images images;
-
-	/**
-	 * Creates a configuration for the container.
+	 * Creates a configuration for the collection.
 	 * 
-	 * @param properties The ocr4all container properties.
-	 * @param folder     The container folder.
+	 * @param properties The ocr4all collection properties.
+	 * @param folder     The collection folder.
 	 * @since 1.8
 	 */
-	public ContainerConfiguration(Container properties, Path folder) {
+	public CollectionConfiguration(
+			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties,
+			Path folder) {
 		this(properties, folder, null);
 	}
 
 	/**
-	 * Creates a configuration for the container.
+	 * Creates a configuration for the collection.
 	 * 
-	 * @param properties The ocr4all container properties.
-	 * @param folder     The container folder.
-	 * @param coreData   The core data for a container configuration. If non null
+	 * @param properties The ocr4all collection properties.
+	 * @param folder     The collection folder.
+	 * @param coreData   The core data for a collection configuration. If non null
 	 *                   and the main configuration is not available, then this
 	 *                   basic data is used to initialize the main configuration.
 	 * @since 1.8
 	 */
-	public ContainerConfiguration(Container properties, Path folder, Configuration.CoreData coreData) {
+	public CollectionConfiguration(
+			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties, Path folder,
+			Configuration.CoreData coreData) {
 		super(folder);
 
 		configuration = new Configuration(properties.getConfiguration(), coreData);
-		images = new Images(properties);
 	}
 
 	/**
@@ -87,17 +82,7 @@ public class ContainerConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Returns the images.
-	 *
-	 * @return The images.
-	 * @since 1.8
-	 */
-	public Images getImages() {
-		return images;
-	}
-
-	/**
-	 * Defines configurations for the container.
+	 * Defines configurations for the collection.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -115,39 +100,41 @@ public class ContainerConfiguration extends CoreFolder {
 		private final Path folioFile;
 
 		/**
-		 * The container.
+		 * The collection.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container container = null;
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection collection = null;
 
 		/**
-		 * Creates a configuration for the container.
+		 * Creates a configuration for the collection.
 		 * 
-		 * @param properties The configuration properties for the container.
-		 * @param coreData   The core data for a container configuration. If non null
+		 * @param properties The configuration properties for the collection.
+		 * @param coreData   The core data for a collection configuration. If non null
 		 *                   and the main configuration is not available, then this
 		 *                   basic data is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		Configuration(Container.Configuration properties, CoreData coreData) {
-			super(Paths.get(ContainerConfiguration.this.folder.toString(), properties.getFolder()));
+		Configuration(
+				de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection.Configuration properties,
+				CoreData coreData) {
+			super(Paths.get(CollectionConfiguration.this.folder.toString(), properties.getFolder()));
 
-			// Initialize the container configuration folder and consequently the
-			// container
-			ConfigurationService.initializeFolder(true, folder, "container configuration");
+			// Initialize the collection configuration folder and consequently the
+			// collection
+			ConfigurationService.initializeFolder(true, folder, "collection configuration");
 
 			// Initializes the configuration files
 			folioFile = getPath(properties.getFiles().getFolio());
 
 			// Loads the main configuration file
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
-					Type.repository_container_v1);
+					Type.data_collection_v1);
 			loadMainConfiguration(coreData);
 		}
 
 		/**
 		 * Loads the main configuration file.
 		 * 
-		 * @param coreData The core data for a container configuration. If non null and
+		 * @param coreData The core data for a collection configuration. If non null and
 		 *                 the main configuration is not available, then this basic data
 		 *                 is used to initialize the main configuration.
 		 * @since 1.8
@@ -155,24 +142,25 @@ public class ContainerConfiguration extends CoreFolder {
 		private void loadMainConfiguration(CoreData coreData) {
 			// Load main configuration
 			try {
-				container = mainConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.class, null,
+				collection = mainConfigurationManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection.class, null,
 						message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || container.getName() == null || container.getSecurity() == null) {
+				if (!isMainConfigurationAvailable() || collection.getName() == null
+						|| collection.getSecurity() == null) {
 					Date currentTimeStamp = new Date();
 					if (!isMainConfigurationAvailable()) {
-						container = new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container();
+						collection = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection();
 
-						container.setDate(currentTimeStamp);
+						collection.setDate(currentTimeStamp);
 
 						if (coreData != null) {
-							container.setName(coreData.getName());
-							container.setDescription(coreData.getDescription());
-							container.setKeywords(coreData.getKeywords());
+							collection.setName(coreData.getName());
+							collection.setDescription(coreData.getDescription());
+							collection.setKeywords(coreData.getKeywords());
 
 							if (coreData.getUser() != null)
-								container.setSecurity(new SecurityGrant(
+								collection.setSecurity(new SecurityGrant(
 
 										SecurityGrant.Right.maximal, coreData.getUser()));
 
@@ -181,18 +169,18 @@ public class ContainerConfiguration extends CoreFolder {
 						// avoid using basic data if not creating a main configuration
 						coreData = null;
 
-					if (container.getName() == null)
-						container.setName(ContainerConfiguration.this.folder.getFileName().toString());
+					if (collection.getName() == null)
+						collection.setName(CollectionConfiguration.this.folder.getFileName().toString());
 
-					if (container.getSecurity() == null)
-						container.setSecurity(new SecurityGrant());
+					if (collection.getSecurity() == null)
+						collection.setSecurity(new SecurityGrant());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
 
-				container = null;
+				collection = null;
 			}
 		}
 
@@ -203,7 +191,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isMainConfigurationAvailable() {
-			return container != null;
+			return collection != null;
 		}
 
 		/**
@@ -228,18 +216,18 @@ public class ContainerConfiguration extends CoreFolder {
 		private boolean persist(String user, Date updated) {
 			if (isMainConfigurationAvailable())
 				try {
-					container.setUser(user);
-					container.setUpdated(updated == null ? new Date() : updated);
+					collection.setUser(user);
+					collection.setUpdated(updated == null ? new Date() : updated);
 
-					mainConfigurationManager.persist(container);
+					mainConfigurationManager.persist(collection);
 
-					logger.info("Persisted the container configuration.");
+					logger.info("Persisted the collection configuration.");
 
 					return true;
 				} catch (Exception e) {
 					reloadMainConfiguration();
 
-					logger.warn("Could not persist the container configuration - " + e.getMessage());
+					logger.warn("Could not persist the collection configuration - " + e.getMessage());
 				}
 
 			return false;
@@ -274,19 +262,19 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public String getName() {
-			return isMainConfigurationAvailable() ? container.getName() : null;
+			return isMainConfigurationAvailable() ? collection.getName() : null;
 		}
 
 		/**
-		 * Returns the container information.
+		 * Returns the collection information.
 		 * 
-		 * @return The container information.
+		 * @return The collection information.
 		 * @since 1.8
 		 */
 		public Information getInformation() {
 			return isMainConfigurationAvailable()
-					? new Information(container.getName(), container.getDescription(),
-							container.getKeywords() == null ? null : new HashSet<>(container.getKeywords()))
+					? new Information(collection.getName(), collection.getDescription(),
+							collection.getKeywords() == null ? null : new HashSet<>(collection.getKeywords()))
 					: null;
 		}
 
@@ -295,18 +283,18 @@ public class ContainerConfiguration extends CoreFolder {
 		 * configuration is available and the name is not null and empty.
 		 *
 		 * @param user        The user.
-		 * @param information The container information.
-		 * @return True if the container information was updated and persisted.
+		 * @param information The collection information.
+		 * @return True if the collection information was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean update(String user, Information information) {
 			if (isMainConfigurationAvailable() && information != null && information.getName() != null
 					&& !information.getName().isBlank()) {
-				container.setName(information.getName().trim());
-				container.setDescription(
+				collection.setName(information.getName().trim());
+				collection.setDescription(
 						information.getDescription() == null || information.getDescription().isBlank() ? null
 								: information.getDescription().trim());
-				container.setKeywords(information.getKeywords());
+				collection.setKeywords(information.getKeywords());
 
 				return persist(user);
 			} else
@@ -354,20 +342,20 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public SecurityGrant getSecurity() {
-			return cloneSecurity(container.getSecurity());
+			return cloneSecurity(collection.getSecurity());
 		}
 
 		/**
 		 * Updates the security.
 		 *
 		 * @param user     The user.
-		 * @param security The container security.
-		 * @return True if the container security was updated and persisted.
+		 * @param security The collection security.
+		 * @return True if the collection security was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean update(String user, SecurityGrant security) {
 			if (isMainConfigurationAvailable()) {
-				container.setSecurity(cloneSecurity(security));
+				collection.setSecurity(cloneSecurity(security));
 
 				return persist(user);
 			} else
@@ -387,13 +375,13 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the container right for given user and groups.
+		 * Returns the collection right for given user and groups.
 		 * 
 		 * @param target If not null, the search is ended as soon as the target right is
 		 *               fulfilled. Otherwise search for the maximal fulfilled right.
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The container right.
+		 * @return The collection right.
 		 * @since 1.8
 		 */
 		private SecurityGrant.Right getRightFulfilled(SecurityGrant.Right target, String user,
@@ -404,15 +392,15 @@ public class ContainerConfiguration extends CoreFolder {
 			SecurityGrant.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = SecurityGrant.Right.getMaximnal(right, container.getSecurity().getOther());
+				right = SecurityGrant.Right.getMaximnal(right, collection.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
 
-				if (container.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
+				if (collection.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (SecurityGrant.Grant grant : container.getSecurity().getUsers())
+					for (SecurityGrant.Grant grant : collection.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
 							right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
@@ -421,12 +409,12 @@ public class ContainerConfiguration extends CoreFolder {
 						}
 				}
 
-				if (container.getSecurity().getGroups() != null && groups != null)
+				if (collection.getSecurity().getGroups() != null && groups != null)
 					for (String group : groups) {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (SecurityGrant.Grant grant : container.getSecurity().getGroups())
+							for (SecurityGrant.Grant grant : collection.getSecurity().getGroups())
 								if (grant.getTargets().contains(group)) {
 									right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
@@ -442,11 +430,11 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the maximal fulfilled container right for given user and groups.
+		 * Returns the maximal fulfilled collection right for given user and groups.
 		 * 
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The container right.
+		 * @return The collection right.
 		 * @since 1.8
 		 */
 		public SecurityGrant.Right getRight(String user, Collection<String> groups) {
@@ -514,7 +502,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 */
 		@Override
 		public String getUser() {
-			return isMainConfigurationAvailable() ? container.getUser() : null;
+			return isMainConfigurationAvailable() ? collection.getUser() : null;
 		}
 
 		/*
@@ -536,7 +524,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getCreated() {
-			return isMainConfigurationAvailable() ? container.getDate() : null;
+			return isMainConfigurationAvailable() ? collection.getDate() : null;
 		}
 
 		/*
@@ -558,11 +546,11 @@ public class ContainerConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getUpdated() {
-			return isMainConfigurationAvailable() ? container.getUpdated() : null;
+			return isMainConfigurationAvailable() ? collection.getUpdated() : null;
 		}
 
 		/**
-		 * Information is an immutable class that defines information for container
+		 * Information is an immutable class that defines information for collection
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -586,7 +574,7 @@ public class ContainerConfiguration extends CoreFolder {
 			private final Set<String> keywords;
 
 			/**
-			 * Creates an information for a container configuration.
+			 * Creates an information for a collection configuration.
 			 * 
 			 * @param name        The name.
 			 * @param description The description.
@@ -634,7 +622,7 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * CoreData is an immutable class that defines core data for container
+		 * CoreData is an immutable class that defines core data for collection
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -648,7 +636,7 @@ public class ContainerConfiguration extends CoreFolder {
 			private final String user;
 
 			/**
-			 * Creates core data for a container configuration.
+			 * Creates core data for a collection configuration.
 			 * 
 			 * @param user        The user.
 			 * @param name        The name.
@@ -673,308 +661,6 @@ public class ContainerConfiguration extends CoreFolder {
 			}
 		}
 
-	}
-
-	/**
-	 * Images is an immutable class that defines images folder for containers.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public class Images {
-
-		/**
-		 * The folder for folios.
-		 */
-		private final Path folios;
-
-		/**
-		 * The folder for folios derivatives.
-		 */
-		private final Derivatives derivatives;
-
-		/**
-		 * Creates images folder for a project.
-		 * 
-		 * @param properties The container properties.
-		 * @since 1.8
-		 */
-		public Images(Container properties) {
-			super();
-
-			// Initializes the folders
-			folios = getPath(null, properties.getFolios().getFolder(), "folios");
-
-			final String derivativesFolder = properties.getDerivatives().getFolder();
-
-			derivatives = new Derivatives(
-					ImageFormat.getImageFormat(properties.getDerivatives().getFormat(), ImageFormat.jpg),
-					getPath(derivativesFolder, properties.getDerivatives().getQuality().getThumbnail().getFolder(),
-							"thumbnail"),
-					getPath(derivativesFolder, properties.getDerivatives().getQuality().getDetail().getFolder(),
-							"detail"),
-					getPath(derivativesFolder, properties.getDerivatives().getQuality().getBest().getFolder(), "best"));
-		}
-
-		/**
-		 * Returns the path for given configuration folder. The folder is initialized.
-		 * 
-		 * @param derivatives The folder for derivatives. Null if not required.
-		 * @param folder      The folder.
-		 * @param name        The folder name.
-		 * @return The path.
-		 * @since 1.8
-		 */
-		private Path getPath(String derivatives, String folder, String name) {
-			Path path = derivatives == null
-					? Paths.get(ContainerConfiguration.this.folder.toString(), folder).normalize()
-					: Paths.get(ContainerConfiguration.this.folder.toString(), derivatives, folder).normalize();
-
-			ConfigurationService.initializeFolder(true, path,
-					"container '" + ContainerConfiguration.this.folder.getFileName() + "' " + name);
-
-			return path;
-		}
-
-		/**
-		 * Returns true if the folder for folios is a directory.
-		 *
-		 * @return True if the folder is a directory; false if the folder does not
-		 *         exist, is not a directory, or it cannot be determined if the folder
-		 *         is a directory or not.
-		 * 
-		 * @since 1.8
-		 */
-		public boolean isFoliosDirectory() {
-			return Files.isDirectory(folios);
-		}
-
-		/**
-		 * Returns the folder for folios.
-		 *
-		 * @return The folder for folios.
-		 * @since 1.8
-		 */
-		public Path getFolios() {
-			return folios;
-		}
-
-		/**
-		 * Returns the derivatives quality image folders for folios.
-		 *
-		 * @return The derivatives quality image folders for folios.
-		 * @since 1.8
-		 */
-		public Derivatives getDerivatives() {
-			return derivatives;
-		}
-
-		/**
-		 * Reset the folios.
-		 *
-		 * @return True if the folios could be reset.
-		 * @since 1.8
-		 */
-		public boolean resetFolios() {
-			return Files.exists(folios) ? deleteContents(folios) : true;
-		}
-
-		/**
-		 * Reset the images.
-		 *
-		 * @return True if the images could be reset.
-		 * @since 1.8
-		 */
-		public boolean reset() {
-			boolean isReset = resetFolios();
-
-			if (!derivatives.reset())
-				isReset = false;
-
-			return isReset;
-		}
-
-		/**
-		 * Derivatives is an immutable class that defines derivatives quality image
-		 * folders for folios.
-		 *
-		 * 
-		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-		 * @version 1.0
-		 * @since 1.8
-		 */
-		public class Derivatives {
-			/**
-			 * The folios derivatives format. The format must be suitable for use on web
-			 * pages.
-			 */
-			private final ImageFormat format;
-
-			/**
-			 * The folder for folios derivatives quality thumbnail.
-			 */
-			private final Path thumbnail;
-
-			/**
-			 * The folder for folios derivatives quality detail.
-			 */
-			private final Path detail;
-
-			/**
-			 * The folder for folios derivatives quality best.
-			 */
-			private final Path best;
-
-			/**
-			 * Creates derivatives quality image folders for folios.
-			 * 
-			 * @param format    The folios derivatives format. The format must be suitable
-			 *                  for use on web pages.
-			 * @param thumbnail The folder for folios derivatives quality thumbnail.
-			 * @param detail    The folder for folios derivatives quality detail.
-			 * @param best      The folder for folios derivatives quality best.
-			 * @since 1.8
-			 */
-			public Derivatives(ImageFormat format, Path thumbnail, Path detail, Path best) {
-				super();
-
-				this.format = format.isWebPages() ? format : ImageFormat.jpg;
-				this.thumbnail = thumbnail;
-				this.detail = detail;
-				this.best = best;
-			}
-
-			/**
-			 * Returns the folios derivatives format.
-			 *
-			 * @return The folios derivatives format.
-			 * @since 1.8
-			 */
-			public ImageFormat getFormat() {
-				return format;
-			}
-
-			/**
-			 * Returns true if the folder for folios derivatives quality thumbnail is a
-			 * directory.
-			 *
-			 * @return True if the folder is a directory; false if the folder does not
-			 *         exist, is not a directory, or it cannot be determined if the folder
-			 *         is a directory or not.
-			 * 
-			 * @since 1.8
-			 */
-			public boolean isThumbnailDirectory() {
-				return Files.isDirectory(thumbnail);
-			}
-
-			/**
-			 * Returns the folder for folios derivatives quality thumbnail.
-			 *
-			 * @return The folder for folios derivatives quality thumbnail.
-			 * @since 1.8
-			 */
-			public Path getThumbnail() {
-				return thumbnail;
-			}
-
-			/**
-			 * Reset the folios derivatives quality thumbnail.
-			 *
-			 * @return True if the folios derivatives quality thumbnail could be reset.
-			 * @since 1.8
-			 */
-			public boolean resetThumbnail() {
-				return Files.exists(thumbnail) ? deleteContents(thumbnail) : true;
-			}
-
-			/**
-			 * Returns true if the folder for folios derivatives quality detail is a
-			 * directory.
-			 *
-			 * @return True if the folder is a directory; false if the folder does not
-			 *         exist, is not a directory, or it cannot be determined if the folder
-			 *         is a directory or not.
-			 * 
-			 * @since 1.8
-			 */
-			public boolean isDetailDirectory() {
-				return Files.isDirectory(detail);
-			}
-
-			/**
-			 * Returns the folder for folios derivatives quality detail.
-			 *
-			 * @return The folder for folios derivatives quality detail.
-			 * @since 1.8
-			 */
-			public Path getDetail() {
-				return detail;
-			}
-
-			/**
-			 * Reset the folios derivatives quality detail.
-			 *
-			 * @return True if the folios derivatives quality detail could be reset.
-			 * @since 1.8
-			 */
-			public boolean resetDetail() {
-				return Files.exists(detail) ? deleteContents(detail) : true;
-			}
-
-			/**
-			 * Returns true if the folder for folios derivatives quality best is a
-			 * directory.
-			 *
-			 * @return True if the folder is a directory; false if the folder does not
-			 *         exist, is not a directory, or it cannot be determined if the folder
-			 *         is a directory or not.
-			 * 
-			 * @since 1.8
-			 */
-			public boolean isBestDirectory() {
-				return Files.isDirectory(best);
-			}
-
-			/**
-			 * Returns the folder for folios derivatives quality best.
-			 *
-			 * @return The folder for folios derivatives quality best.
-			 * @since 1.8
-			 */
-			public Path getBest() {
-				return best;
-			}
-
-			/**
-			 * Reset the folios derivatives quality best.
-			 *
-			 * @return True if the folios derivatives quality best could be reset.
-			 * @since 1.8
-			 */
-			public boolean resetBest() {
-				return Files.exists(best) ? deleteContents(best) : true;
-			}
-
-			/**
-			 * Reset the folios derivatives.
-			 *
-			 * @return True if the folios derivatives could be reset.
-			 * @since 1.8
-			 */
-			public boolean reset() {
-				boolean isReset = resetThumbnail();
-
-				if (!resetDetail())
-					isReset = false;
-
-				if (!resetDetail())
-					isReset = false;
-
-				return isReset;
-			}
-		}
 	}
 
 }

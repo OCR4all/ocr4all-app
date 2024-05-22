@@ -12,9 +12,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4a
 /**
  * Defines ocr4all collection properties.
  *
- * @author      <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
- * @version     1.0
- * @since       17
+ * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+ * @version 1.0
+ * @since 17
  */
 public class Collection {
 	/**
@@ -104,6 +104,7 @@ public class Collection {
 		public void setFiles(Files files) {
 			this.files = files;
 		}
+
 	}
 
 	/**
@@ -120,9 +121,19 @@ public class Collection {
 		private static final String defaultMainFileName = "collection";
 
 		/**
+		 * The default folio file name.
+		 */
+		private static final String defaultFolioFileName = "folio";
+
+		/**
 		 * The main file name. The default value is collection.
 		 */
 		private String main = defaultMainFileName;
+
+		/**
+		 * The folio file name. The default value is folio.
+		 */
+		private String folio = defaultFolioFileName;
 
 		/**
 		 * Returns the main file name.
@@ -142,6 +153,26 @@ public class Collection {
 		 */
 		public void setMain(String fileName) {
 			main = fileName;
+		}
+
+		/**
+		 * Returns the folio file name.
+		 *
+		 * @return The folio file name.
+		 * @since 1.8
+		 */
+		public String getFolio() {
+			return OCR4all.getNotEmpty(folio, defaultFolioFileName);
+		}
+
+		/**
+		 * Set the folio file name.
+		 *
+		 * @param fileName The file name to set.
+		 * @since 1.8
+		 */
+		public void setFolio(String fileName) {
+			folio = fileName;
 		}
 
 	}

@@ -282,6 +282,11 @@
 			"description": "ocr4all main data collection configuration file; the default value is 'collection'."
 		},
 		{
+			"name": "ocr4all.data.collection.configuration.files.folio",
+			"type": "java.lang.String",
+			"description": "ocr4all folio data collection configuration file; the default value is 'folio'."
+		},
+		{
 			"name": "ocr4all.workspace.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all workspace directory."

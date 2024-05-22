@@ -1,11 +1,11 @@
 /**
- * File:     RepositoryService.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.repository
+ * File:     DataService.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.data
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     23.11.2023
+ * Date:     22.05.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
+package de.uniwuerzburg.zpd.ocr4all.application.core.data;
 
 import java.nio.file.Path;
 
@@ -13,28 +13,29 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 
 /**
- * Defines repository services.
+ * Defines data services.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Service
-public class RepositoryService extends CoreService {
+public class DataService extends CoreService {
 	/**
 	 * The security service.
 	 */
 	private final SecurityService securityService;
 
 	/**
-	 * The repository configuration.
+	 * The data configuration.
 	 */
-	private final RepositoryConfiguration.Configuration configuration;
+	private final DataConfiguration.Configuration configuration;
 
 	/**
 	 * The folder.
@@ -42,19 +43,19 @@ public class RepositoryService extends CoreService {
 	protected final Path folder;
 
 	/**
-	 * Creates a repository service.
+	 * Creates a data service.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @since 1.8
 	 */
-	public RepositoryService(ConfigurationService configurationService, SecurityService securityService) {
-		super(RepositoryService.class, configurationService);
+	public DataService(ConfigurationService configurationService, SecurityService securityService) {
+		super(DataService.class, configurationService);
 
 		this.securityService = securityService;
 
-		folder = configurationService.getRepository().getFolder().normalize();
-		configuration = configurationService.getRepository().getConfiguration();
+		folder = configurationService.getData().getFolder().normalize();
+		configuration = configurationService.getData().getConfiguration();
 	}
 
 	/**
@@ -69,10 +70,10 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
-	 * Returns the repository security if the administrator security permission is
+	 * Returns the data security if the administrator security permission is
 	 * achievable by the session user.
 	 * 
-	 * @return The repository security.
+	 * @return The data security.
 	 * @since 1.8
 	 */
 	public SecurityOwner getSecurity() {
@@ -95,10 +96,10 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
-	 * Secures the repository and persists the main configuration if it is available
-	 * and the administrator security permission is achievable by the session user.
+	 * Secures the data and persists the main configuration if it is available and
+	 * the administrator security permission is achievable by the session user.
 	 *
-	 * @param isSecured True if the repository is secured.
+	 * @param isSecured True if the data is secured.
 	 * @return True if the security was updated and persisted.
 	 * @since 1.8
 	 */
@@ -107,25 +108,25 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
-	 * Returns the repository configuration.
+	 * Returns the data configuration.
 	 * 
-	 * @return The repository configuration. Null if no administrator security
-	 *         permission is achievable by the session user.
+	 * @return The data configuration. Null if no administrator security permission
+	 *         is achievable by the session user.
 	 * @since 1.8
 	 */
-	public RepositoryConfiguration.Configuration getConfiguration() {
+	public DataConfiguration.Configuration getConfiguration() {
 		return isAdministrator() ? configuration : null;
 	}
 
 	/**
-	 * Returns true if a container can be created.
+	 * Returns true if a collection can be created.
 	 * 
-	 * @return True if a container can be created.
+	 * @return True if a collection can be created.
 	 * @since 1.8
 	 */
-	public boolean isCreateContainer() {
+	public boolean isCreateCollection() {
 		return isAdministrator()
-				|| configuration.isCreateContainer(securityService.getUser(), securityService.getActiveGroups());
+				|| configuration.isCreateCollection(securityService.getUser(), securityService.getActiveGroups());
 	}
 
 }

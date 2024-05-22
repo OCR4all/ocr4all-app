@@ -21,6 +21,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.ApplicationScope;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
@@ -151,6 +152,11 @@ public class ConfigurationService {
 	private final RepositoryConfiguration repository;
 
 	/**
+	 * The configuration for the data.
+	 */
+	private final DataConfiguration data;
+
+	/**
 	 * The configuration for the workspace.
 	 */
 	private final WorkspaceConfiguration workspace;
@@ -201,6 +207,7 @@ public class ConfigurationService {
 		image = new ImageConfiguration(properties.getImage());
 		exchange = new ExchangeConfiguration(properties);
 		repository = new RepositoryConfiguration(properties);
+		data = new DataConfiguration(properties);
 		opt = new OptConfiguration(properties);
 		workspace = new WorkspaceConfiguration(properties.getWorkspace(), systemCommand, application, exchange, opt);
 		api = new ApiConfiguration(properties.getApi());
@@ -369,6 +376,16 @@ public class ConfigurationService {
 	 */
 	public RepositoryConfiguration getRepository() {
 		return repository;
+	}
+
+	/**
+	 * Returns the configuration for the data.
+	 *
+	 * @return The configuration for the data.
+	 * @since 17
+	 */
+	public DataConfiguration getData() {
+		return data;
 	}
 
 	/**

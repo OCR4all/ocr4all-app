@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -404,8 +405,7 @@ public class ContainerApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerSecurityRequest
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security {
+	public static class ContainerSecurityRequest extends SecurityGrant {
 		/**
 		 * The serial version UID.
 		 */
@@ -589,7 +589,7 @@ public class ContainerApiController extends CoreApiController {
 		/**
 		 * The right.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right;
+		private SecurityGrant.Right right;
 
 		/**
 		 * Creates a container with right response for the api without security.
@@ -609,7 +609,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRight() {
+		public SecurityGrant.Right getRight() {
 			return right;
 		}
 
@@ -619,8 +619,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @param right The right to set.
 		 * @since 1.8
 		 */
-		public void setRight(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right) {
+		public void setRight(SecurityGrant.Right right) {
 			this.right = right;
 		}
 
@@ -642,7 +641,7 @@ public class ContainerApiController extends CoreApiController {
 		/**
 		 * The security.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security;
+		private SecurityGrant security;
 
 		/**
 		 * Creates a container with right response for the api without security.
@@ -662,7 +661,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security getSecurity() {
+		public SecurityGrant getSecurity() {
 			return security;
 		}
 
@@ -672,8 +671,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @param security The security to set.
 		 * @since 1.8
 		 */
-		public void setSecurity(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+		public void setSecurity(SecurityGrant security) {
 			this.security = security;
 		}
 
