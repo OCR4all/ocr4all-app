@@ -132,6 +132,16 @@ ocr4all:
             thumbnail.folder: thumbnail
             detail.folder: detail
             best.folder: best
+  data:
+    folder: ${user.home}/ocr4all/data
+    configuration:
+      folder: .data
+      files.main: data
+    collection:
+        configuration:
+          folder: .collection
+          files:
+            main: collection
   workspace:
     folder: ${user.home}/ocr4all/workspace
     configuration:
@@ -279,6 +289,7 @@ ocr4all:
             wait-duration: 15000
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4all/repository
+  data.folder: /srv/ocr4all/data
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -291,6 +302,7 @@ spring:
 ocr4all:
   exchange.folder: ${user.home}/ocr4all/exchange
   repository.folder: ${user.home}/ocr4all/repository
+  data.folder: ${user.home}/ocr4all/data
   workspace.folder: ${user.home}/ocr4all/workspace
   opt.folder: ${user.home}/ocr4all/opt
   temporary.folder: ${user.home}/ocr4all/tmp
@@ -302,6 +314,7 @@ spring:
 ocr4all:
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4all/repository
+  data.folder: /srv/ocr4all/data
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -317,6 +330,7 @@ ocr4all:
   application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/dev/exchange
   repository.folder: ${user.home}/ocr4all/dev/repository
+  data.folder: ${user.home}/ocr4all/data
   workspace.folder: ${user.home}/ocr4all/dev/workspace
   opt.folder: ${user.home}/ocr4all/dev/opt
   temporary.folder: ${user.home}/ocr4all/dev/tmp
@@ -332,6 +346,7 @@ ocr4all:
   application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/test/exchange
   repository.folder: ${user.home}/ocr4all/test/repository
+  data.folder: ${user.home}/ocr4all/data
   workspace.folder: ${user.home}/ocr4all/test/workspace
   opt.folder: ${user.home}/ocr4all/test/opt
   temporary.folder: ${user.home}/ocr4all/test/tmp
