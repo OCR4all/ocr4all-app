@@ -121,9 +121,9 @@ public class Collection {
 		private static final String defaultMainFileName = "collection";
 
 		/**
-		 * The default folio file name.
+		 * The default sets file name.
 		 */
-		private static final String defaultFolioFileName = "folio";
+		private static final String defaultSetsFileName = "sets";
 
 		/**
 		 * The main file name. The default value is collection.
@@ -131,9 +131,9 @@ public class Collection {
 		private String main = defaultMainFileName;
 
 		/**
-		 * The folio file name. The default value is folio.
+		 * The sets file name. The default value is sets.
 		 */
-		private String folio = defaultFolioFileName;
+		private String sets = defaultSetsFileName;
 
 		/**
 		 * Returns the main file name.
@@ -156,23 +156,23 @@ public class Collection {
 		}
 
 		/**
-		 * Returns the folio file name.
+		 * Returns the sets file name.
 		 *
-		 * @return The folio file name.
+		 * @return The sets file name.
 		 * @since 1.8
 		 */
-		public String getFolio() {
-			return OCR4all.getNotEmpty(folio, defaultFolioFileName);
+		public String getSets() {
+			return OCR4all.getNotEmpty(sets, defaultSetsFileName);
 		}
 
 		/**
-		 * Set the folio file name.
+		 * Set the sets file name.
 		 *
 		 * @param fileName The file name to set.
 		 * @since 1.8
 		 */
-		public void setFolio(String fileName) {
-			folio = fileName;
+		public void setSets(String fileName) {
+			sets = fileName;
 		}
 
 	}

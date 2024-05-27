@@ -95,9 +95,9 @@ public class CollectionConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The folio configuration file.
+		 * The sets configuration file.
 		 */
-		private final Path folioFile;
+		private final Path setsFile;
 
 		/**
 		 * The collection.
@@ -123,7 +123,7 @@ public class CollectionConfiguration extends CoreFolder {
 			ConfigurationService.initializeFolder(true, folder, "collection configuration");
 
 			// Initializes the configuration files
-			folioFile = getPath(properties.getFiles().getFolio());
+			setsFile = getPath(properties.getFiles().getSets());
 
 			// Loads the main configuration file
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
@@ -246,13 +246,13 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the folio configuration file.
+		 * Returns the sets configuration file.
 		 *
-		 * @return The folio configuration file.
+		 * @return The sets configuration file.
 		 * @since 1.8
 		 */
-		public Path getFolioFile() {
-			return folioFile;
+		public Path getSetsFile() {
+			return setsFile;
 		}
 
 		/**

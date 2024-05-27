@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
@@ -316,7 +317,7 @@ public class CollectionService extends CoreService {
 	 * @throws IOException Throws if an I/O error occurs.
 	 * @since 1.8
 	 */
-	private void move(List<String> fileNames, Path source, Path target) throws IOException {
+	private void move(java.util.Collection<String> fileNames, Path source, Path target) throws IOException {
 		for (String fileName : fileNames)
 			Files.move(Paths.get(source.toString(), fileName), Paths.get(target.toString(), fileName),
 					StandardCopyOption.REPLACE_EXISTING);
@@ -355,168 +356,86 @@ public class CollectionService extends CoreService {
 	 * @throws IOException Throws on storage troubles.
 	 * @since 1.8
 	 */
-	public List<Folio> store(Collection collection, MultipartFile[] files) throws IOException {
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> store(Collection collection,
+			MultipartFile[] files) throws IOException {
 		if (collection != null && files != null) {
 			if (collection.getRight().isWriteFulfilled()) {
 				// create tmp folder
-				Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
+				Path temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
 
 				try {
-					Files.createDirectory(temporaryDirectory);
+					Files.createDirectory(temporaryFolder);
 				} catch (IOException e) {
 					throw e;
 				}
 
 				// store the files
-				List<Folio> folios = new ArrayList<>();
+				List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
+				Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> names = new Hashtable<>();
+				Set<String> setFiles = new HashSet<>();
+
 				for (MultipartFile file : files)
 					if (file != null && !file.isEmpty()) {
-						String fileName = file.getOriginalFilename();
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set.NameExtension nameExtension = de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set
+								.getNameExtension(file.getOriginalFilename());
 
-						final ImageFormat imageFormat = ImageFormat.getImageFormatFilename(fileName);
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = names
+								.get(nameExtension.getName());
+						if (set == null) {
+							set = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(new Date(),
+									securityService.getUser(), OCR4allUtils.getUUID(), nameExtension.getName());
 
-						if (imageFormat != null)
-							try {
-								final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
-										.getPersistence();
+							sets.add(set);
+							names.put(nameExtension.getName(), set);
+						}
 
-								if (format == null) {
-									logger.warn(
-											"The folio does not supports the image type " + imageFormat.name() + ".");
+						final String name = set.getId() + "." + nameExtension.getExtension();
+						setFiles.add(name);
 
-									continue;
-								}
+						final Path destinationFile = temporaryFolder.resolve(Paths.get(name));
 
-								final String id = OCR4allUtils.getUUID();
-								final Path destinationFile = temporaryFolder
-										.resolve(Paths.get(id + "." + imageFormat.name()));
+						try (InputStream inputStream = file.getInputStream()) {
+							Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+						} catch (IOException e) {
+							logger.warn("Failed to store file '" + file.getOriginalFilename() + "' with uuid "
+									+ set.getId() + " - " + e.getMessage());
 
-								try (InputStream inputStream = file.getInputStream()) {
-									Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-								} catch (IOException e) {
-									logger.warn("Failed to store image '" + destinationFile + "' with uuid " + id
-											+ " - " + e.getMessage());
-
-									continue;
-								}
-
-								final Folio.Size size;
-								try {
-									size = ImageUtils.getSize(identifyJob, fileName, id + "." + imageFormat.name());
-								} catch (IOException e) {
-									Files.delete(destinationFile);
-
-									continue;
-								}
-
-								folios.add(new Folio(new Date(), securityService.getUser(), id,
-										FilenameUtils.removeExtension(fileName), format, size, null));
-
-							} catch (Exception e) {
-								logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
-							}
+							continue;
+						}
 					}
 
-				if (folios.isEmpty())
-					return folios;
+				if (sets.isEmpty()) {
+					deleteRecursively(temporaryFolder);
 
-				/*
-				 * Create derivatives
-				 */
-				final CollectionConfiguration.Images.Derivatives derivatives = collection.getConfiguration().getImages()
-						.getDerivatives();
-				try {
-					final ImageConfiguration.Derivatives derivativeResolution = configurationService.getImage()
-							.getDerivatives();
-
-					// quality best
-					ImageUtils.createDerivatives(new SystemProcess(temporaryFolder, convertCommand),
-							derivatives.getFormat().name(), OCR4allUtils.getFileNames(temporaryFolder), folderBest,
-							derivativeResolution.getBest().getMaxSize(), derivativeResolution.getBest().getQuality());
-
-					// quality detail
-					ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
-							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderBest), folderDetail,
-							derivativeResolution.getDetail().getMaxSize(),
-							derivativeResolution.getDetail().getQuality());
-
-					// quality thumbnail
-					ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
-							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderDetail), folderThumbnail,
-							derivativeResolution.getThumbnail().getMaxSize(),
-							derivativeResolution.getThumbnail().getQuality());
-				} catch (Exception e) {
-					deleteRecursively(temporaryDirectory);
-
-					throw new IOException("Cannot create derivatives for collection - " + e.getMessage());
-				}
-
-				// set sizes
-				SystemProcess identifyThumbnailJob = new SystemProcess(folderThumbnail, identifyCommand);
-				SystemProcess identifyDetailJob = new SystemProcess(folderDetail, identifyCommand);
-				SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
-
-				List<String> foliosFiles = new ArrayList<>();
-				List<String> derivativeFiles = new ArrayList<>();
-
-				final String foliosDerivativesImageFormat = derivatives.getFormat().name();
-				for (Folio folio : folios) {
-					try {
-						foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
-
-						String target = folio.getId() + "." + foliosDerivativesImageFormat;
-						derivativeFiles.add(target);
-
-						folio.setDerivatives(
-								new Folio.Derivatives(ImageUtils.getSize(identifyThumbnailJob, folio.getName(), target),
-										ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
-										ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
-					} catch (IOException e) {
-						deleteRecursively(temporaryDirectory);
-
-						throw new IOException("Cannot restore derivatives information - " + e.getMessage() + ".");
-					}
+					return sets;
 				}
 
 				/*
-				 * Move the folios to the collection
+				 * Move the files to the collection
 				 */
 				try {
-					move(foliosFiles, temporaryFolder, collection.getConfiguration().getImages().getFolios());
-
-					move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
-
-					move(derivativeFiles, folderDetail, derivatives.getDetail());
-
-					move(derivativeFiles, folderBest, derivatives.getBest());
+					move(setFiles, temporaryFolder, collection.getConfiguration().getFolder());
 				} catch (IOException e) {
-					int remain = remove(foliosFiles, collection.getConfiguration().getImages().getFolios());
-					remain += remove(derivativeFiles, derivatives.getThumbnail());
-					remain += remove(derivativeFiles, derivatives.getDetail());
-					remain += remove(derivativeFiles, derivatives.getBest());
+					final String message = "Cannot move the files to collection - " + e.getMessage() + ".";
 
-					final String message = "Cannot move the folios to collection"
-							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
-							+ ".";
-
-					deleteRecursively(temporaryDirectory);
+					deleteRecursively(temporaryFolder);
 
 					throw new IOException(message);
 				}
 
 				// remove temporary data
-				deleteRecursively(temporaryDirectory);
+				deleteRecursively(temporaryFolder);
 
 				// Persist the configuration
 				try {
-					(new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(),
-							Type.folio_v1)).persist(true, folios);
+					(new PersistenceManager(collection.getConfiguration().getConfiguration().getSetsFile(),
+							Type.data_collection_set_v1)).persist(true, sets);
 				} catch (Exception e) {
 					throw new IOException(
-							"Cannot persist collection folios configuration file - " + e.getMessage() + ".");
+							"Cannot persist collection sets configuration file - " + e.getMessage() + ".");
 				}
 
-				return folios;
+				return sets;
 			}
 		}
 

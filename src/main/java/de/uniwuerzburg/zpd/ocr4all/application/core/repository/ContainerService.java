@@ -435,8 +435,11 @@ public class ContainerService extends CoreService {
 							}
 					}
 
-				if (folios.isEmpty())
+				if (folios.isEmpty()) {
+					deleteRecursively(temporaryDirectory);
+
 					return folios;
+				}
 
 				/*
 				 * Create derivatives

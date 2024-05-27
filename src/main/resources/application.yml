@@ -142,7 +142,7 @@ ocr4all:
           folder: .collection
           files:
             main: collection
-            folio: folio
+            sets: sets
   workspace:
     folder: ${user.home}/ocr4all/workspace
     configuration:
