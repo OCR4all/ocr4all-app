@@ -1,11 +1,11 @@
 /**
- * File:     ContainerService.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.repository
+ * File:     CollectionService.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.data
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     24.11.2023
+ * Date:     27.05.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.repository;
+package de.uniwuerzburg.zpd.ocr4all.application.core.data;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +33,10 @@ import org.springframework.web.multipart.MultipartFile;
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration.Configuration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration.Configuration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
@@ -46,23 +48,23 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGran
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
- * Defines container services.
+ * Defines collection services.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Service
-public class ContainerService extends CoreService {
+public class CollectionService extends CoreService {
 	/**
 	 * The security service.
 	 */
 	private final SecurityService securityService;
 
 	/**
-	 * The repository service.
+	 * The data service.
 	 */
-	private final RepositoryService repositoryService;
+	private final DataService dataService;
 
 	/**
 	 * The folder.
@@ -70,42 +72,42 @@ public class ContainerService extends CoreService {
 	protected final Path folder;
 
 	/**
-	 * Creates a container service.
+	 * Creates a collection service.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
-	 * @param repositoryService    The repository service.
+	 * @param dataService          The data service.
 	 * @since 1.8
 	 */
-	public ContainerService(ConfigurationService configurationService, SecurityService securityService,
-			RepositoryService repositoryService) {
-		super(ContainerService.class, configurationService);
+	public CollectionService(ConfigurationService configurationService, SecurityService securityService,
+			DataService dataService) {
+		super(CollectionService.class, configurationService);
 
 		this.securityService = securityService;
-		this.repositoryService = repositoryService;
+		this.dataService = dataService;
 
-		folder = configurationService.getRepository().getFolder().normalize();
+		folder = configurationService.getData().getFolder().normalize();
 	}
 
 	/**
-	 * Returns the container.
+	 * Returns the collection.
 	 * 
-	 * @param configuration The container configuration.
-	 * @return The container.
+	 * @param configuration The collection configuration.
+	 * @return The collection.
 	 * @since 1.8
 	 */
-	private Container getContainer(ContainerConfiguration configuration) {
-		return new Container(repositoryService.isAdministrator() ? SecurityGrant.Right.maximal
+	private Collection getCollection(CollectionConfiguration configuration) {
+		return new Collection(dataService.isAdministrator() ? SecurityGrant.Right.maximal
 				: configuration.getConfiguration().getRight(securityService.getUser(),
 						securityService.getActiveGroups()),
 				configuration);
 	}
 
 	/**
-	 * Returns the container folder.
+	 * Returns the collection folder.
 	 * 
-	 * @param uuid The container uuid.
-	 * @return The container folder. If the uuid is invalid, null is returned.
+	 * @param uuid The collection uuid.
+	 * @return The collection folder. If the uuid is invalid, null is returned.
 	 * @since 1.8
 	 */
 	private Path getPath(String uuid) {
@@ -121,147 +123,147 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Returns the container.
+	 * Returns the collection.
 	 * 
-	 * @param path The container path.
-	 * @return The container.
+	 * @param path The collection path.
+	 * @return The collection.
 	 * @since 1.8
 	 */
-	private Container getContainer(Path path) {
-		return getContainer(new ContainerConfiguration(configurationService.getRepository().getContainer(), path));
+	private Collection getCollection(Path path) {
+		return getCollection(new CollectionConfiguration(configurationService.getData().getCollection(), path));
 	}
 
 	/**
-	 * Returns true if a container can be created.
+	 * Returns true if a collection can be created.
 	 * 
-	 * @return True if a container can be created.
+	 * @return True if a collection can be created.
 	 * @since 1.8
 	 */
 	public boolean isCreate() {
-		return repositoryService.isCreateContainer();
+		return dataService.isCreateCollection();
 	}
 
 	/**
-	 * Creates a container.
+	 * Creates a collection.
 	 * 
 	 * @param name        The name.
 	 * @param description The description.
 	 * @param keywords    The keywords.
-	 * @return The container configuration. Null if the container can not be
+	 * @return The collection configuration. Null if the collection can not be
 	 *         created.
 	 * @since 1.8
 	 */
-	public Container create(String name, String description, Set<String> keywords) {
+	public Collection create(String name, String description, Set<String> keywords) {
 		if (isCreate()) {
 			final String user = securityService.getUser();
-			final Path folder = Paths.get(ContainerService.this.folder.toString(), OCR4allUtils.getUUID()).normalize();
+			final Path folder = Paths.get(CollectionService.this.folder.toString(), OCR4allUtils.getUUID()).normalize();
 
 			try {
 				Files.createDirectory(folder);
 
-				logger.info("Created container folder '" + folder.toString() + "'"
+				logger.info("Created collection folder '" + folder.toString() + "'"
 						+ (user == null ? "" : ", user=" + user) + ".");
 			} catch (Exception e) {
-				logger.warn("Cannot create container '" + folder.toString() + "'"
+				logger.warn("Cannot create collection '" + folder.toString() + "'"
 						+ (user == null ? "" : ", user=" + user) + " - " + e.getMessage() + ".");
 
 				return null;
 			}
 
-			return getContainer(new ContainerConfiguration(configurationService.getRepository().getContainer(), folder,
+			return getCollection(new CollectionConfiguration(configurationService.getData().getCollection(), folder,
 					new Configuration.CoreData(user, name, description, keywords)));
 		} else
 			return null;
 	}
 
 	/**
-	 * Returns the container.
+	 * Returns the collection.
 	 * 
-	 * @param uuid The container uuid.
-	 * @return The container. Null if unknown.
+	 * @param uuid The collection uuid.
+	 * @return The collection. Null if unknown.
 	 * @since 1.8
 	 */
-	public Container getContainer(String uuid) {
+	public Collection getCollection(String uuid) {
 		Path path = getPath(uuid);
 
-		return path == null ? null : getContainer(path);
+		return path == null ? null : getCollection(path);
 	}
 
 	/**
-	 * Returns the containers sorted by name.
+	 * Returns the collections sorted by name.
 	 * 
-	 * @return The containers.
+	 * @return The collections.
 	 * @since 1.8
 	 */
-	public List<Container> getContainers() {
-		List<Container> containers = new ArrayList<>();
+	public List<Collection> getCollections() {
+		List<Collection> collections = new ArrayList<>();
 
 		try {
-			Files.list(ContainerService.this.folder).filter(Files::isDirectory).forEach(path -> {
+			Files.list(CollectionService.this.folder).filter(Files::isDirectory).forEach(path -> {
 				// Ignore directories beginning with a dot
 				if (!path.getFileName().toString().startsWith("."))
-					containers.add(getContainer(path));
+					collections.add(getCollection(path));
 			});
 		} catch (IOException e) {
-			logger.warn("Cannot not load containers - " + e.getMessage());
+			logger.warn("Cannot not load collections - " + e.getMessage());
 		}
 
-		Collections.sort(containers, (p1, p2) -> p1.getConfiguration().getConfiguration().getName()
+		Collections.sort(collections, (p1, p2) -> p1.getConfiguration().getConfiguration().getName()
 				.compareToIgnoreCase(p2.getConfiguration().getConfiguration().getName()));
 
-		return containers;
+		return collections;
 	}
 
 	/**
-	 * Removes the container if the special right is fulfilled.
+	 * Removes the collection if the special right is fulfilled.
 	 * 
-	 * @param uuid The container uuid.
-	 * @return True if the container could be removed.
+	 * @param uuid The collection uuid.
+	 * @return True if the collection could be removed.
 	 * @since 1.8
 	 */
 	public boolean remove(String uuid) {
 		Path path = getPath(uuid);
 
-		if (path != null && getContainer(path).getRight().isSpecialFulfilled()) {
+		if (path != null && getCollection(path).getRight().isSpecialFulfilled()) {
 			try {
 				Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 
 				if (!Files.exists(path)) {
-					logger.info("Removed container '" + path.toString() + "'.");
+					logger.info("Removed collection '" + path.toString() + "'.");
 
 					return true;
 				} else
-					logger.warn("Troubles removing the container '" + path.toString() + "'.");
+					logger.warn("Troubles removing the collection '" + path.toString() + "'.");
 			} catch (Exception e) {
-				logger.warn("Cannot remove container '" + path.toString() + "' - " + e.getMessage() + ".");
+				logger.warn("Cannot remove collection '" + path.toString() + "' - " + e.getMessage() + ".");
 			}
 		} else {
-			logger.warn("Cannot remove container '" + uuid + "'.");
+			logger.warn("Cannot remove collection '" + uuid + "'.");
 		}
 
 		return false;
 	}
 
 	/**
-	 * Updates a container.
+	 * Updates a collection.
 	 * 
-	 * @param uuid        The container uuid.
+	 * @param uuid        The collection uuid.
 	 * @param name        The name.
 	 * @param description The description.
 	 * @param keywords    The keywords.
-	 * @return The container. Null if the container can not be updated.
+	 * @return The collection. Null if the collection can not be updated.
 	 * @since 1.8
 	 */
-	public Container update(String uuid, String name, String description, Set<String> keywords) {
+	public Collection update(String uuid, String name, String description, Set<String> keywords) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
-			Container container = getContainer(path);
+			Collection collection = getCollection(path);
 
-			if (container.getRight().isSpecialFulfilled()
-					&& container.getConfiguration().getConfiguration().update(securityService.getUser(),
-							new ContainerConfiguration.Configuration.Information(name, description, keywords)))
-				return container;
+			if (collection.getRight().isSpecialFulfilled()
+					&& collection.getConfiguration().getConfiguration().update(securityService.getUser(),
+							new CollectionConfiguration.Configuration.Information(name, description, keywords)))
+				return collection;
 		}
 
 		return null;
@@ -270,20 +272,20 @@ public class ContainerService extends CoreService {
 	/**
 	 * Updates the security.
 	 *
-	 * @param uuid     The container uuid.
-	 * @param security The container security.
-	 * @return The updated container. Null if it can not be updated.
+	 * @param uuid     The collection uuid.
+	 * @param security The collection security.
+	 * @return The updated collection. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public Container update(String uuid, SecurityGrant security) {
+	public Collection update(String uuid, SecurityGrant security) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
-			Container container = getContainer(path);
+			Collection collection = getCollection(path);
 
-			if (container.getRight().isSpecialFulfilled()
-					&& container.getConfiguration().getConfiguration().update(securityService.getUser(), security))
-				return container;
+			if (collection.getRight().isSpecialFulfilled()
+					&& collection.getConfiguration().getConfiguration().update(securityService.getUser(), security))
+				return collection;
 		}
 
 		return null;
@@ -343,47 +345,27 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Store the folios.
+	 * Store the sets.
 	 * 
-	 * @param container The container.
-	 * @param files     The folios.
-	 * @return The stored folios. Null if container is unknown or the write right is
+	 * @param collection The collection.
+	 * @param files      The sets. The prefix of the file name up to the first dot
+	 *                   defines a set.
+	 * @return The stored sets. Null if collection is unknown or the write right is
 	 *         not fulfilled.
 	 * @throws IOException Throws on storage troubles.
 	 * @since 1.8
 	 */
-	public List<Folio> store(Container container, MultipartFile[] files) throws IOException {
-		if (container != null && files != null) {
-			if (container.getRight().isWriteFulfilled()) {
-				// The system commands
-				final String identifyCommand = configurationService.getSystemCommand().getIdentify();
-				if (!configurationService.getSystemCommand().isIdentifyAvailable())
-					throw new IOException("the system identify command " + identifyCommand + " is not available.");
-
-				final String convertCommand = configurationService.getSystemCommand().getConvert();
-				if (!configurationService.getSystemCommand().isConvertAvailable())
-					throw new IOException("the system convert command " + convertCommand + " is not available.");
-
-				// create tmp directories
+	public List<Folio> store(Collection collection, MultipartFile[] files) throws IOException {
+		if (collection != null && files != null) {
+			if (collection.getRight().isWriteFulfilled()) {
+				// create tmp folder
 				Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
 
-				Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
-				Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
-				Path folderDetail = Paths.get(temporaryDirectory.toString().toString(), "detail");
-				Path folderBest = Paths.get(temporaryDirectory.toString().toString(), "best");
-
 				try {
-					Files.createDirectory(folderFolios);
-					Files.createDirectory(folderThumbnail);
-					Files.createDirectory(folderDetail);
-					Files.createDirectory(folderBest);
+					Files.createDirectory(temporaryDirectory);
 				} catch (IOException e) {
-					deleteRecursively(temporaryDirectory);
-
 					throw e;
 				}
-
-				SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
 
 				// store the files
 				List<Folio> folios = new ArrayList<>();
@@ -406,7 +388,7 @@ public class ContainerService extends CoreService {
 								}
 
 								final String id = OCR4allUtils.getUUID();
-								final Path destinationFile = folderFolios
+								final Path destinationFile = temporaryFolder
 										.resolve(Paths.get(id + "." + imageFormat.name()));
 
 								try (InputStream inputStream = file.getInputStream()) {
@@ -441,15 +423,15 @@ public class ContainerService extends CoreService {
 				/*
 				 * Create derivatives
 				 */
-				final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
+				final CollectionConfiguration.Images.Derivatives derivatives = collection.getConfiguration().getImages()
 						.getDerivatives();
 				try {
 					final ImageConfiguration.Derivatives derivativeResolution = configurationService.getImage()
 							.getDerivatives();
 
 					// quality best
-					ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
-							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderFolios), folderBest,
+					ImageUtils.createDerivatives(new SystemProcess(temporaryFolder, convertCommand),
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(temporaryFolder), folderBest,
 							derivativeResolution.getBest().getMaxSize(), derivativeResolution.getBest().getQuality());
 
 					// quality detail
@@ -466,7 +448,7 @@ public class ContainerService extends CoreService {
 				} catch (Exception e) {
 					deleteRecursively(temporaryDirectory);
 
-					throw new IOException("Cannot create derivatives for container - " + e.getMessage());
+					throw new IOException("Cannot create derivatives for collection - " + e.getMessage());
 				}
 
 				// set sizes
@@ -497,10 +479,10 @@ public class ContainerService extends CoreService {
 				}
 
 				/*
-				 * Move the folios to the container
+				 * Move the folios to the collection
 				 */
 				try {
-					move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
+					move(foliosFiles, temporaryFolder, collection.getConfiguration().getImages().getFolios());
 
 					move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
 
@@ -508,12 +490,12 @@ public class ContainerService extends CoreService {
 
 					move(derivativeFiles, folderBest, derivatives.getBest());
 				} catch (IOException e) {
-					int remain = remove(foliosFiles, container.getConfiguration().getImages().getFolios());
+					int remain = remove(foliosFiles, collection.getConfiguration().getImages().getFolios());
 					remain += remove(derivativeFiles, derivatives.getThumbnail());
 					remain += remove(derivativeFiles, derivatives.getDetail());
 					remain += remove(derivativeFiles, derivatives.getBest());
 
-					final String message = "Cannot move the folios to container"
+					final String message = "Cannot move the folios to collection"
 							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
 							+ ".";
 
@@ -527,11 +509,11 @@ public class ContainerService extends CoreService {
 
 				// Persist the configuration
 				try {
-					(new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+					(new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(),
 							Type.folio_v1)).persist(true, folios);
 				} catch (Exception e) {
 					throw new IOException(
-							"Cannot persist container folios configuration file - " + e.getMessage() + ".");
+							"Cannot persist collection folios configuration file - " + e.getMessage() + ".");
 				}
 
 				return folios;
@@ -544,31 +526,31 @@ public class ContainerService extends CoreService {
 	/**
 	 * Returns the folios.
 	 *
-	 * @param container The container.
-	 * @return The folios. Null if the container is null or the read right is not
+	 * @param collection The collection.
+	 * @return The folios. Null if the collection is null or the read right is not
 	 *         fulfilled.
 	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Container container) throws IOException {
-		return getFolios(container, null);
+	public List<Folio> getFolios(Collection collection) throws IOException {
+		return getFolios(collection, null);
 	}
 
 	/**
 	 * Returns the folios that are restricted to the specified IDs.
 	 *
-	 * @param container The container.
-	 * @param uuids     The folios uuids. If null, returns all folios.
-	 * @return The folios. Null if the container is null or the read right is not
+	 * @param collection The collection.
+	 * @param uuids      The folios uuids. If null, returns all folios.
+	 * @return The folios. Null if the collection is null or the read right is not
 	 *         fulfilled.
 	 * @throws IOException Throws if the folios metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Container container, Set<String> uuids) throws IOException {
-		if (container != null && container.getRight().isReadFulfilled()) {
+	public List<Folio> getFolios(Collection collection, Set<String> uuids) throws IOException {
+		if (collection != null && collection.getRight().isReadFulfilled()) {
 			List<Folio> folios = new ArrayList<>();
 
-			for (Folio folio : (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+			for (Folio folio : (new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(),
 					Type.folio_v1)).getEntities(Folio.class))
 				if (uuids == null || uuids.contains(folio.getId()))
 					folios.add(folio);
@@ -581,36 +563,36 @@ public class ContainerService extends CoreService {
 	/**
 	 * Persist the folios.
 	 * 
-	 * @param container The container.
-	 * @param folios    The folios to persist.
+	 * @param collection The collection.
+	 * @param folios     The folios to persist.
 	 * @return The number of persisted folios.
 	 * @throws IOException Throws if the folios metadata file can not be persisted.
 	 * @since 1.8
 	 */
-	private int persist(Container container, List<Folio> folios) throws IOException {
-		return (new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1))
+	private int persist(Collection collection, List<Folio> folios) throws IOException {
+		return (new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1))
 				.persist(folios);
 	}
 
 	/**
 	 * Sorts the folios.
 	 * 
-	 * @param container The container.
-	 * @param order     The order to sort, that is list of folios ids.
-	 * @param isAfter   True if the folios that do not belong to the order are to be
-	 *                  inserted after the folios that belong to the order.
-	 *                  Otherwise, they are placed at the beginning.
-	 * @return The sorted folios. Null if the container is null or the write right
+	 * @param collection The collection.
+	 * @param order      The order to sort, that is list of folios ids.
+	 * @param isAfter    True if the folios that do not belong to the order are to
+	 *                   be inserted after the folios that belong to the order.
+	 *                   Otherwise, they are placed at the beginning.
+	 * @return The sorted folios. Null if the collection is null or the write right
 	 *         is not fulfilled.
 	 * @throws IOException Throws if the folios metadata file can not be read or
 	 *                     persisted.
 	 * @since 1.8
 	 */
-	public List<Folio> sortFolios(Container container, List<String> order, boolean isAfter) throws IOException {
-		if (container != null && container.getRight().isWriteFulfilled()) {
-			List<Folio> folios = ImageUtils.sort(getFolios(container), order, isAfter);
+	public List<Folio> sortFolios(Collection collection, List<String> order, boolean isAfter) throws IOException {
+		if (collection != null && collection.getRight().isWriteFulfilled()) {
+			List<Folio> folios = ImageUtils.sort(getFolios(collection), order, isAfter);
 
-			persist(container, folios);
+			persist(collection, folios);
 
 			return folios;
 		} else
@@ -621,18 +603,19 @@ public class ContainerService extends CoreService {
 	/**
 	 * Update the folios metadata.
 	 * 
-	 * @param container The container.
-	 * @param metadata  The metadata of the folios to update.
+	 * @param collection The collection.
+	 * @param metadata   The metadata of the folios to update.
 	 * @return The folios.
 	 * @throws IOException Throws if the folios metadata file can not be read or
 	 *                     persisted.
 	 * @since 1.8
 	 */
-	public List<Folio> updateFolios(Container container, Collection<ImageUtils.Metadata> metadata) throws IOException {
-		if (container != null && container.getRight().isWriteFulfilled()) {
-			List<Folio> folios = ImageUtils.update(getFolios(container), metadata);
+	public List<Folio> updateFolios(Collection collection, Collection<ImageUtils.Metadata> metadata)
+			throws IOException {
+		if (collection != null && collection.getRight().isWriteFulfilled()) {
+			List<Folio> folios = ImageUtils.update(getFolios(collection), metadata);
 
-			persist(container, folios);
+			persist(collection, folios);
 
 			return folios;
 		} else
@@ -642,21 +625,22 @@ public class ContainerService extends CoreService {
 	/**
 	 * Removed the folios.
 	 * 
-	 * @param container The container.
-	 * @param ids       The ids of the folios to remove. If null, remove all folios.
-	 * @return The folios. Null if the container is null or the write right is not
+	 * @param collection The collection.
+	 * @param ids        The ids of the folios to remove. If null, remove all
+	 *                   folios.
+	 * @return The folios. Null if the collection is null or the write right is not
 	 *         fulfilled.
 	 * @throws IOException Throws if the folios metadata file can not be read or
 	 *                     persisted.
 	 * @since 1.8
 	 */
-	public List<Folio> removeFolios(Container container, Collection<String> ids) throws IOException {
-		if (container != null && container.getRight().isWriteFulfilled()) {
+	public List<Folio> removeFolios(Collection collection, Collection<String> ids) throws IOException {
+		if (collection != null && collection.getRight().isWriteFulfilled()) {
 			final List<Folio> folios = new ArrayList<>();
 
-			final Path foliosFolder = container.getConfiguration().getImages().getFolios();
+			final Path foliosFolder = collection.getConfiguration().getImages().getFolios();
 
-			final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
+			final CollectionConfiguration.Images.Derivatives derivatives = collection.getConfiguration().getImages()
 					.getDerivatives();
 			final Path thumbnailFolder = derivatives.getThumbnail();
 			final Path detailFolder = derivatives.getDetail();
@@ -679,7 +663,7 @@ public class ContainerService extends CoreService {
 
 				final String derivativesFormat = derivatives.getFormat().name();
 
-				for (Folio folio : getFolios(container))
+				for (Folio folio : getFolios(collection))
 					if (removeIds.contains(folio.getId()))
 						try {
 							Files.delete(
@@ -696,7 +680,7 @@ public class ContainerService extends CoreService {
 						folios.add(folio);
 			}
 
-			persist(container, folios);
+			persist(collection, folios);
 
 			return folios;
 		} else
@@ -705,13 +689,13 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Container is an immutable class that defines containers .
+	 * Collection is an immutable class that defines collections .
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class Container {
+	public static class Collection {
 		/**
 		 * The right.
 		 */
@@ -720,16 +704,16 @@ public class ContainerService extends CoreService {
 		/**
 		 * The configuration.
 		 */
-		private final ContainerConfiguration configuration;
+		private final CollectionConfiguration configuration;
 
 		/**
-		 * Creates a container.
+		 * Creates a collection.
 		 * 
 		 * @param right         The right.
 		 * @param configuration The configuration.
 		 * @since 1.8
 		 */
-		public Container(SecurityGrant.Right right, ContainerConfiguration configuration) {
+		public Collection(SecurityGrant.Right right, CollectionConfiguration configuration) {
 			super();
 
 			this.right = right;
@@ -752,7 +736,7 @@ public class ContainerService extends CoreService {
 		 * @return The configuration.
 		 * @since 1.8
 		 */
-		public ContainerConfiguration getConfiguration() {
+		public CollectionConfiguration getConfiguration() {
 			return configuration;
 		}
 
