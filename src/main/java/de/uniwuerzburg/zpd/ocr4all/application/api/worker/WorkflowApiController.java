@@ -88,6 +88,7 @@ public class WorkflowApiController extends CoreApiController {
 	 * @param sandboxService       The sandbox service.
 	 * @since 1.8
 	 */
+	// TODO: add security like repository
 	public WorkflowApiController(ConfigurationService configurationService, SecurityService securityService,
 			SchedulerService schedulerService, WorkflowService service, ProjectService projectService,
 			SandboxService sandboxService) {
@@ -157,13 +158,13 @@ public class WorkflowApiController extends CoreApiController {
 	@Operation(summary = "creates the workflow and returns its metadata in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Workflow Metadata", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = Metadata.class)) }),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+//			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(pushRequestMapping)
 	public ResponseEntity<Metadata> create(@RequestBody WorkflowRequest request) {
-		if (!securityService.isCoordinator())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+//		if (!securityService.isCoordinator())
+//			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
 		try {
 			Metadata metadata = service.create(request.getLabel(), request.getDescription(), request.getViewModel(),
@@ -190,13 +191,13 @@ public class WorkflowApiController extends CoreApiController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Workflow Metadata", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = Metadata.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+//			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping + workflowPathVariable)
 	public ResponseEntity<Metadata> update(@Parameter(description = "the workflow id") @PathVariable String workflowId,
 			@RequestBody WorkflowMatadataRequest request) {
-		if (!securityService.isCoordinator())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+//		if (!securityService.isCoordinator())
+//			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
 		try {
 			Metadata metadata = service.update(workflowId, request.getLabel(), request.getDescription());
@@ -222,13 +223,13 @@ public class WorkflowApiController extends CoreApiController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Workflow Metadata", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = Metadata.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+//			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(pushRequestMapping + workflowPathVariable)
 	public ResponseEntity<Metadata> update(@Parameter(description = "the workflow id") @PathVariable String workflowId,
 			@RequestBody WorkflowRequest request) {
-		if (!securityService.isCoordinator())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+//		if (!securityService.isCoordinator())
+//			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
 		try {
 			Metadata metadata = service.persist(workflowId, request.getLabel(), request.getDescription(),
@@ -254,13 +255,13 @@ public class WorkflowApiController extends CoreApiController {
 	@Operation(summary = "removes the workflow")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Workflow"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+//			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping + workflowPathVariable)
 	public void remove(@Parameter(description = "the workflow id") @PathVariable String workflowId,
 			HttpServletResponse response) {
-		if (!securityService.isCoordinator())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+//		if (!securityService.isCoordinator())
+//			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
 		try {
 			if (service.remove(workflowId))
