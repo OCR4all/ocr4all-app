@@ -10,13 +10,12 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.data;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -25,28 +24,19 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration.Configuration;
-import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
  * Defines collection services.
@@ -324,28 +314,6 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Removes the files from the folder.
-	 * 
-	 * @param fileNames The file names.
-	 * @param folder    The folder.
-	 * @return The number of files that could not be removed.
-	 * @since 1.8
-	 */
-	private int remove(List<String> fileNames, Path folder) {
-		int notRemoved = 0;
-		for (String fileName : fileNames)
-			try {
-				Files.delete(Paths.get(folder.toString(), fileName));
-			} catch (NoSuchFileException e) {
-				// Nothing to do
-			} catch (IOException e) {
-				notRemoved++;
-			}
-
-		return notRemoved;
-	}
-
-	/**
 	 * Store the sets.
 	 * 
 	 * @param collection The collection.
@@ -376,8 +344,7 @@ public class CollectionService extends CoreService {
 
 				for (MultipartFile file : files)
 					if (file != null && !file.isEmpty()) {
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set.NameExtension nameExtension = de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set
-								.getNameExtension(file.getOriginalFilename());
+						NameExtension nameExtension = getNameExtension(file.getOriginalFilename());
 
 						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = names
 								.get(nameExtension.getName());
@@ -443,167 +410,357 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Returns the folios.
+	 * Returns the sets.
 	 *
 	 * @param collection The collection.
-	 * @return The folios. Null if the collection is null or the read right is not
+	 * @return The sets. Null if the collection is null or the read right is not
 	 *         fulfilled.
-	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @throws IOException Throws if the sets metadata file can not be read.
 	 * @since 1.8
 	 */
-	public List<Folio> getFolios(Collection collection) throws IOException {
-		return getFolios(collection, null);
-	}
-
-	/**
-	 * Returns the folios that are restricted to the specified IDs.
-	 *
-	 * @param collection The collection.
-	 * @param uuids      The folios uuids. If null, returns all folios.
-	 * @return The folios. Null if the collection is null or the read right is not
-	 *         fulfilled.
-	 * @throws IOException Throws if the folios metadata file can not be read.
-	 * @since 1.8
-	 */
-	public List<Folio> getFolios(Collection collection, Set<String> uuids) throws IOException {
-		if (collection != null && collection.getRight().isReadFulfilled()) {
-			List<Folio> folios = new ArrayList<>();
-
-			for (Folio folio : (new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(),
-					Type.folio_v1)).getEntities(Folio.class))
-				if (uuids == null || uuids.contains(folio.getId()))
-					folios.add(folio);
-
-			return folios;
-		} else
-			return null;
-	}
-
-	/**
-	 * Persist the folios.
-	 * 
-	 * @param collection The collection.
-	 * @param folios     The folios to persist.
-	 * @return The number of persisted folios.
-	 * @throws IOException Throws if the folios metadata file can not be persisted.
-	 * @since 1.8
-	 */
-	private int persist(Collection collection, List<Folio> folios) throws IOException {
-		return (new PersistenceManager(collection.getConfiguration().getConfiguration().getFolioFile(), Type.folio_v1))
-				.persist(folios);
-	}
-
-	/**
-	 * Sorts the folios.
-	 * 
-	 * @param collection The collection.
-	 * @param order      The order to sort, that is list of folios ids.
-	 * @param isAfter    True if the folios that do not belong to the order are to
-	 *                   be inserted after the folios that belong to the order.
-	 *                   Otherwise, they are placed at the beginning.
-	 * @return The sorted folios. Null if the collection is null or the write right
-	 *         is not fulfilled.
-	 * @throws IOException Throws if the folios metadata file can not be read or
-	 *                     persisted.
-	 * @since 1.8
-	 */
-	public List<Folio> sortFolios(Collection collection, List<String> order, boolean isAfter) throws IOException {
-		if (collection != null && collection.getRight().isWriteFulfilled()) {
-			List<Folio> folios = ImageUtils.sort(getFolios(collection), order, isAfter);
-
-			persist(collection, folios);
-
-			return folios;
-		} else
-			return null;
-
-	}
-
-	/**
-	 * Update the folios metadata.
-	 * 
-	 * @param collection The collection.
-	 * @param metadata   The metadata of the folios to update.
-	 * @return The folios.
-	 * @throws IOException Throws if the folios metadata file can not be read or
-	 *                     persisted.
-	 * @since 1.8
-	 */
-	public List<Folio> updateFolios(Collection collection, Collection<ImageUtils.Metadata> metadata)
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> getSets(Collection collection)
 			throws IOException {
+		return getSets(collection, null);
+	}
+
+	/**
+	 * Returns the sets that are restricted to the specified IDs.
+	 *
+	 * @param collection The collection.
+	 * @param uuids      The sets uuids. If null, returns all sets.
+	 * @return The sets. Null if the collection is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the sets metadata file can not be read.
+	 * @since 1.8
+	 */
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> getSets(Collection collection,
+			Set<String> uuids) throws IOException {
+		if (collection != null && collection.getRight().isReadFulfilled()) {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : (new PersistenceManager(
+					collection.getConfiguration().getConfiguration().getSetsFile(), Type.data_collection_set_v1))
+					.getEntities(de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set.class))
+				if (uuids == null || uuids.contains(set.getId()))
+					sets.add(set);
+
+			return sets;
+		} else
+			return null;
+	}
+
+	/**
+	 * Returns the file extensions of a set.
+	 *
+	 * @param collection The collection.
+	 * @param uuid       The set uuid.
+	 * @return The file extensions of the set. Null if the collection is null or the
+	 *         read right is not fulfilled.
+	 * @throws IOException Throws if an I/O error occurs when opening the collection
+	 *                     folder.
+	 * @since 1.8
+	 */
+	public List<String> getFileExtensions(Collection collection, String uuid) throws IOException {
+		if (collection != null && collection.getRight().isReadFulfilled() && uuid != null || !uuid.isBlank()) {
+			List<String> extensions = new ArrayList<>();
+
+			for (String filename : OCR4allUtils.getFileNames(collection.getConfiguration().getFolder(),
+					uuid.trim() + ".", null))
+				extensions.add(getNameExtension(filename).getExtension());
+
+			Collections.sort(extensions, String.CASE_INSENSITIVE_ORDER);
+
+			return extensions;
+		} else
+			return null;
+	}
+
+	/**
+	 * Persist the sets.
+	 * 
+	 * @param collection The collection.
+	 * @param sets       The sets to persist.
+	 * @return The number of persisted sets.
+	 * @throws IOException Throws if the sets metadata file can not be persisted.
+	 * @since 1.8
+	 */
+	private int persist(Collection collection, List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets)
+			throws IOException {
+		return (new PersistenceManager(collection.getConfiguration().getConfiguration().getSetsFile(),
+				Type.data_collection_set_v1)).persist(sets);
+	}
+
+	/**
+	 * Sorts the sets in the given order.
+	 * 
+	 * @param sets    The sets to sort.
+	 * @param order   The order to sort, that is list of sets ids.
+	 * @param isAfter True if the sets that do not belong to the order are to be
+	 *                inserted after the sets that belong to the order. Otherwise,
+	 *                they are placed at the beginning.
+	 * @return The sorted sets.
+	 * @since 1.8
+	 */
+	private static List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sort(
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets, List<String> order,
+			boolean isAfter) {
+		if (sets == null || sets.isEmpty() || order == null || order.isEmpty())
+			return sets;
+
+		List<String> parsedOrder = new ArrayList<>();
+		Set<String> parsedIds = new HashSet<>();
+		for (String id : order)
+			if (id != null && !id.isBlank()) {
+				id = id.trim();
+
+				if (parsedIds.add(id))
+					parsedOrder.add(id);
+			}
+
+		if (parsedOrder.isEmpty())
+			return sets;
+
+		Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> idSets = new Hashtable<>();
+		for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+			idSets.put(set.getId(), set);
+
+		// Set the new order
+		List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> newOrder = new ArrayList<>();
+		for (String id : parsedOrder)
+			if (idSets.containsKey(id))
+				newOrder.add(idSets.get(id));
+
+		// The remainder sets
+		Set<String> orderSet = new HashSet<>(parsedOrder);
+		List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> remainderOrder = new ArrayList<>();
+		for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+			if (!orderSet.contains(set.getId()))
+				remainderOrder.add(set);
+
+		if (!remainderOrder.isEmpty()) {
+			if (isAfter)
+				newOrder.addAll(remainderOrder);
+			else
+				newOrder.addAll(0, remainderOrder);
+		}
+
+		return newOrder;
+	}
+
+	/**
+	 * Sorts the sets.
+	 * 
+	 * @param collection The collection.
+	 * @param order      The order to sort, that is list of sets ids.
+	 * @param isAfter    True if the sets that do not belong to the order are to be
+	 *                   inserted after the sets that belong to the order.
+	 *                   Otherwise, they are placed at the beginning.
+	 * @return The sorted sets. Null if the collection is null or the write right is
+	 *         not fulfilled.
+	 * @throws IOException Throws if the sets metadata file can not be read or
+	 *                     persisted.
+	 * @since 1.8
+	 */
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sortFolios(Collection collection,
+			List<String> order, boolean isAfter) throws IOException {
 		if (collection != null && collection.getRight().isWriteFulfilled()) {
-			List<Folio> folios = ImageUtils.update(getFolios(collection), metadata);
+
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> folios = sort(getSets(collection), order,
+					isAfter);
 
 			persist(collection, folios);
 
 			return folios;
 		} else
 			return null;
+
 	}
 
 	/**
-	 * Removed the folios.
+	 * Update the sets metadata.
+	 * 
+	 * @param sets     The sets.
+	 * @param metadata The metadata of the sets to update.
+	 * @return The sets.
+	 * @since 1.8
+	 */
+	private static List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> update(
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets,
+			java.util.Collection<Metadata> metadata) {
+		if (sets == null || sets.isEmpty() || metadata == null || metadata.isEmpty())
+			return sets;
+
+		// index the sets
+		Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> indexed = new Hashtable<>();
+		for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+			indexed.put(set.getId(), set);
+
+		// update metadata
+		for (Metadata update : metadata)
+			if (update != null && update.getId() != null && !update.getId().isBlank()) {
+				de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = indexed.get(update.getId().trim());
+
+				if (set != null) {
+					if (update.getName() != null && !update.getName().isBlank())
+						set.setName(update.getName().trim());
+
+					if (update.getKeywords() == null)
+						set.setKeywords(null);
+					else {
+						Set<String> keywords = new HashSet<>();
+						for (String keyword : update.getKeywords())
+							if (keyword != null && !keyword.isBlank())
+								keywords.add(keyword.trim());
+
+						set.setKeywords(keywords.isEmpty() ? null : keywords);
+					}
+				}
+			}
+
+		return sets;
+	}
+
+	/**
+	 * Update the sets metadata.
 	 * 
 	 * @param collection The collection.
-	 * @param ids        The ids of the folios to remove. If null, remove all
-	 *                   folios.
-	 * @return The folios. Null if the collection is null or the write right is not
-	 *         fulfilled.
-	 * @throws IOException Throws if the folios metadata file can not be read or
+	 * @param metadata   The metadata of the sets to update.
+	 * @return The sets.
+	 * @throws IOException Throws if the sets metadata file can not be read or
 	 *                     persisted.
 	 * @since 1.8
 	 */
-	public List<Folio> removeFolios(Collection collection, Collection<String> ids) throws IOException {
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> updateSets(Collection collection,
+			java.util.Collection<Metadata> metadata) throws IOException {
 		if (collection != null && collection.getRight().isWriteFulfilled()) {
-			final List<Folio> folios = new ArrayList<>();
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = update(getSets(collection),
+					metadata);
 
-			final Path foliosFolder = collection.getConfiguration().getImages().getFolios();
+			persist(collection, sets);
 
-			final CollectionConfiguration.Images.Derivatives derivatives = collection.getConfiguration().getImages()
-					.getDerivatives();
-			final Path thumbnailFolder = derivatives.getThumbnail();
-			final Path detailFolder = derivatives.getDetail();
-			final Path bestFolder = derivatives.getBest();
+			return sets;
+		} else
+			return null;
+	}
+
+	/**
+	 * Removed the sets.
+	 * 
+	 * @param collection The collection.
+	 * @param ids        The ids of the sets to remove. If null, remove all sets.
+	 * @return The sets. Null if the collection is null or the write right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the sets metadata file can not be read or
+	 *                     persisted.
+	 * @since 1.8
+	 */
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> removeSets(Collection collection,
+			java.util.Collection<String> ids) throws IOException {
+		if (collection != null && collection.getRight().isWriteFulfilled()) {
+			final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
+
+			final Path folder = collection.getConfiguration().getFolder();
 
 			if (ids == null) {
-				// Clear all folios and derivatives
-				FileUtils.cleanDirectory(foliosFolder.toFile());
-
-				FileUtils.cleanDirectory(thumbnailFolder.toFile());
-				FileUtils.cleanDirectory(detailFolder.toFile());
-				FileUtils.cleanDirectory(bestFolder.toFile());
+				// Clear all sets
+				OCR4allUtils.delete(OCR4allUtils.getFiles(folder, null, null));
 			} else {
-				// Clear desired folios and the respective derivatives
+				// Clear desired sets and the respective derivatives
 				final Set<String> removeIds = new HashSet<>();
 
 				for (String id : ids)
 					if (id != null && !id.isBlank())
 						removeIds.add(id.trim());
 
-				final String derivativesFormat = derivatives.getFormat().name();
-
-				for (Folio folio : getFolios(collection))
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set folio : getSets(collection))
 					if (removeIds.contains(folio.getId()))
 						try {
-							Files.delete(
-									Paths.get(foliosFolder.toString(), folio.getId() + "." + folio.getFormat().name()));
-
-							Files.delete(
-									Paths.get(thumbnailFolder.toString(), folio.getId() + "." + derivativesFormat));
-							Files.delete(Paths.get(detailFolder.toString(), folio.getId() + "." + derivativesFormat));
-							Files.delete(Paths.get(bestFolder.toString(), folio.getId() + "." + derivativesFormat));
+							OCR4allUtils.delete(OCR4allUtils.getFiles(folder, folio.getId() + ".", null));
 						} catch (Exception e) {
 							// Ignore troubles removing files
 						}
 					else
-						folios.add(folio);
+						sets.add(folio);
 			}
 
-			persist(collection, folios);
+			persist(collection, sets);
 
-			return folios;
+			return sets;
 		} else
 			return null;
+	}
+
+	/**
+	 * Returns the set name with its extension of the given file name.
+	 * 
+	 * @param fileName The file name.
+	 * @return The set name of given file name.
+	 * @since 17
+	 */
+	private static NameExtension getNameExtension(String fileName) {
+		if (fileName == null)
+			return null;
+		else {
+			fileName = fileName.trim();
+
+			int index = fileName.indexOf(".");
+
+			return new NameExtension((index < 0 ? fileName : fileName.substring(0, index)),
+					(index < 0 || index == fileName.length() - 1 ? "" : fileName.substring(index + 1)));
+		}
+	}
+
+	/**
+	 * NameExtension is an immutable class the defines names with extensions.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	private static class NameExtension {
+		/**
+		 * The name.
+		 */
+		private final String name;
+
+		/**
+		 * The extension.
+		 */
+		private final String extension;
+
+		/**
+		 * Creates a name with extension.
+		 * 
+		 * @param name      The name.
+		 * @param extension The extension.
+		 * @since 17
+		 */
+		public NameExtension(String name, String extension) {
+			super();
+
+			this.name = name;
+			this.extension = extension;
+		}
+
+		/**
+		 * Returns the name.
+		 *
+		 * @return The name.
+		 * @since 17
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Returns the extension.
+		 *
+		 * @return The extension.
+		 * @since 17
+		 */
+		public String getExtension() {
+			return extension;
+		}
 
 	}
 
@@ -661,4 +818,79 @@ public class CollectionService extends CoreService {
 
 	}
 
+	/**
+	 * Metadata is an immutable class that defines metadata for update.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class Metadata implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The id.
+		 */
+		private final String id;
+
+		/**
+		 * The name without extension.
+		 */
+		private final String name;
+
+		/**
+		 * The keywords.
+		 */
+		private final Set<String> keywords;
+
+		/**
+		 * Creates a metadata.
+		 * 
+		 * @param id       The id.
+		 * @param name     The name without extension.
+		 * @param keywords The keywords.
+		 * @since 1.8
+		 */
+		public Metadata(String id, String name, Set<String> keywords) {
+			super();
+
+			this.id = id;
+			this.name = name;
+			this.keywords = keywords;
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 1.8
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Returns the name.
+		 *
+		 * @return The name.
+		 * @since 1.8
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Returns the keywords.
+		 *
+		 * @return The keywords.
+		 * @since 1.8
+		 */
+		public Set<String> getKeywords() {
+			return keywords;
+		}
+
+	}
 }
