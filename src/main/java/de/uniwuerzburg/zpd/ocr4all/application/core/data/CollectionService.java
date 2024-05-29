@@ -561,7 +561,7 @@ public class CollectionService extends CoreService {
 	 *                     persisted.
 	 * @since 1.8
 	 */
-	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sortFolios(Collection collection,
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sortSets(Collection collection,
 			List<String> order, boolean isAfter) throws IOException {
 		if (collection != null && collection.getRight().isWriteFulfilled()) {
 

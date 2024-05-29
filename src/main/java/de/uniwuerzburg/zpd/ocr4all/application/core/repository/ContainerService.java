@@ -26,10 +26,13 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
@@ -542,6 +545,26 @@ public class ContainerService extends CoreService {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns the folio with specified ID.
+	 *
+	 * @param container The container.
+	 * @param uuid      The folios uuid.
+	 * @return The folio. Null if the container is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public Folio getFolio(Container container, String uuid) throws IOException {
+		if (uuid == null)
+			return null;
+		else {
+			List<Folio> folios = getFolios(container, Set.of(uuid));
+
+			return folios == null || folios.isEmpty() ? null : folios.get(0);
+		}
 	}
 
 	/**

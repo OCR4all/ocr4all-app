@@ -278,6 +278,11 @@ public class CoreApiController {
 	public static final String containerPathVariable = "/{containerId}";
 
 	/**
+	 * The collection id path variable.
+	 */
+	public static final String collectionPathVariable = "/{collectionId}";
+
+	/**
 	 * The action path variable.
 	 */
 	public static final String actionPathVariable = "/{action}";

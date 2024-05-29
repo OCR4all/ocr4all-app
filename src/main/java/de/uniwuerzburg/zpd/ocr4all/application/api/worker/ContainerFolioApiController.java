@@ -7,12 +7,16 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -195,10 +199,10 @@ public class ContainerFolioApiController extends CoreApiController {
 		ContainerService.Container container = authorizeRead(containerId);
 
 		try {
-			List<Folio> folios = service.getFolios(container, Set.of(id));
+			Folio folio = service.getFolio(container, id);
 
-			return folios.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
-					: ResponseEntity.ok().body(new FolioResponse(folios.get(0)));
+			return folio == null ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new FolioResponse(folio));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -397,6 +401,53 @@ public class ContainerFolioApiController extends CoreApiController {
 			service.removeFolios(container, null);
 
 			response.setStatus(HttpServletResponse.SC_OK);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the image with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The image id.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "downloads the image with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Image"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(downloadRequestMapping + containerPathVariable)
+	public void download(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response)
+			throws IOException {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			Folio folio = service.getFolio(container, id);
+			if (folio == null)
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+			Path path = Paths.get(container.getConfiguration().getImages().getFolios().toString(),
+					id + "." + folio.getFormat().name());
+			if (!Files.exists(path))
+				throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+
+			byte[] content = Files.readAllBytes(path);
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"");
+			response.getOutputStream().write(content, 0, content.length);
+		} catch (ResponseStatusException ex) {
+			throw ex;
 		} catch (Exception ex) {
 			log(ex);
 
