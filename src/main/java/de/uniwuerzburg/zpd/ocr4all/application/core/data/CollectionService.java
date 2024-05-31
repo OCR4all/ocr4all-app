@@ -410,6 +410,28 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
+	 * Returns the set with given IDs.
+	 *
+	 * @param collection The collection.
+	 * @param uuid       The set uuid.
+	 * @return The set. Null if the collection is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the sets metadata file can not be read.
+	 * @since 1.8
+	 */
+	public de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set getSet(Collection collection, String uuid)
+			throws IOException {
+		if (uuid == null)
+			return null;
+		else {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = getSets(collection, Set.of(uuid));
+
+			return sets == null || sets.isEmpty() ? null : sets.get(0);
+		}
+
+	}
+
+	/**
 	 * Returns the sets.
 	 *
 	 * @param collection The collection.

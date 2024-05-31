@@ -331,23 +331,7 @@ ocr4all:
   application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/dev/exchange
   repository.folder: ${user.home}/ocr4all/dev/repository
-  data.folder: ${user.home}/ocr4all/data
+  data.folder: ${user.home}/ocr4all/dev/data
   workspace.folder: ${user.home}/ocr4all/dev/workspace
   opt.folder: ${user.home}/ocr4all/dev/opt
   temporary.folder: ${user.home}/ocr4all/dev/tmp
-
----
-spring:
-    config.activate.on-profile: test
-
-server:
-  port: 9091
-
-ocr4all:
-  application.security.administrator.create: true
-  exchange.folder: ${user.home}/ocr4all/test/exchange
-  repository.folder: ${user.home}/ocr4all/test/repository
-  data.folder: ${user.home}/ocr4all/data
-  workspace.folder: ${user.home}/ocr4all/test/workspace
-  opt.folder: ${user.home}/ocr4all/test/opt
-  temporary.folder: ${user.home}/ocr4all/test/tmp

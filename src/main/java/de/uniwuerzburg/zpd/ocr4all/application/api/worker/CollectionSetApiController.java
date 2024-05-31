@@ -7,11 +7,18 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +37,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersReq
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -192,11 +200,10 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeRead(collectionId);
 
 		try {
-			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = service.getSets(collection,
-					Set.of(id));
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = service.getSet(collection, id);
 
-			return sets.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
-					: ResponseEntity.ok().body(new SetResponse(sets.get(0)));
+			return set == null ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
+					: ResponseEntity.ok().body(new SetResponse(set));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -399,6 +406,131 @@ public class CollectionSetApiController extends CoreApiController {
 			service.removeSets(collection, null);
 
 			response.setStatus(HttpServletResponse.SC_OK);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns metadata to be compressed in a zipped file containing the file name
+	 * mapping of the sets in a tab-separated values format.
+	 * 
+	 * @param sets The sets.
+	 * @return The metadata to be compressed in a zipped file.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 17
+	 */
+	private OCR4allUtils.ZipMetadata getZipMetadataFilenameMappingTSV(
+			Collection<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets) throws IOException {
+		StringBuffer buffer = new StringBuffer();
+
+		for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+			buffer.append(set.getId() + "\t" + set.getName() + System.lineSeparator());
+
+		return new OCR4allUtils.ZipMetadata(filenameMappingTSV,
+				new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8)));
+	}
+
+	/**
+	 * Downloads the files of given collection with desired set id.
+	 * 
+	 * @param collectionId The collection id. This is the folder name.
+	 * @param id           The set id.
+	 * @param response     The HTTP-specific functionality in sending a response to
+	 *                     the client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "downloads the files of a collection with given set id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Files"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(downloadRequestMapping + collectionPathVariable)
+	public void download(
+			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
+			@Parameter(description = "the set id") @RequestParam String id, HttpServletResponse response)
+			throws IOException {
+		CollectionService.Collection collection = authorizeRead(collectionId);
+
+		try {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = service.getSet(collection, id);
+			if (set == null)
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+			Path folder = collection.getConfiguration().getFolder();
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"collection-" + collectionId.trim() + "_set-" + id + ".zip\"");
+
+			OCR4allUtils.zip(folder, true, response.getOutputStream(), new OCR4allUtils.ZipFilter() {
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils.ZipFilter#
+				 * accept(java.io.File)
+				 */
+				@Override
+				public boolean accept(File entry) {
+					return entry.getName().startsWith(id + ".");
+				}
+			}, getZipMetadataFilenameMappingTSV(Set.of(set)));
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Zips the images of given collection.
+	 * 
+	 * @param collectionId The collection id. This is the folder name.
+	 * @param response     The HTTP-specific functionality in sending a response to
+	 *                     the client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "zip the images of ")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Image"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(zipRequestMapping + collectionPathVariable)
+	public void zip(
+			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
+			HttpServletResponse response) throws IOException {
+		CollectionService.Collection collection = authorizeRead(collectionId);
+
+		try {
+			Path folder = collection.getConfiguration().getFolder();
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"collection-" + collectionId.trim() + ".zip\"");
+
+			OCR4allUtils.zip(folder, true, response.getOutputStream(), new OCR4allUtils.ZipFilter() {
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils.ZipFilter#
+				 * accept(java.io.File)
+				 */
+				@Override
+				public boolean accept(File entry) {
+					// Ignore configuration folders
+					return !entry.getName().startsWith(".");
+				}
+			}, getZipMetadataFilenameMappingTSV(service.getSets(collection)));
+		} catch (ResponseStatusException ex) {
+			throw ex;
 		} catch (Exception ex) {
 			log(ex);
 

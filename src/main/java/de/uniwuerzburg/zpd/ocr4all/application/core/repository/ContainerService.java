@@ -548,7 +548,7 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Returns the folio with specified ID.
+	 * Returns the folio with given ID.
 	 *
 	 * @param container The container.
 	 * @param uuid      The folios uuid.

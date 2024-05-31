@@ -7,7 +7,9 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -409,7 +412,7 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the image with given id.
+	 * Downloads the image of given container with desired id.
 	 * 
 	 * @param containerId The container id. This is the folder name.
 	 * @param id          The image id.
@@ -418,7 +421,7 @@ public class ContainerFolioApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
-	@Operation(summary = "downloads the image with given id")
+	@Operation(summary = "downloads the image of a container with given id")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Image"),
 			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
@@ -446,6 +449,63 @@ public class ContainerFolioApiController extends CoreApiController {
 
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"");
 			response.getOutputStream().write(content, 0, content.length);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns metadata to be compressed in a zipped file containing the file name
+	 * mapping of the container images in a tab-separated values format.
+	 * 
+	 * @param container The container.
+	 * @return The metadata to be compressed in a zipped file.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 17
+	 */
+	private OCR4allUtils.ZipMetadata getZipMetadataFilenameMappingTSV(ContainerService.Container container)
+			throws IOException {
+		StringBuffer buffer = new StringBuffer();
+
+		for (Folio folio : service.getFolios(container))
+			buffer.append(folio.getId() + "\t" + folio.getName() + System.lineSeparator());
+
+		return new OCR4allUtils.ZipMetadata(filenameMappingTSV,
+				new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8)));
+	}
+
+	/**
+	 * Zips the images of given container.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "zip the images of ")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Image"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(zipRequestMapping + containerPathVariable)
+	public void zip(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			HttpServletResponse response) throws IOException {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		try {
+			Path folder = container.getConfiguration().getImages().getFolios();
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"container-" + containerId.trim() + ".zip\"");
+
+			OCR4allUtils.zip(folder, true, response.getOutputStream(), null,
+					getZipMetadataFilenameMappingTSV(container));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {
