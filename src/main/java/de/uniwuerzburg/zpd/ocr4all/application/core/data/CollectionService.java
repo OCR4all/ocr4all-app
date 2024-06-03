@@ -331,12 +331,6 @@ public class CollectionService extends CoreService {
 				// create tmp folder
 				Path temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
 
-				try {
-					Files.createDirectory(temporaryFolder);
-				} catch (IOException e) {
-					throw e;
-				}
-
 				// store the files
 				List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
 				Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> names = new Hashtable<>();
