@@ -26,10 +26,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -45,6 +49,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines snapshot controllers for the api.
@@ -74,17 +79,25 @@ public class SnapshotApiController extends CoreApiController {
 	public static final String pathRequestMapping = "/path";
 
 	/**
+	 * The collection service.
+	 */
+	private final CollectionService collectionService;
+
+	/**
 	 * Creates a snapshot controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
+	 * @param collectionService    The collection service.
 	 * @since 1.8
 	 */
 	public SnapshotApiController(ConfigurationService configurationService, SecurityService securityService,
-			ProjectService projectService, SandboxService sandboxService) {
+			ProjectService projectService, SandboxService sandboxService, CollectionService collectionService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService, sandboxService);
+
+		this.collectionService = collectionService;
 	}
 
 	/**
@@ -419,6 +432,49 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for collection read security operations.
+	 * 
+	 * @param id The collection id.
+	 * @return The authorized collection.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	private CollectionService.Collection authorizeCollectionRead(String id) throws ResponseStatusException {
+		CollectionService.Collection collection = collectionService.getCollection(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	// TODO: continue
+	private void dataset(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
+			throws ResponseStatusException, IllegalArgumentException {
+		CollectionService.Collection collection = authorizeCollectionRead(snapshotCollectionRequest.getCollectionId());
+
+		Snapshot snapshot = sandbox.getSnapshot(snapshotCollectionRequest.getTrack());
+
+		// TODO: Test if it is a Larex snapshot!
+		// if
+		// (snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId().equals(LAREXLauncher))
+
+		List<String> filenames = (snapshotCollectionRequest instanceof SnapshotCollectionFilesRequest)
+				? ((SnapshotCollectionFilesRequest) snapshotCollectionRequest).getFilenames()
+				: null;
+
+	}
+
+	/**
 	 * Downloads the file in the sandbox of the leaf snapshot in the track of the
 	 * request.
 	 * 
@@ -643,6 +699,88 @@ public class SnapshotApiController extends CoreApiController {
 			this.comment = comment;
 		}
 
+	}
+
+	/**
+	 * Defines snapshot collection requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotCollectionRequest extends SnapshotRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The collection id.
+		 */
+		@NotBlank
+		@JsonProperty("collection-id")
+		private String collectionId;
+
+		/**
+		 * Returns the collectionId.
+		 *
+		 * @return The collectionId.
+		 * @since 17
+		 */
+		public String getCollectionId() {
+			return collectionId;
+		}
+
+		/**
+		 * Set the collectionId.
+		 *
+		 * @param collectionId The collectionId to set.
+		 * @since 17
+		 */
+		public void setCollectionId(String collectionId) {
+			this.collectionId = collectionId;
+		}
+
+	}
+
+	/**
+	 * Defines snapshot collection files requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotCollectionFilesRequest extends SnapshotCollectionRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The file names.
+		 */
+		@NotNull
+		private List<String> filenames;
+
+		/**
+		 * Returns the file names.
+		 *
+		 * @return The file names.
+		 * @since 17
+		 */
+		public List<String> getFilenames() {
+			return filenames;
+		}
+
+		/**
+		 * Set the file names.
+		 *
+		 * @param filenames The file names to set.
+		 * @since 17
+		 */
+		public void setFilenames(List<String> filenames) {
+			this.filenames = filenames;
+		}
 	}
 
 	/**
