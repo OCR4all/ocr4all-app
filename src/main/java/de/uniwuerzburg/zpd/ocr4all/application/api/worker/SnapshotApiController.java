@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
@@ -32,8 +33,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SandboxResponse.SnapshotSynopsisResponse.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -41,6 +44,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -459,6 +463,7 @@ public class SnapshotApiController extends CoreApiController {
 		else
 			return collection;
 	}
+	
 
 	// TODO: continue
 	private void collection(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
@@ -471,9 +476,49 @@ public class SnapshotApiController extends CoreApiController {
 				.equals(LAREXLauncher.class.getName()))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-		Set<String> filenames = new HashSet<>((snapshotCollectionRequest instanceof SnapshotCollectionFilesRequest)
-				? ((SnapshotCollectionFilesRequest) snapshotCollectionRequest).getFilenames()
+		Set<String> sets = new HashSet<>((snapshotCollectionRequest instanceof SnapshotCollectionSetRequest)
+				? ((SnapshotCollectionSetRequest) snapshotCollectionRequest).getSets()
 				: snapshot.getConfiguration().getSandbox().listAllFiles());
+		
+		Path mets = Paths.get(sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString(), sandbox.getConfiguration().getMetsFileName());
+		if (Files.exists(mets))
+			try {
+				final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+				final String metsGroup = sandbox.getConfiguration().getMetsGroup();
+
+				// search mets file group
+				final String fileGroupID = MetsUtils.getFileGroup(metsGroup).getFileGroup(snapshot.getConfiguration().getTrack());
+				MetsParser.Root.FileGroup fileGroup= null;
+
+				for (MetsParser.Root.FileGroup group : root.getFileGroups())
+					if (fileGroupID.equals(fileGroup.getId()))
+						fileGroup = group;
+				
+				if (fileGroup == null)
+					throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED);
+
+				// mets pages
+				final Hashtable<String, String> images = new Hashtable<>();
+
+				MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
+						.getPhysicalSequence().getPages())
+					try {
+						String id = metsPageUtils.getGroupId(page.getId());
+						for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+							images.put(fieldId.getId(), id);
+					} catch (Exception e) {
+						// Ignore malformed mets page
+					}
+				
+			} catch (ResponseStatusException ex) {
+				throw ex;
+			} catch (Exception ex) {
+				log(ex);
+
+				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			}
+
 
 	}
 
@@ -747,43 +792,44 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines snapshot collection files requests for the api.
+	 * Defines snapshot collection set requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class SnapshotCollectionFilesRequest extends SnapshotCollectionRequest {
+	public static class SnapshotCollectionSetRequest extends SnapshotCollectionRequest {
 		/**
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * The file names.
+		 * The sets.
 		 */
 		@NotNull
-		private List<String> filenames;
+		private List<String> sets;
 
 		/**
-		 * Returns the file names.
+		 * Returns the sets.
 		 *
-		 * @return The file names.
+		 * @return The sets.
 		 * @since 17
 		 */
-		public List<String> getFilenames() {
-			return filenames;
+		public List<String> getSets() {
+			return sets;
 		}
 
 		/**
-		 * Set the file names.
+		 * Set the sets.
 		 *
-		 * @param filenames The file names to set.
+		 * @param sets The sets to set.
 		 * @since 17
 		 */
-		public void setFilenames(List<String> filenames) {
-			this.filenames = filenames;
+		public void setSets(List<String> sets) {
+			this.sets = sets;
 		}
+
 	}
 
 	/**
