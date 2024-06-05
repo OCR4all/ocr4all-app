@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +39,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -458,19 +461,19 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	// TODO: continue
-	private void dataset(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
+	private void collection(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
 			throws ResponseStatusException, IllegalArgumentException {
 		CollectionService.Collection collection = authorizeCollectionRead(snapshotCollectionRequest.getCollectionId());
 
 		Snapshot snapshot = sandbox.getSnapshot(snapshotCollectionRequest.getTrack());
 
-		// TODO: Test if it is a Larex snapshot!
-		// if
-		// (snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId().equals(LAREXLauncher))
+		if (!snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId()
+				.equals(LAREXLauncher.class.getName()))
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-		List<String> filenames = (snapshotCollectionRequest instanceof SnapshotCollectionFilesRequest)
+		Set<String> filenames = new HashSet<>((snapshotCollectionRequest instanceof SnapshotCollectionFilesRequest)
 				? ((SnapshotCollectionFilesRequest) snapshotCollectionRequest).getFilenames()
-				: null;
+				: snapshot.getConfiguration().getSandbox().listAllFiles());
 
 	}
 
