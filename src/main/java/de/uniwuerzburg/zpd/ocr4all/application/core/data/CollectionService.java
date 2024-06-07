@@ -286,7 +286,7 @@ public class CollectionService extends CoreService {
 	 * Delete the supplied Path — for directories, recursively delete any nested
 	 * directories or files as well.
 	 * 
-	 * @param path the root Path to delete
+	 * @param path The root path to delete.
 	 * @since 1.8
 	 */
 	private void deleteRecursively(Path path) {
@@ -326,81 +326,129 @@ public class CollectionService extends CoreService {
 	 */
 	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> store(Collection collection,
 			MultipartFile[] files) throws IOException {
-		if (collection != null && files != null) {
-			if (collection.getRight().isWriteFulfilled()) {
-				// create tmp folder
-				Path temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
+		if (collection == null || files == null || !collection.getRight().isWriteFulfilled())
+			return null;
+		else {
+			// create tmp folder
+			Path temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
 
-				// store the files
-				List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
-				Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> names = new Hashtable<>();
-				Set<String> setFiles = new HashSet<>();
+			// store the files
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
+			Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> names = new Hashtable<>();
+			Set<String> setFiles = new HashSet<>();
 
-				for (MultipartFile file : files)
-					if (file != null && !file.isEmpty()) {
-						NameExtension nameExtension = getNameExtension(file.getOriginalFilename());
+			for (MultipartFile file : files)
+				if (file != null && !file.isEmpty()) {
+					NameExtension nameExtension = getNameExtension(file.getOriginalFilename());
 
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = names
-								.get(nameExtension.getName());
-						if (set == null) {
-							set = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(new Date(),
-									securityService.getUser(), OCR4allUtils.getUUID(), nameExtension.getName());
+					de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = names
+							.get(nameExtension.getName());
+					if (set == null) {
+						set = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(new Date(),
+								securityService.getUser(), OCR4allUtils.getUUID(), nameExtension.getName());
 
-							sets.add(set);
-							names.put(nameExtension.getName(), set);
-						}
-
-						final String name = set.getId() + "." + nameExtension.getExtension();
-						setFiles.add(name);
-
-						final Path destinationFile = temporaryFolder.resolve(Paths.get(name));
-
-						try (InputStream inputStream = file.getInputStream()) {
-							Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-						} catch (IOException e) {
-							logger.warn("Failed to store file '" + file.getOriginalFilename() + "' with uuid "
-									+ set.getId() + " - " + e.getMessage());
-
-							continue;
-						}
+						sets.add(set);
+						names.put(nameExtension.getName(), set);
 					}
 
-				if (sets.isEmpty()) {
-					deleteRecursively(temporaryFolder);
+					final String name = set.getId() + "." + nameExtension.getExtension();
+					setFiles.add(name);
 
-					return sets;
+					final Path destinationFile = temporaryFolder.resolve(Paths.get(name));
+
+					try (InputStream inputStream = file.getInputStream()) {
+						Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+					} catch (IOException e) {
+						logger.warn("Failed to store file '" + file.getOriginalFilename() + "' with uuid " + set.getId()
+								+ " - " + e.getMessage());
+
+						continue;
+					}
 				}
 
-				/*
-				 * Move the files to the collection
-				 */
-				try {
-					move(setFiles, temporaryFolder, collection.getConfiguration().getFolder());
-				} catch (IOException e) {
-					final String message = "Cannot move the files to collection - " + e.getMessage() + ".";
-
-					deleteRecursively(temporaryFolder);
-
-					throw new IOException(message);
-				}
-
-				// remove temporary data
+			if (sets.isEmpty()) {
 				deleteRecursively(temporaryFolder);
-
-				// Persist the configuration
-				try {
-					(new PersistenceManager(collection.getConfiguration().getConfiguration().getSetsFile(),
-							Type.data_collection_set_v1)).persist(true, sets);
-				} catch (Exception e) {
-					throw new IOException(
-							"Cannot persist collection sets configuration file - " + e.getMessage() + ".");
-				}
 
 				return sets;
 			}
-		}
 
-		return null;
+			/*
+			 * Move the files to the collection
+			 */
+			try {
+				move(setFiles, temporaryFolder, collection.getConfiguration().getFolder());
+			} catch (IOException e) {
+				final String message = "Cannot move the files to collection - " + e.getMessage() + ".";
+
+				deleteRecursively(temporaryFolder);
+
+				throw new IOException(message);
+			}
+
+			// remove temporary data
+			deleteRecursively(temporaryFolder);
+
+			// Persist the configuration
+			try {
+				(new PersistenceManager(collection.getConfiguration().getConfiguration().getSetsFile(),
+						Type.data_collection_set_v1)).persist(true, sets);
+			} catch (Exception e) {
+				throw new IOException("Cannot persist collection sets configuration file - " + e.getMessage() + ".");
+			}
+
+			return sets;
+		}
+	}
+
+	/**
+	 * Adds the sets to the collection.
+	 * 
+	 * @param collection     The collection.
+	 * @param collectionSets The sets.
+	 * @param files          The files. The file names has to match the collection
+	 *                       restrictions defined for the given sets.
+	 * @param isMove         True if move the files.
+	 * @return The stored sets. Null if collection is unknown or the write right is
+	 *         not fulfilled.
+	 * @throws IOException Throws on storage troubles.
+	 * @since 1.8
+	 */
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> add(Collection collection,
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets, List<Path> files,
+			boolean isMove) throws IOException {
+		if (collection == null || collectionSets == null || files == null || !collection.getRight().isWriteFulfilled())
+			return null;
+		else if (files.isEmpty())
+			return getSets(collection);
+		else {
+			for (Path file : files) {
+				if (isMove)
+					Files.move(file, Paths.get(collection.getConfiguration().getFolder().toString(),
+							file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+				else
+					Files.copy(file, Paths.get(collection.getConfiguration().getFolder().toString(),
+							file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+			}
+
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = getSets(collection);
+			Set<String> availableSetIds = new HashSet<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+				availableSetIds.add(set.getId());
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionSets)
+				if (availableSetIds.add(set.getId()))
+					sets.add(set);
+
+			// Persist the configuration
+			try {
+				(new PersistenceManager(collection.getConfiguration().getConfiguration().getSetsFile(),
+						Type.data_collection_set_v1)).persist(true, sets);
+			} catch (Exception e) {
+				throw new IOException("Cannot persist collection sets configuration file - " + e.getMessage() + ".");
+			}
+
+			return sets;
+		}
 	}
 
 	/**

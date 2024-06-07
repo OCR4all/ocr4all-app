@@ -10,9 +10,12 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -22,6 +25,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,7 +37,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
-import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SandboxResponse.SnapshotSynopsisResponse.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
@@ -44,6 +47,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -463,10 +467,27 @@ public class SnapshotApiController extends CoreApiController {
 		else
 			return collection;
 	}
-	
 
-	// TODO: continue
-	private void collection(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
+	/**
+	 * Exports the snapshot files to the collection.
+	 * 
+	 * @param sandbox                   The sandbox.
+	 * @param snapshotCollectionRequest The snapshot collection request.
+	 * @throws ResponseStatusException  Throw with http status:
+	 *                                  <ul>
+	 *                                  <li>400 (Bad Request): if the collection is
+	 *                                  not available.</li>
+	 *                                  <li>401 (Unauthorized): if the read security
+	 *                                  permission is not achievable by the session
+	 *                                  user.</li>
+	 *                                  <li>412 (Precondition Failed): if the mets
+	 *                                  file group is unknown.</li>
+	 *                                  </ul>
+	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
+	 *                                  the sandbox or it is inconsistent.
+	 * @since 17
+	 */
+	private void exportSnapshot2collection(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
 			throws ResponseStatusException, IllegalArgumentException {
 		CollectionService.Collection collection = authorizeCollectionRead(snapshotCollectionRequest.getCollectionId());
 
@@ -476,50 +497,113 @@ public class SnapshotApiController extends CoreApiController {
 				.equals(LAREXLauncher.class.getName()))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-		Set<String> sets = new HashSet<>((snapshotCollectionRequest instanceof SnapshotCollectionSetRequest)
-				? ((SnapshotCollectionSetRequest) snapshotCollectionRequest).getSets()
-				: snapshot.getConfiguration().getSandbox().listAllFiles());
-		
-		Path mets = Paths.get(sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString(), sandbox.getConfiguration().getMetsFileName());
+		Path temporaryFolder = null;
+		Path mets = Paths.get(sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString(),
+				sandbox.getConfiguration().getMetsFileName());
 		if (Files.exists(mets))
 			try {
 				final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
 				final String metsGroup = sandbox.getConfiguration().getMetsGroup();
 
 				// search mets file group
-				final String fileGroupID = MetsUtils.getFileGroup(metsGroup).getFileGroup(snapshot.getConfiguration().getTrack());
-				MetsParser.Root.FileGroup fileGroup= null;
+				final String fileGroupID = MetsUtils.getFileGroup(metsGroup)
+						.getFileGroup(snapshot.getConfiguration().getTrack());
+				MetsParser.Root.FileGroup fileGroup = null;
 
 				for (MetsParser.Root.FileGroup group : root.getFileGroups())
 					if (fileGroupID.equals(fileGroup.getId()))
 						fileGroup = group;
-				
+
 				if (fileGroup == null)
 					throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED);
 
 				// mets pages
-				final Hashtable<String, String> files = new Hashtable<>();
+				final Hashtable<String, String> metsFieldId2ocr4allId = new Hashtable<>();
 
-				MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
+				final MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
 				for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
 						.getPhysicalSequence().getPages())
 					try {
-						String id = metsPageUtils.getGroupId(page.getId());
+						String ocr4allId = metsPageUtils.getGroupId(page.getId());
 						for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
-							files.put(fieldId.getId(), id);
+							metsFieldId2ocr4allId.put(fieldId.getId(), ocr4allId);
 					} catch (Exception e) {
 						// Ignore malformed mets page
 					}
-				
+
+				// The sets to import. The value is the ocr4all id. Null to import all.
+				final Set<String> sets = (snapshotCollectionRequest instanceof SnapshotCollectionSetRequest)
+						? new HashSet<>(((SnapshotCollectionSetRequest) snapshotCollectionRequest).getSets())
+						: null;
+
+				// The folio names map
+				final Set<String> availableFolios = new HashSet<>();
+				for (Folio folio : sandbox.getProject().getFolios())
+					availableFolios.add(folio.getId());
+
+				final String snapshotFolder = snapshot.getConfiguration().getFolder().toString();
+
+				temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
+				final Set<String> availableSets = new HashSet<>();
+				final List<Path> files = new ArrayList<>();
+
+				for (de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File file : fileGroup
+						.getFiles()) {
+					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
+
+					if (ocr4allId != null && (sets == null || sets.contains(ocr4allId))
+							&& availableFolios.contains(ocr4allId)) {
+						Path data = Paths.get(snapshotFolder, file.getLocation().getPath());
+
+						if (Files.isRegularFile(data, LinkOption.NOFOLLOW_LINKS)) {
+							// Build target name
+							String target = data.getFileName().toString();
+							int index = target.indexOf(ocr4allId);
+							if (index < 0)
+								target = ocr4allId + "." + target;
+							else {
+								String suffix = target.substring(index + ocr4allId.length());
+								target = ocr4allId + (suffix.startsWith(".") ? suffix : "." + suffix);
+							}
+
+							Path targetPath = Paths.get(temporaryFolder.toString(), target);
+
+							// copy the file to the temporary directory
+							Files.copy(data, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+							availableSets.add(ocr4allId);
+							files.add(targetPath);
+						}
+					}
+				}
+
+				if (!files.isEmpty()) {
+					final Date date = new Date();
+					final String user = securityService.getUser();
+
+					final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets = new ArrayList<>();
+					for (Folio folio : sandbox.getProject().getFolios())
+						if (availableSets.contains(folio.getId()))
+							collectionSets.add(new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(date,
+									user, folio.getKeywords(), folio.getId(), folio.getName()));
+
+					collectionService.add(collection, collectionSets, files, true);
+				}
+
 			} catch (ResponseStatusException ex) {
 				throw ex;
 			} catch (Exception ex) {
 				log(ex);
 
 				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			} finally {
+				if (temporaryFolder != null)
+					try {
+						FileSystemUtils.deleteRecursively(temporaryFolder);
+					} catch (IOException e) {
+						logger.warn("cannot delete directory " + temporaryFolder + " - " + e.getMessage() + ".");
+					}
 			}
-
-
 	}
 
 	/**
