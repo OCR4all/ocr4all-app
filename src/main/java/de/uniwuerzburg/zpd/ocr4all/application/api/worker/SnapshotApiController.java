@@ -498,7 +498,7 @@ public class SnapshotApiController extends CoreApiController {
 					throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED);
 
 				// mets pages
-				final Hashtable<String, String> images = new Hashtable<>();
+				final Hashtable<String, String> files = new Hashtable<>();
 
 				MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
 				for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
@@ -506,7 +506,7 @@ public class SnapshotApiController extends CoreApiController {
 					try {
 						String id = metsPageUtils.getGroupId(page.getId());
 						for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
-							images.put(fieldId.getId(), id);
+							files.put(fieldId.getId(), id);
 					} catch (Exception e) {
 						// Ignore malformed mets page
 					}
