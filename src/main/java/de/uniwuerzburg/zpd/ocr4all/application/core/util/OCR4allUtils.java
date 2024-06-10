@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -150,8 +151,57 @@ public class OCR4allUtils {
 	 * @since 17
 	 */
 	public static Set<String> getFileNames(Path folder) throws IOException {
+		return getFileNames(folder, null, null);
+	}
+
+	/**
+	 * Returns the file names in the given folder.
+	 * 
+	 * @param folder The folder.
+	 * @param prefix The prefix. If null, then do not filter on prefix.
+	 * @param suffix The suffix. If null, then do not filter on suffix.
+	 * @return The file names.
+	 * @throws IOException Throws if an I/O error occurs when opening the folder.
+	 * @since 17
+	 */
+	public static Set<String> getFileNames(Path folder, String prefix, String suffix) throws IOException {
 		try (Stream<Path> stream = Files.list(folder)) {
-			return stream.filter(file -> !Files.isDirectory(file)).map(Path::getFileName).map(Path::toString)
+			return stream
+					.filter(file -> !Files.isDirectory(file)
+							&& (prefix == null || file.getFileName().toString().startsWith(prefix))
+							&& (suffix == null || file.getFileName().toString().endsWith(suffix)))
+					.map(Path::getFileName).map(Path::toString).collect(Collectors.toSet());
+		}
+	}
+
+	/**
+	 * Returns the files in the given folder.
+	 * 
+	 * @param folder The folder.
+	 * @return The files.
+	 * @throws IOException Throws if an I/O error occurs when opening the folder.
+	 * @since 17
+	 */
+	public static Set<Path> getFiles(Path folder) throws IOException {
+		return getFiles(folder, null, null);
+	}
+
+	/**
+	 * Returns the files in the given folder.
+	 * 
+	 * @param folder The folder.
+	 * @param prefix The prefix. If null, then do not filter on prefix.
+	 * @param suffix The suffix. If null, then do not filter on suffix.
+	 * @return The files.
+	 * @throws IOException Throws if an I/O error occurs when opening the folder.
+	 * @since 17
+	 */
+	public static Set<Path> getFiles(Path folder, String prefix, String suffix) throws IOException {
+		try (Stream<Path> stream = Files.list(folder)) {
+			return stream
+					.filter(file -> !Files.isDirectory(file)
+							&& (prefix == null || file.getFileName().toString().startsWith(prefix))
+							&& (suffix == null || file.getFileName().toString().endsWith(suffix)))
 					.collect(Collectors.toSet());
 		}
 	}
@@ -167,7 +217,7 @@ public class OCR4allUtils {
 	 *                     starting file.
 	 * @since 1.8
 	 */
-	public static List<Path> getFiles(Path folder, String extension) throws IOException {
+	public static List<Path> getTreeRootedFiles(Path folder, String extension) throws IOException {
 		final String fileExtension = extension == null || extension.isBlank() ? null
 				: "." + extension.toLowerCase().trim();
 
@@ -189,6 +239,21 @@ public class OCR4allUtils {
 	 */
 	public static List<Path> getDirectories(Path folder) throws IOException {
 		return Files.list(folder).filter(file -> Files.isDirectory(file)).collect(Collectors.toList());
+	}
+
+	/**
+	 * Delete the files.
+	 * 
+	 * @param files The files to remove. If a file is a directory then the directory
+	 *              must be empty.
+	 * @throws IOException Throws if an I/O error occurs.
+	 * @since 17
+	 */
+	public static void delete(Collection<Path> files) throws IOException {
+		if (files != null)
+			for (Path file : files)
+				if (file != null)
+					Files.deleteIfExists(file);
 	}
 
 	/**

@@ -1,9 +1,9 @@
 /**
- * File:     ContainerApiController.java
+ * File:     CollectionApiController.java
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  *
  * Author:   Herbert Baier
- * Date:     24.11.2023
+ * Date:     29.05.2024
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
@@ -25,8 +25,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration;
-import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,62 +42,62 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Defines container repository controllers for the api.
+ * Defines collection data controllers for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
 @Profile("api")
-@Tag(name = "container", description = "the repository container API")
+@Tag(name = "collection", description = "the data collection API")
 @RestController
-@RequestMapping(path = ContainerApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ContainerApiController extends CoreApiController {
+@RequestMapping(path = CollectionApiController.contextPath, produces = CoreApiController.applicationJson)
+public class CollectionApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = RepositoryApiController.contextPath + "/container";
+	public static final String contextPath = DataApiController.contextPath + collectionRequestMapping;
 
 	/**
-	 * The container service.
+	 * The collection service.
 	 */
-	private final ContainerService service;
+	private final CollectionService service;
 
 	/**
-	 * Creates a container repository controller for the api.
+	 * Creates a collection data controller for the api.
 	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
-	 * @param service              The container service.
+	 * @param service              The collection service.
 	 * @since 1.8
 	 */
-	public ContainerApiController(ConfigurationService configurationService, SecurityService securityService,
-			ContainerService service) {
-		super(ContainerApiController.class, configurationService, securityService);
+	public CollectionApiController(ConfigurationService configurationService, SecurityService securityService,
+			CollectionService service) {
+		super(CollectionApiController.class, configurationService, securityService);
 
 		this.service = service;
 	}
 
 	/**
-	 * Returns the container in the response body.
+	 * Returns the collection in the response body.
 	 *
-	 * @param id The container id.
-	 * @return The container in the response body.
+	 * @param id The collection id.
+	 * @return The collection in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the container in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Container", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerRightResponse.class)) }),
+	@Operation(summary = "returns the collection in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CollectionRightResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping)
-	public ResponseEntity<ContainerRightResponse> entity(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id) {
+	public ResponseEntity<CollectionRightResponse> entity(
+			@Parameter(description = "the collection id - this is the folder name") @RequestParam String id) {
 		try {
-			ContainerService.Container container = service.getContainer(id);
+			CollectionService.Collection collection = service.getCollection(id);
 
-			return container == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new ContainerRightResponse(container));
+			return collection == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new CollectionRightResponse(collection));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -106,25 +106,25 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the list of containers sorted by name with rights in the response
+	 * Returns the list of collections sorted by name with rights in the response
 	 * body.
 	 *
-	 * @return The list of containers sorted by name with rights in the response
+	 * @return The list of collections sorted by name with rights in the response
 	 *         body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the list of containers sorted by name in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Containers", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ContainerRightResponse.class))) }),
+	@Operation(summary = "returns the list of collections sorted by name in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collections", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = CollectionRightResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping)
-	public ResponseEntity<List<ContainerRightResponse>> list() {
+	public ResponseEntity<List<CollectionRightResponse>> list() {
 		try {
-			List<ContainerRightResponse> containers = new ArrayList<>();
-			for (ContainerService.Container container : service.getContainers())
-				containers.add(new ContainerRightResponse(container));
+			List<CollectionRightResponse> collections = new ArrayList<>();
+			for (CollectionService.Collection collection : service.getCollections())
+				collections.add(new CollectionRightResponse(collection));
 
-			return ResponseEntity.ok().body(containers);
+			return ResponseEntity.ok().body(collections);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -133,30 +133,30 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Creates the container and returns it in the response body.
+	 * Creates the collection and returns it in the response body.
 	 *
-	 * @param request The container request.
-	 * @return The container in the response body.
+	 * @param request The collection request.
+	 * @return The collection in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "creates the the container and returns it in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Created Container", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerResponse.class)) }),
+	@Operation(summary = "creates the the collection and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Created Collection", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CollectionResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(createRequestMapping)
-	public ResponseEntity<ContainerResponse> create(@RequestBody @Valid ContainerRequest request) {
+	public ResponseEntity<CollectionResponse> create(@RequestBody @Valid CollectionRequest request) {
 		if (!service.isCreate())
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		else
 			try {
-				ContainerService.Container container = service.create(request.getName(), request.getDescription(),
+				CollectionService.Collection collection = service.create(request.getName(), request.getDescription(),
 						request.getKeywords());
 
-				return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-						: ResponseEntity.ok().body(new ContainerResponse(container));
+				return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+						: ResponseEntity.ok().body(new CollectionResponse(collection));
 			} catch (Exception ex) {
 				log(ex);
 
@@ -167,11 +167,11 @@ public class ContainerApiController extends CoreApiController {
 	/**
 	 * Authorizes the session user for special security operations.
 	 *
-	 * @param id The container id.
-	 * @return The authorized container.
+	 * @param id The collection id.
+	 * @return The authorized collection.
 	 * @throws ResponseStatusException Throw with http status:
 	 *                                 <ul>
-	 *                                 <li>400 (Bad Request): if the container is
+	 *                                 <li>400 (Bad Request): if the collection is
 	 *                                 not available.</li>
 	 *                                 <li>401 (Unauthorized): if the special
 	 *                                 security permission is not achievable by the
@@ -179,33 +179,33 @@ public class ContainerApiController extends CoreApiController {
 	 *                                 </ul>
 	 * @since 1.8
 	 */
-	private ContainerService.Container authorizeSpecial(String id) throws ResponseStatusException {
-		ContainerService.Container container = service.getContainer(id);
+	private CollectionService.Collection authorizeSpecial(String id) throws ResponseStatusException {
+		CollectionService.Collection collection = service.getCollection(id);
 
-		if (container == null)
+		if (collection == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		else if (!container.getRight().isSpecialFulfilled())
+		else if (!collection.getRight().isSpecialFulfilled())
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		else
-			return container;
+			return collection;
 	}
 
 	/**
-	 * Removes the container.
+	 * Removes the collection.
 	 *
-	 * @param id       The container id.
+	 * @param id       The collection id.
 	 * @param response The HTTP-specific functionality in sending a response to the
 	 *                 client.
 	 * @since 1.8
 	 */
-	@Operation(summary = "removes the container")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed container"),
+	@Operation(summary = "removes the collection")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed collection"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping)
-	public void remove(@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
+	public void remove(@Parameter(description = "the collection id - this is the folder name") @RequestParam String id,
 			HttpServletResponse response) {
 		authorizeSpecial(id);
 
@@ -224,32 +224,32 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Updates the container information and returns it in the response body.
+	 * Updates the collection information and returns it in the response body.
 	 *
-	 * @param id      The container id.
-	 * @param request The container request.
-	 * @return The container in the response body.
+	 * @param id      The collection id.
+	 * @param request The collection request.
+	 * @return The collection in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "updates the container information and returns it in the response body")
+	@Operation(summary = "updates the collection information and returns it in the response body")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Updated Container Information", content = {
-					@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerResponse.class)) }),
+			@ApiResponse(responseCode = "200", description = "Updated Collection Information", content = {
+					@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CollectionResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
-	public ResponseEntity<ContainerResponse> update(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
-			@RequestBody @Valid ContainerRequest request) {
+	public ResponseEntity<CollectionResponse> update(
+			@Parameter(description = "the collection id - this is the folder name") @RequestParam String id,
+			@RequestBody @Valid CollectionRequest request) {
 		authorizeSpecial(id);
 
 		try {
-			ContainerService.Container container = service.update(id, request.getName(), request.getDescription(),
+			CollectionService.Collection collection = service.update(id, request.getName(), request.getDescription(),
 					request.getKeywords());
 
-			return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-					: ResponseEntity.ok().body(new ContainerResponse(container));
+			return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+					: ResponseEntity.ok().body(new CollectionResponse(collection));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -258,48 +258,48 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the container security in the response body.
+	 * Returns the collection security in the response body.
 	 *
-	 * @param id The container id.
-	 * @return The container security in the response body.
+	 * @param id The collection id.
+	 * @return The collection security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the container security in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Container Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerSecurityResponse.class)) }),
+	@Operation(summary = "returns the collection security in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CollectionSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content) })
 	@GetMapping(securityRequestMapping)
-	public ResponseEntity<ContainerSecurityResponse> security(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id) {
-		return ResponseEntity.ok().body(new ContainerSecurityResponse(authorizeSpecial(id)));
+	public ResponseEntity<CollectionSecurityResponse> security(
+			@Parameter(description = "the collection id - this is the folder name") @RequestParam String id) {
+		return ResponseEntity.ok().body(new CollectionSecurityResponse(authorizeSpecial(id)));
 	}
 
 	/**
-	 * Updates the container security and returns it in the response body.
+	 * Updates the collection security and returns it in the response body.
 	 *
-	 * @param id      The container id.
-	 * @param request The container security request.
-	 * @return The container security in the response body.
+	 * @param id      The collection id.
+	 * @param request The collection security request.
+	 * @return The collection security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "updates the container security and returns it in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Container Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ContainerSecurityResponse.class)) }),
+	@Operation(summary = "updates the collection security and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Collection Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CollectionSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(securityRequestMapping + updateRequestMapping)
-	public ResponseEntity<ContainerSecurityResponse> updateSecurity(
-			@Parameter(description = "the container id - this is the folder name") @RequestParam String id,
-			@RequestBody ContainerSecurityRequest request) {
+	public ResponseEntity<CollectionSecurityResponse> updateSecurity(
+			@Parameter(description = "the collection id - this is the folder name") @RequestParam String id,
+			@RequestBody CollectionSecurityRequest request) {
 		authorizeSpecial(id);
 
 		try {
-			ContainerService.Container container = service.update(id, request);
+			CollectionService.Collection collection = service.update(id, request);
 
-			return container == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-					: ResponseEntity.ok().body(new ContainerSecurityResponse(container));
+			return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+					: ResponseEntity.ok().body(new CollectionSecurityResponse(collection));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -308,13 +308,13 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines container requests for the api.
+	 * Defines collection requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerRequest implements Serializable {
+	public static class CollectionRequest implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -399,13 +399,13 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines container security requests for the api.
+	 * Defines collection security requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerSecurityRequest extends SecurityGrant {
+	public static class CollectionSecurityRequest extends SecurityGrant {
 		/**
 		 * The serial version UID.
 		 */
@@ -414,13 +414,13 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines container responses for the api without security.
+	 * Defines collection responses for the api without security.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerResponse implements Serializable {
+	public static class CollectionResponse implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -452,23 +452,23 @@ public class ContainerApiController extends CoreApiController {
 		private TrackingResponse tracking;
 
 		/**
-		 * Creates a container response for the api without security.
+		 * Creates a collection response for the api without security.
 		 *
-		 * @param container The container configuration.
+		 * @param collection The collection configuration.
 		 * @since 1.8
 		 */
-		public ContainerResponse(ContainerService.Container container) {
+		public CollectionResponse(CollectionService.Collection collection) {
 
-			id = container.getConfiguration().getFolder().getFileName().toString();
+			id = collection.getConfiguration().getFolder().getFileName().toString();
 
-			final ContainerConfiguration.Configuration.Information information = container.getConfiguration()
+			final CollectionConfiguration.Configuration.Information information = collection.getConfiguration()
 					.getConfiguration().getInformation();
 
 			name = information.getName();
 			description = information.getDescription();
 			keywords = information.getKeywords();
 
-			tracking = new TrackingResponse(container.getConfiguration().getConfiguration());
+			tracking = new TrackingResponse(collection.getConfiguration().getConfiguration());
 		}
 
 		/**
@@ -574,13 +574,13 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines container with right responses for the api without security.
+	 * Defines collection with right responses for the api without security.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerRightResponse extends ContainerResponse {
+	public static class CollectionRightResponse extends CollectionResponse {
 		/**
 		 * The serial version UID.
 		 */
@@ -592,15 +592,15 @@ public class ContainerApiController extends CoreApiController {
 		private SecurityGrant.Right right;
 
 		/**
-		 * Creates a container with right response for the api without security.
+		 * Creates a collection with right response for the api without security.
 		 *
-		 * @param container The container.
+		 * @param collection The collection.
 		 * @since 1.8
 		 */
-		public ContainerRightResponse(ContainerService.Container container) {
-			super(container);
+		public CollectionRightResponse(CollectionService.Collection collection) {
+			super(collection);
 
-			right = container.getRight();
+			right = collection.getRight();
 		}
 
 		/**
@@ -626,13 +626,13 @@ public class ContainerApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines container with security responses for the api without security.
+	 * Defines collection with security responses for the api without security.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerSecurityResponse extends ContainerResponse {
+	public static class CollectionSecurityResponse extends CollectionResponse {
 		/**
 		 * The serial version UID.
 		 */
@@ -644,15 +644,15 @@ public class ContainerApiController extends CoreApiController {
 		private SecurityGrant security;
 
 		/**
-		 * Creates a container with right response for the api without security.
+		 * Creates a collection with right response for the api without security.
 		 *
-		 * @param container The container.
+		 * @param collection The collection.
 		 * @since 1.8
 		 */
-		public ContainerSecurityResponse(ContainerService.Container container) {
-			super(container);
+		public CollectionSecurityResponse(CollectionService.Collection collection) {
+			super(collection);
 
-			security = container.getConfiguration().getConfiguration().getSecurity();
+			security = collection.getConfiguration().getConfiguration().getSecurity();
 		}
 
 		/**

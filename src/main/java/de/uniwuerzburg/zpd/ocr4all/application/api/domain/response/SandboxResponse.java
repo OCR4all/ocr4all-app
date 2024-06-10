@@ -413,13 +413,13 @@ public class SandboxResponse implements Serializable {
 						fileGroups.put(fileGroup.getId(), fileGroup);
 
 					// mets pages
-					final Hashtable<String, Integer> images = new Hashtable<>();
+					final Hashtable<String, String> images = new Hashtable<>();
 
 					MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
 					for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
 							.getPhysicalSequence().getPages())
 						try {
-							int id = Integer.parseInt(metsPageUtils.getGroupId(page.getId()));
+							String id = metsPageUtils.getGroupId(page.getId());
 							for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
 								images.put(fieldId.getId(), id);
 						} catch (Exception e) {
@@ -630,7 +630,7 @@ public class SandboxResponse implements Serializable {
 			 * @since 1.8
 			 */
 			public Processor(MetsParser.Root.Header.Agent agent, MetsUtils.FileGroup fileGroup,
-					Hashtable<String, MetsParser.Root.FileGroup> fileGroups, Hashtable<String, Integer> images) {
+					Hashtable<String, MetsParser.Root.FileGroup> fileGroups, Hashtable<String, String> images) {
 				super();
 
 				role = MetsUtils.getAgentRole(agent.getRole(), agent.getOtherRole());
@@ -808,7 +808,7 @@ public class SandboxResponse implements Serializable {
 				 * The image id.
 				 */
 				@JsonProperty("image-id")
-				private int imageId;
+				private String imageId;
 
 				/**
 				 * Creates a file response for the api.
@@ -817,12 +817,12 @@ public class SandboxResponse implements Serializable {
 				 * @param images The mets image id map to the ocr4all image id.
 				 * @since 1.8
 				 */
-				public File(MetsParser.Root.FileGroup.File file, Hashtable<String, Integer> images) {
+				public File(MetsParser.Root.FileGroup.File file, Hashtable<String, String> images) {
 					super();
 
 					mimeType = file.getMimeType();
 					path = file.getLocation().getPath();
-					imageId = images.containsKey(file.getId()) ? images.get(file.getId()) : 0;
+					imageId = images.containsKey(file.getId()) ? images.get(file.getId()) : null;
 				}
 
 				/**
@@ -871,7 +871,7 @@ public class SandboxResponse implements Serializable {
 				 * @return The image id.
 				 * @since 1.8
 				 */
-				public int getImageId() {
+				public String getImageId() {
 					return imageId;
 				}
 
@@ -881,7 +881,7 @@ public class SandboxResponse implements Serializable {
 				 * @param imageId The image id to set.
 				 * @since 1.8
 				 */
-				public void setImageId(int imageId) {
+				public void setImageId(String imageId) {
 					this.imageId = imageId;
 				}
 

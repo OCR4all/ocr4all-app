@@ -42,6 +42,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
@@ -94,8 +95,7 @@ public class ContainerService extends CoreService {
 	 * @since 1.8
 	 */
 	private Container getContainer(ContainerConfiguration configuration) {
-		return new Container(repositoryService.isAdministrator()
-				? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
+		return new Container(repositoryService.isAdministrator() ? SecurityGrant.Right.maximal
 				: configuration.getConfiguration().getRight(securityService.getUser(),
 						securityService.getActiveGroups()),
 				configuration);
@@ -162,21 +162,14 @@ public class ContainerService extends CoreService {
 				logger.info("Created container folder '" + folder.toString() + "'"
 						+ (user == null ? "" : ", user=" + user) + ".");
 			} catch (Exception e) {
-				logger.warn("Cannot create project '" + folder.toString() + "'" + (user == null ? "" : ", user=" + user)
-						+ " - " + e.getMessage() + ".");
+				logger.warn("Cannot create container '" + folder.toString() + "'"
+						+ (user == null ? "" : ", user=" + user) + " - " + e.getMessage() + ".");
 
 				return null;
 			}
 
-			ContainerConfiguration configuration = new ContainerConfiguration(
-					configurationService.getRepository().getContainer(), folder,
-					new Configuration.CoreData(user, name, description, keywords));
-
-			return new Container(repositoryService.isAdministrator()
-					? de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal
-					: configuration.getConfiguration().getRight(securityService.getUser(),
-							securityService.getActiveGroups()),
-					configuration);
+			return getContainer(new ContainerConfiguration(configurationService.getRepository().getContainer(), folder,
+					new Configuration.CoreData(user, name, description, keywords)));
 		} else
 			return null;
 	}
@@ -282,8 +275,7 @@ public class ContainerService extends CoreService {
 	 * @return The updated container. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public Container update(String uuid,
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+	public Container update(String uuid, SecurityGrant security) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -443,8 +435,11 @@ public class ContainerService extends CoreService {
 							}
 					}
 
-				if (folios.isEmpty())
+				if (folios.isEmpty()) {
+					deleteRecursively(temporaryDirectory);
+
 					return folios;
+				}
 
 				/*
 				 * Create derivatives
@@ -547,6 +542,26 @@ public class ContainerService extends CoreService {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns the folio with given ID.
+	 *
+	 * @param container The container.
+	 * @param uuid      The folios uuid.
+	 * @return The folio. Null if the container is null or the read right is not
+	 *         fulfilled.
+	 * @throws IOException Throws if the folios metadata file can not be read.
+	 * @since 1.8
+	 */
+	public Folio getFolio(Container container, String uuid) throws IOException {
+		if (uuid == null)
+			return null;
+		else {
+			List<Folio> folios = getFolios(container, Set.of(uuid));
+
+			return folios == null || folios.isEmpty() ? null : folios.get(0);
+		}
 	}
 
 	/**
@@ -723,7 +738,7 @@ public class ContainerService extends CoreService {
 		/**
 		 * The right.
 		 */
-		private final de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right;
+		private final SecurityGrant.Right right;
 
 		/**
 		 * The configuration.
@@ -737,8 +752,7 @@ public class ContainerService extends CoreService {
 		 * @param configuration The configuration.
 		 * @since 1.8
 		 */
-		public Container(de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right,
-				ContainerConfiguration configuration) {
+		public Container(SecurityGrant.Right right, ContainerConfiguration configuration) {
 			super();
 
 			this.right = right;
@@ -751,7 +765,7 @@ public class ContainerService extends CoreService {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRight() {
+		public SecurityGrant.Right getRight() {
 			return right;
 		}
 

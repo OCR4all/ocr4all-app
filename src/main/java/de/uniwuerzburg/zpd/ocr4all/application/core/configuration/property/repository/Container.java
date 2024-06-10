@@ -19,14 +19,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4a
  */
 public class Container {
 	/**
-	 * The configuration.
-	 */
-	private Configuration configuration = new Configuration();
-
-	/**
 	 * The default folios folder.
 	 */
 	private static final String defaultFoliosFolder = "folios";
+
+	/**
+	 * The configuration.
+	 */
+	private Configuration configuration = new Configuration();
 
 	/**
 	 * The folios.

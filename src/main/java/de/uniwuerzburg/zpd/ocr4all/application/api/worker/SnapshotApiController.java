@@ -12,13 +12,19 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,14 +32,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SetResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -45,6 +61,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines snapshot controllers for the api.
@@ -74,17 +91,25 @@ public class SnapshotApiController extends CoreApiController {
 	public static final String pathRequestMapping = "/path";
 
 	/**
+	 * The collection service.
+	 */
+	private final CollectionService collectionService;
+
+	/**
 	 * Creates a snapshot controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
+	 * @param collectionService    The collection service.
 	 * @since 1.8
 	 */
 	public SnapshotApiController(ConfigurationService configurationService, SecurityService securityService,
-			ProjectService projectService, SandboxService sandboxService) {
+			ProjectService projectService, SandboxService sandboxService, CollectionService collectionService) {
 		super(ProjectApiController.class, configurationService, securityService, projectService, sandboxService);
+
+		this.collectionService = collectionService;
 	}
 
 	/**
@@ -419,6 +444,258 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for collection read security operations.
+	 * 
+	 * @param id The collection id.
+	 * @return The authorized collection.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	private CollectionService.Collection authorizeCollectionRead(String id) throws ResponseStatusException {
+		CollectionService.Collection collection = collectionService.getCollection(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
+	 * Adds the snapshot files to the collection as set.
+	 * 
+	 * @param isAllSets True if all all snapshot sets. Otherwise, adds the desired
+	 *                  sets.
+	 * @param sandbox   The sandbox.
+	 * @param request   The snapshot collection request.
+	 * @return The added collection sets.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available or the sandbox is not for a
+	 *                                 LAREX processor.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 <li>404 (Not Found): if the snapshot track is
+	 *                                 invalid for the sandbox.</li>
+	 *                                 <li>412 (Precondition Failed): if the mets
+	 *                                 file group is unknown.</li>
+	 *                                 <li>503 (Service Unavailable): in case of
+	 *                                 unexpected exceptions.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	private List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addSnapshot2collection(boolean isAllSets,
+			Sandbox sandbox, SnapshotCollectionRequest request) throws ResponseStatusException {
+		CollectionService.Collection collection = authorizeCollectionRead(request.getCollectionId());
+
+		Snapshot snapshot;
+		try {
+			snapshot = sandbox.getSnapshot(request.getTrack());
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		}
+
+		if (!snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId()
+				.equals(LAREXLauncher.class.getName()))
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+
+		List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = null;
+
+		Path temporaryFolder = null;
+		final String snapshotsFolder = sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString();
+		Path mets = Paths.get(snapshotsFolder, sandbox.getConfiguration().getMetsFileName());
+		if (Files.exists(mets))
+			try {
+				final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+				final String metsGroup = sandbox.getConfiguration().getMetsGroup();
+
+				// search mets file group
+				final String fileGroupID = MetsUtils.getFileGroup(metsGroup)
+						.getFileGroup(snapshot.getConfiguration().getTrack());
+				MetsParser.Root.FileGroup fileGroup = null;
+
+				for (MetsParser.Root.FileGroup group : root.getFileGroups())
+					if (fileGroupID.equals(group.getId()))
+						fileGroup = group;
+
+				if (fileGroup == null)
+					throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED);
+
+				// mets pages
+				final Hashtable<String, String> metsFieldId2ocr4allId = new Hashtable<>();
+
+				final MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
+						.getPhysicalSequence().getPages())
+					try {
+						String ocr4allId = metsPageUtils.getGroupId(page.getId());
+						for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+							metsFieldId2ocr4allId.put(fieldId.getId(), ocr4allId);
+					} catch (Exception e) {
+						// Ignore malformed mets page
+					}
+
+				// The sets to import. The value is the ocr4all id. Null to import all.
+				final Set<String> importSets = isAllSets ? null
+						: new HashSet<>(((SnapshotCollectionSetRequest) request).getSets());
+
+				// The folio names map
+				final Set<String> availableFolios = new HashSet<>();
+				final List<Folio> folios = sandbox.getProject().getFolios();
+				for (Folio folio : folios)
+					availableFolios.add(folio.getId());
+
+				temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
+
+				final Set<String> availableSets = new HashSet<>();
+				for (de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File file : fileGroup
+						.getFiles()) {
+					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
+
+					if (ocr4allId != null && (isAllSets || importSets.contains(ocr4allId))
+							&& availableFolios.contains(ocr4allId)) {
+						Path data = Paths.get(snapshotsFolder, file.getLocation().getPath());
+
+						if (Files.isRegularFile(data)) {
+							// Build target name
+							String target = data.getFileName().toString();
+
+							int index = target.indexOf(ocr4allId);
+							if (index < 0)
+								target = ocr4allId + "." + target;
+							else {
+								String suffix = target.substring(index + ocr4allId.length());
+								target = ocr4allId + (suffix.startsWith(".") ? suffix : "." + suffix);
+							}
+
+							// copy the file to the temporary directory
+							Files.copy(data, Paths.get(temporaryFolder.toString(), target),
+									StandardCopyOption.REPLACE_EXISTING);
+
+							availableSets.add(ocr4allId);
+						}
+					}
+				}
+
+				if (!availableSets.isEmpty()) {
+					final Date date = new Date();
+					final String user = securityService.getUser();
+
+					final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets = new ArrayList<>();
+					for (Folio folio : folios)
+						if (availableSets.contains(folio.getId()))
+							collectionSets.add(new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(date,
+									user, request.isKeywords() ? folio.getKeywords() : null, folio.getId(),
+									folio.getName()));
+
+					sets = collectionService.add(collection, collectionSets, temporaryFolder, true);
+				}
+
+			} catch (ResponseStatusException ex) {
+				throw ex;
+			} catch (Exception ex) {
+				log(ex);
+
+				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			} finally {
+				if (temporaryFolder != null)
+					try {
+						FileSystemUtils.deleteRecursively(temporaryFolder);
+					} catch (IOException e) {
+						logger.warn("cannot delete directory " + temporaryFolder + " - " + e.getMessage() + ".");
+					}
+			}
+
+		return sets == null ? new ArrayList<>() : sets;
+	}
+
+	/**
+	 * Adds all snapshot sets to a collection and returns the list of added sets of
+	 * the collection in the response body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot collection set request.
+	 * @return The list of added sets to the collection.
+	 * @since 1.8
+	 */
+	@Operation(summary = "adds all snapshot sets to a collection and returns the list of added sets of given collection in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "412", description = "Precondition Failed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(collectionRequestMapping + allRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<List<SetResponse>> addAllSnapshot2collection(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotCollectionRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			final List<SetResponse> sets = new ArrayList<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(true,
+					authorization.sandbox, request))
+				sets.add(new SetResponse(set));
+
+			return ResponseEntity.ok().body(sets);
+		} catch (ResponseStatusException ex) {
+			return ResponseEntity.status(ex.getStatusCode()).build();
+		}
+	}
+
+	/**
+	 * Adds the desired snapshot sets to a collection and returns the list of added
+	 * sets of the collection in the response body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot collection set request.
+	 * @return The list of sets of the collection.
+	 * @since 1.8
+	 */
+	@Operation(summary = "adds the desired snapshot sets to a collection and returns the list of added sets of given collection in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "412", description = "Precondition Failed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(collectionRequestMapping + setRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<List<SetResponse>> addSetSnapshot2collection(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotCollectionSetRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			final List<SetResponse> sets = new ArrayList<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(false,
+					authorization.sandbox, request))
+				sets.add(new SetResponse(set));
+
+			return ResponseEntity.ok().body(sets);
+		} catch (ResponseStatusException ex) {
+			return ResponseEntity.status(ex.getStatusCode()).build();
+		}
+	}
+
+	/**
 	 * Downloads the file in the sandbox of the leaf snapshot in the track of the
 	 * request.
 	 * 
@@ -641,6 +918,120 @@ public class SnapshotApiController extends CoreApiController {
 		 */
 		public void setComment(String comment) {
 			this.comment = comment;
+		}
+
+	}
+
+	/**
+	 * Defines snapshot collection requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotCollectionRequest extends SnapshotRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The collection id.
+		 */
+		@NotBlank
+		@JsonProperty("collection-id")
+		private String collectionId;
+
+		/**
+		 * True if the keywords available in the folio configurations are to be added to
+		 * the collection sets.
+		 */
+		@JsonProperty("keywords")
+		private boolean isKeywords;
+
+		/**
+		 * Returns the collectionId.
+		 *
+		 * @return The collectionId.
+		 * @since 17
+		 */
+		public String getCollectionId() {
+			return collectionId;
+		}
+
+		/**
+		 * Set the collectionId.
+		 *
+		 * @param collectionId The collectionId to set.
+		 * @since 17
+		 */
+		public void setCollectionId(String collectionId) {
+			this.collectionId = collectionId;
+		}
+
+		/**
+		 * Returns true if the keywords available in the folio configurations are to be
+		 * added to the collection sets.
+		 *
+		 * @return True if the keywords available in the folio configurations are to be
+		 *         added to the collection sets.
+		 * @since 17
+		 */
+		@JsonGetter("keywords")
+		public boolean isKeywords() {
+			return isKeywords;
+		}
+
+		/**
+		 * Set to true if the keywords available in the folio configurations are to be
+		 * added to the collection sets.
+		 *
+		 * @param isKeywords The keywords flag to set.
+		 * @since 17
+		 */
+		public void setKeywords(boolean isKeywords) {
+			this.isKeywords = isKeywords;
+		}
+
+	}
+
+	/**
+	 * Defines snapshot collection set requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotCollectionSetRequest extends SnapshotCollectionRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The sets.
+		 */
+		@NotNull
+		private List<String> sets;
+
+		/**
+		 * Returns the sets.
+		 *
+		 * @return The sets.
+		 * @since 17
+		 */
+		public List<String> getSets() {
+			return sets;
+		}
+
+		/**
+		 * Set the sets.
+		 *
+		 * @param sets The sets to set.
+		 * @since 17
+		 */
+		public void setSets(List<String> sets) {
+			this.sets = sets;
 		}
 
 	}

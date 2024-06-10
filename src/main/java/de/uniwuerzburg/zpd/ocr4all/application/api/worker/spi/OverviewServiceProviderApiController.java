@@ -65,6 +65,16 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	public static final String contextPath = ServiceProviderCoreApiController.spiContextPathVersion_1_0;
 
 	/**
+	 * The core request mapping.
+	 */
+	private static final String coreRequestMapping = "/core";
+
+	/**
+	 * The workflow request mapping.
+	 */
+	private static final String workflowRequestMapping = "/workflow";
+
+	/**
 	 * The import service.
 	 */
 	private final ImportService importService;
@@ -219,6 +229,68 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the core service providers in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The core service providers in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the core service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Core Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Core Service Unavailable", content = @Content) })
+	@GetMapping(listRequestMapping + coreRequestMapping)
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersCore(@RequestParam(required = false) String lang) {
+		try {
+			final List<ServiceProviderResponse> providers = serviceProviders(ServiceProviderCoreApiController.Type.imp,
+					importService, lang);
+
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.launcher, launcherService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.postcorrection,
+					postcorrectionService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.export, exportService, lang));
+
+			return ResponseEntity.ok().body(providers);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the workflow service providers in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The workflow service providers in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the workflow service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Workflow Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Workflow Service Unavailable", content = @Content) })
+	@GetMapping(listRequestMapping + workflowRequestMapping)
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersWorkflow(@RequestParam(required = false) String lang) {
+		try {
+			final List<ServiceProviderResponse> providers =  serviceProviders(ServiceProviderCoreApiController.Type.preprocessing, preprocessingService, lang);
+			
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.olr, olrService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.ocr, ocrService, lang));
+			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.tool, toolService, lang));
+
+			return ResponseEntity.ok().body(providers);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Returns the service provider with required id in the response body.
 	 * 
 	 * @param spiId The spi id.
@@ -234,7 +306,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(entityRequestMapping + spiPathVariable)
-	public ResponseEntity<ServiceProviderResponse> serviceProviders(@PathVariable String spiId,
+	public ResponseEntity<ServiceProviderResponse> serviceProvider(@PathVariable String spiId,
 			@RequestParam(required = false) String lang) {
 		if (spiId == null || spiId.isBlank())
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

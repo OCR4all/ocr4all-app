@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Data;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
 
 /**
@@ -48,6 +49,11 @@ public class OCR4all {
 	 * The repository properties.
 	 */
 	private Repository repository = new Repository();
+
+	/**
+	 * The data properties.
+	 */
+	private Data data = new Data();
 
 	/**
 	 * The workspace properties.
@@ -167,6 +173,26 @@ public class OCR4all {
 	 */
 	public void setRepository(Repository repository) {
 		this.repository = repository;
+	}
+
+	/**
+	 * Returns the data properties.
+	 *
+	 * @return The data properties.
+	 * @since 17
+	 */
+	public Data getData() {
+		return data;
+	}
+
+	/**
+	 * Set the data properties.
+	 *
+	 * @param data The data properties to set.
+	 * @since 17
+	 */
+	public void setData(Data data) {
+		this.data = data;
 	}
 
 	/**

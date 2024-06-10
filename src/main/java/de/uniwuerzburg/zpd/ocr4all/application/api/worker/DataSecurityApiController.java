@@ -1,9 +1,9 @@
 /**
- * File:     RepositorySecurityApiController.java
+ * File:     DataSecurityApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     23.11.2023
+ * Date:     29.05.2024
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
@@ -19,7 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.repository.RepositoryService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,38 +30,38 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Defines repository security controllers for the api.
+ * Defines data security controllers for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
 @Profile("api & server")
-@Tag(name = "repository security", description = "the repository security API")
+@Tag(name = "data security", description = "the data security API")
 @RestController
-@RequestMapping(path = RepositorySecurityApiController.contextPath, produces = CoreApiController.applicationJson)
-public class RepositorySecurityApiController extends CoreApiController {
+@RequestMapping(path = DataSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
+public class DataSecurityApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = RepositoryApiController.contextPath + securityRequestMapping;
+	public static final String contextPath = DataApiController.contextPath + securityRequestMapping;
 
 	/**
-	 * The repository service.
+	 * The data service.
 	 */
-	private final RepositoryService service;
+	private final DataService service;
 
 	/**
-	 * Creates a repository security controller for the api.
+	 * Creates a data security controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
-	 * @param service              The repository service.
+	 * @param service              The data service.
 	 * @since 1.8
 	 */
-	public RepositorySecurityApiController(ConfigurationService configurationService, SecurityService securityService,
-			RepositoryService service) {
-		super(RepositorySecurityApiController.class, configurationService, securityService);
+	public DataSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
+			DataService service) {
+		super(DataSecurityApiController.class, configurationService, securityService);
 
 		this.service = service;
 	}
@@ -80,22 +80,22 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the repository security in the response body.
+	 * Returns the data security in the response body.
 	 * 
-	 * @return The repository security in the response body.
+	 * @return The data security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the repository security in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Repository Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = RepositorySecurityResponse.class)) }),
+	@Operation(summary = "returns the data security in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Data Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(informationRequestMapping)
-	public ResponseEntity<RepositorySecurityResponse> information() {
+	public ResponseEntity<DataSecurityResponse> information() {
 		authorize();
 
 		try {
-			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+			return ResponseEntity.ok().body(new DataSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -104,20 +104,20 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Updates the repository security and returns it in the response body.
+	 * Updates the data security and returns it in the response body.
 	 * 
-	 * @param request The repository security request.
-	 * @return The updated repository security in the response body.
+	 * @param request The data security request.
+	 * @return The updated data security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "updates the repository security and returns it in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Repository Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = RepositorySecurityResponse.class)) }),
+	@Operation(summary = "updates the data security and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Data Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
-	public ResponseEntity<RepositorySecurityResponse> update(@RequestBody RepositorySecurityRequest request) {
+	public ResponseEntity<DataSecurityResponse> update(@RequestBody DataSecurityRequest request) {
 		authorize();
 
 		if (request == null)
@@ -126,7 +126,7 @@ public class RepositorySecurityApiController extends CoreApiController {
 			try {
 				service.update(request);
 
-				return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+				return ResponseEntity.ok().body(new DataSecurityResponse(service));
 			} catch (Exception ex) {
 				log(ex);
 
@@ -136,24 +136,24 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Secures the repository.
+	 * Secures the data.
 	 * 
-	 * @return The repository security in the response body.
+	 * @return The data security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "secures the repository")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Secures Repository", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = RepositorySecurityResponse.class)) }),
+	@Operation(summary = "secures the data")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Secures Data", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(secureRequestMapping)
-	public ResponseEntity<RepositorySecurityResponse> secure() {
+	public ResponseEntity<DataSecurityResponse> secure() {
 		authorize();
 
 		try {
 			service.secure(true);
 
-			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+			return ResponseEntity.ok().body(new DataSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -162,24 +162,24 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Unsecures the repository.
+	 * Unsecures the data.
 	 * 
-	 * @return The repository security in the response body.
+	 * @return The data security in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "unsecures the repository")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unsecures Repository", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = RepositorySecurityResponse.class)) }),
+	@Operation(summary = "unsecures the data")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unsecures Data", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(unsecureRequestMapping)
-	public ResponseEntity<RepositorySecurityResponse> unsecure() {
+	public ResponseEntity<DataSecurityResponse> unsecure() {
 		authorize();
 
 		try {
 			service.secure(false);
 
-			return ResponseEntity.ok().body(new RepositorySecurityResponse(service));
+			return ResponseEntity.ok().body(new DataSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -188,13 +188,13 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines repository security responses for the api.
+	 * Defines data security responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class RepositorySecurityResponse extends SecurityOwner {
+	public static class DataSecurityResponse extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */
@@ -206,12 +206,12 @@ public class RepositorySecurityApiController extends CoreApiController {
 		private TrackingResponse tracking;
 
 		/**
-		 * Creates a repository security response for the api.
+		 * Creates a data security response for the api.
 		 * 
-		 * @param service The repository service.
+		 * @param service The data service.
 		 * @since 1.8
 		 */
-		public RepositorySecurityResponse(RepositoryService service) {
+		public DataSecurityResponse(DataService service) {
 			super(service.getSecurity().isSecured(), service.getSecurity().getUsers(),
 					service.getSecurity().getGroups());
 
@@ -241,13 +241,13 @@ public class RepositorySecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines repository security requests for the api.
+	 * Defines data security requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class RepositorySecurityRequest extends SecurityOwner {
+	public static class DataSecurityRequest extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */

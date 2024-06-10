@@ -23,6 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repos
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 
 /**
  * Defines configurations for the container.
@@ -96,7 +97,7 @@ public class ContainerConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Defines configurations for the repository.
+	 * Defines configurations for the container.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -119,9 +120,9 @@ public class ContainerConfiguration extends CoreFolder {
 		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container container = null;
 
 		/**
-		 * Creates a configuration for the repository.
+		 * Creates a configuration for the container.
 		 * 
-		 * @param properties The configuration properties for the repository.
+		 * @param properties The configuration properties for the container.
 		 * @param coreData   The core data for a container configuration. If non null
 		 *                   and the main configuration is not available, then this
 		 *                   basic data is used to initialize the main configuration.
@@ -171,11 +172,9 @@ public class ContainerConfiguration extends CoreFolder {
 							container.setKeywords(coreData.getKeywords());
 
 							if (coreData.getUser() != null)
-								container.setSecurity(
-										new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security(
+								container.setSecurity(new SecurityGrant(
 
-												de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal,
-												coreData.getUser()));
+										SecurityGrant.Right.maximal, coreData.getUser()));
 
 						}
 					} else
@@ -186,8 +185,7 @@ public class ContainerConfiguration extends CoreFolder {
 						container.setName(ContainerConfiguration.this.folder.getFileName().toString());
 
 					if (container.getSecurity() == null)
-						container.setSecurity(
-								new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security());
+						container.setSecurity(new SecurityGrant());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
@@ -240,7 +238,7 @@ public class ContainerConfiguration extends CoreFolder {
 					return true;
 				} catch (Exception e) {
 					reloadMainConfiguration();
-					
+
 					logger.warn("Could not persist the container configuration - " + e.getMessage());
 				}
 
@@ -322,16 +320,13 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return The cloned the grants.
 		 * @since 1.8
 		 */
-		private static Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> cloneGrant(
-				Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> grants) {
-			Set<de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant> clone = new HashSet<>();
+		private static Set<SecurityGrant.Grant> cloneGrant(Set<SecurityGrant.Grant> grants) {
+			Set<SecurityGrant.Grant> clone = new HashSet<>();
 
 			if (grants != null)
-				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : grants) {
+				for (SecurityGrant.Grant grant : grants) {
 					if (grant.getRight() != null && grant.getTargets() != null)
-						clone.add(
-								new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant(
-										grant.getRight(), grant.getTargets()));
+						clone.add(new SecurityGrant.Grant(grant.getRight(), grant.getTargets()));
 
 				}
 
@@ -345,12 +340,11 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return The cloned the security grants.
 		 * @since 1.8
 		 */
-		private static de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security cloneSecurity(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+		private static SecurityGrant cloneSecurity(SecurityGrant security) {
 
 			return security == null ? null
-					: new de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security(
-							cloneGrant(security.getUsers()), cloneGrant(security.getGroups()), security.getOther());
+					: new SecurityGrant(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
+							security.getOther());
 		}
 
 		/**
@@ -359,7 +353,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security getSecurity() {
+		public SecurityGrant getSecurity() {
 			return cloneSecurity(container.getSecurity());
 		}
 
@@ -371,8 +365,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return True if the container security was updated and persisted.
 		 * @since 1.8
 		 */
-		public boolean update(String user,
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security security) {
+		public boolean update(String user, SecurityGrant security) {
 			if (isMainConfigurationAvailable()) {
 				container.setSecurity(cloneSecurity(security));
 
@@ -389,9 +382,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return True if the source right is fulfilled with the target right.
 		 * @since 1.8
 		 */
-		private boolean isRightFulfilled(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right source,
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right target) {
+		private boolean isRightFulfilled(SecurityGrant.Right source, SecurityGrant.Right target) {
 			return source != null && source.iFulfilled(target);
 		}
 
@@ -405,17 +396,15 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return The container right.
 		 * @since 1.8
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRightFulfilled(
-				de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right target,
-				String user, Collection<String> groups) {
+		private SecurityGrant.Right getRightFulfilled(SecurityGrant.Right target, String user,
+				Collection<String> groups) {
 			if (target == null)
-				target = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.maximal;
+				target = SecurityGrant.Right.maximal;
 
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = null;
+			SecurityGrant.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
-						.getMaximnal(right, container.getSecurity().getOther());
+				right = SecurityGrant.Right.getMaximnal(right, container.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
@@ -423,11 +412,9 @@ public class ContainerConfiguration extends CoreFolder {
 				if (container.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : container
-							.getSecurity().getUsers())
+					for (SecurityGrant.Grant grant : container.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
-							right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
-									.getMaximnal(right, grant.getRight());
+							right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
 							if (isRightFulfilled(right, target))
 								return right;
@@ -439,11 +426,9 @@ public class ContainerConfiguration extends CoreFolder {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Grant grant : container
-									.getSecurity().getGroups())
+							for (SecurityGrant.Grant grant : container.getSecurity().getGroups())
 								if (grant.getTargets().contains(group)) {
-									right = de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right
-											.getMaximnal(right, grant.getRight());
+									right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
 									if (isRightFulfilled(right, target))
 										return right;
@@ -464,8 +449,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @return The container right.
 		 * @since 1.8
 		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right getRight(
-				String user, Collection<String> groups) {
+		public SecurityGrant.Right getRight(String user, Collection<String> groups) {
 			return getRightFulfilled(null, user, groups);
 		}
 
@@ -478,9 +462,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightRead(String user, Collection<String> groups) {
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
-					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.read, user,
-					groups);
+			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.read, user, groups);
 
 			return right != null && right.isReadFulfilled();
 		}
@@ -494,9 +476,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightWrite(String user, Collection<String> groups) {
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
-					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.write, user,
-					groups);
+			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.write, user, groups);
 
 			return right != null && right.isWriteFulfilled();
 		}
@@ -510,9 +490,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightSpecial(String user, Collection<String> groups) {
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right right = getRightFulfilled(
-					de.uniwuerzburg.zpd.ocr4all.application.persistence.repository.Container.Security.Right.special,
-					user, groups);
+			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.special, user, groups);
 
 			return right != null && right.isSpecialFulfilled();
 		}
