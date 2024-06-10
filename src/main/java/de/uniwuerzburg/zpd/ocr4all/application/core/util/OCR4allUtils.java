@@ -178,6 +178,18 @@ public class OCR4allUtils {
 	 * Returns the files in the given folder.
 	 * 
 	 * @param folder The folder.
+	 * @return The files.
+	 * @throws IOException Throws if an I/O error occurs when opening the folder.
+	 * @since 17
+	 */
+	public static Set<Path> getFiles(Path folder) throws IOException {
+		return getFiles(folder, null, null);
+	}
+
+	/**
+	 * Returns the files in the given folder.
+	 * 
+	 * @param folder The folder.
 	 * @param prefix The prefix. If null, then do not filter on prefix.
 	 * @param suffix The suffix. If null, then do not filter on suffix.
 	 * @return The files.

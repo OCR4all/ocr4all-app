@@ -243,6 +243,16 @@ public class CoreApiController {
 	public static final String folioRequestMapping = "/folio";
 
 	/**
+	 * The collection request mapping.
+	 */
+	public static final String collectionRequestMapping = "/collection";
+
+	/**
+	 * The set request mapping.
+	 */
+	public static final String setRequestMapping = "/set";
+
+	/**
 	 * The all request mapping.
 	 */
 	public static final String allRequestMapping = "/all";

@@ -56,7 +56,7 @@ public class CollectionApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = DataApiController.contextPath + "/collection";
+	public static final String contextPath = DataApiController.contextPath + collectionRequestMapping;
 
 	/**
 	 * The collection service.

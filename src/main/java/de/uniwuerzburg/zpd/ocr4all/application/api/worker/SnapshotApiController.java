@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -33,9 +32,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SetResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
@@ -469,37 +470,50 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
-	 * Exports the snapshot files to the collection.
+	 * Adds the snapshot files to the collection as set.
 	 * 
-	 * @param sandbox                   The sandbox.
-	 * @param snapshotCollectionRequest The snapshot collection request.
-	 * @throws ResponseStatusException  Throw with http status:
-	 *                                  <ul>
-	 *                                  <li>400 (Bad Request): if the collection is
-	 *                                  not available.</li>
-	 *                                  <li>401 (Unauthorized): if the read security
-	 *                                  permission is not achievable by the session
-	 *                                  user.</li>
-	 *                                  <li>412 (Precondition Failed): if the mets
-	 *                                  file group is unknown.</li>
-	 *                                  </ul>
-	 * @throws IllegalArgumentException Throws if the snapshot track is invalid for
-	 *                                  the sandbox or it is inconsistent.
+	 * @param isAllSets True if all all snapshot sets. Otherwise, adds the desired
+	 *                  sets.
+	 * @param sandbox   The sandbox.
+	 * @param request   The snapshot collection request.
+	 * @return The added collection sets.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available or the sandbox is not for a
+	 *                                 LAREX processor.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 <li>404 (Not Found): if the snapshot track is
+	 *                                 invalid for the sandbox.</li>
+	 *                                 <li>412 (Precondition Failed): if the mets
+	 *                                 file group is unknown.</li>
+	 *                                 <li>503 (Service Unavailable): in case of
+	 *                                 unexpected exceptions.</li>
+	 *                                 </ul>
 	 * @since 17
 	 */
-	private void exportSnapshot2collection(Sandbox sandbox, SnapshotCollectionRequest snapshotCollectionRequest)
-			throws ResponseStatusException, IllegalArgumentException {
-		CollectionService.Collection collection = authorizeCollectionRead(snapshotCollectionRequest.getCollectionId());
+	private List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addSnapshot2collection(boolean isAllSets,
+			Sandbox sandbox, SnapshotCollectionRequest request) throws ResponseStatusException {
+		CollectionService.Collection collection = authorizeCollectionRead(request.getCollectionId());
 
-		Snapshot snapshot = sandbox.getSnapshot(snapshotCollectionRequest.getTrack());
+		Snapshot snapshot;
+		try {
+			snapshot = sandbox.getSnapshot(request.getTrack());
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		}
 
 		if (!snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId()
 				.equals(LAREXLauncher.class.getName()))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
+		List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = null;
+
 		Path temporaryFolder = null;
-		Path mets = Paths.get(sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString(),
-				sandbox.getConfiguration().getMetsFileName());
+		final String snapshotsFolder = sandbox.getConfiguration().getSnapshots().getRoot().getFolder().toString();
+		Path mets = Paths.get(snapshotsFolder, sandbox.getConfiguration().getMetsFileName());
 		if (Files.exists(mets))
 			try {
 				final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
@@ -511,7 +525,7 @@ public class SnapshotApiController extends CoreApiController {
 				MetsParser.Root.FileGroup fileGroup = null;
 
 				for (MetsParser.Root.FileGroup group : root.getFileGroups())
-					if (fileGroupID.equals(fileGroup.getId()))
+					if (fileGroupID.equals(group.getId()))
 						fileGroup = group;
 
 				if (fileGroup == null)
@@ -532,32 +546,30 @@ public class SnapshotApiController extends CoreApiController {
 					}
 
 				// The sets to import. The value is the ocr4all id. Null to import all.
-				final Set<String> sets = (snapshotCollectionRequest instanceof SnapshotCollectionSetRequest)
-						? new HashSet<>(((SnapshotCollectionSetRequest) snapshotCollectionRequest).getSets())
-						: null;
+				final Set<String> importSets = isAllSets ? null
+						: new HashSet<>(((SnapshotCollectionSetRequest) request).getSets());
 
 				// The folio names map
 				final Set<String> availableFolios = new HashSet<>();
-				for (Folio folio : sandbox.getProject().getFolios())
+				final List<Folio> folios = sandbox.getProject().getFolios();
+				for (Folio folio : folios)
 					availableFolios.add(folio.getId());
 
-				final String snapshotFolder = snapshot.getConfiguration().getFolder().toString();
-
 				temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
-				final Set<String> availableSets = new HashSet<>();
-				final List<Path> files = new ArrayList<>();
 
+				final Set<String> availableSets = new HashSet<>();
 				for (de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File file : fileGroup
 						.getFiles()) {
 					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
 
-					if (ocr4allId != null && (sets == null || sets.contains(ocr4allId))
+					if (ocr4allId != null && (isAllSets || importSets.contains(ocr4allId))
 							&& availableFolios.contains(ocr4allId)) {
-						Path data = Paths.get(snapshotFolder, file.getLocation().getPath());
+						Path data = Paths.get(snapshotsFolder, file.getLocation().getPath());
 
-						if (Files.isRegularFile(data, LinkOption.NOFOLLOW_LINKS)) {
+						if (Files.isRegularFile(data)) {
 							// Build target name
 							String target = data.getFileName().toString();
+
 							int index = target.indexOf(ocr4allId);
 							if (index < 0)
 								target = ocr4allId + "." + target;
@@ -566,28 +578,27 @@ public class SnapshotApiController extends CoreApiController {
 								target = ocr4allId + (suffix.startsWith(".") ? suffix : "." + suffix);
 							}
 
-							Path targetPath = Paths.get(temporaryFolder.toString(), target);
-
 							// copy the file to the temporary directory
-							Files.copy(data, targetPath, StandardCopyOption.REPLACE_EXISTING);
+							Files.copy(data, Paths.get(temporaryFolder.toString(), target),
+									StandardCopyOption.REPLACE_EXISTING);
 
 							availableSets.add(ocr4allId);
-							files.add(targetPath);
 						}
 					}
 				}
 
-				if (!files.isEmpty()) {
+				if (!availableSets.isEmpty()) {
 					final Date date = new Date();
 					final String user = securityService.getUser();
 
 					final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets = new ArrayList<>();
-					for (Folio folio : sandbox.getProject().getFolios())
+					for (Folio folio : folios)
 						if (availableSets.contains(folio.getId()))
 							collectionSets.add(new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set(date,
-									user, folio.getKeywords(), folio.getId(), folio.getName()));
+									user, request.isKeywords() ? folio.getKeywords() : null, folio.getId(),
+									folio.getName()));
 
-					collectionService.add(collection, collectionSets, files, true);
+					sets = collectionService.add(collection, collectionSets, temporaryFolder, true);
 				}
 
 			} catch (ResponseStatusException ex) {
@@ -604,6 +615,84 @@ public class SnapshotApiController extends CoreApiController {
 						logger.warn("cannot delete directory " + temporaryFolder + " - " + e.getMessage() + ".");
 					}
 			}
+
+		return sets == null ? new ArrayList<>() : sets;
+	}
+
+	/**
+	 * Adds all snapshot sets to a collection and returns the list of added sets of
+	 * the collection in the response body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot collection set request.
+	 * @return The list of added sets to the collection.
+	 * @since 1.8
+	 */
+	@Operation(summary = "adds all snapshot sets to a collection and returns the list of added sets of given collection in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "412", description = "Precondition Failed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(collectionRequestMapping + allRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<List<SetResponse>> addAllSnapshot2collection(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotCollectionRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			final List<SetResponse> sets = new ArrayList<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(true,
+					authorization.sandbox, request))
+				sets.add(new SetResponse(set));
+
+			return ResponseEntity.ok().body(sets);
+		} catch (ResponseStatusException ex) {
+			return ResponseEntity.status(ex.getStatusCode()).build();
+		}
+	}
+
+	/**
+	 * Adds the desired snapshot sets to a collection and returns the list of added
+	 * sets of the collection in the response body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot collection set request.
+	 * @return The list of sets of the collection.
+	 * @since 1.8
+	 */
+	@Operation(summary = "adds the desired snapshot sets to a collection and returns the list of added sets of given collection in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Collection Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "412", description = "Precondition Failed", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(collectionRequestMapping + setRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<List<SetResponse>> addSetSnapshot2collection(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotCollectionSetRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			final List<SetResponse> sets = new ArrayList<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(false,
+					authorization.sandbox, request))
+				sets.add(new SetResponse(set));
+
+			return ResponseEntity.ok().body(sets);
+		} catch (ResponseStatusException ex) {
+			return ResponseEntity.status(ex.getStatusCode()).build();
+		}
 	}
 
 	/**
@@ -854,6 +943,13 @@ public class SnapshotApiController extends CoreApiController {
 		private String collectionId;
 
 		/**
+		 * True if the keywords available in the folio configurations are to be added to
+		 * the collection sets.
+		 */
+		@JsonProperty("keywords")
+		private boolean isKeywords;
+
+		/**
 		 * Returns the collectionId.
 		 *
 		 * @return The collectionId.
@@ -871,6 +967,30 @@ public class SnapshotApiController extends CoreApiController {
 		 */
 		public void setCollectionId(String collectionId) {
 			this.collectionId = collectionId;
+		}
+
+		/**
+		 * Returns true if the keywords available in the folio configurations are to be
+		 * added to the collection sets.
+		 *
+		 * @return True if the keywords available in the folio configurations are to be
+		 *         added to the collection sets.
+		 * @since 17
+		 */
+		@JsonGetter("keywords")
+		public boolean isKeywords() {
+			return isKeywords;
+		}
+
+		/**
+		 * Set to true if the keywords available in the folio configurations are to be
+		 * added to the collection sets.
+		 *
+		 * @param isKeywords The keywords flag to set.
+		 * @since 17
+		 */
+		public void setKeywords(boolean isKeywords) {
+			this.isKeywords = isKeywords;
 		}
 
 	}

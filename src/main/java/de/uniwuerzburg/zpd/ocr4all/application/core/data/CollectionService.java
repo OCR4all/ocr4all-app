@@ -401,42 +401,62 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Adds the sets to the collection.
+	 * Adds the sets with the respective files to the collection.
 	 * 
 	 * @param collection     The collection.
-	 * @param collectionSets The sets.
-	 * @param files          The files. The file names has to match the collection
-	 *                       restrictions defined for the given sets.
-	 * @param isMove         True if move the files.
-	 * @return The stored sets. Null if collection is unknown or the write right is
+	 * @param collectionSets The sets. If the set is available, only the files are
+	 *                       added, this means, the set configuration is not
+	 *                       updated.
+	 * @param folder         The folder that contains the set files.
+	 * @param isMove         True if move the files. Otherwise, the files are
+	 *                       copied.
+	 * @return The added sets. Null if collection is unknown or the write right is
 	 *         not fulfilled.
 	 * @throws IOException Throws on storage troubles.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> add(Collection collection,
-			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets, List<Path> files,
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> collectionSets, Path folder,
 			boolean isMove) throws IOException {
-		if (collection == null || collectionSets == null || files == null || !collection.getRight().isWriteFulfilled())
+		if (collection == null || collectionSets == null || !collection.getRight().isWriteFulfilled())
 			return null;
-		else if (files.isEmpty())
+		else if (collectionSets.isEmpty())
 			return getSets(collection);
 		else {
-			for (Path file : files) {
-				if (isMove)
-					Files.move(file, Paths.get(collection.getConfiguration().getFolder().toString(),
-							file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
-				else
-					Files.copy(file, Paths.get(collection.getConfiguration().getFolder().toString(),
-							file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+			Set<String> importSets = new HashSet<>();
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionSets)
+				importSets.add(set.getId());
+
+			Set<String> importedSets = new HashSet<>();
+			for (Path file : OCR4allUtils.getFiles(folder)) {
+				String filename = file.getFileName().toString();
+
+				int index = filename.indexOf(".");
+
+				// File names with an empty prefix are not allowed
+				if (index > 0) {
+					String id = filename.substring(0, index);
+
+					if (importSets.contains(id)) {
+						importedSets.add(id);
+
+						if (isMove)
+							Files.move(file, Paths.get(collection.getConfiguration().getFolder().toString(),
+									file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+						else
+							Files.copy(file, Paths.get(collection.getConfiguration().getFolder().toString(),
+									file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+					}
+				}
 			}
 
-			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = getSets(collection);
 			Set<String> availableSetIds = new HashSet<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : sets)
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : getSets(collection))
 				availableSetIds.add(set.getId());
 
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionSets)
-				if (availableSetIds.add(set.getId()))
+				if (importedSets.contains(set.getId()) && availableSetIds.add(set.getId()))
 					sets.add(set);
 
 			// Persist the configuration

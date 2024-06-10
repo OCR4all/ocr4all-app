@@ -1,5 +1,5 @@
 /**
- * File:     CollectionFolioApiController.java
+ * File:     CollectionSetApiController.java
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
  * 
  * Author:   Herbert Baier
@@ -10,6 +10,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,9 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortRequest;
-import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifierRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SetResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -48,6 +49,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines collection set data controllers for the api.
@@ -64,7 +67,7 @@ public class CollectionSetApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = CollectionApiController.contextPath + "/set";
+	public static final String contextPath = CollectionApiController.contextPath + setRequestMapping;
 
 	/**
 	 * The collection service.
@@ -149,7 +152,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload sets")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Folios"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Sets"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
@@ -188,7 +191,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "returns the set of given collection in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Set", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SetResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -219,7 +222,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "returns the list of sets of given collection in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sets", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -251,14 +254,15 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "sort sets")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sorted Folios"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sorted Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(sortRequestMapping + collectionPathVariable)
 	public ResponseEntity<List<SetResponse>> sort(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
-			@RequestBody @Valid FolioSortRequest request) {
+			@RequestBody @Valid SetSortRequest request) {
 		CollectionService.Collection collection = authorizeWrite(collectionId);
 
 		try {
@@ -284,7 +288,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "updates the required sets and returns all sets in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sets", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -292,12 +296,12 @@ public class CollectionSetApiController extends CoreApiController {
 	@PostMapping(updateRequestMapping + collectionPathVariable)
 	public ResponseEntity<List<SetResponse>> update(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
-			@RequestBody @Valid FolioUpdateRequest request) {
+			@RequestBody @Valid SetUpdateRequest request) {
 		CollectionService.Collection collection = authorizeWrite(collectionId);
 
 		try {
 			List<CollectionService.Metadata> metadata = new ArrayList<>();
-			for (FolioUpdateRequest.Metadata update : request.getMetadata())
+			for (SetUpdateRequest.Metadata update : request.getMetadata())
 				if (update != null)
 					metadata.add(
 							new CollectionService.Metadata(update.getId(), update.getName(), update.getKeywords()));
@@ -324,7 +328,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "removes the set and returns the sets in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folio", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Set", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SetResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -358,7 +362,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "removes the sets and returns the sets in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Folios", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Sets", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = SetResponse.class))) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -392,7 +396,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	@Operation(summary = "removes all sets")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Folios"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed Sets"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
@@ -539,28 +543,155 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines set responses for the api.
+	 * Defines set sort requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
-	public static class SetResponse extends de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set {
+	public static class SetSortRequest extends IdentifiersRequest {
 		/**
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * Creates a set response for the api.
-		 * 
-		 * @param set The set.
+		 * True if the sets that do not belong to the collection are to be inserted
+		 * after the sets that belong to the collection. Otherwise, they are placed at
+		 * the beginning.
+		 */
+		@NotNull
+		private Boolean isAfter;
+
+		/**
+		 * Returns true if the sets that do not belong to the collection are to be
+		 * inserted after the sets that belong to the collection. Otherwise, they are
+		 * placed at the beginning.
+		 *
+		 * @return True if the sets that do not belong to the collection are to be
+		 *         inserted after the sets that belong to the collection. Otherwise,
+		 *         they are placed at the beginning.
 		 * @since 1.8
 		 */
-		public SetResponse(de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set) {
-			super(set.getDate(), set.getUser(), set.getKeywords(), set.getId(), set.getName());
+		public Boolean isAfter() {
+			return isAfter;
 		}
 
+		/**
+		 * Set to true if the sets that do not belong to the collection are to be
+		 * inserted after the sets that belong to the collection. Otherwise, they are
+		 * placed at the beginning.
+		 *
+		 * @param isAfter The insert flag to set.
+		 * @since 1.8
+		 */
+		public void setAfter(Boolean isAfter) {
+			this.isAfter = isAfter;
+		}
 	}
 
+	/**
+	 * Defines set update requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SetUpdateRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The metadata.
+		 */
+		@NotNull
+		private List<Metadata> metadata;
+
+		/**
+		 * Returns the metadata.
+		 *
+		 * @return The metadata.
+		 * @since 1.8
+		 */
+		public List<Metadata> getMetadata() {
+			return metadata;
+		}
+
+		/**
+		 * Set the metadata.
+		 *
+		 * @param metadata The metadata to set.
+		 * @since 1.8
+		 */
+		public void setMetadata(List<Metadata> metadata) {
+			this.metadata = metadata;
+		}
+
+		/**
+		 * Defines metadata for update.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class Metadata extends IdentifierRequest {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The name without extension.
+			 */
+			@NotBlank
+			private String name;
+
+			/**
+			 * The keywords.
+			 */
+			private Set<String> keywords;
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 1.8
+			 */
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			/**
+			 * Returns the keywords.
+			 *
+			 * @return The keywords.
+			 * @since 1.8
+			 */
+			public Set<String> getKeywords() {
+				return keywords;
+			}
+
+			/**
+			 * Set the keywords.
+			 *
+			 * @param keywords The keywords to set.
+			 * @since 1.8
+			 */
+			public void setKeywords(Set<String> keywords) {
+				this.keywords = keywords;
+			}
+		}
+	}
 }
