@@ -7,6 +7,8 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.context.annotation.Profile;
@@ -72,6 +74,27 @@ public class InstanceApiController extends CoreApiController {
 		try {
 			return ResponseEntity.ok().body(new InstanceResponse(configurationService.getInstance(),
 					securityService.isSecured(), configurationService.getApplication().getViewLanguages()));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the instance configuration.
+	 * 
+	 * @return The instance configuration.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the instance configuration")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Configuration", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ConcfigurationResponse.class)) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(configurationRequestMapping)
+	public ResponseEntity<ConcfigurationResponse> configuration() {
+		try {
+			return ResponseEntity.ok().body(new ConcfigurationResponse(configurationService));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -156,6 +179,213 @@ public class InstanceApiController extends CoreApiController {
 		 */
 		public void setViewLanguages(List<String> viewLanguages) {
 			this.viewLanguages = viewLanguages;
+		}
+
+	}
+
+	/**
+	 * Defines configuration responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ConcfigurationResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The charset.
+		 */
+		private String charset;
+
+		/**
+		 * The locale.
+		 */
+		private String locale;
+
+		/**
+		 * The folders.
+		 */
+		private List<FolderResponse> folders;
+
+		/**
+		 * Creates a configuration responses for the api.
+		 * 
+		 * @param service       The configuration service.
+		 * @param isSecured     True if the application is secured.
+		 * @param viewLanguages The view languages.
+		 * @since 1.8
+		 */
+		public ConcfigurationResponse(ConfigurationService service) {
+			super();
+
+			charset = service.getApplication().getCharset().displayName();
+			locale = service.getApplication().getLocale().toString();
+
+			folders = new ArrayList<>();
+
+			folders.add(
+					new FolderResponse(FolderResponse.Type.workspace, service.getWorkspace().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.projects,
+					service.getWorkspace().getProjects().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.workflows,
+					service.getWorkspace().getWorkflows().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.exchange, service.getExchange().getFolder().toString()));
+			folders.add(
+					new FolderResponse(FolderResponse.Type.repository, service.getRepository().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.data, service.getData().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.opt, service.getOpt().getFolder().toString()));
+			folders.add(
+					new FolderResponse(FolderResponse.Type.temporary, service.getTemporary().getFolder().toString()));
+		}
+
+		/**
+		 * Returns the charset.
+		 *
+		 * @return The charset.
+		 * @since 17
+		 */
+		public String getCharset() {
+			return charset;
+		}
+
+		/**
+		 * Set the charset.
+		 *
+		 * @param charset The charset to set.
+		 * @since 17
+		 */
+		public void setCharset(String charset) {
+			this.charset = charset;
+		}
+
+		/**
+		 * Returns the locale.
+		 *
+		 * @return The locale.
+		 * @since 17
+		 */
+		public String getLocale() {
+			return locale;
+		}
+
+		/**
+		 * Set the locale.
+		 *
+		 * @param locale The locale to set.
+		 * @since 17
+		 */
+		public void setLocale(String locale) {
+			this.locale = locale;
+		}
+
+		/**
+		 * Returns the folders.
+		 *
+		 * @return The folders.
+		 * @since 17
+		 */
+		public List<FolderResponse> getFolders() {
+			return folders;
+		}
+
+		/**
+		 * Set the folders.
+		 *
+		 * @param folders The folders to set.
+		 * @since 17
+		 */
+		public void setFolders(List<FolderResponse> folders) {
+			this.folders = folders;
+		}
+
+		/**
+		 * Defines folder responses for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class FolderResponse implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The types.
+			 */
+			public enum Type {
+				workspace, projects, workflows, exchange, repository, data, opt, temporary
+			}
+
+			/**
+			 * The type.
+			 */
+			private Type type;
+
+			/**
+			 * The folder.
+			 */
+			private String folder;
+
+			/**
+			 * Creates a folder responses for the api.
+			 * 
+			 * @param type   The type.
+			 * @param folder The folder.
+			 * @since 17
+			 */
+			public FolderResponse(Type type, String folder) {
+				super();
+
+				this.type = type;
+				this.folder = folder;
+			}
+
+			/**
+			 * Returns the type.
+			 *
+			 * @return The type.
+			 * @since 17
+			 */
+			public Type getType() {
+				return type;
+			}
+
+			/**
+			 * Set the type.
+			 *
+			 * @param type The type to set.
+			 * @since 17
+			 */
+			public void setType(Type type) {
+				this.type = type;
+			}
+
+			/**
+			 * Returns the folder.
+			 *
+			 * @return The folder.
+			 * @since 17
+			 */
+			public String getFolder() {
+				return folder;
+			}
+
+			/**
+			 * Set the folder.
+			 *
+			 * @param folder The folder to set.
+			 * @since 17
+			 */
+			public void setFolder(String folder) {
+				this.folder = folder;
+			}
+
 		}
 
 	}
