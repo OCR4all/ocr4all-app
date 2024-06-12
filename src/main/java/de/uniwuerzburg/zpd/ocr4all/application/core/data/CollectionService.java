@@ -849,7 +849,7 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Collection is an immutable class that defines collections .
+	 * Collection is an immutable class that defines collections.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0

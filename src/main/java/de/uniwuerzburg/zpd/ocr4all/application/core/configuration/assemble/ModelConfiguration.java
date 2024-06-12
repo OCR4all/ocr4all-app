@@ -1,11 +1,11 @@
 /**
- * File:     CollectionConfiguration.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data
+ * File:     ModelConfiguration.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.05.2024
+ * Date:     12.06.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data;
+package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,22 +18,23 @@ import java.util.Set;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.assemble.Model;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 
 /**
- * Defines configurations for the collection.
+ * Defines configurations for the model.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 17
  */
-public class CollectionConfiguration extends CoreFolder {
+public class ModelConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CollectionConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ModelConfiguration.class);
 
 	/**
 	 * The configuration.
@@ -41,31 +42,27 @@ public class CollectionConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
-	 * Creates a configuration for the collection.
+	 * Creates a configuration for the model.
 	 * 
-	 * @param properties The ocr4all collection properties.
-	 * @param folder     The collection folder.
+	 * @param properties The ocr4all model properties.
+	 * @param folder     The model folder.
 	 * @since 1.8
 	 */
-	public CollectionConfiguration(
-			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties,
-			Path folder) {
+	public ModelConfiguration(Model properties, Path folder) {
 		this(properties, folder, null);
 	}
 
 	/**
-	 * Creates a configuration for the collection.
+	 * Creates a configuration for the model.
 	 * 
-	 * @param properties The ocr4all collection properties.
-	 * @param folder     The collection folder.
-	 * @param coreData   The core data for a collection configuration. If non null
-	 *                   and the main configuration is not available, then this
-	 *                   basic data is used to initialize the main configuration.
+	 * @param properties The ocr4all model properties.
+	 * @param folder     The model folder.
+	 * @param coreData   The core data for a model configuration. If non null and
+	 *                   the main configuration is not available, then this basic
+	 *                   data is used to initialize the main configuration.
 	 * @since 1.8
 	 */
-	public CollectionConfiguration(
-			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties, Path folder,
-			Configuration.CoreData coreData) {
+	public ModelConfiguration(Model properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
 		configuration = new Configuration(properties.getConfiguration(), coreData);
@@ -82,7 +79,7 @@ public class CollectionConfiguration extends CoreFolder {
 	}
 
 	/**
-	 * Defines configurations for the collection.
+	 * Defines configurations for the model.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -95,91 +92,87 @@ public class CollectionConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The sets configuration file.
+		 * The engine configuration file.
 		 */
-		private final Path setsFile;
+		private final Path engineFile;
 
 		/**
-		 * The collection.
+		 * The model.
 		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection collection = null;
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Model model = null;
 
 		/**
-		 * Creates a configuration for the collection.
+		 * Creates a configuration for the model.
 		 * 
-		 * @param properties The configuration properties for the collection.
-		 * @param coreData   The core data for a collection configuration. If non null
-		 *                   and the main configuration is not available, then this
-		 *                   basic data is used to initialize the main configuration.
+		 * @param properties The configuration properties for the model.
+		 * @param coreData   The core data for a model configuration. If non null and
+		 *                   the main configuration is not available, then this basic
+		 *                   data is used to initialize the main configuration.
 		 * @since 1.8
 		 */
-		Configuration(
-				de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection.Configuration properties,
-				CoreData coreData) {
-			super(Paths.get(CollectionConfiguration.this.folder.toString(), properties.getFolder()));
+		Configuration(Model.Configuration properties, CoreData coreData) {
+			super(Paths.get(ModelConfiguration.this.folder.toString(), properties.getFolder()));
 
-			// Initialize the collection configuration folder and consequently the
-			// collection
-			ConfigurationService.initializeFolder(true, folder, "collection configuration");
+			// Initialize the model configuration folder and consequently the
+			// model
+			ConfigurationService.initializeFolder(true, folder, "model configuration");
 
 			// Initializes the configuration files
-			setsFile = getPath(properties.getFiles().getSets());
+			engineFile = getPath(properties.getFiles().getEngine());
 
 			// Loads the main configuration file
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
-					Type.data_collection_v1);
+					Type.assemble_model_v1);
 			loadMainConfiguration(coreData);
 		}
 
 		/**
 		 * Loads the main configuration file.
 		 * 
-		 * @param coreData The core data for a collection configuration. If non null and
-		 *                 the main configuration is not available, then this basic data
-		 *                 is used to initialize the main configuration.
+		 * @param coreData The core data for a model configuration. If non null and the
+		 *                 main configuration is not available, then this basic data is
+		 *                 used to initialize the main configuration.
 		 * @since 1.8
 		 */
 		private void loadMainConfiguration(CoreData coreData) {
 			// Load main configuration
 			try {
-				collection = mainConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection.class, null,
+				model = mainConfigurationManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Model.class, null,
 						message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || collection.getName() == null
-						|| collection.getSecurity() == null) {
+				if (!isMainConfigurationAvailable() || model.getName() == null || model.getSecurity() == null) {
 					Date currentTimeStamp = new Date();
 					if (!isMainConfigurationAvailable()) {
-						collection = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection();
+						model = new de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Model();
 
-						collection.setDate(currentTimeStamp);
+						model.setDate(currentTimeStamp);
 
 						if (coreData != null) {
-							collection.setName(coreData.getName());
-							collection.setDescription(coreData.getDescription());
-							collection.setKeywords(coreData.getKeywords());
+							model.setName(coreData.getName());
+							model.setDescription(coreData.getDescription());
+							model.setKeywords(coreData.getKeywords());
 
 							if (coreData.getUser() != null)
-								collection.setSecurity(
-										new SecurityGrant(SecurityGrant.Right.maximal, coreData.getUser()));
+								model.setSecurity(new SecurityGrant(SecurityGrant.Right.maximal, coreData.getUser()));
 
 						}
 					} else
 						// avoid using basic data if not creating a main configuration
 						coreData = null;
 
-					if (collection.getName() == null)
-						collection.setName(CollectionConfiguration.this.folder.getFileName().toString());
+					if (model.getName() == null)
+						model.setName(ModelConfiguration.this.folder.getFileName().toString());
 
-					if (collection.getSecurity() == null)
-						collection.setSecurity(new SecurityGrant());
+					if (model.getSecurity() == null)
+						model.setSecurity(new SecurityGrant());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
 
-				collection = null;
+				model = null;
 			}
 		}
 
@@ -190,7 +183,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isMainConfigurationAvailable() {
-			return collection != null;
+			return model != null;
 		}
 
 		/**
@@ -215,18 +208,18 @@ public class CollectionConfiguration extends CoreFolder {
 		private boolean persist(String user, Date updated) {
 			if (isMainConfigurationAvailable())
 				try {
-					collection.setUser(user);
-					collection.setUpdated(updated == null ? new Date() : updated);
+					model.setUser(user);
+					model.setUpdated(updated == null ? new Date() : updated);
 
-					mainConfigurationManager.persist(collection);
+					mainConfigurationManager.persist(model);
 
-					logger.info("Persisted the collection configuration.");
+					logger.info("Persisted the model configuration.");
 
 					return true;
 				} catch (Exception e) {
 					reloadMainConfiguration();
 
-					logger.warn("Could not persist the collection configuration - " + e.getMessage());
+					logger.warn("Could not persist the model configuration - " + e.getMessage());
 				}
 
 			return false;
@@ -245,13 +238,13 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the sets configuration file.
+		 * Returns the engine configuration file.
 		 *
-		 * @return The sets configuration file.
+		 * @return The engine configuration file.
 		 * @since 1.8
 		 */
-		public Path getSetsFile() {
-			return setsFile;
+		public Path getEngineFile() {
+			return engineFile;
 		}
 
 		/**
@@ -261,19 +254,19 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public String getName() {
-			return isMainConfigurationAvailable() ? collection.getName() : null;
+			return isMainConfigurationAvailable() ? model.getName() : null;
 		}
 
 		/**
-		 * Returns the collection information.
+		 * Returns the model information.
 		 * 
-		 * @return The collection information.
+		 * @return The model information.
 		 * @since 1.8
 		 */
 		public Information getInformation() {
 			return isMainConfigurationAvailable()
-					? new Information(collection.getName(), collection.getDescription(),
-							collection.getKeywords() == null ? null : new HashSet<>(collection.getKeywords()))
+					? new Information(model.getName(), model.getDescription(),
+							model.getKeywords() == null ? null : new HashSet<>(model.getKeywords()))
 					: null;
 		}
 
@@ -282,18 +275,18 @@ public class CollectionConfiguration extends CoreFolder {
 		 * configuration is available and the name is not null and empty.
 		 *
 		 * @param user        The user.
-		 * @param information The collection information.
-		 * @return True if the collection information was updated and persisted.
+		 * @param information The model information.
+		 * @return True if the model information was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean update(String user, Information information) {
 			if (isMainConfigurationAvailable() && information != null && information.getName() != null
 					&& !information.getName().isBlank()) {
-				collection.setName(information.getName().trim());
-				collection.setDescription(
+				model.setName(information.getName().trim());
+				model.setDescription(
 						information.getDescription() == null || information.getDescription().isBlank() ? null
 								: information.getDescription().trim());
-				collection.setKeywords(information.getKeywords());
+				model.setKeywords(information.getKeywords());
 
 				return persist(user);
 			} else
@@ -341,20 +334,20 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public SecurityGrant getSecurity() {
-			return cloneSecurity(collection.getSecurity());
+			return cloneSecurity(model.getSecurity());
 		}
 
 		/**
 		 * Updates the security.
 		 *
 		 * @param user     The user.
-		 * @param security The collection security.
-		 * @return True if the collection security was updated and persisted.
+		 * @param security The model security.
+		 * @return True if the model security was updated and persisted.
 		 * @since 1.8
 		 */
 		public boolean update(String user, SecurityGrant security) {
 			if (isMainConfigurationAvailable()) {
-				collection.setSecurity(cloneSecurity(security));
+				model.setSecurity(cloneSecurity(security));
 
 				return persist(user);
 			} else
@@ -374,13 +367,13 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the collection right for given user and groups.
+		 * Returns the model right for given user and groups.
 		 * 
 		 * @param target If not null, the search is ended as soon as the target right is
 		 *               fulfilled. Otherwise search for the maximal fulfilled right.
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The collection right.
+		 * @return The model right.
 		 * @since 1.8
 		 */
 		private SecurityGrant.Right getRightFulfilled(SecurityGrant.Right target, String user,
@@ -391,15 +384,15 @@ public class CollectionConfiguration extends CoreFolder {
 			SecurityGrant.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = SecurityGrant.Right.getMaximnal(right, collection.getSecurity().getOther());
+				right = SecurityGrant.Right.getMaximnal(right, model.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
 
-				if (collection.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
+				if (model.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (SecurityGrant.Grant grant : collection.getSecurity().getUsers())
+					for (SecurityGrant.Grant grant : model.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
 							right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
@@ -408,12 +401,12 @@ public class CollectionConfiguration extends CoreFolder {
 						}
 				}
 
-				if (collection.getSecurity().getGroups() != null && groups != null)
+				if (model.getSecurity().getGroups() != null && groups != null)
 					for (String group : groups) {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (SecurityGrant.Grant grant : collection.getSecurity().getGroups())
+							for (SecurityGrant.Grant grant : model.getSecurity().getGroups())
 								if (grant.getTargets().contains(group)) {
 									right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
 
@@ -429,11 +422,11 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the maximal fulfilled collection right for given user and groups.
+		 * Returns the maximal fulfilled model right for given user and groups.
 		 * 
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The collection right.
+		 * @return The model right.
 		 * @since 1.8
 		 */
 		public SecurityGrant.Right getRight(String user, Collection<String> groups) {
@@ -501,7 +494,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public String getUser() {
-			return isMainConfigurationAvailable() ? collection.getUser() : null;
+			return isMainConfigurationAvailable() ? model.getUser() : null;
 		}
 
 		/*
@@ -523,7 +516,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getCreated() {
-			return isMainConfigurationAvailable() ? collection.getDate() : null;
+			return isMainConfigurationAvailable() ? model.getDate() : null;
 		}
 
 		/*
@@ -545,11 +538,11 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getUpdated() {
-			return isMainConfigurationAvailable() ? collection.getUpdated() : null;
+			return isMainConfigurationAvailable() ? model.getUpdated() : null;
 		}
 
 		/**
-		 * Information is an immutable class that defines information for collection
+		 * Information is an immutable class that defines information for model
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -573,7 +566,7 @@ public class CollectionConfiguration extends CoreFolder {
 			private final Set<String> keywords;
 
 			/**
-			 * Creates an information for a collection configuration.
+			 * Creates an information for a model configuration.
 			 * 
 			 * @param name        The name.
 			 * @param description The description.
@@ -621,7 +614,7 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * CoreData is an immutable class that defines core data for collection
+		 * CoreData is an immutable class that defines core data for model
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -635,7 +628,7 @@ public class CollectionConfiguration extends CoreFolder {
 			private final String user;
 
 			/**
-			 * Creates core data for a collection configuration.
+			 * Creates core data for a model configuration.
 			 * 
 			 * @param user        The user.
 			 * @param name        The name.

@@ -254,8 +254,7 @@
 			"name": "ocr4all.repository.container.derivatives.quality.best.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all repository derivatives quality best folder; the default value is 'best'."
-		},
-			
+		},		
 		{
 			"name": "ocr4all.data.folder",
 			"type": "java.lang.String",
@@ -285,6 +284,36 @@
 			"name": "ocr4all.data.collection.configuration.files.sets",
 			"type": "java.lang.String",
 			"description": "ocr4all sets data collection configuration file; the default value is 'sets'."
+		},
+		{
+			"name": "ocr4all.assemble.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all assemble directory."
+		},
+		{
+			"name": "ocr4all.assemble.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all assemble configuration folder; the default value is '.assemble'."
+		},
+		{
+			"name": "ocr4all.assemble.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all assemble main configuration file; the default value is 'assemble'."
+		},
+		{
+			"name": "ocr4all.assemble.model.configuration.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all assemble model configuration folder; the default value is '.model'."
+		},
+		{
+			"name": "ocr4all.assemble.model.configuration.files.main",
+			"type": "java.lang.String",
+			"description": "ocr4all main assemble model configuration file; the default value is 'model'."
+		},
+		{
+			"name": "ocr4all.assemble.model.configuration.files.engine",
+			"type": "java.lang.String",
+			"description": "ocr4all engine assemble model configuration file; the default value is 'engine'."
 		},
 		{
 			"name": "ocr4all.workspace.folder",

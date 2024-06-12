@@ -1,11 +1,11 @@
 /**
- * File:     DataService.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.data
+ * File:     AssembleService.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.assemble
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.05.2024
+ * Date:     12.06.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.data;
+package de.uniwuerzburg.zpd.ocr4all.application.core.assemble;
 
 import java.nio.file.Path;
 
@@ -13,28 +13,28 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.AssembleConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 
 /**
- * Defines data services.
+ * Defines assemble services.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 17
  */
 @Service
-public class DataService extends CoreService {
+public class AssembleService extends CoreService {
 	/**
 	 * The security service.
 	 */
 	private final SecurityService securityService;
 
 	/**
-	 * The data configuration.
+	 * The assemble configuration.
 	 */
-	private final DataConfiguration.Configuration configuration;
+	private final AssembleConfiguration.Configuration configuration;
 
 	/**
 	 * The folder.
@@ -42,19 +42,19 @@ public class DataService extends CoreService {
 	protected final Path folder;
 
 	/**
-	 * Creates a data service.
+	 * Creates an assemble service.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @since 1.8
 	 */
-	public DataService(ConfigurationService configurationService, SecurityService securityService) {
-		super(DataService.class, configurationService);
+	public AssembleService(ConfigurationService configurationService, SecurityService securityService) {
+		super(AssembleService.class, configurationService);
 
 		this.securityService = securityService;
 
-		folder = configurationService.getData().getFolder().normalize();
-		configuration = configurationService.getData().getConfiguration();
+		folder = configurationService.getAssemble().getFolder().normalize();
+		configuration = configurationService.getAssemble().getConfiguration();
 	}
 
 	/**
@@ -69,10 +69,10 @@ public class DataService extends CoreService {
 	}
 
 	/**
-	 * Returns the data security if the administrator security permission is
+	 * Returns the assemble security if the administrator security permission is
 	 * achievable by the session user.
 	 * 
-	 * @return The data security.
+	 * @return The assemble security.
 	 * @since 1.8
 	 */
 	public SecurityOwner getSecurity() {
@@ -95,10 +95,10 @@ public class DataService extends CoreService {
 	}
 
 	/**
-	 * Secures the data and persists the main configuration if it is available and
-	 * the administrator security permission is achievable by the session user.
+	 * Secures the assemble and persists the main configuration if it is available
+	 * and the administrator security permission is achievable by the session user.
 	 *
-	 * @param isSecured True if the data is secured.
+	 * @param isSecured True if the assemble is secured.
 	 * @return True if the security was updated and persisted.
 	 * @since 1.8
 	 */
@@ -107,25 +107,25 @@ public class DataService extends CoreService {
 	}
 
 	/**
-	 * Returns the data configuration.
+	 * Returns the assemble configuration.
 	 * 
-	 * @return The data configuration. Null if no administrator security permission
-	 *         is achievable by the session user.
+	 * @return The assemble configuration. Null if no administrator security
+	 *         permission is achievable by the session user.
 	 * @since 1.8
 	 */
-	public DataConfiguration.Configuration getConfiguration() {
+	public AssembleConfiguration.Configuration getConfiguration() {
 		return isAdministrator() ? configuration : null;
 	}
 
 	/**
-	 * Returns true if a collection can be created.
+	 * Returns true if a model can be created.
 	 * 
-	 * @return True if a collection can be created.
+	 * @return True if a model can be created.
 	 * @since 1.8
 	 */
-	public boolean isCreateCollection() {
+	public boolean isCreateModel() {
 		return isAdministrator()
-				|| configuration.isCreateCollection(securityService.getUser(), securityService.getActiveGroups());
+				|| configuration.isCreateModel(securityService.getUser(), securityService.getActiveGroups());
 	}
 
 }
