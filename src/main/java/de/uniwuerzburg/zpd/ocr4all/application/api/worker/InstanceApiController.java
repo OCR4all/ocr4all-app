@@ -72,8 +72,7 @@ public class InstanceApiController extends CoreApiController {
 	@GetMapping
 	public ResponseEntity<InstanceResponse> info() {
 		try {
-			return ResponseEntity.ok().body(new InstanceResponse(configurationService.getInstance(),
-					securityService.isSecured(), configurationService.getApplication().getViewLanguages()));
+			return ResponseEntity.ok().body(new InstanceResponse(configurationService, securityService.isSecured()));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -82,19 +81,19 @@ public class InstanceApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the instance configuration.
+	 * Returns the environment.
 	 * 
-	 * @return The instance configuration.
+	 * @return The environment.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the instance configuration")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Configuration", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ConcfigurationResponse.class)) }),
+	@Operation(summary = "returns the environment")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Environment", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = EvironmentResponse.class)) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@GetMapping(configurationRequestMapping)
-	public ResponseEntity<ConcfigurationResponse> configuration() {
+	@GetMapping(environmentRequestMapping)
+	public ResponseEntity<EvironmentResponse> configuration() {
 		try {
-			return ResponseEntity.ok().body(new ConcfigurationResponse(configurationService));
+			return ResponseEntity.ok().body(new EvironmentResponse(configurationService));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -134,11 +133,11 @@ public class InstanceApiController extends CoreApiController {
 		 * @param viewLanguages The view languages.
 		 * @since 1.8
 		 */
-		public InstanceResponse(Instance instance, boolean isSecured, List<String> viewLanguages) {
-			super(instance.getId(), instance.getName());
+		public InstanceResponse(ConfigurationService service, boolean isSecured) {
+			super(service.getInstance().getId(), service.getInstance().getName());
 
 			this.isSecured = isSecured;
-			this.viewLanguages = viewLanguages;
+			this.viewLanguages = service.getApplication().getViewLanguages();
 		}
 
 		/**
@@ -184,17 +183,23 @@ public class InstanceApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines configuration responses for the api.
+	 * Defines environment responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ConcfigurationResponse implements Serializable {
+	public static class EvironmentResponse implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The operating system.
+		 */
+		@JsonProperty("operating-system")
+		private String operatingSystem;
 
 		/**
 		 * The charset.
@@ -212,15 +217,15 @@ public class InstanceApiController extends CoreApiController {
 		private List<FolderResponse> folders;
 
 		/**
-		 * Creates a configuration responses for the api.
+		 * Creates an environment responses for the api.
 		 * 
-		 * @param service       The configuration service.
-		 * @param isSecured     True if the application is secured.
-		 * @param viewLanguages The view languages.
+		 * @param service The configuration service.
 		 * @since 1.8
 		 */
-		public ConcfigurationResponse(ConfigurationService service) {
+		public EvironmentResponse(ConfigurationService service) {
 			super();
+
+			operatingSystem = ConfigurationService.getOperatingSystem().toString();
 
 			charset = service.getApplication().getCharset().displayName();
 			locale = service.getApplication().getLocale().toString();
@@ -240,6 +245,26 @@ public class InstanceApiController extends CoreApiController {
 			folders.add(new FolderResponse(FolderResponse.Type.opt, service.getOpt().getFolder().toString()));
 			folders.add(
 					new FolderResponse(FolderResponse.Type.temporary, service.getTemporary().getFolder().toString()));
+		}
+
+		/**
+		 * Returns the operatingSystem.
+		 *
+		 * @return The operatingSystem.
+		 * @since 17
+		 */
+		public String getOperatingSystem() {
+			return operatingSystem;
+		}
+
+		/**
+		 * Set the operatingSystem.
+		 *
+		 * @param operatingSystem The operatingSystem to set.
+		 * @since 17
+		 */
+		public void setOperatingSystem(String operatingSystem) {
+			this.operatingSystem = operatingSystem;
 		}
 
 		/**

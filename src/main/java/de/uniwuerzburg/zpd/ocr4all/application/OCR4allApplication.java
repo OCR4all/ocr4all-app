@@ -53,7 +53,8 @@ public class OCR4allApplication {
 			final String instance = configurationService.getWorkspace().getConfiguration().getInstance();
 
 			logger.info("started ocr4all" + (instance == null ? "" : " (" + instance + ")") + ": port "
-					+ configurationService.getServerPort() + ", active profiles '"
+					+ configurationService.getServerPort() + ", operating system "
+					+ ConfigurationService.getOperatingSystem().toString() + ", active profiles '"
 					+ configurationService.getActiveProfilesCSV() + "', workspace '"
 					+ configurationService.getWorkspace().getFolder() + "', exchange '"
 					+ configurationService.getExchange().getFolder() + "', repository '"
