@@ -78,6 +78,16 @@ public class CoreApiController {
 	public static final String informationRequestMapping = "/information";
 
 	/**
+	 * The environment request mapping.
+	 */
+	public static final String environmentRequestMapping = "/environment";
+
+	/**
+	 * The configuration request mapping.
+	 */
+	public static final String configurationRequestMapping = "/configuration";
+
+	/**
 	 * The overview request mapping.
 	 */
 	public static final String overviewRequestMapping = "/overview";
