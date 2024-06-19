@@ -78,6 +78,15 @@ ocr4all:
             max-attempts: 3
             delay-between-attempts: 1000
             wait-duration: 15000
+      - id: calamari
+        url: localhost:9092
+        websocket:
+          end-point: /event
+          topic: /topic/spi
+          resilience:
+            max-attempts: 3
+            delay-between-attempts: 1000
+            wait-duration: 15000
     security:
       groups:
         administrator: admin
@@ -292,6 +301,15 @@ ocr4all:
     spi.msa:
       - id: ocrd
         url: msa-ocrd:8080
+        websocket:
+          end-point: /event
+          topic: /topic/spi
+          resilience:
+            max-attempts: 3
+            delay-between-attempts: 1000
+            wait-duration: 15000
+      - id: calamari
+        url: msa-calamari:8080
         websocket:
           end-point: /event
           topic: /topic/spi

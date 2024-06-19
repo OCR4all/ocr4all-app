@@ -138,7 +138,8 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 
 		session.subscribe(topic, this);
 
-		logger.info("STOMP session " + session.getSessionId() + " established: subscribed to topic " + topic);
+		logger.info("STOMP ID " + id + ": session " + session.getSessionId() + " established / subscribed to topic "
+				+ topic);
 	}
 
 	/*
@@ -153,7 +154,7 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 	@Override
 	public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload,
 			Throwable exception) {
-		logger.warn("STOMP session " + session.getSessionId() + ": exception", exception);
+		logger.warn("STOMP ID " + id + ": session  " + session.getSessionId() + " - exception", exception);
 	}
 
 	/*
@@ -168,7 +169,8 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 		errorAt = new Date();
 		++connectionAttempts;
 
-		logger.warn("STOMP session " + session.getSessionId() + ": transport error - " + exception.getMessage());
+		logger.warn("STOMP ID " + id + ": session  " + session.getSessionId() + " / transport error - "
+				+ exception.getMessage());
 
 		new Thread(new Runnable() {
 			/*
@@ -216,8 +218,8 @@ public class EventSPIMessageStompSessionHandler extends StompSessionHandlerAdapt
 
 		numberEvents[event.getType().ordinal()]++;
 
-		logger.debug("STOMP SPI event " + event.getType().name() + " (" + event.getCreatedAt() + "): key "
-				+ event.getKey() + " / content - " + event.getMessage().getContent());
+		logger.debug("STOMP ID " + id + ": SPI event " + event.getType().name() + " (" + event.getCreatedAt()
+				+ ") / key " + event.getKey() + " / content - " + event.getMessage().getContent());
 
 		if (eventHandler != null)
 			eventHandler.handle(event);
