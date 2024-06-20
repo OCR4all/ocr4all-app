@@ -91,6 +91,17 @@ public abstract class Action extends Job {
 		 * (non-Javadoc)
 		 * 
 		 * @see
+		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#getLocale()
+		 */
+		@Override
+		protected Locale getLocale() {
+			return locale;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
 		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#executeCallback
 		 * ()
 		 */

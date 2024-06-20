@@ -50,7 +50,7 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI export", description = "the export service provider API")
 @RestController
 @RequestMapping(path = ExportServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ExportServiceProviderApiController extends ServiceProviderCoreApiController<ExportService> {
+public class ExportServiceProviderApiController extends ProcessServiceProviderApiController<ExportService> {
 	/**
 	 * The context path.
 	 */

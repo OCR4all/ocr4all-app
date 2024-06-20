@@ -50,7 +50,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI preprocessing", description = "the preprocessing service provider API")
 @RestController
 @RequestMapping(path = PreprocessingServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class PreprocessingServiceProviderApiController extends ServiceProviderCoreApiController<PreprocessingService> {
+public class PreprocessingServiceProviderApiController
+		extends ProcessServiceProviderApiController<PreprocessingService> {
 	/**
 	 * The context path.
 	 */

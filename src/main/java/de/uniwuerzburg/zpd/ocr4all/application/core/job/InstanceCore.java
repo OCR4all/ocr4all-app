@@ -70,14 +70,8 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 	private Date end = null;
 
 	/**
-	 * The application locale.
-	 */
-	protected final Locale locale;
-
-	/**
 	 * Creates a instance core with initialized state.
 	 * 
-	 * @param locale                  The application locale.
 	 * @param serviceProvider         The service provider.
 	 * @param serviceProviderArgument The service provider arguments.
 	 * @param journal                 The journal step.
@@ -85,8 +79,8 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 	 *                                  the journal argument is missed.
 	 * @since 1.8
 	 */
-	protected InstanceCore(Locale locale, T serviceProvider, ServiceProvider serviceProviderArgument,
-			Journal.Step journal) throws IllegalArgumentException {
+	protected InstanceCore(T serviceProvider, ServiceProvider serviceProviderArgument, Journal.Step journal)
+			throws IllegalArgumentException {
 		super();
 
 		if (serviceProvider == null)
@@ -98,10 +92,27 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 		if (journal == null)
 			throw new IllegalArgumentException("Instance: the journal step is mandatory.");
 
-		this.locale = locale;
 		this.serviceProvider = serviceProvider;
 		this.serviceProviderArgument = serviceProviderArgument;
 		this.journal = journal;
+	}
+
+	/**
+	 * Returns the application locale.
+	 * 
+	 * @return The application locale.
+	 * @since 17
+	 */
+	protected abstract Locale getLocale();
+
+	/**
+	 * Returns the short description.
+	 * 
+	 * @return The short description.
+	 * @since 1.8
+	 */
+	public String getShortDescription() {
+		return serviceProvider.getName(getLocale()) + " (v" + serviceProvider.getVersion() + ")";
 	}
 
 	/**
@@ -181,16 +192,6 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 		 * The model argument
 		 */
 		return new ModelArgument(arguments);
-	}
-
-	/**
-	 * Returns the short description.
-	 * 
-	 * @return The short description.
-	 * @since 1.8
-	 */
-	public String getShortDescription() {
-		return serviceProvider.getName(locale) + " (v" + serviceProvider.getVersion() + ")";
 	}
 
 	/**

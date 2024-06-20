@@ -51,7 +51,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping(path = PostcorrectionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class PostcorrectionServiceProviderApiController
-		extends ServiceProviderCoreApiController<PostcorrectionService> {
+		extends ProcessServiceProviderApiController<PostcorrectionService> {
 	/**
 	 * The context path.
 	 */

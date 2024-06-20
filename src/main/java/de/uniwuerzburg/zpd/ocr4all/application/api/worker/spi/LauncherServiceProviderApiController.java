@@ -50,7 +50,7 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI launcher", description = "the launcher service provider API")
 @RestController
 @RequestMapping(path = LauncherServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class LauncherServiceProviderApiController extends ServiceProviderCoreApiController<LauncherService> {
+public class LauncherServiceProviderApiController extends ProcessServiceProviderApiController<LauncherService> {
 	/**
 	 * The context path.
 	 */

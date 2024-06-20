@@ -308,6 +308,17 @@ public abstract class Process extends Job {
 		 * (non-Javadoc)
 		 * 
 		 * @see
+		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#getLocale()
+		 */
+		@Override
+		protected Locale getLocale() {
+			return locale;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
 		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#setState(de.
 		 * uniwuerzburg.zpd.ocr4all.application.core.job.Job.State)
 		 */

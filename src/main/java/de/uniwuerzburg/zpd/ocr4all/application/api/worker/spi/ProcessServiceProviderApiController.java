@@ -1,5 +1,5 @@
 /**
- * File:     ServiceProviderCoreApiController.java
+ * File:     ProcessServiceProviderApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -13,9 +13,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
-import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
@@ -40,39 +36,26 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotNull;
 
 /**
- * Defines core service provider controllers for the api.
+ * Defines process service provider controllers for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @param <S> The core service provider type.
- * @since 1.8
+ * @since 17
  */
-public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? extends ServiceProvider>>
-		extends CoreApiController {
-
-	/**
-	 * The spi prefix path.
-	 */
-	public static final String spiContextPath = "/spi";
-
-	/**
-	 * The spi version 1.0 prefix path.
-	 */
-	public static final String spiContextPathVersion_1_0 = apiContextPathVersion_1_0 + spiContextPath;
-
-	/**
-	 * The providers request mapping.
-	 */
-	public static final String providersRequestMapping = "/providers";
+public class ProcessServiceProviderApiController<S extends CoreServiceProvider<? extends ServiceProvider>>
+		extends CoreServiceProviderApiController<S> {
 
 	/**
 	 * Define types.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public enum Type {
 		/**
@@ -112,7 +95,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Returns the respective persistence snapshot type.
 		 * 
 		 * @return The respective persistence snapshot type. Null if not available.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type getSnapshotType() {
 			switch (this) {
@@ -137,16 +120,6 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	}
 
 	/**
-	 * The scheduler service.
-	 */
-	protected final SchedulerService schedulerService;
-
-	/**
-	 * The service.
-	 */
-	protected final S service;
-
-	/**
 	 * The type.
 	 */
 	protected final Type type;
@@ -157,7 +130,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	protected final Project.Right[] requiredProjectRights;
 
 	/**
-	 * Creates a core service provider controller for the api.
+	 * Creates a process service provider controller for the api.
 	 * 
 	 * @param logger                The logger class.
 	 * @param configurationService  The configuration service.
@@ -168,16 +141,14 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @param type                  The type.
 	 * @param service               The service.
 	 * @param requiredProjectRights The required project rights.
-	 * @since 1.8
+	 * @since 17
 	 */
-	protected ServiceProviderCoreApiController(Class<?> logger, ConfigurationService configurationService,
+	protected ProcessServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
 			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, Type type, S service, Project.Right... requiredProjectRights) {
-		super(logger, configurationService, securityService, projectService, sandboxService);
+		super(logger, configurationService, securityService, projectService, sandboxService, schedulerService, service);
 
-		this.schedulerService = schedulerService;
 		this.type = type;
-		this.service = service;
 		this.requiredProjectRights = requiredProjectRights;
 	}
 
@@ -189,9 +160,9 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 *                the sandbox.
 	 * @return True if the service is available. However, if the service core data
 	 *         requires the sandbox and it is not defined, then returns false.
-	 * @since 1.8
+	 * @since 17
 	 */
-	protected boolean isAvailable(Project project, Sandbox sandbox) {
+	private boolean isAvailable(Project project, Sandbox sandbox) {
 		// A selected project with required rights is always required
 		if (!service.isActiveProviderAvailable() || project == null
 				|| !project.getConfiguration().getConfiguration().isStateActive()
@@ -227,7 +198,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 * @return The service providers in the response body.
 	 * @throws ResponseStatusException Throws if service providers are not available
 	 *                                 for the project/sandbox.
-	 * @since 1.8
+	 * @since 17
 	 */
 	protected ResponseEntity<List<ServiceProviderResponse>> serviceProviders(Authorization authorization,
 			List<Integer> snapshotTrack, String lang) throws ResponseStatusException {
@@ -293,7 +264,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 *                                 server error is thrown if the service's core
 	 *                                 data type is sandbox and the request is not
 	 *                                 of type service provider snapshot request.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public void schedule(Authorization authorization, ServiceProviderRequest request, String lang,
 			HttpServletResponse response) throws ResponseStatusException {
@@ -355,53 +326,11 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	}
 
 	/**
-	 * Defines service provider requests for the api.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class ServiceProviderRequest
-			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * The job short description.
-		 */
-		@JsonProperty("job-short-description")
-		private String jobShortDescription;
-
-		/**
-		 * Returns the job short description.
-		 *
-		 * @return The job short description.
-		 * @since 1.8
-		 */
-		public String getJobShortDescription() {
-			return jobShortDescription;
-		}
-
-		/**
-		 * Set the job short description.
-		 *
-		 * @param jobShortDescription The job short description to set.
-		 * @since 1.8
-		 */
-		public void setJobShortDescription(String jobShortDescription) {
-			this.jobShortDescription = jobShortDescription;
-		}
-
-	}
-
-	/**
 	 * Defines service provider snapshot core requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class ServiceProviderSnapshotCoreRequest extends ServiceProviderRequest {
 		/**
@@ -424,7 +353,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Returns the label.
 		 *
 		 * @return The label.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public String getLabel() {
 			return label;
@@ -434,7 +363,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Set the label.
 		 *
 		 * @param label The label to set.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public void setLabel(String label) {
 			this.label = label;
@@ -444,7 +373,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Returns the description.
 		 *
 		 * @return The description.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public String getDescription() {
 			return description;
@@ -454,7 +383,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Set the description.
 		 *
 		 * @param description The description to set.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public void setDescription(String description) {
 			this.description = description;
@@ -467,7 +396,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class ServiceProviderSnapshotRequest extends ServiceProviderSnapshotCoreRequest {
 		/**
@@ -486,7 +415,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Returns the parent snapshot.
 		 *
 		 * @return The parent snapshot.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public SnapshotRequest getParentSnapshot() {
 			return parentSnapshot;
@@ -496,7 +425,7 @@ public class ServiceProviderCoreApiController<S extends CoreServiceProvider<? ex
 		 * Set the parent snapshot.
 		 *
 		 * @param parentSnapshot The parent snapshot to set.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public void setParentSnapshot(SnapshotRequest parentSnapshot) {
 			this.parentSnapshot = parentSnapshot;
