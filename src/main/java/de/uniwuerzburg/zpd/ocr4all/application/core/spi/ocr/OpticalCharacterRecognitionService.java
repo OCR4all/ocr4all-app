@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
 
 /**
@@ -24,7 +24,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionSe
  */
 @Service
 public class OpticalCharacterRecognitionService
-		extends CoreServiceProvider<OpticalCharacterRecognitionServiceProvider> {
+		extends ProcessServiceProvider<OpticalCharacterRecognitionServiceProvider> {
 	/**
 	 * Creates an optical character recognition (OCR) service.
 	 * 

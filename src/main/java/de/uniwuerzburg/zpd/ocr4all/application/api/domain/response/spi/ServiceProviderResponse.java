@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.ServiceProviderCoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.CoreServiceProviderApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
@@ -43,7 +43,7 @@ public class ServiceProviderResponse implements Serializable {
 	/**
 	 * The type.
 	 */
-	private ServiceProviderCoreApiController.Type type;
+	private CoreServiceProviderApiController.Type type;
 
 	/**
 	 * The id.
@@ -116,7 +116,7 @@ public class ServiceProviderResponse implements Serializable {
 	 * @throws ServiceProviderException Throws on service provider exceptions.
 	 * @since 1.8
 	 */
-	public ServiceProviderResponse(Locale locale, ServiceProviderCoreApiController.Type type, String id,
+	public ServiceProviderResponse(Locale locale, CoreServiceProviderApiController.Type type, String id,
 			ServiceProvider serviceProvider, Target target) throws ServiceProviderException {
 		super();
 
@@ -189,7 +189,7 @@ public class ServiceProviderResponse implements Serializable {
 	 * @return The type.
 	 * @since 1.8
 	 */
-	public ServiceProviderCoreApiController.Type getType() {
+	public CoreServiceProviderApiController.Type getType() {
 		return type;
 	}
 
@@ -199,7 +199,7 @@ public class ServiceProviderResponse implements Serializable {
 	 * @param type The type to set.
 	 * @since 1.8
 	 */
-	public void setType(ServiceProviderCoreApiController.Type type) {
+	public void setType(CoreServiceProviderApiController.Type type) {
 		this.type = type;
 	}
 

@@ -50,6 +50,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecogni
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
@@ -58,6 +59,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServi
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.TrainingServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.JournalEntryServiceProvider.Level;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
@@ -150,6 +152,11 @@ public class AdministrationApiController extends CoreApiController {
 	private final List<CoreServiceProvider<ExportServiceProvider>.Provider> exportProviders;
 
 	/**
+	 * The registered training service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<TrainingServiceProvider>.Provider> trainingProviders;
+
+	/**
 	 * The registered service providers. The key is the id.
 	 */
 	private final Hashtable<String, CoreServiceProvider<?>.Provider> providers = new Hashtable<>();
@@ -167,6 +174,7 @@ public class AdministrationApiController extends CoreApiController {
 	 * @param postcorrectionService The post-correction service.
 	 * @param toolService           The tool service.
 	 * @param exportService         The export service.
+	 * @param trainingService       The training service.
 	 * @param communicationService  The communication service.
 	 * @since 1.8
 	 */
@@ -174,7 +182,7 @@ public class AdministrationApiController extends CoreApiController {
 			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
 			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
-			CommunicationService communicationService) {
+			TrainingService trainingService, CommunicationService communicationService) {
 		super(AdministrationApiController.class, configurationService, securityService);
 
 		this.communicationService = communicationService;
@@ -187,6 +195,7 @@ public class AdministrationApiController extends CoreApiController {
 		postcorrectionProviders = postcorrectionService.getProviders();
 		toolProviders = toolService.getProviders();
 		exportProviders = exportService.getProviders();
+		trainingProviders = trainingService.getProviders();
 
 		for (CoreServiceProvider<?>.Provider provider : importProviders)
 			providers.put(provider.getId(), provider);
@@ -210,6 +219,9 @@ public class AdministrationApiController extends CoreApiController {
 			providers.put(provider.getId(), provider);
 
 		for (CoreServiceProvider<?>.Provider provider : exportProviders)
+			providers.put(provider.getId(), provider);
+
+		for (CoreServiceProvider<?>.Provider provider : trainingProviders)
 			providers.put(provider.getId(), provider);
 	}
 
@@ -1954,6 +1966,11 @@ public class AdministrationApiController extends CoreApiController {
 		private List<ProviderResponse> export;
 
 		/**
+		 * The registered training service providers sorted by name.
+		 */
+		private List<ProviderResponse> training;
+
+		/**
 		 * Default constructor for a provider container response for the api.
 		 *
 		 * @since 1.8
@@ -2002,6 +2019,10 @@ public class AdministrationApiController extends CoreApiController {
 			export = new ArrayList<>();
 			for (CoreServiceProvider<ExportServiceProvider>.Provider provider : exportProviders)
 				export.add(new ProviderResponse(locale, provider));
+
+			training = new ArrayList<>();
+			for (CoreServiceProvider<TrainingServiceProvider>.Provider provider : trainingProviders)
+				training.add(new ProviderResponse(locale, provider));
 		}
 
 		/**
@@ -2162,6 +2183,26 @@ public class AdministrationApiController extends CoreApiController {
 		 */
 		public void setExport(List<ProviderResponse> providers) {
 			export = providers;
+		}
+
+		/**
+		 * Returns the training.
+		 *
+		 * @return The training.
+		 * @since 17
+		 */
+		public List<ProviderResponse> getTraining() {
+			return training;
+		}
+
+		/**
+		 * Set the training.
+		 *
+		 * @param providers The providers to set.
+		 * @since 17
+		 */
+		public void setTraining(List<ProviderResponse> providers) {
+			training = providers;
 		}
 
 		/**

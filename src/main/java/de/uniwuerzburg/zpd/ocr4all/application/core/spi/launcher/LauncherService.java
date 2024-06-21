@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 
 /**
@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
  * @since 1.8
  */
 @Service
-public class LauncherService extends CoreServiceProvider<LauncherServiceProvider> {
+public class LauncherService extends ProcessServiceProvider<LauncherServiceProvider> {
 	/**
 	 * Creates a launcher service.
 	 * 

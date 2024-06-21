@@ -32,25 +32,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ConfigurationServiceProvi
  * @param <P> The service provider type.
  * @since 1.8
  */
-public abstract class CoreServiceProvider<P extends ServiceProvider> extends CoreService {
-	/**
-	 * Define core data.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public enum CoreData {
-		/**
-		 * The project core data.
-		 */
-		project,
-		/**
-		 * The sandbox core data.
-		 */
-		sandbox
-	}
-
+public class CoreServiceProvider<P extends ServiceProvider> extends CoreService {
 	/**
 	 * The service providers. The key is the id.
 	 */
@@ -179,14 +161,6 @@ public abstract class CoreServiceProvider<P extends ServiceProvider> extends Cor
 			logger.warn("Could not initialize provider: " + id + " - " + e.getMessage() + ".");
 		}
 	}
-
-	/**
-	 * Returns the core data.
-	 *
-	 * @return The core data.
-	 * @since 1.8
-	 */
-	public abstract CoreData getCoreData();
 
 	/**
 	 * Returns the active provider with given key.

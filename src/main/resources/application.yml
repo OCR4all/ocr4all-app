@@ -78,6 +78,15 @@ ocr4all:
             max-attempts: 3
             delay-between-attempts: 1000
             wait-duration: 15000
+      - id: calamari
+        url: localhost:9092
+        websocket:
+          end-point: /event
+          topic: /topic/spi
+          resilience:
+            max-attempts: 3
+            delay-between-attempts: 1000
+            wait-duration: 15000
     security:
       groups:
         administrator: admin
@@ -143,6 +152,17 @@ ocr4all:
           files:
             main: collection
             sets: sets
+  assemble:
+    folder: ${user.home}/ocr4all/assemble
+    configuration:
+      folder: .assemble
+      files.main: assemble
+    model:
+        configuration:
+          folder: .model
+          files:
+            main: model
+            engine: engine
   workspace:
     folder: ${user.home}/ocr4all/workspace
     configuration:
@@ -288,9 +308,19 @@ ocr4all:
             max-attempts: 3
             delay-between-attempts: 1000
             wait-duration: 15000
+      - id: calamari
+        url: msa-calamari:8080
+        websocket:
+          end-point: /event
+          topic: /topic/spi
+          resilience:
+            max-attempts: 3
+            delay-between-attempts: 1000
+            wait-duration: 15000
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4all/repository
   data.folder: /srv/ocr4all/data
+  assemble.folder: /srv/ocr4all/assemble
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -304,6 +334,7 @@ ocr4all:
   exchange.folder: ${user.home}/ocr4all/exchange
   repository.folder: ${user.home}/ocr4all/repository
   data.folder: ${user.home}/ocr4all/data
+  assemble.folder: ${user.home}/ocr4all/assemble
   workspace.folder: ${user.home}/ocr4all/workspace
   opt.folder: ${user.home}/ocr4all/opt
   temporary.folder: ${user.home}/ocr4all/tmp
@@ -316,6 +347,7 @@ ocr4all:
   exchange.folder: /srv/ocr4all/exchange
   repository.folder: /srv/ocr4all/repository
   data.folder: /srv/ocr4all/data
+  assemble.folder: /srv/ocr4all/assemble
   workspace.folder: /srv/ocr4all/workspace
   opt.folder: /srv/ocr4all/opt
   temporary.folder: /srv/ocr4all/tmp
@@ -332,6 +364,7 @@ ocr4all:
   exchange.folder: ${user.home}/ocr4all/dev/exchange
   repository.folder: ${user.home}/ocr4all/dev/repository
   data.folder: ${user.home}/ocr4all/dev/data
+  assemble.folder: ${user.home}/ocr4all/dev/assemble
   workspace.folder: ${user.home}/ocr4all/dev/workspace
   opt.folder: ${user.home}/ocr4all/dev/opt
   temporary.folder: ${user.home}/ocr4all/dev/tmp

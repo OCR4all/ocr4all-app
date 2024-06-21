@@ -49,7 +49,7 @@ public class OCR4allApplication {
 			context.close();
 		} else {
 			Locale.setDefault(configurationService.getApplication().getLocale());
-
+			
 			final String instance = configurationService.getWorkspace().getConfiguration().getInstance();
 
 			logger.info("started ocr4all" + (instance == null ? "" : " (" + instance + ")") + ": port "
@@ -59,7 +59,8 @@ public class OCR4allApplication {
 					+ configurationService.getWorkspace().getFolder() + "', exchange '"
 					+ configurationService.getExchange().getFolder() + "', repository '"
 					+ configurationService.getRepository().getFolder() + "', data '"
-					+ configurationService.getData().getFolder() + "', opt '"
+					+ configurationService.getData().getFolder() + "', assemble '"
+					+ configurationService.getAssemble().getFolder() + "', opt '"
 					+ configurationService.getOpt().getFolder() + "', temporary '"
 					+ configurationService.getTemporary().getFolder() + "', charset "
 					+ configurationService.getApplication().getCharset().displayName() + ", locale "

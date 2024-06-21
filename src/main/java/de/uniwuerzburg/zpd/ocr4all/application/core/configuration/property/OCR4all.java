@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.assemble.Assemble;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Data;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
 
@@ -54,6 +55,11 @@ public class OCR4all {
 	 * The data properties.
 	 */
 	private Data data = new Data();
+
+	/**
+	 * The assemble properties.
+	 */
+	private Assemble assemble = new Assemble();
 
 	/**
 	 * The workspace properties.
@@ -193,6 +199,26 @@ public class OCR4all {
 	 */
 	public void setData(Data data) {
 		this.data = data;
+	}
+
+	/**
+	 * Returns the assemble properties.
+	 *
+	 * @return The assemble properties.
+	 * @since 17
+	 */
+	public Assemble getAssemble() {
+		return assemble;
+	}
+
+	/**
+	 * Set the assemble properties.
+	 *
+	 * @param assemble The assemble properties to set.
+	 * @since 17
+	 */
+	public void setAssemble(Assemble assemble) {
+		this.assemble = assemble;
 	}
 
 	/**

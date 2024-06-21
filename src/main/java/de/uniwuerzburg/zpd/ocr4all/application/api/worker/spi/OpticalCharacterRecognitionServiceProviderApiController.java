@@ -52,7 +52,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping(path = OpticalCharacterRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class OpticalCharacterRecognitionServiceProviderApiController
-		extends ServiceProviderCoreApiController<OpticalCharacterRecognitionService> {
+		extends ProcessServiceProviderApiController<OpticalCharacterRecognitionService> {
 	/**
 	 * The context path.
 	 */

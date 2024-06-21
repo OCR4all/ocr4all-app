@@ -50,7 +50,7 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI tool", description = "the tool service provider API")
 @RestController
 @RequestMapping(path = ToolServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ToolServiceProviderApiController extends ServiceProviderCoreApiController<ToolService> {
+public class ToolServiceProviderApiController extends ProcessServiceProviderApiController<ToolService> {
 	/**
 	 * The context path.
 	 */

@@ -52,7 +52,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping(path = OpticalLayoutRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class OpticalLayoutRecognitionServiceProviderApiController
-		extends ServiceProviderCoreApiController<OpticalLayoutRecognitionService> {
+		extends ProcessServiceProviderApiController<OpticalLayoutRecognitionService> {
 	/**
 	 * The context path.
 	 */

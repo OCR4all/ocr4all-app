@@ -128,9 +128,8 @@ public class InstanceApiController extends CoreApiController {
 		/**
 		 * Creates an instance responses for the api.
 		 * 
-		 * @param instance      The instance.
-		 * @param isSecured     True if the application is secured.
-		 * @param viewLanguages The view languages.
+		 * @param service   The configuration service.
+		 * @param isSecured True if the application is secured.
 		 * @since 1.8
 		 */
 		public InstanceResponse(ConfigurationService service, boolean isSecured) {
@@ -242,6 +241,7 @@ public class InstanceApiController extends CoreApiController {
 			folders.add(
 					new FolderResponse(FolderResponse.Type.repository, service.getRepository().getFolder().toString()));
 			folders.add(new FolderResponse(FolderResponse.Type.data, service.getData().getFolder().toString()));
+			folders.add(new FolderResponse(FolderResponse.Type.assemble, service.getAssemble().getFolder().toString()));
 			folders.add(new FolderResponse(FolderResponse.Type.opt, service.getOpt().getFolder().toString()));
 			folders.add(
 					new FolderResponse(FolderResponse.Type.temporary, service.getTemporary().getFolder().toString()));
@@ -344,7 +344,7 @@ public class InstanceApiController extends CoreApiController {
 			 * The types.
 			 */
 			public enum Type {
-				workspace, projects, workflows, exchange, repository, data, opt, temporary
+				workspace, projects, workflows, exchange, repository, data, assemble, opt, temporary
 			}
 
 			/**

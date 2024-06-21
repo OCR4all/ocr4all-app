@@ -36,6 +36,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecogni
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
@@ -62,7 +63,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = ServiceProviderCoreApiController.spiContextPathVersion_1_0;
+	public static final String contextPath = ProcessServiceProviderApiController.spiContextPathVersion_1_0;
 
 	/**
 	 * The core request mapping.
@@ -73,6 +74,11 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * The workflow request mapping.
 	 */
 	private static final String workflowRequestMapping = "/workflow";
+
+	/**
+	 * The training request mapping.
+	 */
+	private static final String trainingRequestMapping = "/training";
 
 	/**
 	 * The import service.
@@ -115,6 +121,11 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private final ExportService exportService;
 
 	/**
+	 * The training service.
+	 */
+	private final TrainingService trainingService;
+
+	/**
 	 * Creates an overview api controller for service providers.
 	 * 
 	 * @param configurationService  The configuration service.
@@ -127,13 +138,14 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @param postcorrectionService The post-correction service.
 	 * @param toolService           The tool service.
 	 * @param exportService         The export service.
+	 * @param trainingService       The training service.
 	 * @since 1.8
 	 */
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, ImportService importService, LauncherService launcherService,
 			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
 			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
-			ToolService toolService, ExportService exportService) {
+			ToolService toolService, ExportService exportService, TrainingService trainingService) {
 		super(OverviewServiceProviderApiController.class, configurationService, securityService);
 
 		this.importService = importService;
@@ -144,6 +156,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 		this.postcorrectionService = postcorrectionService;
 		this.toolService = toolService;
 		this.exportService = exportService;
+		this.trainingService = trainingService;
 	}
 
 	/**
@@ -157,7 +170,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @throws ServiceProviderException Throws on service provider exceptions.
 	 * @since 1.8
 	 */
-	private List<ServiceProviderResponse> serviceProviders(ServiceProviderCoreApiController.Type type,
+	private List<ServiceProviderResponse> serviceProviders(CoreServiceProviderApiController.Type type,
 			CoreServiceProvider<? extends ServiceProvider> service, String lang) throws ServiceProviderException {
 		final Locale locale = getLocale(lang);
 		final Target target = new Target(configurationService.getExchange().getFolder().normalize(),
@@ -205,18 +218,20 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	@GetMapping(listRequestMapping)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@RequestParam(required = false) String lang) {
 		try {
-			final List<ServiceProviderResponse> providers = serviceProviders(ServiceProviderCoreApiController.Type.imp,
+			final List<ServiceProviderResponse> providers = serviceProviders(CoreServiceProviderApiController.Type.imp,
 					importService, lang);
 
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.launcher, launcherService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.launcher, launcherService, lang));
 			providers.addAll(
-					serviceProviders(ServiceProviderCoreApiController.Type.preprocessing, preprocessingService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.olr, olrService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.ocr, ocrService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.postcorrection,
+					serviceProviders(CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.olr, olrService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.ocr, ocrService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.postcorrection,
 					postcorrectionService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.tool, toolService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.export, exportService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.tool, toolService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.export, exportService, lang));
+
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.training, trainingService, lang));
 
 			return ResponseEntity.ok().body(providers);
 		} catch (ResponseStatusException ex) {
@@ -240,15 +255,16 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Core Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping + coreRequestMapping)
-	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersCore(@RequestParam(required = false) String lang) {
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersCore(
+			@RequestParam(required = false) String lang) {
 		try {
-			final List<ServiceProviderResponse> providers = serviceProviders(ServiceProviderCoreApiController.Type.imp,
+			final List<ServiceProviderResponse> providers = serviceProviders(CoreServiceProviderApiController.Type.imp,
 					importService, lang);
 
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.launcher, launcherService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.postcorrection,
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.launcher, launcherService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.postcorrection,
 					postcorrectionService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.export, exportService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.export, exportService, lang));
 
 			return ResponseEntity.ok().body(providers);
 		} catch (ResponseStatusException ex) {
@@ -272,15 +288,43 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Workflow Service Unavailable", content = @Content) })
 	@GetMapping(listRequestMapping + workflowRequestMapping)
-	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersWorkflow(@RequestParam(required = false) String lang) {
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersWorkflow(
+			@RequestParam(required = false) String lang) {
 		try {
-			final List<ServiceProviderResponse> providers =  serviceProviders(ServiceProviderCoreApiController.Type.preprocessing, preprocessingService, lang);
-			
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.olr, olrService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.ocr, ocrService, lang));
-			providers.addAll(serviceProviders(ServiceProviderCoreApiController.Type.tool, toolService, lang));
+			final List<ServiceProviderResponse> providers = serviceProviders(
+					CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang);
+
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.olr, olrService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.ocr, ocrService, lang));
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.tool, toolService, lang));
 
 			return ResponseEntity.ok().body(providers);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the training service providers in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The training service providers in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the training service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Training Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Training Service Unavailable", content = @Content) })
+	@GetMapping(listRequestMapping + trainingRequestMapping)
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersTraining(
+			@RequestParam(required = false) String lang) {
+		try {
+			return ResponseEntity.ok()
+					.body(serviceProviders(CoreServiceProviderApiController.Type.training, trainingService, lang));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {
@@ -314,43 +358,48 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 		spiId = spiId.trim();
 
 		try {
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.imp,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.imp,
 					importService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.launcher,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.launcher,
 					launcherService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
 			for (ServiceProviderResponse provider : serviceProviders(
-					ServiceProviderCoreApiController.Type.preprocessing, preprocessingService, lang))
+					CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.olr,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.olr,
 					olrService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.ocr,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.ocr,
 					ocrService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
 			for (ServiceProviderResponse provider : serviceProviders(
-					ServiceProviderCoreApiController.Type.postcorrection, postcorrectionService, lang))
+					CoreServiceProviderApiController.Type.postcorrection, postcorrectionService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.tool,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.tool,
 					toolService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
-			for (ServiceProviderResponse provider : serviceProviders(ServiceProviderCoreApiController.Type.export,
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.export,
 					exportService, lang))
+				if (spiId.equals(provider.getId()))
+					return ResponseEntity.ok().body(provider);
+
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.training,
+					trainingService, lang))
 				if (spiId.equals(provider.getId()))
 					return ResponseEntity.ok().body(provider);
 
