@@ -10,7 +10,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 
 /**
@@ -21,7 +20,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
  * @param <S> The core service provider type.
  * @since 17
  */
-public class ActionServiceProviderApiController<S extends CoreServiceProvider<? extends ServiceProvider>>
+public class ActionServiceProviderApiController<S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ActionServiceProvider<? extends ServiceProvider>>
 		extends CoreServiceProviderApiController<S> {
 
 	/**
@@ -36,7 +35,7 @@ public class ActionServiceProviderApiController<S extends CoreServiceProvider<? 
 	 */
 	protected ActionServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
 			SecurityService securityService, SchedulerService schedulerService, S service) {
-		super(logger, configurationService, securityService, null, null, schedulerService, service);
+		super(logger, configurationService, securityService, null, null, schedulerService, Type.training, service);
 	}
 
 }

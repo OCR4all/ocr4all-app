@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
 
 /**
@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
  * @since 1.8
  */
 @Service
-public class ExportService extends CoreServiceProvider<ExportServiceProvider> {
+public class ExportService extends ProcessServiceProvider<ExportServiceProvider> {
 	/**
 	 * Creates an export service.
 	 * 

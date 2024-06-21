@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.TrainingServiceProvider;
 
 /**
@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.TrainingServiceProvider;
  * @since 1.8
  */
 @Service
-public class TrainingService extends CoreServiceProvider<TrainingServiceProvider> {
+public class TrainingService extends ActionServiceProvider<TrainingServiceProvider> {
 	/**
 	 * Creates a training service.
 	 * 
@@ -36,18 +36,6 @@ public class TrainingService extends CoreServiceProvider<TrainingServiceProvider
 			ThreadPoolTaskExecutor taskExecutor) {
 		super(TrainingService.class, configurationService, communicationService, TrainingServiceProvider.class,
 				taskExecutor);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider#
-	 * getCoreData()
-	 */
-	@Override
-	public CoreData getCoreData() {
-		// TODO: see ProcessServiceProviderApiController
-		return CoreData.sandbox;
 	}
 
 }

@@ -128,9 +128,8 @@ public class InstanceApiController extends CoreApiController {
 		/**
 		 * Creates an instance responses for the api.
 		 * 
-		 * @param instance      The instance.
-		 * @param isSecured     True if the application is secured.
-		 * @param viewLanguages The view languages.
+		 * @param service   The configuration service.
+		 * @param isSecured True if the application is secured.
 		 * @since 1.8
 		 */
 		public InstanceResponse(ConfigurationService service, boolean isSecured) {

@@ -42,7 +42,7 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 	/**
 	 * The state. The initial state is initialized.
 	 */
-	private Job.State state = Job.State.initialized;
+	private State state = State.initialized;
 
 	/**
 	 * The service provider arguments.
@@ -195,8 +195,17 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 	}
 
 	/**
-	 * Set the process state. If a snapshot is available, its process status is also
-	 * updated.
+	 * Returns the process state.
+	 *
+	 * @return The process state.
+	 * @since 17
+	 */
+	public State getState() {
+		return state;
+	}
+
+	/**
+	 * Set the process state.
 	 * 
 	 * @param state The state to set.
 	 * @since 1.8

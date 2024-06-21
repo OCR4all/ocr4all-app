@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 
 /**
@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
  * @since 1.8
  */
 @Service
-public class ImportService extends CoreServiceProvider<ImportServiceProvider> {
+public class ImportService extends ProcessServiceProvider<ImportServiceProvider> {
 	/**
 	 * Creates an import service.
 	 * 

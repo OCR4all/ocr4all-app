@@ -506,7 +506,7 @@ public abstract class Process extends Job {
 						}
 				}
 			}
-
+			
 			if (!State.canceled.equals(getState())) {
 				setState(ProcessServiceProvider.Processor.State.completed.equals(executionState) ? State.completed
 						: State.interrupted);

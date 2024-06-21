@@ -47,82 +47,8 @@ import jakarta.validation.constraints.NotNull;
  * @param <S> The core service provider type.
  * @since 17
  */
-public class ProcessServiceProviderApiController<S extends CoreServiceProvider<? extends ServiceProvider>>
+public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<? extends ServiceProvider>>
 		extends CoreServiceProviderApiController<S> {
-
-	/**
-	 * Define types.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 17
-	 */
-	public enum Type {
-		/**
-		 * The imp type.
-		 */
-		imp,
-		/**
-		 * The launcher type.
-		 */
-		launcher,
-		/**
-		 * The preprocessing type.
-		 */
-		preprocessing,
-		/**
-		 * The olr type.
-		 */
-		olr,
-		/**
-		 * The ocr type.
-		 */
-		ocr,
-		/**
-		 * The postcorrection type.
-		 */
-		postcorrection,
-		/**
-		 * The tool type.
-		 */
-		tool,
-		/**
-		 * The export type.
-		 */
-		export;
-
-		/**
-		 * Returns the respective persistence snapshot type.
-		 * 
-		 * @return The respective persistence snapshot type. Null if not available.
-		 * @since 17
-		 */
-		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type getSnapshotType() {
-			switch (this) {
-			case launcher:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.launcher;
-			case preprocessing:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.preprocessing;
-			case olr:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.olr;
-			case ocr:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.ocr;
-			case postcorrection:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.postcorrection;
-			case tool:
-				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.tool;
-			case imp:
-			case export:
-			default:
-				return null;
-			}
-		}
-	}
-
-	/**
-	 * The type.
-	 */
-	protected final Type type;
 
 	/**
 	 * The required project rights.
@@ -146,9 +72,9 @@ public class ProcessServiceProviderApiController<S extends CoreServiceProvider<?
 	protected ProcessServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
 			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
 			SchedulerService schedulerService, Type type, S service, Project.Right... requiredProjectRights) {
-		super(logger, configurationService, securityService, projectService, sandboxService, schedulerService, service);
+		super(logger, configurationService, securityService, projectService, sandboxService, schedulerService, type,
+				service);
 
-		this.type = type;
 		this.requiredProjectRights = requiredProjectRights;
 	}
 

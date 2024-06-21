@@ -30,6 +30,80 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 		extends CoreApiController {
 
 	/**
+	 * Define types.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public enum Type {
+		/**
+		 * The imp type.
+		 */
+		imp,
+		/**
+		 * The launcher type.
+		 */
+		launcher,
+		/**
+		 * The preprocessing type.
+		 */
+		preprocessing,
+		/**
+		 * The olr type.
+		 */
+		olr,
+		/**
+		 * The ocr type.
+		 */
+		ocr,
+		/**
+		 * The postcorrection type.
+		 */
+		postcorrection,
+		/**
+		 * The tool type.
+		 */
+		tool,
+		/**
+		 * The export type.
+		 */
+		export,
+		/**
+		 * The training type.
+		 */
+		training;
+
+		/**
+		 * Returns the respective persistence snapshot type.
+		 * 
+		 * @return The respective persistence snapshot type. Null if not available.
+		 * @since 17
+		 */
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type getSnapshotType() {
+			switch (this) {
+			case launcher:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.launcher;
+			case preprocessing:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.preprocessing;
+			case olr:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.olr;
+			case ocr:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.ocr;
+			case postcorrection:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.postcorrection;
+			case tool:
+				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.tool;
+			case imp:
+			case export:
+			case training:
+			default:
+				return null;
+			}
+		}
+	}
+
+	/**
 	 * The spi prefix path.
 	 */
 	public static final String spiContextPath = "/spi";
@@ -50,6 +124,11 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	protected final SchedulerService schedulerService;
 
 	/**
+	 * The type.
+	 */
+	protected final Type type;
+
+	/**
 	 * The service.
 	 */
 	protected final S service;
@@ -63,16 +142,18 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	 * @param projectService        The project service.
 	 * @param sandboxService        The sandbox service.
 	 * @param schedulerService      The scheduler service.
+	 * @param type                  The type.
 	 * @param service               The service.
-	 * @param requiredProjectRights The required project rights.
 	 * @since 17
 	 */
 	protected CoreServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
 			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, S service) {
+			SchedulerService schedulerService, Type type, S service) {
 		super(logger, configurationService, securityService, projectService, sandboxService);
 
 		this.schedulerService = schedulerService;
+		
+		this.type = type;
 		this.service = service;
 	}
 
