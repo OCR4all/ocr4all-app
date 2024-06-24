@@ -117,22 +117,23 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the users sorted by login in the response body.
+	 * Returns the users sorted by login with respective groups in the response
+	 * body.
 	 * 
-	 * @return The users sorted by login in the response body.
+	 * @return The users sorted by login with respective in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the users sorted by login in the response body")
+	@Operation(summary = "returns the users sorted by login with respective groups in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Users with Groups", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = UserResponse.class))) }),
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = UserGroupResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(userRequestMapping + listRequestMapping)
-	public ResponseEntity<List<UserResponse>> userList() {
+	public ResponseEntity<List<UserGroupResponse>> userList() {
 		try {
-			List<UserResponse> users = new ArrayList<>();
+			List<UserGroupResponse> users = new ArrayList<>();
 
 			for (User user : service.getUsers())
-				users.add(new UserResponse(user));
+				users.add(new UserGroupResponse(user, service.getGroups()));
 
 			return ResponseEntity.ok().body(users);
 		} catch (Exception ex) {
