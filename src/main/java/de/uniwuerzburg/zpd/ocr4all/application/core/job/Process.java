@@ -201,7 +201,7 @@ public abstract class Process extends Job {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ProcessServiceProvider.Processor processor;
+		private final ProcessServiceProvider.Processor<Framework> processor;
 
 		/**
 		 * The snapshot.
@@ -506,7 +506,7 @@ public abstract class Process extends Job {
 						}
 				}
 			}
-			
+
 			if (!State.canceled.equals(getState())) {
 				setState(ProcessServiceProvider.Processor.State.completed.equals(executionState) ? State.completed
 						: State.interrupted);

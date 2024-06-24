@@ -434,7 +434,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor newProcessor() {
+	public ProcessServiceProvider.Processor<Framework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/*
 			 * (non-Javadoc)

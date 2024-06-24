@@ -460,7 +460,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor newProcessor() {
+	public ProcessServiceProvider.Processor<Framework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/**
 			 * Persists the mets file.
@@ -898,7 +898,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					for (String fileName : OCR4allUtils.getFileNames(folderProjectFolios)) {
 						// set image name
 						arguments.set(0, fileName);
-						
+
 						// process image
 						preprocessJob.execute(arguments);
 

@@ -255,7 +255,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor newProcessor() {
+	public ProcessServiceProvider.Processor<Framework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/**
 			 * The image formats sorted by enumeration order.

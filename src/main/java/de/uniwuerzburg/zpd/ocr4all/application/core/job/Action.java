@@ -16,6 +16,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.FrameworkCore;
 
 /**
  * Defines actions.
@@ -61,11 +62,11 @@ public abstract class Action extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance extends InstanceCore<ActionServiceProvider> {
+	public class Instance<T extends FrameworkCore> extends InstanceCore<ActionServiceProvider<T>> {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ActionServiceProvider.Processor processor;
+		private final ActionServiceProvider.Processor<T> processor;
 
 		/**
 		 * Creates a process instance with initialized state.
@@ -77,7 +78,7 @@ public abstract class Action extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		private Instance(ActionServiceProvider serviceProvider, ServiceProvider serviceProviderArgument,
+		private Instance(ActionServiceProvider<T> serviceProvider, ServiceProvider serviceProviderArgument,
 				Journal.Step journal) throws IllegalArgumentException {
 			super(serviceProvider, serviceProviderArgument, journal);
 
