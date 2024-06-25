@@ -45,6 +45,7 @@ import jakarta.validation.constraints.NotNull;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <P> The service provider.
  * @param <S> The core service provider type.
  * @since 17
  */
