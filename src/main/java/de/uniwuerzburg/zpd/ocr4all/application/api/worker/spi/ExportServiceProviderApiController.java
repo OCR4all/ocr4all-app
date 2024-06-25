@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -50,7 +51,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI export", description = "the export service provider API")
 @RestController
 @RequestMapping(path = ExportServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ExportServiceProviderApiController extends ProcessServiceProviderApiController<ExportService> {
+public class ExportServiceProviderApiController
+		extends ProcessServiceProviderApiController<ExportServiceProvider, ExportService> {
 	/**
 	 * The context path.
 	 */

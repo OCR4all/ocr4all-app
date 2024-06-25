@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -50,7 +51,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI tool", description = "the tool service provider API")
 @RestController
 @RequestMapping(path = ToolServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ToolServiceProviderApiController extends ProcessServiceProviderApiController<ToolService> {
+public class ToolServiceProviderApiController
+		extends ProcessServiceProviderApiController<ToolServiceProvider, ToolService> {
 	/**
 	 * The context path.
 	 */

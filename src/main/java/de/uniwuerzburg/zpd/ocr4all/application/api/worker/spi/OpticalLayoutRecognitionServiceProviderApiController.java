@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,8 +52,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI olr", description = "the optical layout recognition (OLR) service provider API")
 @RestController
 @RequestMapping(path = OpticalLayoutRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class OpticalLayoutRecognitionServiceProviderApiController
-		extends ProcessServiceProviderApiController<OpticalLayoutRecognitionService> {
+public class OpticalLayoutRecognitionServiceProviderApiController extends
+		ProcessServiceProviderApiController<OpticalLayoutRecognitionServiceProvider, OpticalLayoutRecognitionService> {
 	/**
 	 * The context path.
 	 */

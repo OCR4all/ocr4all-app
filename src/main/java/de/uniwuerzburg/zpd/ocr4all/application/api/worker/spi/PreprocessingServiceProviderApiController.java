@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,7 +52,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping(path = PreprocessingServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class PreprocessingServiceProviderApiController
-		extends ProcessServiceProviderApiController<PreprocessingService> {
+		extends ProcessServiceProviderApiController<PreprocessingServiceProvider, PreprocessingService> {
 	/**
 	 * The context path.
 	 */

@@ -33,14 +33,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
@@ -56,7 +48,7 @@ import jakarta.validation.constraints.NotNull;
  * @param <S> The core service provider type.
  * @since 17
  */
-public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<? extends ServiceProvider>>
+public class ProcessServiceProviderApiController<P extends ProcessorServiceProvider<ProcessFramework>, S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<P>>
 		extends CoreServiceProviderApiController<S> {
 
 	/**
@@ -207,27 +199,7 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
-			final ServiceProvider activeProvider = service.getActiveProvider(request.getId());
-
-			ProcessorServiceProvider<ProcessFramework> provider = null;
-			if (activeProvider != null && (activeProvider instanceof ProcessorServiceProvider<?>)) {
-				if (activeProvider instanceof ExportServiceProvider)
-					provider = (ExportServiceProvider) activeProvider;
-				else if (activeProvider instanceof ImportServiceProvider)
-					provider = (ImportServiceProvider) activeProvider;
-				else if (activeProvider instanceof LauncherServiceProvider)
-					provider = (LauncherServiceProvider) activeProvider;
-				else if (activeProvider instanceof OpticalCharacterRecognitionServiceProvider)
-					provider = (OpticalCharacterRecognitionServiceProvider) activeProvider;
-				else if (activeProvider instanceof OpticalLayoutRecognitionServiceProvider)
-					provider = (OpticalLayoutRecognitionServiceProvider) activeProvider;
-				else if (activeProvider instanceof PostcorrectionServiceProvider)
-					provider = (PostcorrectionServiceProvider) activeProvider;
-				else if (activeProvider instanceof PreprocessingServiceProvider)
-					provider = (PreprocessingServiceProvider) activeProvider;
-				else if (activeProvider instanceof ToolServiceProvider)
-					provider = (ToolServiceProvider) activeProvider;
-			}
+			final P provider = service.getActiveProvider(request.getId());
 
 			if (provider == null)
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

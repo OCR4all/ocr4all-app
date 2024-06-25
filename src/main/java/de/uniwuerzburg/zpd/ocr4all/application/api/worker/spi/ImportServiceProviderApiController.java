@@ -27,6 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -49,7 +50,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI import", description = "the import service provider API")
 @RestController
 @RequestMapping(path = ImportServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ImportServiceProviderApiController extends ProcessServiceProviderApiController<ImportService> {
+public class ImportServiceProviderApiController
+		extends ProcessServiceProviderApiController<ImportServiceProvider, ImportService> {
 	/**
 	 * The context path.
 	 */

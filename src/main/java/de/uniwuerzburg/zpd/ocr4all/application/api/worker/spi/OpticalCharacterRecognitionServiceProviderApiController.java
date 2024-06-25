@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,8 +52,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI ocr", description = "the optical character recognition (OCR) service provider API")
 @RestController
 @RequestMapping(path = OpticalCharacterRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class OpticalCharacterRecognitionServiceProviderApiController
-		extends ProcessServiceProviderApiController<OpticalCharacterRecognitionService> {
+public class OpticalCharacterRecognitionServiceProviderApiController extends
+		ProcessServiceProviderApiController<OpticalCharacterRecognitionServiceProvider, OpticalCharacterRecognitionService> {
 	/**
 	 * The context path.
 	 */

@@ -28,6 +28,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -50,7 +51,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI launcher", description = "the launcher service provider API")
 @RestController
 @RequestMapping(path = LauncherServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class LauncherServiceProviderApiController extends ProcessServiceProviderApiController<LauncherService> {
+public class LauncherServiceProviderApiController
+		extends ProcessServiceProviderApiController<LauncherServiceProvider, LauncherService> {
 	/**
 	 * The context path.
 	 */
