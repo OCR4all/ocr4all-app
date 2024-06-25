@@ -16,7 +16,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.FrameworkCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.StorageFramework;
 
 /**
  * Defines actions.
@@ -62,7 +62,7 @@ public abstract class Action extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance<T extends FrameworkCore> extends InstanceCore<ActionServiceProvider<T>> {
+	public class Instance<T extends StorageFramework> extends InstanceCore<ActionServiceProvider<T>> {
 		/**
 		 * The processor for the service provider.
 		 */

@@ -34,7 +34,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
@@ -460,7 +460,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor<Framework> newProcessor() {
+	public ProcessServiceProvider.Processor<ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/**
 			 * Persists the mets file.
@@ -503,7 +503,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
 			 */
 			@Override
-			public State execute(Callback callback, Framework framework, ModelArgument modelArgument) {
+			public State execute(Callback callback, ProcessFramework framework, ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
 					return ProcessServiceProvider.Processor.State.canceled;
 

@@ -31,7 +31,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.BooleanField;
@@ -434,7 +434,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor<Framework> newProcessor() {
+	public ProcessServiceProvider.Processor<ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/*
 			 * (non-Javadoc)
@@ -446,7 +446,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
 			 */
 			@Override
-			public State execute(Callback callback, Framework framework, ModelArgument modelArgument) {
+			public State execute(Callback callback, ProcessFramework framework, ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
 					return ProcessServiceProvider.Processor.State.canceled;
 
@@ -861,7 +861,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * @param larexFiles             The LAREX files.
 	 * @since 1.8
 	 */
-	private void setImages(Framework framework, MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+	private void setImages(ProcessFramework framework, MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
 			MetsParser.Root root, List<LarexFile> larexFiles) {
 		// mets pages
 		final List<Set<String>> pages = new ArrayList<>();

@@ -27,7 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.job.ProcessHistory;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines processes.
@@ -201,7 +201,7 @@ public abstract class Process extends Job {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ProcessServiceProvider.Processor<Framework> processor;
+		private final ProcessServiceProvider.Processor<ProcessFramework> processor;
 
 		/**
 		 * The snapshot.
@@ -346,7 +346,7 @@ public abstract class Process extends Job {
 		 * @return The framework for the service provider.
 		 * @since 1.8
 		 */
-		private Framework getFramework() {
+		private ProcessFramework getFramework() {
 			Path temporaryDirectory = null;
 			try {
 				temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
@@ -356,9 +356,9 @@ public abstract class Process extends Job {
 						+ serviceProvider.getVersion() + ") - " + e.getMessage() + ".");
 			}
 
-			return new Framework(ConfigurationService.getOperatingSystem().getFramework(),
+			return new ProcessFramework(ConfigurationService.getOperatingSystem().getFramework(),
 					ConfigurationService.getUID(), ConfigurationService.getGID(),
-					new Framework.Application(configurationService.getApplication().getLabel(),
+					new ProcessFramework.Application(configurationService.getApplication().getLabel(),
 							configurationService.getApplication().getName(),
 							configurationService.getApplication().getDateFormat()),
 					project.getUser(),
@@ -439,7 +439,7 @@ public abstract class Process extends Job {
 			else {
 				journal.setFurtherInformation(new StepFurtherInformation());
 
-				Framework framework = getFramework();
+				ProcessFramework framework = getFramework();
 				try {
 					executionState = processor.execute(new ProcessServiceProvider.Processor.Callback() {
 						/*
