@@ -33,8 +33,17 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalLayoutRecognitionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.PreprocessingServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ToolServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
@@ -198,9 +207,29 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
 		try {
-			final ServiceProvider provider = service.getActiveProvider(request.getId());
+			final ServiceProvider activeProvider = service.getActiveProvider(request.getId());
 
-			if (provider == null || !(provider instanceof ProcessServiceProvider))
+			ProcessorServiceProvider<ProcessFramework> provider = null;
+			if (activeProvider != null && (activeProvider instanceof ProcessorServiceProvider<?>)) {
+				if (activeProvider instanceof ExportServiceProvider)
+					provider = (ExportServiceProvider) activeProvider;
+				else if (activeProvider instanceof ImportServiceProvider)
+					provider = (ImportServiceProvider) activeProvider;
+				else if (activeProvider instanceof LauncherServiceProvider)
+					provider = (LauncherServiceProvider) activeProvider;
+				else if (activeProvider instanceof OpticalCharacterRecognitionServiceProvider)
+					provider = (OpticalCharacterRecognitionServiceProvider) activeProvider;
+				else if (activeProvider instanceof OpticalLayoutRecognitionServiceProvider)
+					provider = (OpticalLayoutRecognitionServiceProvider) activeProvider;
+				else if (activeProvider instanceof PostcorrectionServiceProvider)
+					provider = (PostcorrectionServiceProvider) activeProvider;
+				else if (activeProvider instanceof PreprocessingServiceProvider)
+					provider = (PreprocessingServiceProvider) activeProvider;
+				else if (activeProvider instanceof ToolServiceProvider)
+					provider = (ToolServiceProvider) activeProvider;
+			}
+
+			if (provider == null)
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
 			final Locale locale = getLocale(lang);
@@ -208,7 +237,7 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 			switch (service.getCoreData()) {
 			case project:
 				task = new Task(configurationService, locale, request.getJobShortDescription(), Job.Processing.parallel,
-						authorization.project, (ProcessServiceProvider) provider, request);
+						authorization.project, provider, request);
 
 				break;
 			case sandbox:
@@ -223,7 +252,7 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 						task = new Task(configurationService, locale, request.getJobShortDescription(),
 								Job.Processing.parallel, authorization.sandbox, type.getSnapshotType(),
 								snapshotTrackParent, snapshotRequest.getLabel(), snapshotRequest.getDescription(),
-								(ProcessServiceProvider) provider, request);
+								provider, request);
 					} catch (Exception ex) {
 						log(ex);
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

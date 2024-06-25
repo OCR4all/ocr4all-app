@@ -19,7 +19,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snaps
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines workflows.
@@ -252,7 +253,7 @@ public class Workflow extends Process {
 		/**
 		 * The service provider.
 		 */
-		private final ProcessServiceProvider serviceProvider;
+		private final ProcessorServiceProvider<ProcessFramework> serviceProvider;
 
 		/**
 		 * The snapshot type.
@@ -272,7 +273,8 @@ public class Workflow extends Process {
 		 * @param processor       The processor.
 		 * @since 1.8
 		 */
-		public Provider(ProcessServiceProvider serviceProvider, Type snapshotType, Processor processor) {
+		public Provider(ProcessorServiceProvider<ProcessFramework> serviceProvider, Type snapshotType,
+				Processor processor) {
 			super();
 			this.serviceProvider = serviceProvider;
 			this.snapshotType = snapshotType;
@@ -285,7 +287,7 @@ public class Workflow extends Process {
 		 * @return The service provider.
 		 * @since 1.8
 		 */
-		public ProcessServiceProvider getServiceProvider() {
+		public ProcessorServiceProvider<ProcessFramework> getServiceProvider() {
 			return serviceProvider;
 		}
 

@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
+import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.OverviewServiceProviderApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
@@ -28,7 +29,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.olr.OpticalLayoutRecognitionService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.PostcorrectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
@@ -40,8 +40,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.View;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines workflow services.
@@ -73,11 +73,6 @@ public class WorkflowService extends CoreService {
 	private final OpticalCharacterRecognitionService ocrService;
 
 	/**
-	 * The post-correction service.
-	 */
-	private final PostcorrectionService postcorrectionService;
-
-	/**
 	 * The tool service.
 	 */
 	private final ToolService toolService;
@@ -85,19 +80,17 @@ public class WorkflowService extends CoreService {
 	/**
 	 * Creates a workflow service.
 	 * 
-	 * @param configurationService  The configuration service.
-	 * @param securityService       The security service.
-	 * @param preprocessingService  The preprocessing service.
-	 * @param olrService            The optical layout recognition (OLR) service.
-	 * @param ocrService            The optical character recognition (OCR) service.
-	 * @param postcorrectionService The post-correction service.
-	 * @param toolService           The tool service.
+	 * @param configurationService The configuration service.
+	 * @param securityService      The security service.
+	 * @param preprocessingService The preprocessing service.
+	 * @param olrService           The optical layout recognition (OLR) service.
+	 * @param ocrService           The optical character recognition (OCR) service.
+	 * @param toolService          The tool service.
 	 * @since 1.8
 	 */
 	public WorkflowService(ConfigurationService configurationService, SecurityService securityService,
 			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
-			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
-			ToolService toolService) {
+			OpticalCharacterRecognitionService ocrService, ToolService toolService) {
 		super(WorkflowService.class, configurationService);
 
 		this.securityService = securityService;
@@ -105,7 +98,6 @@ public class WorkflowService extends CoreService {
 		this.preprocessingService = preprocessingService;
 		this.olrService = olrService;
 		this.ocrService = ocrService;
-		this.postcorrectionService = postcorrectionService;
 		this.toolService = toolService;
 	}
 
@@ -407,14 +399,21 @@ public class WorkflowService extends CoreService {
 	 * 
 	 * @param processor The processor.
 	 * @return The job workflow provider. Null if the service provider is unknown or
-	 *         inactive or not of type process.
+	 *         inactive or not a workflow provider. The workflow providers has to
+	 *         conform with the workflow providers defined in the api.
+	 * @see OverviewServiceProviderApiController#serviceProvidersWorkflow()
 	 * @since 1.8
 	 */
 	private de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider getActiveProcessServiceProvider(
 			Processor processor) {
 		Snapshot.Type snapshotType = null;
 
-		ServiceProvider provider = preprocessingService.getActiveProvider(processor.getId());
+		/*
+		 * The workflow providers has to conform with the workflow providers defined in
+		 * the api (see
+		 * OverviewServiceProviderApiController#serviceProvidersWorkflow()).
+		 */
+		ProcessorServiceProvider<ProcessFramework> provider = preprocessingService.getActiveProvider(processor.getId());
 
 		if (provider != null)
 			snapshotType = Snapshot.Type.preprocessing;
@@ -429,23 +428,17 @@ public class WorkflowService extends CoreService {
 				if (provider != null)
 					snapshotType = Snapshot.Type.ocr;
 				else {
-					provider = postcorrectionService.getActiveProvider(processor.getId());
+					provider = toolService.getActiveProvider(processor.getId());
 
 					if (provider != null)
-						snapshotType = Snapshot.Type.postcorrection;
-					else {
-						provider = toolService.getActiveProvider(processor.getId());
-
-						if (provider != null)
-							snapshotType = Snapshot.Type.tool;
-					}
+						snapshotType = Snapshot.Type.tool;
 				}
 			}
 		}
 
-		return provider == null || !(provider instanceof ProcessServiceProvider) ? null
-				: new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider(
-						(ProcessServiceProvider) provider, snapshotType, processor);
+		return provider == null ? null
+				: new de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow.Provider(provider, snapshotType,
+						processor);
 	}
 
 	/**

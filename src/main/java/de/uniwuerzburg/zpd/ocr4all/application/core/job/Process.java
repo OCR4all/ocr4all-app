@@ -25,8 +25,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.job.ProcessHistory;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
@@ -197,11 +197,11 @@ public abstract class Process extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance extends InstanceCore<ProcessServiceProvider> {
+	public class Instance extends InstanceCore<ProcessorServiceProvider<ProcessFramework>> {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ProcessServiceProvider.Processor<ProcessFramework> processor;
+		private final ProcessorServiceProvider.Processor<ProcessFramework> processor;
 
 		/**
 		 * The snapshot.
@@ -228,8 +228,8 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument,
-				Journal.Step journal) throws IllegalArgumentException {
+		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider,
+				ServiceProvider serviceProviderArgument, Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider, serviceProviderArgument, null, false, journal);
 		}
 
@@ -243,8 +243,8 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessServiceProvider serviceProvider, Snapshot snapshot, Journal.Step journal)
-				throws IllegalArgumentException {
+		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider, Snapshot snapshot,
+				Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider, snapshot, true, journal);
 		}
 
@@ -259,8 +259,8 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessServiceProvider serviceProvider, Snapshot snapshot, boolean isSnapshotLockable,
-				Journal.Step journal) throws IllegalArgumentException {
+		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider, Snapshot snapshot,
+				boolean isSnapshotLockable, Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider,
 					snapshot.getConfiguration().isConsistent()
 							? snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider()
@@ -280,8 +280,9 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		private Instance(ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument,
-				Snapshot snapshot, boolean isSnapshotLockable, Journal.Step journal) throws IllegalArgumentException {
+		private Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider,
+				ServiceProvider serviceProviderArgument, Snapshot snapshot, boolean isSnapshotLockable,
+				Journal.Step journal) throws IllegalArgumentException {
 			super(serviceProvider, serviceProviderArgument, journal);
 
 			if (snapshot != null) {
@@ -433,7 +434,7 @@ public abstract class Process extends Job {
 		protected void executeCallback() {
 			appendHistory();
 
-			ProcessServiceProvider.Processor.State executionState = null;
+			ProcessorServiceProvider.Processor.State executionState = null;
 			if (processor == null)
 				journal.setNote("no processor available for the service provider");
 			else {
@@ -441,7 +442,7 @@ public abstract class Process extends Job {
 
 				ProcessFramework framework = getFramework();
 				try {
-					executionState = processor.execute(new ProcessServiceProvider.Processor.Callback() {
+					executionState = processor.execute(new ProcessorServiceProvider.Processor.Callback() {
 						/*
 						 * (non-Javadoc)
 						 * 
@@ -508,7 +509,7 @@ public abstract class Process extends Job {
 			}
 
 			if (!State.canceled.equals(getState())) {
-				setState(ProcessServiceProvider.Processor.State.completed.equals(executionState) ? State.completed
+				setState(ProcessorServiceProvider.Processor.State.completed.equals(executionState) ? State.completed
 						: State.interrupted);
 				setEnd();
 

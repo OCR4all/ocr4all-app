@@ -14,9 +14,9 @@ import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.StorageFramework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 
 /**
  * Defines actions.
@@ -62,11 +62,11 @@ public abstract class Action extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance<T extends StorageFramework> extends InstanceCore<ActionServiceProvider<T>> {
+	public class Instance<T extends Framework> extends InstanceCore<ProcessorServiceProvider<T>> {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ActionServiceProvider.Processor<T> processor;
+		private final ProcessorServiceProvider.Processor<T> processor;
 
 		/**
 		 * Creates a process instance with initialized state.
@@ -78,7 +78,7 @@ public abstract class Action extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		private Instance(ActionServiceProvider<T> serviceProvider, ServiceProvider serviceProviderArgument,
+		private Instance(ProcessorServiceProvider<T> serviceProvider, ServiceProvider serviceProviderArgument,
 				Journal.Step journal) throws IllegalArgumentException {
 			super(serviceProvider, serviceProviderArgument, journal);
 

@@ -38,6 +38,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.Preprocess
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
+import de.uniwuerzburg.zpd.ocr4all.application.core.workflow.WorkflowService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import io.swagger.v3.oas.annotations.Operation;
@@ -277,11 +278,14 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the workflow service providers in the response body.
+	 * Returns the workflow service providers in the response body. The workflow
+	 * providers has to conform with the workflow providers defined in the workflow
+	 * service.
 	 * 
 	 * @param lang The language. if null, then use the application preferred locale.
 	 * @return The workflow service providers in the response body.
-	 * @since 1.8
+	 * @see WorkflowService#getActiveProcessServiceProvider()
+	 * @since 17
 	 */
 	@Operation(summary = "returns the workflow service providers in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Workflow Service Providers", content = {
@@ -291,6 +295,10 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersWorkflow(
 			@RequestParam(required = false) String lang) {
 		try {
+			/*
+			 * The workflow providers has to conform with the workflow providers defined in
+			 * the workflow service (see WorkflowService#getActiveProcessServiceProvider()).
+			 */
 			final List<ServiceProviderResponse> providers = serviceProviders(
 					CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang);
 

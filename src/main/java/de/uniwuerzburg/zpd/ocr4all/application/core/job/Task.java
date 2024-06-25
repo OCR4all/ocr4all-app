@@ -15,7 +15,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines tasks.
@@ -59,7 +60,7 @@ public final class Task extends Process {
 	/**
 	 * The service provider.
 	 */
-	private final ProcessServiceProvider serviceProvider;
+	private final ProcessorServiceProvider<ProcessFramework> serviceProvider;
 
 	/**
 	 * The service provider arguments.
@@ -82,7 +83,7 @@ public final class Task extends Process {
 	 * @since 1.8
 	 */
 	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
-			Processing processing, Project project, ProcessServiceProvider serviceProvider,
+			Processing processing, Project project, ProcessorServiceProvider<ProcessFramework> serviceProvider,
 			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
 		this(configurationService, locale, shortDescription, processing, project, null, null, null, null, null,
 				serviceProvider, serviceProviderArgument);
@@ -112,7 +113,7 @@ public final class Task extends Process {
 			Processing processing, Sandbox sandbox,
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
 			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
-			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
+			ProcessorServiceProvider<ProcessFramework> serviceProvider, ServiceProvider serviceProviderArgument)
 			throws IllegalArgumentException {
 		this(configurationService, locale, shortDescription, processing, sandbox.getProject(), sandbox, snapshotType,
 				snapshotTrackParent, snapshotLabel, snapshotDescription, serviceProvider, serviceProviderArgument);
@@ -143,7 +144,7 @@ public final class Task extends Process {
 			Processing processing, Project project, Sandbox sandbox,
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
 			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
-			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
+			ProcessorServiceProvider<ProcessFramework> serviceProvider, ServiceProvider serviceProviderArgument)
 			throws IllegalArgumentException {
 		super(configurationService, locale, processing, 1, project, sandbox);
 

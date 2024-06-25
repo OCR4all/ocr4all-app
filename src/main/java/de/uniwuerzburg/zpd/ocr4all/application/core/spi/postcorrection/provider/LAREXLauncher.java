@@ -30,9 +30,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorke
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.BooleanField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Model;
@@ -434,13 +434,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor<ProcessFramework> newProcessor() {
+	public ProcessorServiceProvider.Processor<ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/*
 			 * (non-Javadoc)
 			 * 
-			 * @see
-			 * de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.Processor#
+			 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessorServiceProvider.
+			 * Processor#
 			 * execute(de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.
 			 * Processor.Callback, de.uniwuerzburg.zpd.ocr4all.application.spi.Framework,
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
@@ -448,7 +448,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			@Override
 			public State execute(Callback callback, ProcessFramework framework, ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Loads core data
@@ -468,7 +468,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError(
 							"The argument '" + Field.mimeTypeFilter.getName() + "' is not of string type.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// copy images argument
@@ -481,11 +481,11 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				} catch (ClassCastException e) {
 					updatedStandardError("The argument '" + Field.copyImages.getName() + "' is not of boolean type.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				// mets file
 				updatedStandardOutput("Load mets xml file.");
@@ -494,14 +494,14 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				if (metsPath == null) {
 					updatedStandardError("Missed required mets file path.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsGroup = framework.getMetsGroup();
 				if (metsGroup == null) {
 					updatedStandardError("Missed required mets file group.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final MetsUtils.FrameworkFileGroup metsFrameworkFileGroup = MetsUtils.getFileGroup(framework);
@@ -514,12 +514,12 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					} catch (Exception e) {
 						updatedStandardError("Could not parse the mets file - " + e.getMessage());
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 				else {
 					updatedStandardError("The mets file is not available.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// mets templates
@@ -530,7 +530,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError("Internal error: missed mets agent resource '"
 							+ Template.mets_agent.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsFileGroupTemplate;
@@ -540,7 +540,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError("Internal error: missed mets file group resource '"
 							+ Template.mets_file_group.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsFileTemplate;
@@ -550,7 +550,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError(
 							"Internal error: missed mets file resource '" + Template.mets_file.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsPageTemplate;
@@ -560,13 +560,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError(
 							"Internal error: missed page file resource '" + Template.mets_page.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				callback.updatedProgress(0.05F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Select required files and copy then to temporary directory
@@ -585,7 +585,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					updatedStandardError("The required mets input file group '" + metsFrameworkFileGroup.getInput()
 							+ "' is not available.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final Path processorWorkspace = framework.getProcessorWorkspace();
@@ -603,7 +603,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 									+ "', since it is not a prefix of file group id '"
 									+ metsFrameworkFileGroup.getInput() + "'.");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 
 						final Path inputFile = Paths.get(processorWorkspace.toString(), file.getLocation().getPath());
@@ -611,7 +611,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 							updatedStandardError(
 									"The required input file '" + inputFile.toString() + "' is not available.");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 
 						LarexFile larexFile = new LarexFile(metsFrameworkFileGroup, file);
@@ -625,7 +625,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 							updatedStandardError("Cannot copy the required input file '" + inputFile.toString()
 									+ "' to temporary directory - " + e.getMessage() + ".");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 
 						larexFiles.add(larexFile);
@@ -644,7 +644,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								updatedStandardError(
 										"The required input image '" + inputFile.toString() + "' is not available.");
 
-								return ProcessServiceProvider.Processor.State.interrupted;
+								return ProcessorServiceProvider.Processor.State.interrupted;
 							}
 
 							try {
@@ -656,7 +656,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								updatedStandardError("Cannot copy the required input image '" + inputFile.toString()
 										+ "' to temporary directory - " + e.getMessage() + ".");
 
-								return ProcessServiceProvider.Processor.State.interrupted;
+								return ProcessorServiceProvider.Processor.State.interrupted;
 							}
 
 						}
@@ -665,7 +665,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				callback.updatedProgress(0.80F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Moves the images to snapshot
@@ -694,13 +694,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				} catch (Exception e) {
 					updatedStandardError("Can not move files to sandbox - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				callback.updatedProgress(0.95F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Updates the mets file
@@ -756,7 +756,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								updatedStandardError("Duplicated main Mets XML tag '" + handlingTag.getTag()
 										+ "', file '" + metsPath.toString() + ".");
 
-								return ProcessServiceProvider.Processor.State.interrupted;
+								return ProcessorServiceProvider.Processor.State.interrupted;
 							}
 						} else {
 							final boolean isCloseTag = handlingTag.isCloseTag(line);
@@ -834,7 +834,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					e.printStackTrace();
 					updatedStandardError("Can not update mets file - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				callback.lockSnapshot(
