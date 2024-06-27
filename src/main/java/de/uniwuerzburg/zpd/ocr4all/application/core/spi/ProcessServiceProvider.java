@@ -12,7 +12,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines process service providers.
@@ -22,7 +22,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
  * @param <P> The service provider type.
  * @since 17
  */
-public abstract class ProcessServiceProvider<P extends ProcessorServiceProvider<? extends Framework>>
+public abstract class ProcessServiceProvider<P extends ProcessorServiceProvider<ProcessFramework>>
 		extends CoreServiceProvider<P> {
 	/**
 	 * Define core data.
