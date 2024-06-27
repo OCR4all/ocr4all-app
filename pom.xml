@@ -131,6 +131,13 @@
 			<version>${de.uni-wuerzburg.zpd.ocr4all.version}</version>
 		</dependency>
 
+		<!-- ocr4all application calamari service providers -->
+		<dependency>
+			<groupId>de.uni-wuerzburg.zpd</groupId>
+			<artifactId>ocr4all-app-calamari-spi</artifactId>
+			<version>${de.uni-wuerzburg.zpd.ocr4all.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
