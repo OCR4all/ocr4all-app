@@ -32,6 +32,8 @@
 		
 		<commons-io.version>2.15.1</commons-io.version>
 		
+		<maven-artifact.version>3.9.8</maven-artifact.version>
+		
 		<io.jsonwebtoken.version>0.12.5</io.jsonwebtoken.version>
 		
 		<de.uni-wuerzburg.zpd.ocr4all.version>1.0-SNAPSHOT</de.uni-wuerzburg.zpd.ocr4all.version>
@@ -79,6 +81,14 @@
 			<version>${commons-io.version}</version>
 		</dependency>
 		
+		<!-- Version Comparison -->
+		<!-- https://mvnrepository.com/artifact/org.apache.maven/maven-artifact -->
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-artifact</artifactId>
+			<version>${maven-artifact.version}</version>
+		</dependency>
+
 		<!-- JWT library for authentication -->
 		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
 		<dependency>
