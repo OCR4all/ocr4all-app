@@ -97,9 +97,19 @@ public class ModelConfiguration extends CoreFolder {
 		private final Path engineFile;
 
 		/**
+		 * The engine persistence manager.
+		 */
+		private final PersistenceManager engineManager;
+
+		/**
 		 * The model.
 		 */
 		private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Model model = null;
+
+		/**
+		 * The engine.
+		 */
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine engine = null;
 
 		/**
 		 * Creates a configuration for the model.
@@ -124,6 +134,27 @@ public class ModelConfiguration extends CoreFolder {
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
 					Type.assemble_model_v1);
 			loadMainConfiguration(coreData);
+
+			// Load the engine configuration file
+			engineManager = new PersistenceManager(engineFile, Type.assemble_engine_v1);
+			loadEngineConfiguration();
+		}
+
+		/**
+		 * Loads the engine configuration file.
+		 * 
+		 * @since 1.8
+		 */
+		private void loadEngineConfiguration() {
+			try {
+				engine = engineManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.class, null,
+						message -> logger.warn(message));
+			} catch (IOException e) {
+				logger.warn(e.getMessage());
+
+				engine = null;
+			}
 		}
 
 		/**
@@ -226,6 +257,16 @@ public class ModelConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Returns the engine configuration file.
+		 *
+		 * @return The engine configuration file.
+		 * @since 1.8
+		 */
+		public Path getEngineFile() {
+			return engineFile;
+		}
+
+		/**
 		 * Reloads the main configuration file.
 		 * 
 		 * @return True if the main configuration is available.
@@ -238,13 +279,35 @@ public class ModelConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the engine configuration file.
-		 *
-		 * @return The engine configuration file.
+		 * Returns true if the engine configuration is available.
+		 * 
+		 * @return True if the engine configuration is available.
 		 * @since 1.8
 		 */
-		public Path getEngineFile() {
-			return engineFile;
+		public boolean isEngineConfigurationAvailable() {
+			return engine != null;
+		}
+
+		/**
+		 * Reloads the engine configuration file.
+		 * 
+		 * @return True if the engine configuration is available.
+		 * @since 1.8
+		 */
+		public boolean reloadEngineConfiguration() {
+			loadEngineConfiguration();
+
+			return isEngineConfigurationAvailable();
+		}
+
+		/**
+		 * Returns the engine configuration.
+		 *
+		 * @return The engine configuration.
+		 * @since 17
+		 */
+		public de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine getEngineConfiguration() {
+			return engine;
 		}
 
 		/**
