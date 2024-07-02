@@ -9,6 +9,9 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi;
 
 import java.util.Locale;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.RecognitionModelField;
 
 /**
@@ -25,23 +28,27 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * True if the application recognition models are required.
+	 * The model type.
 	 */
-	private boolean isApplicationModels;
+	@JsonProperty("model-type")
+	private RecognitionModelField.Type modelType;
 
 	/**
-	 * True if the recognition models of the selected project are required.
+	 * /** The minimum version. Null if not set.
 	 */
-	private boolean isProjectModels;
+	@JsonProperty("minimum-version")
+	private String minimumVersion;
 
 	/**
-	 * True if the recognition models of the remainder projects are required.
+	 * The maximum version. Null if not set.
 	 */
-	private boolean isRemainderProjectsModels;
+	@JsonProperty("maximum-version")
+	private String maximumVersion;
 
 	/**
 	 * True if multiple models can be selected.
 	 */
+	@JsonProperty("multiple-models")
 	private boolean isMultipleModels;
 
 	/**
@@ -54,72 +61,70 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	public RecognitionModelResponse(Locale locale, RecognitionModelField recognitionModelField) {
 		super(locale, Type.recognition, recognitionModelField);
 
-		isApplicationModels = recognitionModelField.isApplicationModels();
-		isProjectModels = recognitionModelField.isProjectModels();
-		isRemainderProjectsModels = recognitionModelField.isRemainderProjectsModels();
+		modelType = recognitionModelField.getType();
+		minimumVersion = recognitionModelField.getMinimumVersion().orElse(null);
+		maximumVersion = recognitionModelField.getMaximumVersion().orElse(null);
 		isMultipleModels = recognitionModelField.isMultipleModels();
 	}
 
 	/**
-	 * Returns true if the application recognition models are required.
+	 * Returns the model type.
 	 *
-	 * @return True if the application recognition models are required.
-	 * @since 1.8
+	 * @return The model type.
+	 * @since 17
 	 */
-	public boolean isApplicationModels() {
-		return isApplicationModels;
+	public RecognitionModelField.Type getModelType() {
+		return modelType;
 	}
 
 	/**
-	 * Set to true if the application recognition models are required.
+	 * Set the model type.
 	 *
-	 * @param isApplicationModels The recognition models flag to set.
-	 * @since 1.8
+	 * @param modelType The model type flag to set.
+	 * @since 17
 	 */
-	public void setApplicationModels(boolean isApplicationModels) {
-		this.isApplicationModels = isApplicationModels;
+	public void setModelType(RecognitionModelField.Type modelType) {
+		this.modelType = modelType;
 	}
 
 	/**
-	 * Returns true if the recognition models of the selected project are required.
+	 * Returns the minimum version. Null if not set.
 	 *
-	 * @return True if the recognition models of the selected project are required.
-	 * @since 1.8
+	 * @return The minimum version.
+	 * @since 17
 	 */
-	public boolean isProjectModels() {
-		return isProjectModels;
+	public String getMinimumVersion() {
+		return minimumVersion;
 	}
 
 	/**
-	 * Set to true if the recognition models of the selected project are required.
+	 * Set the minimum version. Null if not set.
 	 *
-	 * @param isProjectModels The selected project model flag to set.
-	 * @since 1.8
+	 * @param minimumVersion The minimum version flag to set.
+	 * @since 17
 	 */
-	public void setProjectModels(boolean isProjectModels) {
-		this.isProjectModels = isProjectModels;
+	public void setMinimumVersion(String minimumVersion) {
+		this.minimumVersion = minimumVersion;
 	}
 
 	/**
-	 * Returns true if the recognition models of the remainder projects are
-	 * required.
+	 * Returns the maximum version. Null if not set.
 	 *
-	 * @return True if the recognition models of the remainder projects are
-	 *         required.
-	 * @since 1.8
+	 * @return The maximum version.
+	 * @since 17
 	 */
-	public boolean isRemainderProjectsModels() {
-		return isRemainderProjectsModels;
+	public String getMaximumVersion() {
+		return maximumVersion;
 	}
 
 	/**
-	 * Set to true if the recognition models of the remainder projects are required.
+	 * Set the maximum version. Null if not set.
 	 *
-	 * @param isRemainderProjectsModels The remainder projects flag to set.
-	 * @since 1.8
+	 * @param maximumVersion The maximum version flag to set.
+	 * @since 17
 	 */
-	public void setRemainderProjectsModels(boolean isRemainderProjectsModels) {
-		this.isRemainderProjectsModels = isRemainderProjectsModels;
+	public void setMaximumVersion(String maximumVersion) {
+		this.maximumVersion = maximumVersion;
 	}
 
 	/**
@@ -128,6 +133,7 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	 * @return True if multiple models can be selected.
 	 * @since 1.8
 	 */
+	@JsonGetter("multiple-models")
 	public boolean isMultipleModels() {
 		return isMultipleModels;
 	}

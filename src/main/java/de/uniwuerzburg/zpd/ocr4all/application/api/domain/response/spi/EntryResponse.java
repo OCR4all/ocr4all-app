@@ -52,7 +52,7 @@ public class EntryResponse implements Serializable {
 		/**
 		 * The recognition type.
 		 */
-		recognition,
+		recognition("recognition-model"),
 		/**
 		 * The select type.
 		 */

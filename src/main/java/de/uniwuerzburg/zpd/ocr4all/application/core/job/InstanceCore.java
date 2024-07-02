@@ -175,9 +175,17 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 		if (serviceProviderArgument.getRecognitionModels() != null)
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument recognitionModel : serviceProviderArgument
 					.getRecognitionModels())
-				if (recognitionModel != null)
-					arguments.add(
-							new RecognitionModelArgument(recognitionModel.getArgument(), recognitionModel.getValues()));
+				if (recognitionModel != null) {
+					List<RecognitionModelArgument.Assemble> assembles = new ArrayList<>();
+					if (recognitionModel.getAssembles() != null)
+						for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument.Assemble assemble : recognitionModel
+								.getAssembles())
+							if (assemble != null)
+								assembles.add(
+										new RecognitionModelArgument.Assemble(assemble.getId(), assemble.getModels()));
+
+					arguments.add(new RecognitionModelArgument(recognitionModel.getArgument(), assembles));
+				}
 
 		/*
 		 * The select arguments.
