@@ -7,16 +7,18 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +29,16 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonRespon
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.AssembleService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Training;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.TrainingServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Dataset;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -41,8 +47,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines training service provider controllers for the api.
@@ -62,27 +69,34 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 	public static final String contextPath = spiContextPathVersion_1_0 + "/training";
 
 	/**
-	 * The AssembleService.
+	 * The assemble service.
 	 */
 	private final AssembleService assembleService;
+
+	/**
+	 * The model service.
+	 */
+	private final ModelService modelService;
 
 	/**
 	 * Creates a training service provider controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
-	 * @param assembleService      The AssembleService.
+	 * @param assembleService      The assemble service.
+	 * @param assembleService      The model service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The service.
 	 * @since 17
 	 */
 	public TrainingServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, AssembleService assembleService, SchedulerService schedulerService,
-			TrainingService service) {
+			SecurityService securityService, AssembleService assembleService, ModelService modelService,
+			SchedulerService schedulerService, TrainingService service) {
 		super(TrainingServiceProviderApiController.class, configurationService, securityService, null, null,
 				schedulerService, Type.training, service);
 
 		this.assembleService = assembleService;
+		this.modelService = modelService;
 	}
 
 	/**
@@ -98,7 +112,7 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(providersRequestMapping)
+	@GetMapping(providersRequestMapping)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(
 			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		if (!assembleService.isCreateModel())
@@ -160,17 +174,33 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(scheduleRequestMapping)
-	public ResponseEntity<JobJsonResponse> schedule(
-			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
-			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
-			@RequestBody @Valid ServiceProviderTrainingRequest request,
-			@Parameter(description = "the language") @RequestParam(required = false) String lang,
-			HttpServletResponse response) {
+	public ResponseEntity<JobJsonResponse> schedule(@RequestBody @Valid ServiceProviderTrainingRequest request,
+			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		if (!assembleService.isCreateModel())
 			return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
 		else {
-			// TODO: continue
-			return ResponseEntity.ok().body(null);
+			final TrainingServiceProvider provider = service.getActiveProvider(request.getId());
+
+			if (provider == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+			try {
+				// Create the model
+				ModelService.Model model = modelService.create(request.getAssembleModel().getName(),
+						request.getAssembleModel().getDescription(), request.getAssembleModel().getKeywords());
+
+				// Create training job
+				Training training = new Training(configurationService, getLocale(lang),
+						request.getJobShortDescription(), securityService.getUser(), request.getDatset(),
+						model.getConfiguration().getFolder().getFileName().toString(), provider, request);
+
+				return ResponseEntity.ok()
+						.body(new JobJsonResponse(training.getId(), schedulerService.schedule(training)));
+			} catch (Exception ex) {
+				log(ex);
+
+				return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+			}
 		}
 	}
 
@@ -187,7 +217,148 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 		 */
 		private static final long serialVersionUID = 1L;
 
-		// TODO: Assemble Model description + Dataset
+		/**
+		 * The data set.
+		 */
+		@NotNull
+		private Dataset datset;
+
+		/**
+		 * The assemble model.
+		 */
+		@NotNull
+		private AssembleModel assembleModel;
+
+		/**
+		 * Returns the datset.
+		 *
+		 * @return The datset.
+		 * @since 17
+		 */
+		public Dataset getDatset() {
+			return datset;
+		}
+
+		/**
+		 * Set the datset.
+		 *
+		 * @param datset The datset to set.
+		 * @since 17
+		 */
+		public void setDatset(Dataset datset) {
+			this.datset = datset;
+		}
+
+		/**
+		 * Returns the assemble model.
+		 *
+		 * @return The assemble model.
+		 * @since 17
+		 */
+		public AssembleModel getAssembleModel() {
+			return assembleModel;
+		}
+
+		/**
+		 * Set the assemble model.
+		 *
+		 * @param assembleModel The assemble model to set.
+		 * @since 17
+		 */
+		public void setAssembleModel(AssembleModel assembleModel) {
+			this.assembleModel = assembleModel;
+		}
+
+		/**
+		 * Defines assemble model.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class AssembleModel implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The name.
+			 */
+			@NotBlank
+			private String name = null;
+
+			/**
+			 * The description.
+			 */
+			private String description = null;
+
+			/**
+			 * The keywords.
+			 */
+			private Set<String> keywords = null;
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 1.8
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 1.8
+			 */
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			/**
+			 * Returns the description.
+			 *
+			 * @return The description.
+			 * @since 1.8
+			 */
+			public String getDescription() {
+				return description;
+			}
+
+			/**
+			 * Set the description.
+			 *
+			 * @param description The description to set.
+			 * @since 1.8
+			 */
+			public void setDescription(String description) {
+				this.description = description;
+			}
+
+			/**
+			 * Returns the keywords.
+			 *
+			 * @return The keywords.
+			 * @since 1.8
+			 */
+			public Set<String> getKeywords() {
+				return keywords;
+			}
+
+			/**
+			 * Set the keywords.
+			 *
+			 * @param keywords The keywords to set.
+			 * @since 1.8
+			 */
+			public void setKeywords(Set<String> keywords) {
+				this.keywords = keywords;
+			}
+
+		}
 	}
 
 }

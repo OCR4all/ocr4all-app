@@ -30,6 +30,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorke
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
@@ -434,7 +435,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessorServiceProvider.Processor<ProcessFramework> newProcessor() {
+	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/*
 			 * (non-Javadoc)
@@ -446,7 +447,8 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
 			 */
 			@Override
-			public State execute(Callback callback, ProcessFramework framework, ModelArgument modelArgument) {
+			public State execute(LockSnapshotCallback callback, ProcessFramework framework,
+					ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
 					return ProcessorServiceProvider.Processor.State.canceled;
 

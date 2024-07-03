@@ -170,7 +170,8 @@ public class ApplicationConfiguration {
 		monitorInterval = properties.getMonitor().getInterval();
 
 		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getTask(),
-				properties.getThread().getPool().getSize().getWorkflow());
+				properties.getThread().getPool().getSize().getWorkflow(),
+				properties.getThread().getPool().getSize().getTraining());
 
 		// The spi
 		spi = new SPI(properties.getSpi());
@@ -400,17 +401,24 @@ public class ApplicationConfiguration {
 		private final int workflow;
 
 		/**
+		 * The training pool size.
+		 */
+		private final int training;
+
+		/**
 		 * Creates properties for the thread pool size.
 		 * 
 		 * @param task     The task pool size.
 		 * @param workflow The workflow pool size.
+		 * @param training The training pool size.
 		 * @since 1.8
 		 */
-		public ThreadPoolSizeProperties(int task, int workflow) {
+		public ThreadPoolSizeProperties(int task, int workflow, int training) {
 			super();
 
 			this.task = task;
 			this.workflow = workflow;
+			this.training = training;
 		}
 
 		/**
@@ -432,6 +440,17 @@ public class ApplicationConfiguration {
 		public int getWorkflow() {
 			return workflow;
 		}
+
+		/**
+		 * Returns the training pool size.
+		 *
+		 * @return The training pool size.
+		 * @since 17
+		 */
+		public int getTraining() {
+			return training;
+		}
+
 	}
 
 	/**

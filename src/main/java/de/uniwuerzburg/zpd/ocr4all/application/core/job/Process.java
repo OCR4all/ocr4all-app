@@ -27,6 +27,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.job.ProcessHistory;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
@@ -197,11 +198,12 @@ public abstract class Process extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance extends InstanceCore<ProcessorServiceProvider<ProcessFramework>> {
+	public class Instance
+			extends InstanceCore<ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>> {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ProcessorServiceProvider.Processor<ProcessFramework> processor;
+		private final ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> processor;
 
 		/**
 		 * The snapshot.
@@ -228,7 +230,7 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider,
+		public Instance(ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
 				ServiceProvider serviceProviderArgument, Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider, serviceProviderArgument, null, false, journal);
 		}
@@ -243,8 +245,8 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider, Snapshot snapshot,
-				Journal.Step journal) throws IllegalArgumentException {
+		public Instance(ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
+				Snapshot snapshot, Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider, snapshot, true, journal);
 		}
 
@@ -259,8 +261,8 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		public Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider, Snapshot snapshot,
-				boolean isSnapshotLockable, Journal.Step journal) throws IllegalArgumentException {
+		public Instance(ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
+				Snapshot snapshot, boolean isSnapshotLockable, Journal.Step journal) throws IllegalArgumentException {
 			this(serviceProvider,
 					snapshot.getConfiguration().isConsistent()
 							? snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider()
@@ -280,7 +282,7 @@ public abstract class Process extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		private Instance(ProcessorServiceProvider<ProcessFramework> serviceProvider,
+		private Instance(ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
 				ServiceProvider serviceProviderArgument, Snapshot snapshot, boolean isSnapshotLockable,
 				Journal.Step journal) throws IllegalArgumentException {
 			super(serviceProvider, serviceProviderArgument, journal);
@@ -359,7 +361,7 @@ public abstract class Process extends Job {
 
 			return new ProcessFramework(ConfigurationService.getOperatingSystem().getFramework(),
 					ConfigurationService.getUID(), ConfigurationService.getGID(),
-					new ProcessFramework.Application(configurationService.getApplication().getLabel(),
+					new Framework.Application(configurationService.getApplication().getLabel(),
 							configurationService.getApplication().getName(),
 							configurationService.getApplication().getDateFormat()),
 					project.getUser(),
@@ -442,7 +444,7 @@ public abstract class Process extends Job {
 
 				ProcessFramework framework = getFramework();
 				try {
-					executionState = processor.execute(new ProcessorServiceProvider.Processor.Callback() {
+					executionState = processor.execute(new ProcessorServiceProvider.Processor.LockSnapshotCallback() {
 						/*
 						 * (non-Javadoc)
 						 * 

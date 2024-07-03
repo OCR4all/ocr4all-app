@@ -68,6 +68,7 @@ ocr4all:
     thread.pool.size: 
       task: 6
       workflow: 12
+      training: 6
     spi.msa:
       - id: ocrd
         url: localhost:9091

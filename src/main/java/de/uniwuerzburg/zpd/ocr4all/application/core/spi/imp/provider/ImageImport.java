@@ -37,6 +37,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
@@ -255,7 +256,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessorServiceProvider.Processor<ProcessFramework> newProcessor() {
+	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider() {
 			/**
 			 * The image formats sorted by enumeration order.
@@ -380,7 +381,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 */
 			@Override
 			public ProcessorServiceProvider.Processor.State execute(
-					ProcessorServiceProvider.Processor.Callback callback, ProcessFramework framework,
+					ProcessorServiceProvider.Processor.LockSnapshotCallback callback, ProcessFramework framework,
 					ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
 					return ProcessorServiceProvider.Processor.State.canceled;

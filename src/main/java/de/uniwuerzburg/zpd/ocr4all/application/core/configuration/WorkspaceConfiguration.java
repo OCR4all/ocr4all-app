@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.AssembleConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Workspace;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Entity;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Identifier;
@@ -252,11 +254,14 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 * @param applicationConfiguration The configuration for the application.
 	 * @param exchangeConfiguration    The configuration for the exchange.
 	 * @param optConfiguration         The configuration for the opt.
+	 * @param dataConfiguration        The configuration for the data.
+	 * @param assembleConfiguration    The configuration for the assemble.
 	 * @since 1.8
 	 */
 	public WorkspaceConfiguration(Workspace properties, ConfigurationService.SystemCommand systemCommand,
 			ApplicationConfiguration applicationConfiguration, ExchangeConfiguration exchangeConfiguration,
-			OptConfiguration optConfiguration) {
+			OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
+			AssembleConfiguration assembleConfiguration) {
 		super(Paths.get(properties.getFolder()));
 
 		this.applicationConfiguration = applicationConfiguration;
@@ -265,7 +270,8 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 		configuration = new Configuration(properties.getConfiguration(), systemCommand);
 		workflows = new WorkflowsConfiguration(properties.getWorkflows(), this);
-		projects = new ProjectsConfiguration(properties.getProjects(), exchangeConfiguration, optConfiguration, this);
+		projects = new ProjectsConfiguration(properties.getProjects(), exchangeConfiguration, optConfiguration,
+				dataConfiguration, assembleConfiguration, this);
 	}
 
 	/**

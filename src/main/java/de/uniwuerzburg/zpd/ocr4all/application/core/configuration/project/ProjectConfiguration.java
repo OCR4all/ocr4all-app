@@ -25,6 +25,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ExchangeConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.OptConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.AssembleConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
@@ -65,15 +67,19 @@ public class ProjectConfiguration extends CoreFolder {
 	 * @param properties            The project properties.
 	 * @param exchangeConfiguration The configuration for the exchange.
 	 * @param optConfiguration      The configuration for the opt.
+	 * @param dataConfiguration     The configuration for the data.
+	 * @param assembleConfiguration The configuration for the assemble.
 	 * @param folder                The project folder.
 	 * @param user                  The user.
 	 * @since 1.8
 	 */
 	public ProjectConfiguration(Project properties, ExchangeConfiguration exchangeConfiguration,
-			OptConfiguration optConfiguration, Path folder, String user) {
+			OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
+			AssembleConfiguration assembleConfiguration, Path folder, String user) {
 		super(folder);
 
-		configuration = new Configuration(properties.getConfiguration(), exchangeConfiguration, optConfiguration, user);
+		configuration = new Configuration(properties.getConfiguration(), exchangeConfiguration, optConfiguration,
+				dataConfiguration, assembleConfiguration, user);
 		images = new Images(properties.getImages());
 		sandboxesConfiguration = new SandboxesConfiguration(properties.getSandboxes(), this);
 	}
@@ -147,6 +153,16 @@ public class ProjectConfiguration extends CoreFolder {
 		private final OptConfiguration optConfiguration;
 
 		/**
+		 * The configuration for the data.
+		 */
+		private final DataConfiguration dataConfiguration;
+
+		/**
+		 * The configuration for the assemble.
+		 */
+		private final AssembleConfiguration assembleConfiguration;
+
+		/**
 		 * The project.
 		 */
 		private de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Project project = null;
@@ -172,15 +188,21 @@ public class ProjectConfiguration extends CoreFolder {
 		 * @param properties            The configuration properties for the project.
 		 * @param exchangeConfiguration The configuration for the exchange.
 		 * @param optConfiguration      The configuration for the opt.
+		 * @param dataConfiguration     The configuration for the data.
+		 * @param assembleConfiguration The configuration for the assemble.
 		 * @param user                  The user.
 		 * @since 1.8
 		 */
 		Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
-				OptConfiguration optConfiguration, String user) {
+				OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
+				AssembleConfiguration assembleConfiguration, String user) {
 			super(Paths.get(ProjectConfiguration.this.folder.toString(), properties.getFolder()));
 
 			this.exchangeConfiguration = exchangeConfiguration;
 			this.optConfiguration = optConfiguration;
+			this.dataConfiguration = dataConfiguration;
+			this.assembleConfiguration = assembleConfiguration;
+
 			this.user = user;
 
 			/*
@@ -486,6 +508,26 @@ public class ProjectConfiguration extends CoreFolder {
 		 */
 		public Path getOpt() {
 			return optConfiguration.getFolder().normalize();
+		}
+
+		/**
+		 * Returns the folder for data.
+		 *
+		 * @return The folder for data.
+		 * @since 1.8
+		 */
+		public Path getData() {
+			return dataConfiguration.getFolder().normalize();
+		}
+
+		/**
+		 * Returns the folder for assemble.
+		 *
+		 * @return The folder for assemble.
+		 * @since 1.8
+		 */
+		public Path getAssemble() {
+			return assembleConfiguration.getFolder().normalize();
 		}
 
 		/**

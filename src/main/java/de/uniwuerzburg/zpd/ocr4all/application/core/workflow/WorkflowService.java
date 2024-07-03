@@ -40,6 +40,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.View;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Workflow;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
@@ -413,7 +414,8 @@ public class WorkflowService extends CoreService {
 		 * the api (see
 		 * OverviewServiceProviderApiController#serviceProvidersWorkflow()).
 		 */
-		ProcessorServiceProvider<ProcessFramework> provider = preprocessingService.getActiveProvider(processor.getId());
+		ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> provider = preprocessingService
+				.getActiveProvider(processor.getId());
 
 		if (provider != null)
 			snapshotType = Snapshot.Type.preprocessing;

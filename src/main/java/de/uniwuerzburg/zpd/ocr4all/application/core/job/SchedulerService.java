@@ -57,6 +57,10 @@ public class SchedulerService extends CoreService {
 		 */
 		workflow("wf"),
 		/**
+		 * The training thread pool.
+		 */
+		training("tr"),
+		/**
 		 * The workspace thread pool.
 		 */
 		workspace("ws");
@@ -156,6 +160,11 @@ public class SchedulerService extends CoreService {
 	private final ThreadPoolTaskExecutor threadPoolWorkflow;
 
 	/**
+	 * The thread pool for training.
+	 */
+	private final ThreadPoolTaskExecutor threadPoolTraining;
+
+	/**
 	 * The thread pool for workspace.
 	 */
 	private final Hashtable<String, ThreadPoolTaskExecutor> threadPoolWorkspace = new Hashtable<>();
@@ -176,6 +185,8 @@ public class SchedulerService extends CoreService {
 				configurationService.getApplication().getThreadPoolSizeProperties().getTask());
 		threadPoolWorkflow = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.workflow.getLabel(),
 				configurationService.getApplication().getThreadPoolSizeProperties().getWorkflow());
+		threadPoolTraining = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.training.getLabel(),
+				configurationService.getApplication().getThreadPoolSizeProperties().getTraining());
 
 		/*
 		 * The workspace thread pools
@@ -337,10 +348,21 @@ public class SchedulerService extends CoreService {
 				logger.error("unknown thread pool '" + job.getThreadPoolWorkspace() + "' for job " + job.getId());
 		}
 
-		job.start(
-				threadPool != null ? threadPool
-						: (ThreadPool.task.equals(job.getThreadPool()) ? threadPoolTask : threadPoolWorkflow),
-				instance -> schedule());
+		if (threadPool == null)
+			switch (job.getThreadPool()) {
+			case training:
+				threadPool = threadPoolTraining;
+				break;
+			case workflow:
+				threadPool = threadPoolWorkflow;
+				break;
+			case task:
+			default:
+				threadPool = threadPoolTask;
+				break;
+			}
+
+		job.start(threadPool, instance -> schedule());
 
 		if (job.isStateRunning())
 			running.put(job.getId(), job);

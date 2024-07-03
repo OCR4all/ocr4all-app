@@ -33,6 +33,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
@@ -49,7 +50,7 @@ import jakarta.validation.constraints.NotNull;
  * @param <S> The core service provider type.
  * @since 17
  */
-public class ProcessServiceProviderApiController<P extends ProcessorServiceProvider<ProcessFramework>, S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<P>>
+public class ProcessServiceProviderApiController<P extends ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>, S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<P>>
 		extends CoreServiceProviderApiController<S> {
 
 	/**

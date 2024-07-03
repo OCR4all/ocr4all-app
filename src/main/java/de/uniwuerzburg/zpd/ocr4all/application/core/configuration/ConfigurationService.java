@@ -216,7 +216,8 @@ public class ConfigurationService {
 		data = new DataConfiguration(properties);
 		assemble = new AssembleConfiguration(properties);
 		opt = new OptConfiguration(properties);
-		workspace = new WorkspaceConfiguration(properties.getWorkspace(), systemCommand, application, exchange, opt);
+		workspace = new WorkspaceConfiguration(properties.getWorkspace(), systemCommand, application, exchange, opt,
+				data, assemble);
 		api = new ApiConfiguration(properties.getApi());
 		temporary = new TemporaryConfiguration(properties.getTemporary());
 	}

@@ -174,8 +174,9 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private List<ServiceProviderResponse> serviceProviders(CoreServiceProviderApiController.Type type,
 			CoreServiceProvider<? extends ServiceProvider> service, String lang) throws ServiceProviderException {
 		final Locale locale = getLocale(lang);
-		final Target target = new Target(configurationService.getExchange().getFolder().normalize(),
-				configurationService.getOpt().getFolder().normalize(), null, null);
+		final Target target = new Target(configurationService.getExchange().getFolder(),
+				configurationService.getOpt().getFolder(), configurationService.getData().getFolder(),
+				configurationService.getAssemble().getFolder(), null, null);
 
 		final List<ServiceProviderResponse> providers = new ArrayList<>();
 		for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders())

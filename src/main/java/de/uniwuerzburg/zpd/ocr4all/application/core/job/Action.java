@@ -29,19 +29,23 @@ public abstract class Action extends Job {
 	/**
 	 * The logger.
 	 */
-	protected static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Action.class);
+	protected final org.slf4j.Logger logger;
 
 	/**
-	 * Creates a process.
+	 * Creates an action.
 	 * 
+	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param locale               The application locale.
 	 * @param processing           The processing mode.
 	 * @param steps                The number of steps. This is a positive number.
 	 * @since 1.8
 	 */
-	Action(ConfigurationService configurationService, Locale locale, Processing processing, int steps) {
+	Action(Class<? extends Action> logger, ConfigurationService configurationService, Locale locale,
+			Processing processing, int steps) {
 		super(configurationService, locale, processing, steps);
+
+		this.logger = org.slf4j.LoggerFactory.getLogger(logger);
 	}
 
 	/*
@@ -62,11 +66,12 @@ public abstract class Action extends Job {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public class Instance<T extends Framework> extends InstanceCore<ProcessorServiceProvider<T>> {
+	public abstract class InstanceAction<C extends ProcessorCore.Callback, F extends Framework>
+			extends InstanceCore<ProcessorServiceProvider<C, F>> {
 		/**
 		 * The processor for the service provider.
 		 */
-		private final ProcessorServiceProvider.Processor<T> processor;
+		private final ProcessorServiceProvider.Processor<C, F> processor;
 
 		/**
 		 * Creates a process instance with initialized state.
@@ -78,8 +83,8 @@ public abstract class Action extends Job {
 		 *                                  the journal argument is missed.
 		 * @since 1.8
 		 */
-		private Instance(ProcessorServiceProvider<T> serviceProvider, ServiceProvider serviceProviderArgument,
-				Journal.Step journal) throws IllegalArgumentException {
+		protected InstanceAction(ProcessorServiceProvider<C, F> serviceProvider,
+				ServiceProvider serviceProviderArgument, Journal.Step journal) throws IllegalArgumentException {
 			super(serviceProvider, serviceProviderArgument, journal);
 
 			processor = this.serviceProvider.newProcessor();
@@ -99,31 +104,5 @@ public abstract class Action extends Job {
 			return locale;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#executeCallback
-		 * ()
-		 */
-		@Override
-		protected void executeCallback() {
-			// TODO Auto-generated method stub
-
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * de.uniwuerzburg.zpd.ocr4all.application.core.job.InstanceCore#cancelCallback(
-		 * )
-		 */
-		@Override
-		protected ProcessorCore cancelCallback() {
-			// TODO Auto-generated method stub
-
-			return processor;
-		}
 	}
 }
