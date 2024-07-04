@@ -35,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifierRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SetResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -70,75 +71,17 @@ public class CollectionSetApiController extends CoreApiController {
 	public static final String contextPath = CollectionApiController.contextPath + setRequestMapping;
 
 	/**
-	 * The collection service.
-	 */
-	private final CollectionService service;
-
-	/**
 	 * Creates a collection set data controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param modelService         The model service.
 	 * @param service              The collection service.
 	 * @since 1.8
 	 */
 	public CollectionSetApiController(ConfigurationService configurationService, SecurityService securityService,
-			CollectionService service) {
-		super(CollectionSetApiController.class, configurationService, securityService);
-
-		this.service = service;
-	}
-
-	/**
-	 * Authorizes the session user for read security operations.
-	 * 
-	 * @param id The collection id.
-	 * @return The authorized collection.
-	 * @throws ResponseStatusException Throw with http status:
-	 *                                 <ul>
-	 *                                 <li>400 (Bad Request): if the collection is
-	 *                                 not available.</li>
-	 *                                 <li>401 (Unauthorized): if the read security
-	 *                                 permission is not achievable by the session
-	 *                                 user.</li>
-	 *                                 </ul>
-	 * @since 1.8
-	 */
-	private CollectionService.Collection authorizeRead(String id) throws ResponseStatusException {
-		CollectionService.Collection collection = service.getCollection(id);
-
-		if (collection == null)
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		else if (!collection.getRight().isReadFulfilled())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-		else
-			return collection;
-	}
-
-	/**
-	 * Authorizes the session user for write security operations.
-	 * 
-	 * @param id The collection id.
-	 * @return The authorized collection.
-	 * @throws ResponseStatusException Throw with http status:
-	 *                                 <ul>
-	 *                                 <li>400 (Bad Request): if the collection is
-	 *                                 not available.</li>
-	 *                                 <li>401 (Unauthorized): if the write security
-	 *                                 permission is not achievable by the session
-	 *                                 user.</li>
-	 *                                 </ul>
-	 * @since 1.8
-	 */
-	private CollectionService.Collection authorizeWrite(String id) throws ResponseStatusException {
-		CollectionService.Collection collection = service.getCollection(id);
-
-		if (collection == null)
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		else if (!collection.getRight().isWriteFulfilled())
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-		else
-			return collection;
+			ModelService modelService, CollectionService service) {
+		super(CollectionSetApiController.class, configurationService, securityService, service, modelService);
 	}
 
 	/**
@@ -160,10 +103,10 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<List<SetResponse>> upload(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> uploaded = service
+			final List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> uploaded = collectionService
 					.store(collection, files);
 
 			if (uploaded == null)
@@ -200,10 +143,10 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<SetResponse> entity(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@Parameter(description = "the set id") @RequestParam String id) {
-		CollectionService.Collection collection = authorizeRead(collectionId);
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = service.getSet(collection, id);
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = collectionService.getSet(collection, id);
 
 			return set == null ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
 					: ResponseEntity.ok().body(new SetResponse(set));
@@ -230,11 +173,12 @@ public class CollectionSetApiController extends CoreApiController {
 	@GetMapping(listRequestMapping + collectionPathVariable)
 	public ResponseEntity<List<SetResponse>> list(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId) {
-		CollectionService.Collection collection = authorizeRead(collectionId);
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : service.getSets(collection))
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
+					.getSets(collection))
 				sets.add(new SetResponse(set));
 
 			return ResponseEntity.ok().body(sets);
@@ -263,12 +207,12 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<List<SetResponse>> sort(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@RequestBody @Valid SetSortRequest request) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : service.sortSets(collection,
-					request.getIds(), request.isAfter()))
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
+					.sortSets(collection, request.getIds(), request.isAfter()))
 				sets.add(new SetResponse(set));
 
 			return ResponseEntity.ok().body(sets);
@@ -297,7 +241,7 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<List<SetResponse>> update(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@RequestBody @Valid SetUpdateRequest request) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
 			List<CollectionService.Metadata> metadata = new ArrayList<>();
@@ -307,8 +251,8 @@ public class CollectionSetApiController extends CoreApiController {
 							new CollectionService.Metadata(update.getId(), update.getName(), update.getKeywords()));
 
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : service.updateSets(collection,
-					metadata))
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
+					.updateSets(collection, metadata))
 				sets.add(new SetResponse(set));
 
 			return ResponseEntity.ok().body(sets);
@@ -337,12 +281,12 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<List<SetResponse>> removeEntity(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@Parameter(description = "the set id") @RequestParam String id) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : service.removeSets(collection,
-					Set.of(id)))
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
+					.removeSets(collection, Set.of(id)))
 				sets.add(new SetResponse(set));
 
 			return ResponseEntity.ok().body(sets);
@@ -371,12 +315,12 @@ public class CollectionSetApiController extends CoreApiController {
 	public ResponseEntity<List<SetResponse>> removeList(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@RequestBody @Valid IdentifiersRequest request) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : service.removeSets(collection,
-					request.getIds()))
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
+					.removeSets(collection, request.getIds()))
 				sets.add(new SetResponse(set));
 
 			return ResponseEntity.ok().body(sets);
@@ -404,10 +348,10 @@ public class CollectionSetApiController extends CoreApiController {
 	public void removeAll(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			HttpServletResponse response) {
-		CollectionService.Collection collection = authorizeWrite(collectionId);
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			service.removeSets(collection, null);
+			collectionService.removeSets(collection, null);
 
 			response.setStatus(HttpServletResponse.SC_OK);
 		} catch (Exception ex) {
@@ -459,10 +403,10 @@ public class CollectionSetApiController extends CoreApiController {
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@Parameter(description = "the set id") @RequestParam String id, HttpServletResponse response)
 			throws IOException {
-		CollectionService.Collection collection = authorizeRead(collectionId);
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
-			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = service.getSet(collection, id);
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = collectionService.getSet(collection, id);
 			if (set == null)
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
@@ -511,7 +455,7 @@ public class CollectionSetApiController extends CoreApiController {
 	public void zip(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			HttpServletResponse response) throws IOException {
-		CollectionService.Collection collection = authorizeRead(collectionId);
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
 			Path folder = collection.getConfiguration().getFolder();
@@ -532,7 +476,7 @@ public class CollectionSetApiController extends CoreApiController {
 					// Ignore configuration folders
 					return !entry.getName().startsWith(".");
 				}
-			}, getZipMetadataFilenameMappingTSV(service.getSets(collection)));
+			}, getZipMetadataFilenameMappingTSV(collectionService.getSets(collection)));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {

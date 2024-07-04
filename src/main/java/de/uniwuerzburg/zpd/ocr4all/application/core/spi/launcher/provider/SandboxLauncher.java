@@ -462,7 +462,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 */
 	@Override
 	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
-		return new CoreProcessorServiceProvider() {
+		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
 			/**
 			 * Persists the mets file.
 			 * 

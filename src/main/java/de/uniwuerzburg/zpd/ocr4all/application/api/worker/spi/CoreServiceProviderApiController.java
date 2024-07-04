@@ -7,16 +7,25 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.web.server.ResponseStatusException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Dataset;
 
 /**
  * Defines process service provider controllers for the api.
@@ -136,25 +145,84 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	/**
 	 * Creates a process service provider controller for the api.
 	 * 
-	 * @param logger                The logger class.
-	 * @param configurationService  The configuration service.
-	 * @param securityService       The security service.
-	 * @param projectService        The project service.
-	 * @param sandboxService        The sandbox service.
-	 * @param schedulerService      The scheduler service.
-	 * @param type                  The type.
-	 * @param service               The service.
+	 * @param logger               The logger class.
+	 * @param configurationService The configuration service.
+	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
+	 * @param projectService       The project service.
+	 * @param sandboxService       The sandbox service.
+	 * @param schedulerService     The scheduler service.
+	 * @param type                 The type.
+	 * @param service              The service.
 	 * @since 17
 	 */
 	protected CoreServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, Type type, S service) {
-		super(logger, configurationService, securityService, projectService, sandboxService);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService, SchedulerService schedulerService, Type type,
+			S service) {
+		super(logger, configurationService, securityService, collectionService, modelService, projectService,
+				sandboxService);
 
 		this.schedulerService = schedulerService;
-		
+
 		this.type = type;
 		this.service = service;
+	}
+
+	/**
+	 * Authorizes the session user for read security operations on data collections.
+	 * 
+	 * @param dataset The dataset. If it is null or no collection are available,
+	 *                then it is authorized.
+	 * @return The authorized dataset. Null if the given dataset is null.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if a collection is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user on a collection.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	protected Dataset authorizeRead(Dataset dataset) throws ResponseStatusException {
+		if (dataset != null)
+			for (Dataset.Collection collection : dataset.getCollections())
+				authorizeCollectionRead(collection.getId());
+
+		return dataset;
+	}
+
+	/**
+	 * Authorizes the session user for read security operations on assemble models.
+	 * 
+	 * @param recognitionModels The recognition models. If it is null or no models
+	 *                          are available, then it is authorized.
+	 * @return The authorized models. Null if the given models is null.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if a model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected List<ModelService.Model> authorizeRead(List<RecognitionModelArgument> recognitionModels)
+			throws ResponseStatusException {
+		if (recognitionModels == null)
+			return null;
+		else {
+			List<ModelService.Model> models = new ArrayList<>();
+			for (RecognitionModelArgument recognitionModel : recognitionModels)
+				if (recognitionModel != null && recognitionModel.getAssembles() != null)
+					for (RecognitionModelArgument.Assemble assemble : recognitionModel.getAssembles())
+						models.add(authorizeModelRead(assemble.getId()));
+
+			return models;
+		}
 	}
 
 	/**

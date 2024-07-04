@@ -35,7 +35,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortReque
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
@@ -79,12 +81,15 @@ public class ContainerFolioApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The container service.
 	 * @since 1.8
 	 */
 	public ContainerFolioApiController(ConfigurationService configurationService, SecurityService securityService,
-			ContainerService service) {
-		super(ContainerFolioApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, ContainerService service) {
+		super(ContainerFolioApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.service = service;
 	}

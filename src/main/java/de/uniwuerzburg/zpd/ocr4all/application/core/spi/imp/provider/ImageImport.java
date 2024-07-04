@@ -257,7 +257,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 */
 	@Override
 	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
-		return new CoreProcessorServiceProvider() {
+		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
 			/**
 			 * The image formats sorted by enumeration order.
 			 */

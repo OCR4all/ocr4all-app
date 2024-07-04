@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
@@ -56,12 +58,14 @@ public class DataSecurityApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The data service.
 	 * @since 1.8
 	 */
 	public DataSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
-			DataService service) {
-		super(DataSecurityApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, DataService service) {
+		super(DataSecurityApiController.class, configurationService, securityService, collectionService, modelService);
 
 		this.service = service;
 	}

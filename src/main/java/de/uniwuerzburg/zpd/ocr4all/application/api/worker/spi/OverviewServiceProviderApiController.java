@@ -25,7 +25,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
@@ -131,6 +133,8 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * 
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param importService         The import service.
 	 * @param launcherService       The launcher service.
 	 * @param preprocessingService  The preprocessing service.
@@ -143,11 +147,13 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ImportService importService, LauncherService launcherService,
-			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
-			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
-			ToolService toolService, ExportService exportService, TrainingService trainingService) {
-		super(OverviewServiceProviderApiController.class, configurationService, securityService);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
+			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
+			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
+			TrainingService trainingService) {
+		super(OverviewServiceProviderApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.importService = importService;
 		this.launcherService = launcherService;

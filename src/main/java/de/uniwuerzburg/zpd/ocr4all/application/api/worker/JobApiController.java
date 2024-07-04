@@ -27,7 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
@@ -166,12 +168,16 @@ public class JobApiController extends CoreApiController {
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param service              The scheduler service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
 	public JobApiController(ConfigurationService configurationService, SecurityService securityService,
-			SchedulerService service, ProjectService projectService) {
-		super(ProjectApiController.class, configurationService, securityService, projectService);
+			CollectionService collectionService, ModelService modelService, SchedulerService service,
+			ProjectService projectService) {
+		super(ProjectApiController.class, configurationService, securityService, collectionService, modelService,
+				projectService);
 
 		this.service = service;
 		this.projectService = projectService;

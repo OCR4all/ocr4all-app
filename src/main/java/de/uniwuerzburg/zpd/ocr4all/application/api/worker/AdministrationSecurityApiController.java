@@ -25,7 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.administration.AdministrationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Group;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Password;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityEntity;
@@ -80,12 +82,16 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The administration service.
 	 * @since 1.8
 	 */
 	public AdministrationSecurityApiController(ConfigurationService configurationService,
-			SecurityService securityService, AdministrationService service) {
-		super(AdministrationSecurityApiController.class, configurationService, securityService);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			AdministrationService service) {
+		super(AdministrationSecurityApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.service = service;
 	}

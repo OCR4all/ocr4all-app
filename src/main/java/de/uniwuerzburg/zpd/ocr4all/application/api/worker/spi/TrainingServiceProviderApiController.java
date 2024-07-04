@@ -31,6 +31,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.AssembleService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Training;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -74,29 +75,24 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 	private final AssembleService assembleService;
 
 	/**
-	 * The model service.
-	 */
-	private final ModelService modelService;
-
-	/**
 	 * Creates a training service provider controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param assembleService      The assemble service.
-	 * @param assembleService      The model service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The service.
 	 * @since 17
 	 */
 	public TrainingServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, AssembleService assembleService, ModelService modelService,
-			SchedulerService schedulerService, TrainingService service) {
-		super(TrainingServiceProviderApiController.class, configurationService, securityService, null, null,
-				schedulerService, Type.training, service);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			AssembleService assembleService, SchedulerService schedulerService, TrainingService service) {
+		super(TrainingServiceProviderApiController.class, configurationService, securityService, collectionService,
+				modelService, null, null, schedulerService, Type.training, service);
 
 		this.assembleService = assembleService;
-		this.modelService = modelService;
 	}
 
 	/**
@@ -184,6 +180,12 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 			if (provider == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
+			Dataset dataset = authorizeRead(request.getDatset());
+			if (dataset == null || dataset.getCollections().isEmpty())
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+			authorizeRead(request.getRecognitionModels());
+			
 			try {
 				// Create the model
 				ModelService.Model model = modelService.create(request.getAssembleModel().getName(),
@@ -191,7 +193,7 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 
 				// Create training job
 				Training training = new Training(configurationService, getLocale(lang),
-						request.getJobShortDescription(), securityService.getUser(), request.getDatset(),
+						request.getJobShortDescription(), securityService.getUser(), dataset,
 						model.getConfiguration().getFolder().getFileName().toString(), provider, request);
 
 				return ResponseEntity.ok()

@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
@@ -63,6 +65,8 @@ public class ExportServiceProviderApiController
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
 	 * @param schedulerService     The scheduler service.
@@ -70,10 +74,12 @@ public class ExportServiceProviderApiController
 	 * @since 1.8
 	 */
 	public ExportServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, ExportService service) {
-		super(ExportServiceProviderApiController.class, configurationService, securityService, projectService,
-				sandboxService, schedulerService, Type.export, service, Project.Right.execute);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService, SchedulerService schedulerService,
+			ExportService service) {
+		super(ExportServiceProviderApiController.class, configurationService, securityService, collectionService,
+				modelService, projectService, sandboxService, schedulerService, Type.export, service,
+				Project.Right.execute);
 	}
 
 	/**

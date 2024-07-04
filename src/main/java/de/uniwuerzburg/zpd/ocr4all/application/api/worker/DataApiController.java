@@ -20,7 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,12 +60,14 @@ public class DataApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The data service.
 	 * @since 1.8
 	 */
 	public DataApiController(ConfigurationService configurationService, SecurityService securityService,
-			DataService service) {
-		super(DataApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, DataService service) {
+		super(DataApiController.class, configurationService, securityService, collectionService, modelService);
 
 		this.service = service;
 	}

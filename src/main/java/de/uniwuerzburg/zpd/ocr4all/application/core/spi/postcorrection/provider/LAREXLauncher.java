@@ -436,7 +436,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 */
 	@Override
 	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
-		return new CoreProcessorServiceProvider() {
+		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
 			/*
 			 * (non-Javadoc)
 			 * 

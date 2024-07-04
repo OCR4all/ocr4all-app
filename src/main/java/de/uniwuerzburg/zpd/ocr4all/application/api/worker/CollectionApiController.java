@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
@@ -59,23 +60,17 @@ public class CollectionApiController extends CoreApiController {
 	public static final String contextPath = DataApiController.contextPath + collectionRequestMapping;
 
 	/**
-	 * The collection service.
-	 */
-	private final CollectionService service;
-
-	/**
 	 * Creates a collection data controller for the api.
 	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param modelService         The model service.
 	 * @param service              The collection service.
 	 * @since 1.8
 	 */
 	public CollectionApiController(ConfigurationService configurationService, SecurityService securityService,
-			CollectionService service) {
-		super(CollectionApiController.class, configurationService, securityService);
-
-		this.service = service;
+			ModelService modelService, CollectionService service) {
+		super(CollectionApiController.class, configurationService, securityService, service, modelService);
 	}
 
 	/**
@@ -94,7 +89,7 @@ public class CollectionApiController extends CoreApiController {
 	public ResponseEntity<CollectionRightResponse> entity(
 			@Parameter(description = "the collection id - this is the folder name") @RequestParam String id) {
 		try {
-			CollectionService.Collection collection = service.getCollection(id);
+			CollectionService.Collection collection = collectionService.getCollection(id);
 
 			return collection == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
 					: ResponseEntity.ok().body(new CollectionRightResponse(collection));
@@ -121,7 +116,7 @@ public class CollectionApiController extends CoreApiController {
 	public ResponseEntity<List<CollectionRightResponse>> list() {
 		try {
 			List<CollectionRightResponse> collections = new ArrayList<>();
-			for (CollectionService.Collection collection : service.getCollections())
+			for (CollectionService.Collection collection : collectionService.getCollections())
 				collections.add(new CollectionRightResponse(collection));
 
 			return ResponseEntity.ok().body(collections);
@@ -148,12 +143,12 @@ public class CollectionApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(createRequestMapping)
 	public ResponseEntity<CollectionResponse> create(@RequestBody @Valid CollectionRequest request) {
-		if (!service.isCreate())
+		if (!collectionService.isCreate())
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		else
 			try {
-				CollectionService.Collection collection = service.create(request.getName(), request.getDescription(),
-						request.getKeywords());
+				CollectionService.Collection collection = collectionService.create(request.getName(),
+						request.getDescription(), request.getKeywords());
 
 				return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
 						: ResponseEntity.ok().body(new CollectionResponse(collection));
@@ -180,7 +175,7 @@ public class CollectionApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	private CollectionService.Collection authorizeSpecial(String id) throws ResponseStatusException {
-		CollectionService.Collection collection = service.getCollection(id);
+		CollectionService.Collection collection = collectionService.getCollection(id);
 
 		if (collection == null)
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -210,7 +205,7 @@ public class CollectionApiController extends CoreApiController {
 		authorizeSpecial(id);
 
 		try {
-			if (service.remove(id))
+			if (collectionService.remove(id))
 				response.setStatus(HttpServletResponse.SC_OK);
 			else
 				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -245,8 +240,8 @@ public class CollectionApiController extends CoreApiController {
 		authorizeSpecial(id);
 
 		try {
-			CollectionService.Collection collection = service.update(id, request.getName(), request.getDescription(),
-					request.getKeywords());
+			CollectionService.Collection collection = collectionService.update(id, request.getName(),
+					request.getDescription(), request.getKeywords());
 
 			return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
 					: ResponseEntity.ok().body(new CollectionResponse(collection));
@@ -296,7 +291,7 @@ public class CollectionApiController extends CoreApiController {
 		authorizeSpecial(id);
 
 		try {
-			CollectionService.Collection collection = service.update(id, request);
+			CollectionService.Collection collection = collectionService.update(id, request);
 
 			return collection == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
 					: ResponseEntity.ok().body(new CollectionSecurityResponse(collection));

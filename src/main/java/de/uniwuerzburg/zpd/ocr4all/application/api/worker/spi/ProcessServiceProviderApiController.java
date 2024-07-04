@@ -23,7 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Task;
@@ -64,6 +66,8 @@ public class ProcessServiceProviderApiController<P extends ProcessorServiceProvi
 	 * @param logger                The logger class.
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param projectService        The project service.
 	 * @param sandboxService        The sandbox service.
 	 * @param schedulerService      The scheduler service.
@@ -73,10 +77,11 @@ public class ProcessServiceProviderApiController<P extends ProcessorServiceProvi
 	 * @since 17
 	 */
 	protected ProcessServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, Type type, S service, Project.Right... requiredProjectRights) {
-		super(logger, configurationService, securityService, projectService, sandboxService, schedulerService, type,
-				service);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService, SchedulerService schedulerService, Type type,
+			S service, Project.Right... requiredProjectRights) {
+		super(logger, configurationService, securityService, collectionService, modelService, projectService,
+				sandboxService, schedulerService, type, service);
 
 		this.requiredProjectRights = requiredProjectRights;
 	}
@@ -199,6 +204,8 @@ public class ProcessServiceProviderApiController<P extends ProcessorServiceProvi
 			HttpServletResponse response) throws ResponseStatusException {
 		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
+		
+		authorizeRead(request.getRecognitionModels());
 
 		try {
 			final P provider = service.getActiveProvider(request.getId());
