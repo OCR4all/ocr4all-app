@@ -26,6 +26,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.Model
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.ModelConfiguration.Configuration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 
 /**
@@ -195,28 +196,19 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * Returns the readable models sorted by name.
+	 * Returns the available models sorted by name.
 	 * 
+	 * @param filter The filter.
 	 * @return The models.
 	 * @since 1.8
 	 */
-	public List<Model> getReadableModels() {
+	public List<Model> getAvailableModels(ModelFilter filter) {
 		List<Model> models = new ArrayList<>();
-		
-		// TODO: continue
 
-		try {
-			Files.list(ModelService.this.folder).filter(Files::isDirectory).forEach(path -> {
-				// Ignore directories beginning with a dot
-				if (!path.getFileName().toString().startsWith("."))
-					models.add(getModel(path));
-			});
-		} catch (IOException e) {
-			logger.warn("Cannot not load models - " + e.getMessage());
-		}
-
-		Collections.sort(models, (p1, p2) -> p1.getConfiguration().getConfiguration().getName()
-				.compareToIgnoreCase(p2.getConfiguration().getConfiguration().getName()));
+		// TODO: use filter
+		for (Model model : getModels())
+			if (model.getRight().isReadFulfilled())
+				models.add(model);
 
 		return models;
 	}
@@ -357,4 +349,111 @@ public class ModelService extends CoreService {
 		}
 
 	}
+
+	/**
+	 * Defines filters for models.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class ModelFilter {
+		/**
+		 * The engine type.
+		 */
+		private final Engine.Type type;
+
+		/**
+		 * The engine state.
+		 */
+		private final Engine.State state;
+
+		/**
+		 * The minimum version.
+		 */
+		private final String minimumVersion;
+
+		/**
+		 * The maximum version.
+		 */
+		private final String maximumVersion;
+
+		/**
+		 * The suffix for the model file names.
+		 */
+		private final String suffix;
+
+		/**
+		 * Creates a filter for models.
+		 * 
+		 * @param type           The engine type.
+		 * @param state          The state.
+		 * @param minimumVersion The minimum version.
+		 * @param maximumVersion The maximum version.
+		 * @param suffix         The suffix for the model file names.
+		 * @since 17
+		 */
+		public ModelFilter(Engine.Type type, Engine.State state, String minimumVersion, String maximumVersion,
+				String suffix) {
+			super();
+
+			this.type = type;
+			this.state = state;
+			this.minimumVersion = minimumVersion;
+			this.maximumVersion = maximumVersion;
+			this.suffix = suffix;
+		}
+
+		/**
+		 * Returns the engine type.
+		 *
+		 * @return The engine type.
+		 * @since 17
+		 */
+		public Engine.Type getType() {
+			return type;
+		}
+
+		/**
+		 * Returns the engine state.
+		 *
+		 * @return The engine state.
+		 * @since 17
+		 */
+		public Engine.State getState() {
+			return state;
+		}
+
+		/**
+		 * Returns the minimum version.
+		 *
+		 * @return The minimum version.
+		 * @since 17
+		 */
+		public String getMinimumVersion() {
+			return minimumVersion;
+		}
+
+		/**
+		 * Returns the maximum version.
+		 *
+		 * @return The maximum version.
+		 * @since 17
+		 */
+		public String getMaximumVersion() {
+			return maximumVersion;
+		}
+
+		/**
+		 * Returns the suffix for the model file names.
+		 *
+		 * @return The suffix for the model file names.
+		 * @since 17
+		 */
+		public String getSuffix() {
+			return suffix;
+		}
+
+	}
+
 }
