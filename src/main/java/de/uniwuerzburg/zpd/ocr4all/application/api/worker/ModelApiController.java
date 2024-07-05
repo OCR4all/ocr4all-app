@@ -24,12 +24,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.ModelConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -119,6 +122,38 @@ public class ModelApiController extends CoreApiController {
 				models.add(new ModelRightResponse(model));
 
 			return ResponseEntity.ok().body(models);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the available models sorted by name with desired files in the
+	 * response body.
+	 *
+	 * @param request The available model request.
+	 * @return The available models sorted by name with desired files in the
+	 *         response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the available models sorted by name with desired files in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Available Models", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ModelFileResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(availableRequestMapping)
+	public ResponseEntity<List<ModelFileResponse>> available(@RequestBody AvailableModelRequest request) {
+		try {
+			List<ModelFileResponse> modelFiles = new ArrayList<>();
+			for (ModelService.ModelFile modelFile : modelService.getAvailableModels(
+					request == null ? null
+							: new ModelService.ModelFilter(request.getType(), request.getState(),
+									request.getMinimumVersion(), request.getMaximumVersion()),
+					request == null ? null : request.getFilenameSuffix()))
+				modelFiles.add(new ModelFileResponse(modelFile));
+
+			return ResponseEntity.ok().body(modelFiles);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -371,6 +406,146 @@ public class ModelApiController extends CoreApiController {
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
+
+	}
+
+	/**
+	 * Defines available model requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class AvailableModelRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The engine type.
+		 */
+		private Engine.Type type;
+
+		/**
+		 * The engine state.
+		 */
+		private Engine.State state;
+
+		/**
+		 * The minimum version.
+		 */
+		private String minimumVersion;
+
+		/**
+		 * The maximum version.
+		 */
+		private String maximumVersion;
+
+		/**
+		 * The suffix for the model file names to return.
+		 */
+		private String filenameSuffix;
+
+		/**
+		 * Returns the engine type.
+		 *
+		 * @return The engine type.
+		 * @since 17
+		 */
+		public Engine.Type getType() {
+			return type;
+		}
+
+		/**
+		 * Set the engine type.
+		 *
+		 * @param type The engine type to set.
+		 * @since 17
+		 */
+		public void setType(Engine.Type type) {
+			this.type = type;
+		}
+
+		/**
+		 * Returns the engine state.
+		 *
+		 * @return The engine state.
+		 * @since 17
+		 */
+		public Engine.State getState() {
+			return state;
+		}
+
+		/**
+		 * Set the engine state.
+		 *
+		 * @param state The engine state to set.
+		 * @since 17
+		 */
+		public void setState(Engine.State state) {
+			this.state = state;
+		}
+
+		/**
+		 * Returns the minimum version.
+		 *
+		 * @return The minimum version.
+		 * @since 17
+		 */
+		public String getMinimumVersion() {
+			return minimumVersion;
+		}
+
+		/**
+		 * Set the minimum version.
+		 *
+		 * @param minimumVersion The minimum version to set.
+		 * @since 17
+		 */
+		public void setMinimumVersion(String minimumVersion) {
+			this.minimumVersion = minimumVersion;
+		}
+
+		/**
+		 * Returns the maximum version.
+		 *
+		 * @return The maximum version.
+		 * @since 17
+		 */
+		public String getMaximumVersion() {
+			return maximumVersion;
+		}
+
+		/**
+		 * Set the maximum version.
+		 *
+		 * @param maximumVersion The maximum version to set.
+		 * @since 17
+		 */
+		public void setMaximumVersion(String maximumVersion) {
+			this.maximumVersion = maximumVersion;
+		}
+
+		/**
+		 * Returns the suffix for the model file names to return.
+		 *
+		 * @return The suffix for the model file names to return.
+		 * @since 17
+		 */
+		public String getFilenameSuffix() {
+			return filenameSuffix;
+		}
+
+		/**
+		 * Set the suffix for the model file names to return.
+		 *
+		 * @param filenameSuffix The suffix to set.
+		 * @since 17
+		 */
+		public void setFilenameSuffix(String filenameSuffix) {
+			this.filenameSuffix = filenameSuffix;
+		}
 
 	}
 
@@ -818,6 +993,49 @@ public class ModelApiController extends CoreApiController {
 		 */
 		public void setRight(SecurityGrant.Right right) {
 			this.right = right;
+		}
+
+	}
+
+	/**
+	 * Defines available model with right responses for the api without security.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ModelFileResponse extends ModelRightResponse {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The file names.
+		 */
+		@JsonProperty("file-names")
+		private final List<String> filenames;
+
+		/**
+		 * Creates an available model with right response for the api without security.
+		 *
+		 * @param model The model.
+		 * @since 1.8
+		 */
+		public ModelFileResponse(ModelService.ModelFile modelFile) {
+			super(modelFile);
+
+			filenames = modelFile.getFilenames();
+		}
+
+		/**
+		 * Returns the filenames.
+		 *
+		 * @return The filenames.
+		 * @since 17
+		 */
+		public List<String> getFilenames() {
+			return filenames;
 		}
 
 	}

@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
@@ -196,21 +197,84 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * Returns the available models sorted by name.
+	 * Returns the available models sorted by name, this means, the models for which
+	 * the user has read rights.
 	 * 
-	 * @param filter The filter.
-	 * @return The models.
+	 * @param filter         The filter. If null, no filter is applied.
+	 * @param filenameSuffix The suffix for the model file names to return. If
+	 *                       empty, do not return them.
+	 * @return The models with the desired file names.
 	 * @since 1.8
 	 */
-	public List<Model> getAvailableModels(ModelFilter filter) {
-		List<Model> models = new ArrayList<>();
+	public List<ModelFile> getAvailableModels(ModelFilter filter, String filenameSuffix) {
+		List<ModelFile> modelFiles = new ArrayList<>();
 
-		// TODO: use filter
+		// The suffix for the model file names
+		final String sufix = filenameSuffix == null || filenameSuffix.isBlank() ? null : filenameSuffix.trim();
+
+		// The version filter
+		ComparableVersion minimumVersion = null, maximumVersion = null;
+		if (filter != null) {
+			if (!filter.isTypeSet() && !filter.isStateSet() && !filter.isMinimumVersionSet() && !filter.isMaximumVersionSet())
+				filter = null;
+			else {
+				if (filter.isMinimumVersionSet()) 
+					minimumVersion = new ComparableVersion(filter.getMinimumVersion());
+
+				if (filter.isMaximumVersionSet())
+					maximumVersion = new ComparableVersion(filter.getMaximumVersion());
+
+			}
+
+		}
+
+		// Select the models
 		for (Model model : getModels())
-			if (model.getRight().isReadFulfilled())
-				models.add(model);
+			if (model.getRight().isReadFulfilled()) {
+				if (filter != null) {
+					if (!model.getConfiguration().getConfiguration().isEngineConfigurationAvailable())
+						break;
+					
+					Engine engine = model.getConfiguration().getConfiguration().getEngineConfiguration();
+					
+					if (filter.isTypeSet() && !filter.getType().equals(engine.getType()))
+						break;
+					
+					if (filter.isStateSet() && !filter.getState().equals(engine.getState()))
+						break;
+					
+					if (filter.isMinimumVersionSet() || filter.isMaximumVersionSet()) {
+						if (engine.getVersion() == null || engine.getVersion().isBlank())
+							break;
+						
+						ComparableVersion version = new ComparableVersion(engine.getVersion().trim());
+						
+						if (minimumVersion != null && minimumVersion.compareTo(version) > 0)
+							break;
+							
+						if (maximumVersion != null && maximumVersion.compareTo(version) < 0)
+							break;
+					}
+				}
 
-		return models;
+				List<String> filenames = new ArrayList<>();				
+				if (sufix != null)
+					try {
+						Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile).forEach(path -> {
+							String filename = path.getFileName().toString();
+							
+							// Ignore file names beginning with a dot and not ending with desired filename suffix
+							if (!filename.startsWith(".") && filename.endsWith(sufix))
+								filenames.add(filename);
+						});
+					} catch (IOException e) {
+						logger.warn("Cannot not read model files - " + e.getMessage());
+					}
+
+				modelFiles.add(new ModelFile(model, filenames));
+			}
+
+		return modelFiles;
 	}
 
 	/**
@@ -297,7 +361,7 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * Model is an immutable class that defines collections.
+	 * Model is an immutable class that defines models.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
@@ -315,7 +379,7 @@ public class ModelService extends CoreService {
 		private final ModelConfiguration configuration;
 
 		/**
-		 * Creates a collection.
+		 * Creates a model.
 		 * 
 		 * @param right         The right.
 		 * @param configuration The configuration.
@@ -351,6 +415,44 @@ public class ModelService extends CoreService {
 	}
 
 	/**
+	 * ModelFile is an immutable class that defines models with file names.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ModelFile extends Model {
+		/**
+		 * The file names.
+		 */
+		private final List<String> filenames;
+
+		/**
+		 * Creates a model with file names.
+		 * 
+		 * @param model     The model.
+		 * @param filenames The file names.
+		 * @since 17
+		 */
+		public ModelFile(Model model, List<String> filenames) {
+			super(model.getRight(), model.getConfiguration());
+
+			this.filenames = filenames;
+		}
+
+		/**
+		 * Returns the file names.
+		 *
+		 * @return The file names.
+		 * @since 17
+		 */
+		public List<String> getFilenames() {
+			return filenames;
+		}
+
+	}
+
+	/**
 	 * Defines filters for models.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -379,29 +481,31 @@ public class ModelService extends CoreService {
 		private final String maximumVersion;
 
 		/**
-		 * The suffix for the model file names.
-		 */
-		private final String suffix;
-
-		/**
 		 * Creates a filter for models.
 		 * 
 		 * @param type           The engine type.
 		 * @param state          The state.
 		 * @param minimumVersion The minimum version.
 		 * @param maximumVersion The maximum version.
-		 * @param suffix         The suffix for the model file names.
 		 * @since 17
 		 */
-		public ModelFilter(Engine.Type type, Engine.State state, String minimumVersion, String maximumVersion,
-				String suffix) {
+		public ModelFilter(Engine.Type type, Engine.State state, String minimumVersion, String maximumVersion) {
 			super();
 
 			this.type = type;
 			this.state = state;
-			this.minimumVersion = minimumVersion;
-			this.maximumVersion = maximumVersion;
-			this.suffix = suffix;
+			this.minimumVersion = minimumVersion == null || minimumVersion.isBlank() ? null : minimumVersion.trim();
+			this.maximumVersion = maximumVersion == null || maximumVersion.isBlank() ? null : maximumVersion.trim();
+		}
+
+		/**
+		 * Returns true if the engine type is set.
+		 *
+		 * @return True if the engine type is set.
+		 * @since 17
+		 */
+		public boolean isTypeSet() {
+			return type != null;
 		}
 
 		/**
@@ -415,6 +519,16 @@ public class ModelService extends CoreService {
 		}
 
 		/**
+		 * Returns true if the engine state is set.
+		 *
+		 * @return rue if the engine state is set.
+		 * @since 17
+		 */
+		public boolean isStateSet() {
+			return state != null;
+		}
+
+		/**
 		 * Returns the engine state.
 		 *
 		 * @return The engine state.
@@ -422,6 +536,16 @@ public class ModelService extends CoreService {
 		 */
 		public Engine.State getState() {
 			return state;
+		}
+
+		/**
+		 * Returns true if the minimum version is set.
+		 *
+		 * @return True if the minimum version is set.
+		 * @since 17
+		 */
+		public boolean isMinimumVersionSet() {
+			return minimumVersion != null;
 		}
 
 		/**
@@ -435,6 +559,16 @@ public class ModelService extends CoreService {
 		}
 
 		/**
+		 * Returns true if the maximum version is set.
+		 *
+		 * @return True if the maximum version is set.
+		 * @since 17
+		 */
+		public boolean isMaximumVersionSet() {
+			return maximumVersion != null;
+		}
+
+		/**
 		 * Returns the maximum version.
 		 *
 		 * @return The maximum version.
@@ -442,16 +576,6 @@ public class ModelService extends CoreService {
 		 */
 		public String getMaximumVersion() {
 			return maximumVersion;
-		}
-
-		/**
-		 * Returns the suffix for the model file names.
-		 *
-		 * @return The suffix for the model file names.
-		 * @since 17
-		 */
-		public String getSuffix() {
-			return suffix;
 		}
 
 	}

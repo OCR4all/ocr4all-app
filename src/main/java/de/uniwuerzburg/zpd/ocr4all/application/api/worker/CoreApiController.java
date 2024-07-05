@@ -75,6 +75,11 @@ public class CoreApiController {
 	public static final String listRequestMapping = "/list";
 
 	/**
+	 * The available request mapping.
+	 */
+	public static final String availableRequestMapping = "/available";
+
+	/**
 	 * The information request mapping.
 	 */
 	public static final String informationRequestMapping = "/information";
