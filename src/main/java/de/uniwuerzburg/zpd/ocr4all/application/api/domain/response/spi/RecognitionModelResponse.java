@@ -52,6 +52,11 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	private boolean isMultipleModels;
 
 	/**
+	 * The suffix for the model file names.
+	 */
+	private String suffix;
+
+	/**
 	 * Creates a recognition model response for the api.
 	 * 
 	 * @param locale                The locale.
@@ -65,6 +70,7 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 		minimumVersion = recognitionModelField.getMinimumVersion().orElse(null);
 		maximumVersion = recognitionModelField.getMaximumVersion().orElse(null);
 		isMultipleModels = recognitionModelField.isMultipleModels();
+		suffix = recognitionModelField.getSuffix();
 	}
 
 	/**
@@ -146,6 +152,26 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	 */
 	public void setMultipleModels(boolean isMultipleModels) {
 		this.isMultipleModels = isMultipleModels;
+	}
+
+	/**
+	 * Returns the suffix for the model file names.
+	 *
+	 * @return The suffix for the model file names.
+	 * @since 17
+	 */
+	public String getSuffix() {
+		return suffix;
+	}
+
+	/**
+	 * Set the suffix for the model file names.
+	 *
+	 * @param suffix The suffix to set.
+	 * @since 17
+	 */
+	public void setSuffix(String suffix) {
+		this.suffix = suffix;
 	}
 
 }

@@ -1,9 +1,9 @@
 /**
- * File:     DataSecurityApiController.java
+ * File:     AssembleSecurityApiController.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.worker
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     29.05.2024
+ * Date:     05.07.2024
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
@@ -21,7 +21,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.AssembleService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,40 +32,41 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Defines data security controllers for the api.
+ * Defines assemble security controllers for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 17
  */
 @Profile("api & server")
-@Tag(name = "data security", description = "the data security API")
+@Tag(name = "assemble security", description = "the assemble security API")
 @RestController
-@RequestMapping(path = DataSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
-public class DataSecurityApiController extends CoreApiController {
+@RequestMapping(path = AssembleSecurityApiController.contextPath, produces = CoreApiController.applicationJson)
+public class AssembleSecurityApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = DataApiController.contextPath + securityRequestMapping;
+	public static final String contextPath = AssembleApiController.contextPath + securityRequestMapping;
 
 	/**
-	 * The data service.
+	 * The assemble service.
 	 */
-	private final DataService service;
+	private final AssembleService service;
 
 	/**
-	 * Creates a data security controller for the api.
+	 * Creates an assemble security controller for the api.
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param collectionService    The collection service.
 	 * @param modelService         The model service.
-	 * @param service              The data service.
+	 * @param service              The assemble service.
 	 * @since 17
 	 */
-	public DataSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
-			CollectionService collectionService, ModelService modelService, DataService service) {
-		super(DataSecurityApiController.class, configurationService, securityService, collectionService, modelService);
+	public AssembleSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
+			CollectionService collectionService, ModelService modelService, AssembleService service) {
+		super(AssembleSecurityApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.service = service;
 	}
@@ -84,22 +85,22 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the data security in the response body.
+	 * Returns the assemble security in the response body.
 	 * 
-	 * @return The data security in the response body.
+	 * @return The assemble security in the response body.
 	 * @since 17
 	 */
-	@Operation(summary = "returns the data security in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Data Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
+	@Operation(summary = "returns the assemble security in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Assemble Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AssembleSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(informationRequestMapping)
-	public ResponseEntity<DataSecurityResponse> information() {
+	public ResponseEntity<AssembleSecurityResponse> information() {
 		authorize();
 
 		try {
-			return ResponseEntity.ok().body(new DataSecurityResponse(service));
+			return ResponseEntity.ok().body(new AssembleSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -108,20 +109,20 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Updates the data security and returns it in the response body.
+	 * Updates the assemble security and returns it in the response body.
 	 * 
-	 * @param request The data security request.
-	 * @return The updated data security in the response body.
+	 * @param request The assemble security request.
+	 * @return The updated assemble security in the response body.
 	 * @since 17
 	 */
-	@Operation(summary = "updates the data security and returns it in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Data Security", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
+	@Operation(summary = "updates the assemble security and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Assemble Security", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AssembleSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
-	public ResponseEntity<DataSecurityResponse> update(@RequestBody DataSecurityRequest request) {
+	public ResponseEntity<AssembleSecurityResponse> update(@RequestBody AssembleSecurityRequest request) {
 		authorize();
 
 		if (request == null)
@@ -130,7 +131,7 @@ public class DataSecurityApiController extends CoreApiController {
 			try {
 				service.update(request);
 
-				return ResponseEntity.ok().body(new DataSecurityResponse(service));
+				return ResponseEntity.ok().body(new AssembleSecurityResponse(service));
 			} catch (Exception ex) {
 				log(ex);
 
@@ -140,24 +141,24 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Secures the data.
+	 * Secures the assemble.
 	 * 
-	 * @return The data security in the response body.
+	 * @return The assemble security in the response body.
 	 * @since 17
 	 */
-	@Operation(summary = "secures the data")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Secures Data", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
+	@Operation(summary = "secures the assemble")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Secures Assemble", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AssembleSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(secureRequestMapping)
-	public ResponseEntity<DataSecurityResponse> secure() {
+	public ResponseEntity<AssembleSecurityResponse> secure() {
 		authorize();
 
 		try {
 			service.secure(true);
 
-			return ResponseEntity.ok().body(new DataSecurityResponse(service));
+			return ResponseEntity.ok().body(new AssembleSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -166,24 +167,24 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Unsecures the data.
+	 * Unsecures the assemble.
 	 * 
-	 * @return The data security in the response body.
+	 * @return The assemble security in the response body.
 	 * @since 17
 	 */
-	@Operation(summary = "unsecures the data")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unsecures Data", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = DataSecurityResponse.class)) }),
+	@Operation(summary = "unsecures the assemble")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unsecures Assemble", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = AssembleSecurityResponse.class)) }),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(unsecureRequestMapping)
-	public ResponseEntity<DataSecurityResponse> unsecure() {
+	public ResponseEntity<AssembleSecurityResponse> unsecure() {
 		authorize();
 
 		try {
 			service.secure(false);
 
-			return ResponseEntity.ok().body(new DataSecurityResponse(service));
+			return ResponseEntity.ok().body(new AssembleSecurityResponse(service));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -192,13 +193,13 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines data security responses for the api.
+	 * Defines assemble security responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class DataSecurityResponse extends SecurityOwner {
+	public static class AssembleSecurityResponse extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */
@@ -210,12 +211,12 @@ public class DataSecurityApiController extends CoreApiController {
 		private TrackingResponse tracking;
 
 		/**
-		 * Creates a data security response for the api.
+		 * Creates a assemble security response for the api.
 		 * 
-		 * @param service The data service.
+		 * @param service The assemble service.
 		 * @since 17
 		 */
-		public DataSecurityResponse(DataService service) {
+		public AssembleSecurityResponse(AssembleService service) {
 			super(service.getSecurity().isSecured(), service.getSecurity().getUsers(),
 					service.getSecurity().getGroups());
 
@@ -245,13 +246,13 @@ public class DataSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines data security requests for the api.
+	 * Defines assemble security requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class DataSecurityRequest extends SecurityOwner {
+	public static class AssembleSecurityRequest extends SecurityOwner {
 		/**
 		 * The serial version UID.
 		 */

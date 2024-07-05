@@ -64,13 +64,13 @@ public class CollectionApiController extends CoreApiController {
 	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
 	 * @param modelService         The model service.
-	 * @param service              The collection service.
 	 * @since 1.8
 	 */
 	public CollectionApiController(ConfigurationService configurationService, SecurityService securityService,
-			ModelService modelService, CollectionService service) {
-		super(CollectionApiController.class, configurationService, securityService, service, modelService);
+			CollectionService collectionService, ModelService modelService) {
+		super(CollectionApiController.class, configurationService, securityService, collectionService, modelService);
 	}
 
 	/**

@@ -260,6 +260,11 @@ public class CoreApiController {
 	public static final String collectionRequestMapping = "/collection";
 
 	/**
+	 * The model request mapping.
+	 */
+	public static final String modelRequestMapping = "/model";
+
+	/**
 	 * The set request mapping.
 	 */
 	public static final String setRequestMapping = "/set";
