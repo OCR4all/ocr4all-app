@@ -195,6 +195,33 @@ public class ModelService extends CoreService {
 	}
 
 	/**
+	 * Returns the readable models sorted by name.
+	 * 
+	 * @return The models.
+	 * @since 1.8
+	 */
+	public List<Model> getReadableModels() {
+		List<Model> models = new ArrayList<>();
+		
+		// TODO: continue
+
+		try {
+			Files.list(ModelService.this.folder).filter(Files::isDirectory).forEach(path -> {
+				// Ignore directories beginning with a dot
+				if (!path.getFileName().toString().startsWith("."))
+					models.add(getModel(path));
+			});
+		} catch (IOException e) {
+			logger.warn("Cannot not load models - " + e.getMessage());
+		}
+
+		Collections.sort(models, (p1, p2) -> p1.getConfiguration().getConfiguration().getName()
+				.compareToIgnoreCase(p2.getConfiguration().getConfiguration().getName()));
+
+		return models;
+	}
+
+	/**
 	 * Removes the model if the special right is fulfilled.
 	 * 
 	 * @param uuid The model uuid.
@@ -204,27 +231,32 @@ public class ModelService extends CoreService {
 	public boolean remove(String uuid) {
 		Path path = getPath(uuid);
 
-		// TODO: test if engine is running!!!
 		if (path != null && getModel(path).getRight().isSpecialFulfilled()) {
-			try {
-				Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+			Model model = getModel(path);
 
-				if (!Files.exists(path)) {
-					logger.info("Removed model '" + path.toString() + "'.");
+			if (model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
+					&& !model.getConfiguration().getConfiguration().getEngineConfiguration().getState().isDone())
+				logger.warn("Cannot remove model '" + uuid + "', since the training engine is running.");
+			else
+				try {
+					Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 
-					return true;
-				} else
-					logger.warn("Troubles removing the model '" + path.toString() + "'.");
-			} catch (Exception e) {
-				logger.warn("Cannot remove model '" + path.toString() + "' - " + e.getMessage() + ".");
-			}
+					if (!Files.exists(path)) {
+						logger.info("Removed model '" + path.toString() + "'.");
+
+						return true;
+					} else
+						logger.warn("Troubles removing the model '" + path.toString() + "'.");
+				} catch (Exception e) {
+					logger.warn("Cannot remove model '" + path.toString() + "' - " + e.getMessage() + ".");
+				}
 		} else {
 			logger.warn("Cannot remove model '" + uuid + "'.");
 		}
 
 		return false;
 	}
-	
+
 	/**
 	 * Updates a model.
 	 * 
