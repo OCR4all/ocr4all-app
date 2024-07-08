@@ -39,6 +39,11 @@ public class ContainerConfiguration extends CoreFolder {
 	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ContainerConfiguration.class);
 
 	/**
+	 * The id.
+	 */
+	private final String id;
+
+	/**
 	 * The configuration.
 	 */
 	private final Configuration configuration;
@@ -72,8 +77,20 @@ public class ContainerConfiguration extends CoreFolder {
 	public ContainerConfiguration(Container properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
+		id = folder == null || !Files.isDirectory(folder) ? null : folder.getFileName().toString();
+
 		configuration = new Configuration(properties.getConfiguration(), coreData);
 		images = new Images(properties);
+	}
+
+	/**
+	 * Returns the id.
+	 *
+	 * @return The id.
+	 * @since 17
+	 */
+	public String getId() {
+		return id;
 	}
 
 	/**

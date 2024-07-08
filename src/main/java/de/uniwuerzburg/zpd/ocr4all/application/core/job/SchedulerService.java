@@ -695,17 +695,20 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public Container getJobs() {
-		return getJobs(null);
+		return getJobs(null, null);
 	}
 
 	/**
 	 * Returns the jobs that are associated to the given clusters.
 	 * 
-	 * @param clusters The clusters. If null, all jobs are returned in the snapshot.
+	 * @param clusters         The clusters. If null, all jobs are returned in the
+	 *                         snapshot.
+	 * @param trainingModelIds The training jobs to add, that are running on the
+	 *                         given assemble model ids.
 	 * @return The jobs that are associated to the given clusters.
 	 * @since 1.8
 	 */
-	public Container getJobs(Collection<Job.Cluster> clusters) {
+	public Container getJobs(Collection<Job.Cluster> clusters, Set<String> trainingModelIds) {
 		// Filter target jobs
 		Set<Job> jobs;
 		if (clusters == null)
@@ -715,23 +718,30 @@ public class SchedulerService extends CoreService {
 			for (Job.Cluster cluster : clusters)
 				if (cluster != null)
 					jobs.addAll(associated(cluster));
+
+			if (trainingModelIds != null && !trainingModelIds.isEmpty())
+				for (Job job : this.jobs.values())
+					if (job instanceof Training training)
+						if (trainingModelIds.contains(training.getModelId()))
+							jobs.add(job);
 		}
 
-		// Add scheduled target jobs to the snapshot in the same order
-		Container snapshot = new Container();
+		// Add scheduled target jobs to the container in the same order
+		Container container = new Container();
 		for (Job job : scheduled)
 			if (jobs.remove(job))
-				snapshot.getScheduled().add(job);
+				container.getScheduled().add(job);
 
 		// Adds running and completed target jobs to the snapshot and sorts them.
 		for (Job job : jobs)
 			if (job.isStateRunning())
-				snapshot.getRunning().add(job);
+				container.getRunning().add(job);
 			else
-				snapshot.getDone().add(job);
-		snapshot.sort();
+				container.getDone().add(job);
 
-		return snapshot;
+		container.sort();
+
+		return container;
 	}
 
 	/**

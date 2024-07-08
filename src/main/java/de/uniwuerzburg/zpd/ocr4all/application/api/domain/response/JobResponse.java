@@ -17,6 +17,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Task;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Training;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Workflow;
 
 /**
  * Defines job responses for the api.
@@ -30,6 +33,17 @@ public class JobResponse implements Serializable {
 	 * The serial version UID.
 	 */
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Defines types.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public enum Type {
+		task, workflow, training, unknown
+	}
 
 	/**
 	 * The id.
@@ -85,6 +99,12 @@ public class JobResponse implements Serializable {
 	private ProcessResponse process;
 
 	/**
+	 * The action specific data.
+	 */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private ActionResponse action;
+
+	/**
 	 * Creates a job response for the api.
 	 * 
 	 * @param job The job.
@@ -103,8 +123,9 @@ public class JobResponse implements Serializable {
 		journal = new JournalResponse(job.getJournal());
 		description = job.getShortDescription();
 
-		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process p
-				? new ProcessResponse(p)
+		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process p ? new ProcessResponse(p)
+				: null;
+		action = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Action p ? new ActionResponse(p)
 				: null;
 	}
 
@@ -311,6 +332,26 @@ public class JobResponse implements Serializable {
 	}
 
 	/**
+	 * Returns the action.
+	 *
+	 * @return The action.
+	 * @since 17
+	 */
+	public ActionResponse getAction() {
+		return action;
+	}
+
+	/**
+	 * Set the action.
+	 *
+	 * @param action The action to set.
+	 * @since 17
+	 */
+	public void setAction(ActionResponse action) {
+		this.action = action;
+	}
+
+	/**
 	 * Defines process responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -322,6 +363,11 @@ public class JobResponse implements Serializable {
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The type.
+		 */
+		private Type type;
 
 		/**
 		 * The project id.
@@ -337,6 +383,11 @@ public class JobResponse implements Serializable {
 		private String idSandbox;
 
 		/**
+		 * The track. Null if not available.
+		 */
+		private List<Integer> track;
+
+		/**
 		 * Creates a process response for the api.
 		 * 
 		 * @param process The process.
@@ -345,8 +396,37 @@ public class JobResponse implements Serializable {
 		public ProcessResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.Process process) {
 			super();
 
+			if (process instanceof Task)
+				type = Type.task;
+			else if (process instanceof Workflow)
+				type = Type.workflow;
+			else
+				type = Type.unknown;
+
 			idPproject = process.getProject().getId();
 			idSandbox = process.isSandboxType() ? process.getSandbox().getId() : null;
+			track = process.geTargetSnapshot() != null ? process.geTargetSnapshot().getConfiguration().getTrack()
+					: null;
+		}
+
+		/**
+		 * Returns the type.
+		 *
+		 * @return The type.
+		 * @since 17
+		 */
+		public Type getType() {
+			return type;
+		}
+
+		/**
+		 * Set the type.
+		 *
+		 * @param type The type to set.
+		 * @since 17
+		 */
+		public void setType(Type type) {
+			this.type = type;
 		}
 
 		/**
@@ -387,6 +467,110 @@ public class JobResponse implements Serializable {
 		 */
 		public void setIdSandbox(String id) {
 			idSandbox = id;
+		}
+
+		/**
+		 * Returns the track. Null if not available.
+		 *
+		 * @return The track.
+		 * @since 17
+		 */
+		public List<Integer> getTrack() {
+			return track;
+		}
+
+		/**
+		 * Set the track. Null if not available.
+		 *
+		 * @param track The track to set.
+		 * @since 17
+		 */
+		public void setTrack(List<Integer> track) {
+			this.track = track;
+		}
+
+	}
+
+	/**
+	 * Defines action responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class ActionResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The type.
+		 */
+		private Type type;
+
+		/**
+		 * The model id.
+		 */
+		@JsonProperty("model-id")
+		private String modelId = null;
+
+		/**
+		 * Creates an action response for the api.
+		 * 
+		 * @param action The action.
+		 * @since 1.8
+		 */
+		public ActionResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.Action action) {
+			super();
+
+			if (action instanceof Training training) {
+				type = Type.training;
+
+				modelId = training.getModelId();
+			} else
+				type = Type.unknown;
+
+		}
+
+		/**
+		 * Returns the type.
+		 *
+		 * @return The type.
+		 * @since 17
+		 */
+		public Type getType() {
+			return type;
+		}
+
+		/**
+		 * Set the type.
+		 *
+		 * @param type The type to set.
+		 * @since 17
+		 */
+		public void setType(Type type) {
+			this.type = type;
+		}
+
+		/**
+		 * Returns the model id.
+		 *
+		 * @return The model id.
+		 * @since 17
+		 */
+		public String getModelId() {
+			return modelId;
+		}
+
+		/**
+		 * Set the model id.
+		 *
+		 * @param modelId The model id to set.
+		 * @since 17
+		 */
+		public void setModelId(String modelId) {
+			this.modelId = modelId;
 		}
 
 	}

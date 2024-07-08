@@ -8,6 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -35,6 +36,11 @@ public class ModelConfiguration extends CoreFolder {
 	 * The logger.
 	 */
 	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ModelConfiguration.class);
+
+	/**
+	 * The id.
+	 */
+	private final String id;
 
 	/**
 	 * The configuration.
@@ -65,7 +71,19 @@ public class ModelConfiguration extends CoreFolder {
 	public ModelConfiguration(Model properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
+		id = folder == null || !Files.isDirectory(folder) ? null : folder.getFileName().toString();
+
 		configuration = new Configuration(properties.getConfiguration(), coreData);
+	}
+
+	/**
+	 * Returns the id.
+	 *
+	 * @return The id.
+	 * @since 17
+	 */
+	public String getId() {
+		return id;
 	}
 
 	/**

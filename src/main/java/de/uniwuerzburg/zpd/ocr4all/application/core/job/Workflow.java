@@ -42,6 +42,12 @@ public class Workflow extends Process {
 	private final de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot;
 
 	/**
+	 * The target snapshot in which the process is being executed. Null if not
+	 * started.
+	 */
+	private de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot targetSnapshot = null;
+
+	/**
 	 * The metadata.
 	 */
 	private final Metadata metadata;
@@ -219,7 +225,7 @@ public class Workflow extends Process {
 								provider.getProcessor(), configurationService.getInstance());
 
 						/*
-						 * The snapshot is lockable iif the path reaches its target.
+						 * The snapshot is lockable iff the path reaches its target.
 						 */
 						instance = new Instance(provider.getServiceProvider(), snapshot, isTarget(path),
 								getJournal().getStep());
@@ -230,6 +236,7 @@ public class Workflow extends Process {
 					}
 
 					// executes the instance
+					targetSnapshot = snapshot;
 					State state = instance.execute();
 					if (!State.completed.equals(state))
 						return state;
@@ -241,6 +248,17 @@ public class Workflow extends Process {
 				}
 
 		return isCanceled ? State.canceled : State.completed;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Process#geTargetSnapshot()
+	 */
+	@Override
+	public de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot geTargetSnapshot() {
+		return targetSnapshot;
 	}
 
 	/**

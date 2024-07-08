@@ -172,6 +172,16 @@ public class Training extends Action {
 		return instance.execute();
 	}
 
+	/**
+	 * Returns the model id.
+	 *
+	 * @return The model id.
+	 * @since 17
+	 */
+	public String getModelId() {
+		return modelId;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 

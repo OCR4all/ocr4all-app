@@ -662,6 +662,33 @@ public class CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for special security operations on an assemble
+	 * model.
+	 * 
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the write security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected ModelService.Model authorizeModelSpecial(String id) throws ResponseStatusException {
+		ModelService.Model collection = modelService.getModel(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isSpecialFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
 	 * Returns the image media type.
 	 *
 	 * @param format The image format.

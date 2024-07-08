@@ -111,6 +111,15 @@ public abstract class Process extends Job {
 		this.sandbox = sandbox;
 	}
 
+	/**
+	 * Returns the target snapshot in which the process is being executed.
+	 * 
+	 * @return The target snapshot in which the process is being executed. Null if
+	 *         not started.
+	 * @since 17
+	 */
+	public abstract de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot geTargetSnapshot();
+
 	/*
 	 * (non-Javadoc)
 	 * 
