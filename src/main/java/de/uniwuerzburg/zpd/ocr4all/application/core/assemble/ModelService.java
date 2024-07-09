@@ -9,17 +9,21 @@ package de.uniwuerzburg.zpd.ocr4all.application.core.assemble;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -215,10 +219,11 @@ public class ModelService extends CoreService {
 		// The version filter
 		ComparableVersion minimumVersion = null, maximumVersion = null;
 		if (filter != null) {
-			if (!filter.isTypeSet() && !filter.isStateSet() && !filter.isMinimumVersionSet() && !filter.isMaximumVersionSet())
+			if (!filter.isTypeSet() && !filter.isStatesSet() && !filter.isMinimumVersionSet()
+					&& !filter.isMaximumVersionSet())
 				filter = null;
 			else {
-				if (filter.isMinimumVersionSet()) 
+				if (filter.isMinimumVersionSet())
 					minimumVersion = new ComparableVersion(filter.getMinimumVersion());
 
 				if (filter.isMaximumVersionSet())
@@ -234,36 +239,37 @@ public class ModelService extends CoreService {
 				if (filter != null) {
 					if (!model.getConfiguration().getConfiguration().isEngineConfigurationAvailable())
 						break;
-					
+
 					Engine engine = model.getConfiguration().getConfiguration().getEngineConfiguration();
-					
+
 					if (filter.isTypeSet() && !filter.getType().equals(engine.getType()))
 						break;
-					
-					if (filter.isStateSet() && !filter.getState().equals(engine.getState()))
+
+					if (filter.isStatesSet() && !filter.getStates().contains(engine.getState()))
 						break;
-					
+
 					if (filter.isMinimumVersionSet() || filter.isMaximumVersionSet()) {
 						if (engine.getVersion() == null || engine.getVersion().isBlank())
 							break;
-						
+
 						ComparableVersion version = new ComparableVersion(engine.getVersion().trim());
-						
+
 						if (minimumVersion != null && minimumVersion.compareTo(version) > 0)
 							break;
-							
+
 						if (maximumVersion != null && maximumVersion.compareTo(version) < 0)
 							break;
 					}
 				}
 
-				List<String> filenames = new ArrayList<>();				
+				List<String> filenames = new ArrayList<>();
 				if (sufix != null)
 					try {
 						Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile).forEach(path -> {
 							String filename = path.getFileName().toString();
-							
-							// Ignore file names beginning with a dot and not ending with desired filename suffix
+
+							// Ignore file names beginning with a dot and not ending with desired filename
+							// suffix
 							if (!filename.startsWith(".") && filename.endsWith(sufix))
 								filenames.add(filename);
 						});
@@ -292,7 +298,7 @@ public class ModelService extends CoreService {
 
 			if (model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
 					&& !model.getConfiguration().getConfiguration().getEngineConfiguration().getState().isDone())
-				logger.warn("Cannot remove model '" + uuid + "', since the training engine is running.");
+				logger.warn("Cannot remove model '" + uuid + "', since the engine is not done.");
 			else
 				try {
 					Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
@@ -358,6 +364,43 @@ public class ModelService extends CoreService {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Store the models.
+	 * 
+	 * @param model The model.
+	 * @param files The models.
+	 * @return False if model is unknown or the write right is not fulfilled or not
+	 *         all files could be stored.
+	 * @throws IOException Throws on storage troubles.
+	 * @since 1.8
+	 */
+	public boolean store(Model model, MultipartFile[] files) throws IOException {
+		// TODO: if engine uploading + update state to done.
+		if (model == null || files == null || !model.getRight().isWriteFulfilled())
+			return false;
+		else {
+			// create tmp folder
+			Path folder = model.getConfiguration().getFolder();
+
+			// store the files
+			boolean isAllStored = true;
+			for (MultipartFile file : files)
+				if (file != null && !file.isEmpty()) {
+					try (InputStream inputStream = file.getInputStream()) {
+						Files.copy(inputStream, folder.resolve(Paths.get(file.getOriginalFilename())),
+								StandardCopyOption.REPLACE_EXISTING);
+					} catch (IOException e) {
+						logger.warn("Failed to store file '" + file.getOriginalFilename() + "' - " + e.getMessage());
+
+						isAllStored = false;
+						continue;
+					}
+				}
+
+			return isAllStored;
+		}
 	}
 
 	/**
@@ -466,9 +509,9 @@ public class ModelService extends CoreService {
 		private final Engine.Type type;
 
 		/**
-		 * The engine state.
+		 * The engine states.
 		 */
-		private final Engine.State state;
+		private final Set<Engine.State> states;
 
 		/**
 		 * The minimum version.
@@ -484,16 +527,27 @@ public class ModelService extends CoreService {
 		 * Creates a filter for models.
 		 * 
 		 * @param type           The engine type.
-		 * @param state          The state.
+		 * @param states         The states.
 		 * @param minimumVersion The minimum version.
 		 * @param maximumVersion The maximum version.
 		 * @since 17
 		 */
-		public ModelFilter(Engine.Type type, Engine.State state, String minimumVersion, String maximumVersion) {
+		public ModelFilter(Engine.Type type, Set<Engine.State> states, String minimumVersion, String maximumVersion) {
 			super();
 
 			this.type = type;
-			this.state = state;
+
+			if (states == null)
+				this.states = null;
+			else {
+				Set<Engine.State> set = new HashSet<>();
+				for (Engine.State state : states)
+					if (state != null)
+						set.add(state);
+
+				this.states = set.isEmpty() ? null : set;
+			}
+
 			this.minimumVersion = minimumVersion == null || minimumVersion.isBlank() ? null : minimumVersion.trim();
 			this.maximumVersion = maximumVersion == null || maximumVersion.isBlank() ? null : maximumVersion.trim();
 		}
@@ -519,23 +573,23 @@ public class ModelService extends CoreService {
 		}
 
 		/**
-		 * Returns true if the engine state is set.
+		 * Returns true if the engine states are set.
 		 *
-		 * @return rue if the engine state is set.
+		 * @return True if the engine states are set.
 		 * @since 17
 		 */
-		public boolean isStateSet() {
-			return state != null;
+		public boolean isStatesSet() {
+			return states != null;
 		}
 
 		/**
-		 * Returns the engine state.
+		 * Returns the engine states.
 		 *
-		 * @return The engine state.
+		 * @return The engine states.
 		 * @since 17
 		 */
-		public Engine.State getState() {
-			return state;
+		public Set<Engine.State> getStates() {
+			return states;
 		}
 
 		/**

@@ -315,6 +315,11 @@ public class CoreApiController {
 	public static final String collectionPathVariable = "/{collectionId}";
 
 	/**
+	 * The model id path variable.
+	 */
+	public static final String modelPathVariable = "/{modelId}";
+
+	/**
 	 * The action path variable.
 	 */
 	public static final String actionPathVariable = "/{action}";

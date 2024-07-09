@@ -17,11 +17,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,6 +47,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines assemble model controllers for the api.
@@ -62,6 +65,11 @@ public class ModelApiController extends CoreApiController {
 	 * The context path.
 	 */
 	public static final String contextPath = AssembleApiController.contextPath + modelRequestMapping;
+
+	/**
+	 * The engine request mapping.
+	 */
+	public static final String engineRequestMapping = "/engine";
 
 	/**
 	 * Creates an assemble model controller for the api.
@@ -148,7 +156,7 @@ public class ModelApiController extends CoreApiController {
 			List<ModelFileResponse> modelFiles = new ArrayList<>();
 			for (ModelService.ModelFile modelFile : modelService.getAvailableModels(
 					request == null ? null
-							: new ModelService.ModelFilter(request.getType(), request.getState(),
+							: new ModelService.ModelFilter(request.getType(), request.getStates(),
 									request.getMinimumVersion(), request.getMaximumVersion()),
 					request == null ? null : request.getFilenameSuffix()))
 				modelFiles.add(new ModelFileResponse(modelFile));
@@ -188,6 +196,72 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for write security operations.
+	 *
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the write security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	private ModelService.Model authorizeWrite(String id) throws ResponseStatusException {
+		ModelService.Model model = modelService.getModel(id);
+
+		if (model == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!model.getRight().isWriteFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return model;
+	}
+
+	/**
+	 * Creates the model for upload and returns it in the response body.
+	 *
+	 * @param request The model engine request.
+	 * @return The model in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "creates the the model for upload and returns it in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Created Model", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(createRequestMapping)
+	public ResponseEntity<ModelResponse> create(@RequestBody @Valid ModelEngineRequest request) {
+		if (!modelService.isCreate())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			try {
+				ModelService.Model model = modelService.create(request.getName(), request.getDescription(),
+						request.getKeywords());
+
+				if (model == null)
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+				else {
+					model.getConfiguration().getConfiguration().update(securityService.getUser(),
+							new ModelConfiguration.Configuration.EngineInformation(Engine.Method.manual,
+									Engine.State.uploading, request.getEngineType(), request.getEngineVersion(),
+									request.getEngineName(), null));
+
+					return ResponseEntity.ok().body(new ModelResponse(model));
+				}
+			} catch (Exception ex) {
+				log(ex);
+
+				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			}
+	}
+
+	/**
 	 * Removes the model.
 	 *
 	 * @param id       The model id.
@@ -199,6 +273,7 @@ public class ModelApiController extends CoreApiController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Removed model"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "405", description = "Method Not Allowed", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(removeRequestMapping)
@@ -210,7 +285,7 @@ public class ModelApiController extends CoreApiController {
 			if (modelService.remove(id))
 				response.setStatus(HttpServletResponse.SC_OK);
 			else
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {
@@ -246,6 +321,76 @@ public class ModelApiController extends CoreApiController {
 
 			return model == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
 					: ResponseEntity.ok().body(new ModelResponse(model));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Updates the model engine information and returns the model in the response
+	 * body.
+	 *
+	 * @param id      The model id.
+	 * @param request The engine request.
+	 * @return The model in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "updates the model engine information and returns it in the response body")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Updated Model Engine Information", content = {
+					@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(engineRequestMapping + updateRequestMapping)
+	public ResponseEntity<ModelResponse> updateEngine(
+			@Parameter(description = "the model id - this is the folder name") @RequestParam String id,
+			@RequestBody @Valid EngineRequest request) {
+		ModelService.Model model = authorizeSpecial(id);
+
+		try {
+			if (model.getConfiguration().getConfiguration().update(securityService.getUser(),
+					new ModelConfiguration.Configuration.EngineInformation(request.getMethod(), request.getState(),
+							request.getType(), request.getVersion(), request.getName(), request.getArguments())))
+				return ResponseEntity.ok().body(new ModelResponse(model));
+			else
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Upload the models.
+	 * 
+	 * @param id       The model id.
+	 * @param files    The files to upload in a multipart request.
+	 * @param response The HTTP-specific functionality in sending a response to the
+	 *                 client.
+	 * @return The model in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "upload models")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Models", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(engineRequestMapping + uploadRequestMapping + modelPathVariable)
+	public ResponseEntity<ModelResponse> upload(
+			@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId,
+			@RequestParam MultipartFile[] files, HttpServletResponse response) {
+		ModelService.Model model = authorizeWrite(modelId);
+
+		try {
+			if (modelService.store(model, files))
+				return ResponseEntity.ok().body(new ModelResponse(model));
+			else
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		} catch (Exception ex) {
 			log(ex);
 
@@ -395,6 +540,267 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines model engine requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ModelEngineRequest extends ModelRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The engine type.
+		 */
+		@NotNull
+		@JsonProperty("engine-type")
+		private Engine.Type engineType;
+
+		/**
+		 * The engine version.
+		 */
+		@NotBlank
+		@JsonProperty("engine-version")
+		private String engineVersion;
+
+		/**
+		 * The engine name.
+		 */
+		@JsonProperty("engine-name")
+		private String engineName;
+
+		/**
+		 * Returns the engine type.
+		 *
+		 * @return The engine type.
+		 * @since 17
+		 */
+		public Engine.Type getEngineType() {
+			return engineType;
+		}
+
+		/**
+		 * Set the engine type.
+		 *
+		 * @param engineType The engine type to set.
+		 * @since 17
+		 */
+		public void setEngineType(Engine.Type engineType) {
+			this.engineType = engineType;
+		}
+
+		/**
+		 * Returns the engine version.
+		 *
+		 * @return The engine version.
+		 * @since 17
+		 */
+		public String getEngineVersion() {
+			return engineVersion;
+		}
+
+		/**
+		 * Set the engine version.
+		 *
+		 * @param engineVersion The engine version to set.
+		 * @since 17
+		 */
+		public void setEngineVersion(String engineVersion) {
+			this.engineVersion = engineVersion;
+		}
+
+		/**
+		 * Returns the engine name.
+		 *
+		 * @return The engine name.
+		 * @since 17
+		 */
+		public String getEngineName() {
+			return engineName;
+		}
+
+		/**
+		 * Set the engine name.
+		 *
+		 * @param engineName The engine name to set.
+		 * @since 17
+		 */
+		public void setEngineName(String engineName) {
+			this.engineName = engineName;
+		}
+
+	}
+
+	/**
+	 * Defines engine requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class EngineRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The method. If null, do not update.
+		 */
+		private Engine.Method method;
+
+		/**
+		 * The state. If null, do not update.
+		 */
+		private Engine.State state;
+
+		/**
+		 * The type. If null, do not update.
+		 */
+		private Engine.Type type;
+
+		/**
+		 * The version. If null, do not update. Empty resets the version.
+		 */
+		private String version;
+
+		/**
+		 * The name. If null, do not update. Empty resets the name.
+		 */
+		private String name;
+
+		/**
+		 * The arguments. If null, do not update. Empty list resets the arguments.
+		 */
+		private List<String> arguments;
+
+		/**
+		 * Returns the method. If null, do not update.
+		 *
+		 * @return The method.
+		 * @since 17
+		 */
+		public Engine.Method getMethod() {
+			return method;
+		}
+
+		/**
+		 * Set the method. If null, do not update.
+		 *
+		 * @param method The method to set.
+		 * @since 17
+		 */
+		public void setMethod(Engine.Method method) {
+			this.method = method;
+		}
+
+		/**
+		 * Returns the state. If null, do not update.
+		 *
+		 * @return The state.
+		 * @since 17
+		 */
+		public Engine.State getState() {
+			return state;
+		}
+
+		/**
+		 * Set the state. If null, do not update.
+		 *
+		 * @param state The state to set.
+		 * @since 17
+		 */
+		public void setState(Engine.State state) {
+			this.state = state;
+		}
+
+		/**
+		 * Returns the type. If null, do not update.
+		 *
+		 * @return The type.
+		 * @since 17
+		 */
+		public Engine.Type getType() {
+			return type;
+		}
+
+		/**
+		 * Set the type. If null, do not update.
+		 *
+		 * @param type The type to set.
+		 * @since 17
+		 */
+		public void setType(Engine.Type type) {
+			this.type = type;
+		}
+
+		/**
+		 * Returns the version. If null, do not update. Empty resets the version.
+		 *
+		 * @return The version.
+		 * @since 17
+		 */
+		public String getVersion() {
+			return version;
+		}
+
+		/**
+		 * Set the version. If null, do not update. Empty resets the version.
+		 *
+		 * @param version The version to set.
+		 * @since 17
+		 */
+		public void setVersion(String version) {
+			this.version = version;
+		}
+
+		/**
+		 * Returns the name. If null, do not update. Empty resets the name.
+		 *
+		 * @return The name.
+		 * @since 17
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Set the name. If null, do not update. Empty resets the name.
+		 *
+		 * @param name The name to set.
+		 * @since 17
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * Returns the arguments. If null, do not update. Empty list resets the
+		 * arguments.
+		 *
+		 * @return The arguments.
+		 * @since 17
+		 */
+		public List<String> getArguments() {
+			return arguments;
+		}
+
+		/**
+		 * Set the arguments. If null, do not update. Empty list resets the arguments.
+		 *
+		 * @param arguments The arguments to set.
+		 * @since 17
+		 */
+		public void setArguments(List<String> arguments) {
+			this.arguments = arguments;
+		}
+
+	}
+
+	/**
 	 * Defines model security requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -428,9 +834,9 @@ public class ModelApiController extends CoreApiController {
 		private Engine.Type type;
 
 		/**
-		 * The engine state.
+		 * The engine states.
 		 */
-		private Engine.State state;
+		private Set<Engine.State> states;
 
 		/**
 		 * The minimum version.
@@ -468,23 +874,23 @@ public class ModelApiController extends CoreApiController {
 		}
 
 		/**
-		 * Returns the engine state.
+		 * Returns the engine states.
 		 *
-		 * @return The engine state.
+		 * @return The engine states.
 		 * @since 17
 		 */
-		public Engine.State getState() {
-			return state;
+		public Set<Engine.State> getStates() {
+			return states;
 		}
 
 		/**
-		 * Set the engine state.
+		 * Set the engine states.
 		 *
-		 * @param state The engine state to set.
+		 * @param states The engine states to set.
 		 * @since 17
 		 */
-		public void setState(Engine.State state) {
-			this.state = state;
+		public void setStates(Set<Engine.State> states) {
+			this.states = states;
 		}
 
 		/**
@@ -750,9 +1156,9 @@ public class ModelApiController extends CoreApiController {
 			private static final long serialVersionUID = 1L;
 
 			/**
-			 * The type.
+			 * The method.
 			 */
-			private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type type;
+			private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Method method;
 
 			/**
 			 * The state.
@@ -760,9 +1166,19 @@ public class ModelApiController extends CoreApiController {
 			private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.State state;
 
 			/**
+			 * The type.
+			 */
+			private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type type;
+
+			/**
 			 * The version.
 			 */
 			private String version;
+
+			/**
+			 * The name.
+			 */
+			private String name;
 
 			/**
 			 * The arguments.
@@ -793,9 +1209,12 @@ public class ModelApiController extends CoreApiController {
 			public Engine(de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine engine) {
 				super();
 
-				type = engine.getType();
+				method = engine.getMethod();
 				state = engine.getState();
+				type = engine.getType();
+
 				version = engine.getVersion();
+				name = engine.getName();
 				arguments = engine.getArguments();
 				user = engine.getUser();
 				create = engine.getDate();
@@ -803,23 +1222,23 @@ public class ModelApiController extends CoreApiController {
 			}
 
 			/**
-			 * Returns the type.
+			 * Returns the method.
 			 *
-			 * @return The type.
+			 * @return The method.
 			 * @since 17
 			 */
-			public de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type getType() {
-				return type;
+			public de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Method getMethod() {
+				return method;
 			}
 
 			/**
-			 * Set the type.
+			 * Set the method.
 			 *
-			 * @param type The type to set.
+			 * @param method The method to set.
 			 * @since 17
 			 */
-			public void setType(de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type type) {
-				this.type = type;
+			public void setMethod(de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Method method) {
+				this.method = method;
 			}
 
 			/**
@@ -843,6 +1262,26 @@ public class ModelApiController extends CoreApiController {
 			}
 
 			/**
+			 * Returns the type.
+			 *
+			 * @return The type.
+			 * @since 17
+			 */
+			public de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type getType() {
+				return type;
+			}
+
+			/**
+			 * Set the type.
+			 *
+			 * @param type The type to set.
+			 * @since 17
+			 */
+			public void setType(de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine.Type type) {
+				this.type = type;
+			}
+
+			/**
 			 * Returns the version.
 			 *
 			 * @return The version.
@@ -860,6 +1299,26 @@ public class ModelApiController extends CoreApiController {
 			 */
 			public void setVersion(String version) {
 				this.version = version;
+			}
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 17
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Set the name.
+			 *
+			 * @param name The name to set.
+			 * @since 17
+			 */
+			public void setName(String name) {
+				this.name = name;
 			}
 
 			/**
