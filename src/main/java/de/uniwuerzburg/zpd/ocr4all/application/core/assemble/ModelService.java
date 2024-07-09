@@ -176,6 +176,40 @@ public class ModelService extends CoreService {
 	}
 
 	/**
+	 * Returns the model with files names.
+	 * 
+	 * @param uuid The model uuid.
+	 * @return The model with files names. Null if unknown.
+	 * @since 1.8
+	 */
+	public ModelFile getModelFiles(String uuid) {
+		Path path = getPath(uuid);
+
+		if (path != null) {
+			Model model = getModel(path);
+
+			if (model.getRight().isReadFulfilled()) {
+				List<String> filenames = new ArrayList<>();
+				try {
+					Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile).forEach(file -> {
+						String filename = file.getFileName().toString();
+
+						// Ignore file names beginning with a dot
+						if (!filename.startsWith("."))
+							filenames.add(filename);
+					});
+				} catch (IOException e) {
+					logger.warn("Cannot not read model files - " + e.getMessage());
+				}
+
+				return new ModelFile(model, filenames);
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Returns the models sorted by name.
 	 * 
 	 * @return The models.
@@ -284,7 +318,7 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * Removes the model if the special right is fulfilled.
+	 * Removes the model if the special right is fulfilled .
 	 * 
 	 * @param uuid The model uuid.
 	 * @return True if the model could be removed.
@@ -293,13 +327,12 @@ public class ModelService extends CoreService {
 	public boolean remove(String uuid) {
 		Path path = getPath(uuid);
 
-		if (path != null && getModel(path).getRight().isSpecialFulfilled()) {
+		if (path != null) {
 			Model model = getModel(path);
 
-			if (model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
-					&& !model.getConfiguration().getConfiguration().getEngineConfiguration().getState().isDone())
-				logger.warn("Cannot remove model '" + uuid + "', since the engine is not done.");
-			else
+			if (model.getRight().isSpecialFulfilled()
+					&& model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
+					&& model.getConfiguration().getConfiguration().getEngineConfiguration().getState().isDone())
 				try {
 					Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 
@@ -312,8 +345,6 @@ public class ModelService extends CoreService {
 				} catch (Exception e) {
 					logger.warn("Cannot remove model '" + path.toString() + "' - " + e.getMessage() + ".");
 				}
-		} else {
-			logger.warn("Cannot remove model '" + uuid + "'.");
 		}
 
 		return false;
@@ -367,40 +398,70 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * Store the models.
-	 * 
-	 * @param model The model.
-	 * @param files The models.
-	 * @return False if model is unknown or the write right is not fulfilled or not
-	 *         all files could be stored.
-	 * @throws IOException Throws on storage troubles.
+	 * Updates the model engine.
+	 *
+	 * @param uuid   The model uuid.
+	 * @param engine The engine.
+	 * @return The updated model. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public boolean store(Model model, MultipartFile[] files) throws IOException {
-		// TODO: if engine uploading + update state to done.
-		if (model == null || files == null || !model.getRight().isWriteFulfilled())
-			return false;
-		else {
-			// create tmp folder
-			Path folder = model.getConfiguration().getFolder();
+	public Model update(String uuid, ModelConfiguration.Configuration.EngineInformation engine) {
+		Path path = getPath(uuid);
 
-			// store the files
-			boolean isAllStored = true;
-			for (MultipartFile file : files)
-				if (file != null && !file.isEmpty()) {
-					try (InputStream inputStream = file.getInputStream()) {
-						Files.copy(inputStream, folder.resolve(Paths.get(file.getOriginalFilename())),
-								StandardCopyOption.REPLACE_EXISTING);
-					} catch (IOException e) {
-						logger.warn("Failed to store file '" + file.getOriginalFilename() + "' - " + e.getMessage());
+		if (path != null && engine != null) {
+			Model model = getModel(path);
 
-						isAllStored = false;
-						continue;
-					}
-				}
-
-			return isAllStored;
+			if (model.getRight().isSpecialFulfilled()
+					&& model.getConfiguration().getConfiguration().update(securityService.getUser(), engine))
+				return model;
 		}
+
+		return null;
+	}
+
+	/**
+	 * Store the models if the state is uploading.
+	 * 
+	 * @param uuid  The model uuid.
+	 * @param files The models.
+	 * @return The model. Null if the model is unknown or the write right is not
+	 *         fulfilled or the engine state is not uploading.
+	 * @since 1.8
+	 */
+	public Model store(String uuid, MultipartFile[] files) throws IOException {
+		Path path = getPath(uuid);
+
+		if (path != null && files != null) {
+			Model model = getModel(path);
+
+			if (model.getRight().isWriteFulfilled()
+					&& model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
+					&& Engine.State.uploading
+							.equals(model.getConfiguration().getConfiguration().getEngineConfiguration().getState())) {
+				Path folder = model.getConfiguration().getFolder();
+
+				boolean isSored = true;
+				for (MultipartFile file : files)
+					if (file != null && !file.isEmpty())
+						try (InputStream inputStream = file.getInputStream()) {
+							Files.copy(inputStream, folder.resolve(Paths.get(file.getOriginalFilename())),
+									StandardCopyOption.REPLACE_EXISTING);
+						} catch (IOException e) {
+							logger.warn(
+									"Failed to store file '" + file.getOriginalFilename() + "' - " + e.getMessage());
+
+							isSored = false;
+						}
+
+				model.getConfiguration().getConfiguration().update(securityService.getUser(),
+						new ModelConfiguration.Configuration.EngineInformation(null,
+								isSored ? Engine.State.completed : Engine.State.interrupted, null, null, null, null));
+
+				return model;
+			}
+		}
+
+		return null;
 	}
 
 	/**

@@ -7,6 +7,8 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +37,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.ModelConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 import io.swagger.v3.oas.annotations.Operation;
@@ -222,6 +226,32 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
+	 * Authorizes the session user for read security operations.
+	 *
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 1.8
+	 */
+	private ModelService.Model authorizeRead(String id) throws ResponseStatusException {
+		ModelService.Model model = modelService.getModel(id);
+
+		if (model == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!model.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return model;
+	}
+
+	/**
 	 * Creates the model for upload and returns it in the response body.
 	 *
 	 * @param request The model engine request.
@@ -329,6 +359,40 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
+	 * Upload the models.
+	 * 
+	 * @param id       The model id.
+	 * @param files    The files to upload in a multipart request.
+	 * @param response The HTTP-specific functionality in sending a response to the
+	 *                 client.
+	 * @return The model in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "upload models")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Models", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(uploadRequestMapping + modelPathVariable)
+	public ResponseEntity<ModelResponse> upload(
+			@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId,
+			@RequestParam MultipartFile[] files, HttpServletResponse response) {
+		authorizeWrite(modelId);
+
+		try {
+			ModelService.Model model = modelService.store(modelId, files);
+
+			return model == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new ModelResponse(model));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Updates the model engine information and returns the model in the response
 	 * body.
 	 *
@@ -348,15 +412,15 @@ public class ModelApiController extends CoreApiController {
 	public ResponseEntity<ModelResponse> updateEngine(
 			@Parameter(description = "the model id - this is the folder name") @RequestParam String id,
 			@RequestBody @Valid EngineRequest request) {
-		ModelService.Model model = authorizeSpecial(id);
+		authorizeSpecial(id);
 
 		try {
-			if (model.getConfiguration().getConfiguration().update(securityService.getUser(),
+			ModelService.Model model = modelService.update(id,
 					new ModelConfiguration.Configuration.EngineInformation(request.getMethod(), request.getState(),
-							request.getType(), request.getVersion(), request.getName(), request.getArguments())))
-				return ResponseEntity.ok().body(new ModelResponse(model));
-			else
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+							request.getType(), request.getVersion(), request.getName(), request.getArguments()));
+
+			return model == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new ModelResponse(model));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -365,32 +429,72 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
-	 * Upload the models.
+	 * Returns the model with its file names.
 	 * 
-	 * @param id       The model id.
-	 * @param files    The files to upload in a multipart request.
-	 * @param response The HTTP-specific functionality in sending a response to the
-	 *                 client.
-	 * @return The model in the response body.
+	 * @param id The model id.
+	 * @return The model with its file names in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "upload models")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Models", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelResponse.class)) }),
+	@Operation(summary = "returns the model with file names")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Models File Names", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = ModelFileResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(engineRequestMapping + uploadRequestMapping + modelPathVariable)
-	public ResponseEntity<ModelResponse> upload(
-			@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId,
-			@RequestParam MultipartFile[] files, HttpServletResponse response) {
-		ModelService.Model model = authorizeWrite(modelId);
+	@PostMapping(fileRequestMapping)
+	public ResponseEntity<ModelFileResponse> file(
+			@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId) {
+		authorizeRead(modelId);
 
 		try {
-			if (modelService.store(model, files))
-				return ResponseEntity.ok().body(new ModelResponse(model));
-			else
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			ModelService.ModelFile modelFile = modelService.getModelFiles(modelId);
+
+			return modelFile == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new ModelFileResponse(modelFile));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Zips the files of given model.
+	 * 
+	 * @param modelId  The model id. This is the folder name.
+	 * @param response The HTTP-specific functionality in sending a response to the
+	 *                 client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "zip the model files")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Model Files"),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(zipRequestMapping + modelPathVariable)
+	public void zip(@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId,
+			HttpServletResponse response) throws IOException {
+		ModelService.Model model = authorizeRead(modelId);
+
+		try {
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"model-" + modelId.trim() + ".zip\"");
+
+			OCR4allUtils.zip(model.getConfiguration().getFolder(), true, response.getOutputStream(),
+					new OCR4allUtils.ZipFilter() {
+						/*
+						 * (non-Javadoc)
+						 * 
+						 * @see
+						 * de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils.ZipFilter#
+						 * accept(java.io.File)
+						 */
+						@Override
+						public boolean accept(File entry) {
+							// Ignore configuration folders
+							return !entry.getName().startsWith(".");
+						}
+					});
 		} catch (Exception ex) {
 			log(ex);
 

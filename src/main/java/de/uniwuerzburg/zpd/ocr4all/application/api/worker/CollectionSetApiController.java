@@ -446,8 +446,8 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred.
 	 * @since 1.8
 	 */
-	@Operation(summary = "zip the images of ")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Image"),
+	@Operation(summary = "zip the collection image")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Images"),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
