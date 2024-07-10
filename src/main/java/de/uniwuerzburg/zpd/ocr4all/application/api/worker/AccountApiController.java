@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Group;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Password;
@@ -70,12 +72,14 @@ public class AccountApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param accountService       The account service.
 	 * @since 1.8
 	 */
 	public AccountApiController(ConfigurationService configurationService, SecurityService securityService,
-			AccountService accountService) {
-		super(AccountApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, AccountService accountService) {
+		super(AccountApiController.class, configurationService, securityService, collectionService, modelService);
 
 		this.accountService = accountService;
 	}

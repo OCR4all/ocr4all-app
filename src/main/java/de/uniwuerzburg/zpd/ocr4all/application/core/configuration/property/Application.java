@@ -574,6 +574,12 @@ public class Application {
 				private int workflow = 12;
 
 				/**
+				 * The thread pool size for training. The default value is 6.
+				 */
+				@Min(value = 1, message = "The thread pool size for training should not be less than 1")
+				private int training = 6;
+
+				/**
 				 * Returns the thread pool size for task.
 				 *
 				 * @return The size.
@@ -611,6 +617,26 @@ public class Application {
 				 */
 				public void setWorkflow(int size) {
 					workflow = size;
+				}
+
+				/**
+				 * Returns the thread pool size for training.
+				 *
+				 * @return The size.
+				 * @since 1.8
+				 */
+				public int getTraining() {
+					return training;
+				}
+
+				/**
+				 * Set the thread pool size for training.
+				 *
+				 * @param size The size to set.
+				 * @since 1.8
+				 */
+				public void setTraining(int size) {
+					training = size;
 				}
 			}
 		}

@@ -8,11 +8,13 @@
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
@@ -21,6 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.assemble.Model;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
 
 /**
@@ -35,6 +38,11 @@ public class ModelConfiguration extends CoreFolder {
 	 * The logger.
 	 */
 	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ModelConfiguration.class);
+
+	/**
+	 * The id.
+	 */
+	private final String id;
 
 	/**
 	 * The configuration.
@@ -65,7 +73,19 @@ public class ModelConfiguration extends CoreFolder {
 	public ModelConfiguration(Model properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
+		id = folder == null || !Files.isDirectory(folder) ? null : folder.getFileName().toString();
+
 		configuration = new Configuration(properties.getConfiguration(), coreData);
+	}
+
+	/**
+	 * Returns the id.
+	 *
+	 * @return The id.
+	 * @since 17
+	 */
+	public String getId() {
+		return id;
 	}
 
 	/**
@@ -97,9 +117,19 @@ public class ModelConfiguration extends CoreFolder {
 		private final Path engineFile;
 
 		/**
+		 * The engine persistence manager.
+		 */
+		private final PersistenceManager engineManager;
+
+		/**
 		 * The model.
 		 */
 		private de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Model model = null;
+
+		/**
+		 * The engine.
+		 */
+		private Engine engine = null;
 
 		/**
 		 * Creates a configuration for the model.
@@ -124,6 +154,25 @@ public class ModelConfiguration extends CoreFolder {
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
 					Type.assemble_model_v1);
 			loadMainConfiguration(coreData);
+
+			// Load the engine configuration file
+			engineManager = new PersistenceManager(engineFile, Type.assemble_engine_v1);
+			loadEngineConfiguration();
+		}
+
+		/**
+		 * Loads the engine configuration file.
+		 * 
+		 * @since 1.8
+		 */
+		private void loadEngineConfiguration() {
+			try {
+				engine = engineManager.getEntity(Engine.class, null, message -> logger.warn(message));
+			} catch (IOException e) {
+				logger.warn(e.getMessage());
+
+				engine = null;
+			}
 		}
 
 		/**
@@ -226,6 +275,16 @@ public class ModelConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Returns the engine configuration file.
+		 *
+		 * @return The engine configuration file.
+		 * @since 1.8
+		 */
+		public Path getEngineFile() {
+			return engineFile;
+		}
+
+		/**
 		 * Reloads the main configuration file.
 		 * 
 		 * @return True if the main configuration is available.
@@ -238,13 +297,35 @@ public class ModelConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the engine configuration file.
-		 *
-		 * @return The engine configuration file.
+		 * Returns true if the engine configuration is available.
+		 * 
+		 * @return True if the engine configuration is available.
 		 * @since 1.8
 		 */
-		public Path getEngineFile() {
-			return engineFile;
+		public boolean isEngineConfigurationAvailable() {
+			return engine != null;
+		}
+
+		/**
+		 * Reloads the engine configuration file.
+		 * 
+		 * @return True if the engine configuration is available.
+		 * @since 1.8
+		 */
+		public boolean reloadEngineConfiguration() {
+			loadEngineConfiguration();
+
+			return isEngineConfigurationAvailable();
+		}
+
+		/**
+		 * Returns the engine configuration.
+		 *
+		 * @return The engine configuration.
+		 * @since 17
+		 */
+		public Engine getEngineConfiguration() {
+			return engine;
 		}
 
 		/**
@@ -542,6 +623,51 @@ public class ModelConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Updates the engine information and persists it if the main configuration is
+		 * available.
+		 *
+		 * @param user        The user.
+		 * @param information The model engine information.
+		 * @return True if the model engine information was updated and persisted.
+		 * @since 1.8
+		 */
+		public boolean update(String user, EngineInformation information) {
+			if (isMainConfigurationAvailable() && information != null)
+				try {
+					if (!reloadEngineConfiguration())
+						engine = new Engine();
+
+					if (engine.getUser() == null)
+						engine.setUser(user);
+
+					engine.setMethod(information.getMethod());
+					engine.setState(information.getState());
+					engine.setType(information.getType());
+
+					if (information.isVersionSet())
+						engine.setVersion(information.getVersion());
+
+					if (information.isNameSet())
+						engine.setName(information.getName());
+
+					if (information.isArgumentsSet())
+						engine.setArguments(information.getArguments());
+
+					engineManager.persist(engine);
+
+					logger.info("Persisted the model engine configuration.");
+
+					return true;
+				} catch (Exception e) {
+					reloadEngineConfiguration();
+
+					logger.warn("Could not persist the model engine configuration - " + e.getMessage());
+				}
+
+			return false;
+		}
+
+		/**
 		 * Information is an immutable class that defines information for model
 		 * configurations.
 		 *
@@ -610,7 +736,6 @@ public class ModelConfiguration extends CoreFolder {
 			public Set<String> getKeywords() {
 				return keywords;
 			}
-
 		}
 
 		/**
@@ -651,6 +776,161 @@ public class ModelConfiguration extends CoreFolder {
 			public String getUser() {
 				return user;
 			}
+		}
+
+		/**
+		 * EngineInformation is an immutable class that defines information for model
+		 * engine configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class EngineInformation {
+			/**
+			 * The method.
+			 */
+			private final Engine.Method method;
+
+			/**
+			 * The state.
+			 */
+			private final Engine.State state;
+
+			/**
+			 * The type.
+			 */
+			private final Engine.Type type;
+
+			/**
+			 * The version.
+			 */
+			private final String version;
+
+			/**
+			 * The name.
+			 */
+			private final String name;
+
+			/**
+			 * The arguments.
+			 */
+			private final List<String> arguments;
+
+			/**
+			 * Creates an information for a model engine configuration. Null arguments are
+			 * not updated.
+			 * 
+			 * @param method    The method.
+			 * @param state     The state.
+			 * @param type      The type.
+			 * @param version   The version. Empty resets the version.
+			 * @param name      The name. Empty resets the name.
+			 * @param arguments The arguments. Empty list resets the arguments.
+			 * @since 17
+			 */
+			public EngineInformation(Engine.Method method, Engine.State state, Engine.Type type, String version,
+					String name, List<String> arguments) {
+				super();
+
+				this.method = method;
+				this.state = state;
+				this.type = type;
+				this.version = version;
+				this.name = name;
+				this.arguments = arguments;
+			}
+
+			/**
+			 * Returns the method.
+			 *
+			 * @return The method.
+			 * @since 17
+			 */
+			public Engine.Method getMethod() {
+				return method;
+			}
+
+			/**
+			 * Returns the state.
+			 *
+			 * @return The state.
+			 * @since 17
+			 */
+			public Engine.State getState() {
+				return state;
+			}
+
+			/**
+			 * Returns the type.
+			 *
+			 * @return The type.
+			 * @since 17
+			 */
+			public Engine.Type getType() {
+				return type;
+			}
+
+			/**
+			 * Returns true if the version is set.
+			 *
+			 * @return True if the version is set.
+			 * @since 17
+			 */
+			public boolean isVersionSet() {
+				return version != null;
+			}
+
+			/**
+			 * Returns the version.
+			 *
+			 * @return The version.
+			 * @since 17
+			 */
+			public String getVersion() {
+				return isVersionSet() && !version.isBlank() ? version.trim() : null;
+			}
+
+			/**
+			 * Returns true if the name is set.
+			 *
+			 * @return True if the name is set.
+			 * @since 17
+			 */
+			public boolean isNameSet() {
+				return name != null;
+			}
+
+			/**
+			 * Returns the name.
+			 *
+			 * @return The name.
+			 * @since 17
+			 */
+			public String getName() {
+				return isNameSet() && !name.isBlank() ? name.trim() : null;
+			}
+
+			/**
+			 * Returns true if the arguments are set.
+			 *
+			 * @return True if the arguments are set.
+			 * @since 17
+			 */
+			public boolean isArgumentsSet() {
+				return arguments != null;
+			}
+
+			/**
+			 * Returns the arguments.
+			 *
+			 * @return The arguments.
+			 * @since 17
+			 */
+			public List<String> getArguments() {
+				return isArgumentsSet() && !arguments.isEmpty() ? arguments : null;
+			}
+
 		}
 
 	}

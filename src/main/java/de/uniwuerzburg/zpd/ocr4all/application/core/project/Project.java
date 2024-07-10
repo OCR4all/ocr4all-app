@@ -383,6 +383,7 @@ public class Project implements Job.Cluster {
 								imageConfiguration.getDerivatives().getBest().getMaxSize())));
 
 		return new Target(configuration.getConfiguration().getExchange(), configuration.getConfiguration().getOpt(),
+				configuration.getConfiguration().getData(), configuration.getConfiguration().getAssemble(),
 				new Target.Project(configuration.getConfiguration().getFolder(),
 						configuration.getConfiguration().getFolioFile(), images),
 				sandbox == null && snapshotConfiguration == null ? null

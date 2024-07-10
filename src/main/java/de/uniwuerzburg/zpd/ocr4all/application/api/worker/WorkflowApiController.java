@@ -26,7 +26,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
@@ -82,6 +84,8 @@ public class WorkflowApiController extends CoreApiController {
 	 *
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The workflow service.
 	 * @param projectService       The project service.
@@ -90,9 +94,10 @@ public class WorkflowApiController extends CoreApiController {
 	 */
 	// TODO: add security like repository
 	public WorkflowApiController(ConfigurationService configurationService, SecurityService securityService,
-			SchedulerService schedulerService, WorkflowService service, ProjectService projectService,
-			SandboxService sandboxService) {
-		super(WorkflowApiController.class, configurationService, securityService, projectService, sandboxService);
+			CollectionService collectionService, ModelService modelService, SchedulerService schedulerService,
+			WorkflowService service, ProjectService projectService, SandboxService sandboxService) {
+		super(WorkflowApiController.class, configurationService, securityService, collectionService, modelService,
+				projectService, sandboxService);
 
 		this.schedulerService = schedulerService;
 		this.service = service;

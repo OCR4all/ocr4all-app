@@ -23,7 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Task;
@@ -33,8 +35,10 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
@@ -44,10 +48,11 @@ import jakarta.validation.constraints.NotNull;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
+ * @param <P> The service provider.
  * @param <S> The core service provider type.
  * @since 17
  */
-public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<? extends ServiceProvider>>
+public class ProcessServiceProviderApiController<P extends ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>, S extends de.uniwuerzburg.zpd.ocr4all.application.core.spi.ProcessServiceProvider<P>>
 		extends CoreServiceProviderApiController<S> {
 
 	/**
@@ -61,6 +66,8 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 	 * @param logger                The logger class.
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param projectService        The project service.
 	 * @param sandboxService        The sandbox service.
 	 * @param schedulerService      The scheduler service.
@@ -70,10 +77,11 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 	 * @since 17
 	 */
 	protected ProcessServiceProviderApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, Type type, S service, Project.Right... requiredProjectRights) {
-		super(logger, configurationService, securityService, projectService, sandboxService, schedulerService, type,
-				service);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService, SchedulerService schedulerService, Type type,
+			S service, Project.Right... requiredProjectRights) {
+		super(logger, configurationService, securityService, collectionService, modelService, projectService,
+				sandboxService, schedulerService, type, service);
 
 		this.requiredProjectRights = requiredProjectRights;
 	}
@@ -197,10 +205,12 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 
-		try {
-			final ServiceProvider provider = service.getActiveProvider(request.getId());
+		authorizeRead(request.getWeights());
 
-			if (provider == null || !(provider instanceof ProcessServiceProvider))
+		try {
+			final P provider = service.getActiveProvider(request.getId());
+
+			if (provider == null)
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
 			final Locale locale = getLocale(lang);
@@ -208,7 +218,7 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 			switch (service.getCoreData()) {
 			case project:
 				task = new Task(configurationService, locale, request.getJobShortDescription(), Job.Processing.parallel,
-						authorization.project, (ProcessServiceProvider) provider, request);
+						authorization.project, provider, request);
 
 				break;
 			case sandbox:
@@ -223,7 +233,7 @@ public class ProcessServiceProviderApiController<S extends de.uniwuerzburg.zpd.o
 						task = new Task(configurationService, locale, request.getJobShortDescription(),
 								Job.Processing.parallel, authorization.sandbox, type.getSnapshotType(),
 								snapshotTrackParent, snapshotRequest.getLabel(), snapshotRequest.getDescription(),
-								(ProcessServiceProvider) provider, request);
+								provider, request);
 					} catch (Exception ex) {
 						log(ex);
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

@@ -21,13 +21,16 @@ import org.springframework.web.bind.annotation.RestController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.SnapshotRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.ocr.OpticalCharacterRecognitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.OpticalCharacterRecognitionServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,8 +54,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI ocr", description = "the optical character recognition (OCR) service provider API")
 @RestController
 @RequestMapping(path = OpticalCharacterRecognitionServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class OpticalCharacterRecognitionServiceProviderApiController
-		extends ProcessServiceProviderApiController<OpticalCharacterRecognitionService> {
+public class OpticalCharacterRecognitionServiceProviderApiController extends
+		ProcessServiceProviderApiController<OpticalCharacterRecognitionServiceProvider, OpticalCharacterRecognitionService> {
 	/**
 	 * The context path.
 	 */
@@ -64,6 +67,8 @@ public class OpticalCharacterRecognitionServiceProviderApiController
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
 	 * @param schedulerService     The scheduler service.
@@ -71,10 +76,12 @@ public class OpticalCharacterRecognitionServiceProviderApiController
 	 * @since 1.8
 	 */
 	public OpticalCharacterRecognitionServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService,
-			SchedulerService schedulerService, OpticalCharacterRecognitionService service) {
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService, SchedulerService schedulerService,
+			OpticalCharacterRecognitionService service) {
 		super(OpticalCharacterRecognitionServiceProviderApiController.class, configurationService, securityService,
-				projectService, sandboxService, schedulerService, Type.ocr, service, Project.Right.execute);
+				collectionService, modelService, projectService, sandboxService, schedulerService, Type.ocr, service,
+				Project.Right.execute);
 	}
 
 	/**

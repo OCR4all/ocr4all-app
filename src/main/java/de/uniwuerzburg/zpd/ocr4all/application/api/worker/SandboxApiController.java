@@ -29,7 +29,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.BasicRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.HistoryResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.MetsResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SandboxResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -83,13 +85,17 @@ public class SandboxApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The sandbox service.
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
 	public SandboxApiController(ConfigurationService configurationService, SecurityService securityService,
-			SandboxService service, ProjectService projectService) {
-		super(ProjectApiController.class, configurationService, securityService, projectService, service);
+			CollectionService collectionService, ModelService modelService, SandboxService service,
+			ProjectService projectService) {
+		super(ProjectApiController.class, configurationService, securityService, collectionService, modelService,
+				projectService, service);
 
 		this.service = service;
 	}

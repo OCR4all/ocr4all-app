@@ -29,7 +29,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.security.AuthenticationPrincipal;
 import de.uniwuerzburg.zpd.ocr4all.application.api.security.JwtTokenUtil;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService.Role;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -81,6 +83,8 @@ public class AuthenticationApiController extends CoreApiController {
 	 * 
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param accountService        The account service.
 	 * @param authenticationManager The manager to process the authentication
 	 *                              requests.
@@ -88,8 +92,10 @@ public class AuthenticationApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public AuthenticationApiController(ConfigurationService configurationService, SecurityService securityService,
-			AccountService accountService, AuthenticationManager authenticationManager, JwtTokenUtil jwtTokenUtil) {
-		super(AuthenticationApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, AccountService accountService,
+			AuthenticationManager authenticationManager, JwtTokenUtil jwtTokenUtil) {
+		super(AuthenticationApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.accountService = accountService;
 		this.authenticationManager = authenticationManager;

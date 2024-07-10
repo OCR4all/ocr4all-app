@@ -19,7 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
@@ -71,6 +73,11 @@ public class CoreApiController {
 	 * The list request mapping.
 	 */
 	public static final String listRequestMapping = "/list";
+
+	/**
+	 * The available request mapping.
+	 */
+	public static final String availableRequestMapping = "/available";
 
 	/**
 	 * The information request mapping.
@@ -258,6 +265,11 @@ public class CoreApiController {
 	public static final String collectionRequestMapping = "/collection";
 
 	/**
+	 * The model request mapping.
+	 */
+	public static final String modelRequestMapping = "/model";
+
+	/**
 	 * The set request mapping.
 	 */
 	public static final String setRequestMapping = "/set";
@@ -301,6 +313,11 @@ public class CoreApiController {
 	 * The collection id path variable.
 	 */
 	public static final String collectionPathVariable = "/{collectionId}";
+
+	/**
+	 * The model id path variable.
+	 */
+	public static final String modelPathVariable = "/{modelId}";
 
 	/**
 	 * The action path variable.
@@ -368,6 +385,16 @@ public class CoreApiController {
 	protected final SecurityService securityService;
 
 	/**
+	 * The collection service.
+	 */
+	protected final CollectionService collectionService;
+
+	/**
+	 * The model service.
+	 */
+	protected final ModelService modelService;
+
+	/**
 	 * The authorization factory.
 	 */
 	protected final AuthorizationFactory authorizationFactory;
@@ -378,11 +405,13 @@ public class CoreApiController {
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @since 1.8
 	 */
 	protected CoreApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService) {
-		this(logger, configurationService, securityService, null);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService) {
+		this(logger, configurationService, securityService, collectionService, modelService, null);
 	}
 
 	/**
@@ -391,12 +420,15 @@ public class CoreApiController {
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
 	protected CoreApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService) {
-		this(logger, configurationService, securityService, projectService, null);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService) {
+		this(logger, configurationService, securityService, collectionService, modelService, projectService, null);
 	}
 
 	/**
@@ -405,17 +437,22 @@ public class CoreApiController {
 	 * @param logger               The logger class.
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @param sandboxService       The sandbox service.
 	 * @since 1.8
 	 */
 	protected CoreApiController(Class<?> logger, ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SandboxService sandboxService) {
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SandboxService sandboxService) {
 		super();
 
 		this.logger = org.slf4j.LoggerFactory.getLogger(logger);
 		this.configurationService = configurationService;
 		this.securityService = securityService;
+		this.collectionService = collectionService;
+		this.modelService = modelService;
 
 		authorizationFactory = projectService == null ? null : new AuthorizationFactory(projectService, sandboxService);
 	}
@@ -519,6 +556,141 @@ public class CoreApiController {
 	 */
 	protected boolean isUser() {
 		return securityService.isUser();
+	}
+
+	/**
+	 * Authorizes the session user for read security operations on a data
+	 * collection.
+	 * 
+	 * @param id The collection id.
+	 * @return The authorized collection.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected CollectionService.Collection authorizeCollectionRead(String id) throws ResponseStatusException {
+		CollectionService.Collection collection = collectionService.getCollection(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
+	 * Authorizes the session user for write security operations on a data
+	 * collection.
+	 * 
+	 * @param id The collection id.
+	 * @return The authorized collection.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the collection is
+	 *                                 not available.</li>
+	 *                                 <li>401 (Unauthorized): if the write security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected CollectionService.Collection authorizeCollectionWrite(String id) throws ResponseStatusException {
+		CollectionService.Collection collection = collectionService.getCollection(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isWriteFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
+	 * Authorizes the session user for read security operations on an assemble
+	 * model.
+	 * 
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the read security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected ModelService.Model authorizeModelRead(String id) throws ResponseStatusException {
+		ModelService.Model collection = modelService.getModel(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isReadFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
+	 * Authorizes the session user for write security operations on an assemble
+	 * model.
+	 * 
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the write security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected ModelService.Model authorizeModelWrite(String id) throws ResponseStatusException {
+		ModelService.Model collection = modelService.getModel(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isWriteFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
+	}
+
+	/**
+	 * Authorizes the session user for special security operations on an assemble
+	 * model.
+	 * 
+	 * @param id The model id.
+	 * @return The authorized model.
+	 * @throws ResponseStatusException Throw with http status:
+	 *                                 <ul>
+	 *                                 <li>400 (Bad Request): if the model is not
+	 *                                 available.</li>
+	 *                                 <li>401 (Unauthorized): if the write security
+	 *                                 permission is not achievable by the session
+	 *                                 user.</li>
+	 *                                 </ul>
+	 * @since 17
+	 */
+	protected ModelService.Model authorizeModelSpecial(String id) throws ResponseStatusException {
+		ModelService.Model collection = modelService.getModel(id);
+
+		if (collection == null)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		else if (!collection.getRight().isSpecialFulfilled())
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		else
+			return collection;
 	}
 
 	/**

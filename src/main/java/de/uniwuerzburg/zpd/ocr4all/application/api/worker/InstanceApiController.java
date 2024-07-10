@@ -21,7 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Instance;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,10 +55,13 @@ public class InstanceApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @since 1.8
 	 */
-	public InstanceApiController(ConfigurationService configurationService, SecurityService securityService) {
-		super(InstanceApiController.class, configurationService, securityService);
+	public InstanceApiController(ConfigurationService configurationService, SecurityService securityService,
+			CollectionService collectionService, ModelService modelService) {
+		super(InstanceApiController.class, configurationService, securityService, collectionService, modelService);
 	}
 
 	/**

@@ -15,7 +15,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines tasks.
@@ -57,9 +59,15 @@ public final class Task extends Process {
 	private final String snapshotDescription;
 
 	/**
+	 * The target snapshot in which the process is being executed. Null if not
+	 * started.
+	 */
+	private de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot targetSnapshot = null;
+
+	/**
 	 * The service provider.
 	 */
-	private final ProcessServiceProvider serviceProvider;
+	private final ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider;
 
 	/**
 	 * The service provider arguments.
@@ -82,7 +90,8 @@ public final class Task extends Process {
 	 * @since 1.8
 	 */
 	public Task(ConfigurationService configurationService, Locale locale, String shortDescription,
-			Processing processing, Project project, ProcessServiceProvider serviceProvider,
+			Processing processing, Project project,
+			ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
 			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
 		this(configurationService, locale, shortDescription, processing, project, null, null, null, null, null,
 				serviceProvider, serviceProviderArgument);
@@ -112,8 +121,8 @@ public final class Task extends Process {
 			Processing processing, Sandbox sandbox,
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
 			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
-			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
-			throws IllegalArgumentException {
+			ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
+			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
 		this(configurationService, locale, shortDescription, processing, sandbox.getProject(), sandbox, snapshotType,
 				snapshotTrackParent, snapshotLabel, snapshotDescription, serviceProvider, serviceProviderArgument);
 	}
@@ -143,8 +152,8 @@ public final class Task extends Process {
 			Processing processing, Project project, Sandbox sandbox,
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type snapshotType,
 			List<Integer> snapshotTrackParent, String snapshotLabel, String snapshotDescription,
-			ProcessServiceProvider serviceProvider, ServiceProvider serviceProviderArgument)
-			throws IllegalArgumentException {
+			ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
+			ServiceProvider serviceProviderArgument) throws IllegalArgumentException {
 		super(configurationService, locale, processing, 1, project, sandbox);
 
 		this.shortDescription = shortDescription == null || shortDescription.isBlank()
@@ -200,12 +209,12 @@ public final class Task extends Process {
 	@Override
 	protected State execute() {
 		try {
-			if (isSandboxType())
-				instance = new Instance(serviceProvider,
-						getSandbox().createSnapshot(snapshotType, snapshotTrackParent, snapshotLabel,
-								snapshotDescription, serviceProviderArgument, configurationService.getInstance()),
-						getJournal().getStep());
-			else
+			if (isSandboxType()) {
+				targetSnapshot = getSandbox().createSnapshot(snapshotType, snapshotTrackParent, snapshotLabel,
+						snapshotDescription, serviceProviderArgument, configurationService.getInstance());
+
+				instance = new Instance(serviceProvider, targetSnapshot, getJournal().getStep());
+			} else
 				instance = new Instance(serviceProvider, serviceProviderArgument, getJournal().getStep());
 		} catch (IllegalArgumentException e) {
 			getJournal().getStep().setNote(OCR4allUtils.getStackTrace(e));
@@ -214,6 +223,17 @@ public final class Task extends Process {
 		}
 
 		return instance.execute();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Process#geTargetSnapshot()
+	 */
+	@Override
+	public de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot geTargetSnapshot() {
+		return targetSnapshot;
 	}
 
 	/*

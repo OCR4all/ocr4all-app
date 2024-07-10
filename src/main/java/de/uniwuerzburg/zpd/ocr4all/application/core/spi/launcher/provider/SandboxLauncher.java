@@ -33,9 +33,10 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Group;
@@ -460,8 +461,8 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor newProcessor() {
-		return new CoreProcessorServiceProvider() {
+	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
+		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
 			/**
 			 * Persists the mets file.
 			 * 
@@ -496,16 +497,17 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 			/*
 			 * (non-Javadoc)
 			 * 
-			 * @see
-			 * de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.Processor#
+			 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessorServiceProvider.
+			 * Processor#
 			 * execute(de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.
 			 * Processor.Callback, de.uniwuerzburg.zpd.ocr4all.application.spi.Framework,
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
 			 */
 			@Override
-			public State execute(Callback callback, Framework framework, ModelArgument modelArgument) {
+			public State execute(LockSnapshotCallback callback, ProcessFramework framework,
+					ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Loads core data
@@ -516,7 +518,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				if (processorWorkspaceRelativePath == null) {
 					updatedStandardError("Internal error: inconsistent framework processor workspace path.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// mets
@@ -524,14 +526,14 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				if (metsPath == null) {
 					updatedStandardError("Missed required mets file path.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsGroup = framework.getMetsGroup();
 				if (metsGroup == null) {
 					updatedStandardError("Missed required mets file group.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsCoreTemplate;
@@ -541,7 +543,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					updatedStandardError(
 							"Internal error: missed mets core resource '" + Template.mets_core.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsFileTemplate;
@@ -551,7 +553,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					updatedStandardError(
 							"Internal error: missed mets file resource '" + Template.mets_file.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				final String metsPageTemplate;
@@ -561,7 +563,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					updatedStandardError(
 							"Internal error: missed page file resource '" + Template.mets_page.getResourceName() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// Convert system command
@@ -569,7 +571,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 						.toString();
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Available arguments
@@ -599,19 +601,19 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 													: " '" + values.get(0).trim() + "'")
 											+ ".");
 
-									return ProcessServiceProvider.Processor.State.interrupted;
+									return ProcessorServiceProvider.Processor.State.interrupted;
 								}
 							} else if (values.size() > 1) {
 								updatedStandardError("Only one method can be selected.");
 
-								return ProcessServiceProvider.Processor.State.interrupted;
+								return ProcessorServiceProvider.Processor.State.interrupted;
 							}
 						}
 
 					} catch (ClassCastException e) {
 						updatedStandardError("The argument '" + Field.method.getName() + "' is not of selection type.");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				/*
@@ -649,14 +651,14 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 							else if (extensions.size() > 1) {
 								updatedStandardError("Only one image format can be selected.");
 
-								return ProcessServiceProvider.Processor.State.interrupted;
+								return ProcessorServiceProvider.Processor.State.interrupted;
 							}
 						}
 					} catch (ClassCastException e) {
 						updatedStandardError(
 								"The argument '" + Field.imageFormat.getName() + "' is not of selection type.");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				final ImageFormat imageFormat = ImageFormat.getImageFormat(launcherArgument.getImageFormat());
@@ -668,7 +670,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 													: " '" + launcherArgument.getImageFormat().trim() + "'")
 									+ " is not supported.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// Image maximum width
@@ -683,7 +685,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 						updatedStandardError(
 								"The argument '" + Field.imageMaximumWidth.getName() + "' is not of integer type.");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				// Image maximum height
@@ -698,7 +700,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 						updatedStandardError(
 								"The argument '" + Field.imageMaximumHeight.getName() + "' is not of integer type.");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				// Images for the launcher
@@ -712,7 +714,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					} catch (ClassCastException e) {
 						updatedStandardError("The argument '" + Field.images.getName() + "' is not of image type.");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				// Threshold parameter
@@ -732,14 +734,14 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 											+ launcherArgumentMethodThreshold.getMethodThreshold()
 											+ " for the threshold method is out of range [0..100].");
 
-									return ProcessServiceProvider.Processor.State.interrupted;
+									return ProcessorServiceProvider.Processor.State.interrupted;
 								}
 							}
 						} catch (ClassCastException e) {
 							updatedStandardError(
 									"The argument '" + Field.methodThreshold.getName() + "' is not of integer type.");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 				}
 
@@ -766,14 +768,14 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				} catch (Exception e) {
 					updatedStandardError("Cannot read project folios - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (folios.isEmpty()) {
 					updatedStandardOutput("There are no project images for sandbox launcher.");
 
 					callback.updatedProgress(1);
-					return ProcessServiceProvider.Processor.State.completed;
+					return ProcessorServiceProvider.Processor.State.completed;
 				}
 
 				// The images
@@ -793,15 +795,15 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					} catch (Exception e) {
 						updatedStandardError("Can not create mets file - " + e.getMessage() + ".");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 					callback.updatedProgress(1);
-					return ProcessServiceProvider.Processor.State.completed;
+					return ProcessorServiceProvider.Processor.State.completed;
 				}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Process images in temporary directories
@@ -817,7 +819,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 				} catch (IOException e) {
 					updatedStandardError("could not create required temporary directory - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// Copy required project images to temporary directory
@@ -839,14 +841,14 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 						updatedStandardError("Cannot copy the project folio '" + projectFolio.toString() + "' - "
 								+ e.getMessage() + ".");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 				}
 
 				callback.updatedProgress(0.35F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				try {
 					List<String> arguments = new ArrayList<>(
@@ -898,7 +900,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					for (String fileName : OCR4allUtils.getFileNames(folderProjectFolios)) {
 						// set image name
 						arguments.set(0, fileName);
-						
+
 						// process image
 						preprocessJob.execute(arguments);
 
@@ -907,19 +909,19 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 							updatedStandardError(
 									"Cannot preprocess images" + (error.isBlank() ? "" : " - " + error.trim()) + ".");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 					}
 				} catch (IOException e) {
 					updatedStandardError("Sandbox images cannot be created - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				callback.updatedProgress(0.90F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Moves the images to snapshot and creates the mets file
@@ -968,13 +970,13 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					} catch (Exception e) {
 						updatedStandardError("Can not create mets file - " + e.getMessage() + ".");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				} catch (Exception e) {
 					updatedStandardError("Can not move preprocessed images to sandbox - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				/*

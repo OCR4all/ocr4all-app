@@ -21,12 +21,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -49,7 +52,8 @@ import jakarta.validation.Valid;
 @Tag(name = "SPI import", description = "the import service provider API")
 @RestController
 @RequestMapping(path = ImportServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
-public class ImportServiceProviderApiController extends ProcessServiceProviderApiController<ImportService> {
+public class ImportServiceProviderApiController
+		extends ProcessServiceProviderApiController<ImportServiceProvider, ImportService> {
 	/**
 	 * The context path.
 	 */
@@ -60,16 +64,18 @@ public class ImportServiceProviderApiController extends ProcessServiceProviderAp
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @param schedulerService     The scheduler service.
 	 * @param service              The service.
 	 * @since 1.8
 	 */
 	public ImportServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ProjectService projectService, SchedulerService schedulerService,
-			ImportService service) {
-		super(ImportServiceProviderApiController.class, configurationService, securityService, projectService, null,
-				schedulerService, Type.imp, service, Project.Right.special);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ProjectService projectService, SchedulerService schedulerService, ImportService service) {
+		super(ImportServiceProviderApiController.class, configurationService, securityService, collectionService,
+				modelService, projectService, null, schedulerService, Type.imp, service, Project.Right.special);
 	}
 
 	/**

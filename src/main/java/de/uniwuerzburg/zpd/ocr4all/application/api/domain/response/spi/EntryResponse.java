@@ -50,9 +50,9 @@ public class EntryResponse implements Serializable {
 		 */
 		decimal,
 		/**
-		 * The recognition type.
+		 * The weight type.
 		 */
-		recognition,
+		weight("weight"),
 		/**
 		 * The select type.
 		 */

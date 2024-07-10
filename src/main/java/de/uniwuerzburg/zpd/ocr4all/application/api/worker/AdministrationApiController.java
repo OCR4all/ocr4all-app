@@ -34,12 +34,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.uniwuerzburg.zpd.ocr4all.application.communication.message.spi.EventSPI;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.EventSPIMessageStompSessionHandler;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TemporaryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
@@ -166,6 +168,8 @@ public class AdministrationApiController extends CoreApiController {
 	 *
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param importService         The import service.
 	 * @param launcherService       The launcher service.
 	 * @param preprocessingService  The preprocessing service.
@@ -179,11 +183,13 @@ public class AdministrationApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
-			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
+			CollectionService collectionService, ModelService modelService, ImportService importService,
+			LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
 			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
 			TrainingService trainingService, CommunicationService communicationService) {
-		super(AdministrationApiController.class, configurationService, securityService);
+		super(AdministrationApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.communicationService = communicationService;
 

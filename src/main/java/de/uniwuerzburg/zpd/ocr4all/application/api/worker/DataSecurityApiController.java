@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.TrackingResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.DataService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
@@ -34,7 +36,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 @Profile("api & server")
 @Tag(name = "data security", description = "the data security API")
@@ -56,12 +58,14 @@ public class DataSecurityApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The data service.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public DataSecurityApiController(ConfigurationService configurationService, SecurityService securityService,
-			DataService service) {
-		super(DataSecurityApiController.class, configurationService, securityService);
+			CollectionService collectionService, ModelService modelService, DataService service) {
+		super(DataSecurityApiController.class, configurationService, securityService, collectionService, modelService);
 
 		this.service = service;
 	}
@@ -72,7 +76,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 * @throws ResponseStatusException Throw with http status 401 (Unauthorized) if
 	 *                                 the administrator security permission is not
 	 *                                 achievable by the session user.
-	 * @since 1.8
+	 * @since 17
 	 */
 	private void authorize() throws ResponseStatusException {
 		if (!service.isAdministrator())
@@ -83,7 +87,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 * Returns the data security in the response body.
 	 * 
 	 * @return The data security in the response body.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Operation(summary = "returns the data security in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Data Security", content = {
@@ -108,7 +112,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 * 
 	 * @param request The data security request.
 	 * @return The updated data security in the response body.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Operation(summary = "updates the data security and returns it in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Updated Data Security", content = {
@@ -139,7 +143,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 * Secures the data.
 	 * 
 	 * @return The data security in the response body.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Operation(summary = "secures the data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Secures Data", content = {
@@ -165,7 +169,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 * Unsecures the data.
 	 * 
 	 * @return The data security in the response body.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Operation(summary = "unsecures the data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Unsecures Data", content = {
@@ -192,7 +196,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class DataSecurityResponse extends SecurityOwner {
 		/**
@@ -209,7 +213,7 @@ public class DataSecurityApiController extends CoreApiController {
 		 * Creates a data security response for the api.
 		 * 
 		 * @param service The data service.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public DataSecurityResponse(DataService service) {
 			super(service.getSecurity().isSecured(), service.getSecurity().getUsers(),
@@ -222,7 +226,7 @@ public class DataSecurityApiController extends CoreApiController {
 		 * Returns the tracking.
 		 *
 		 * @return The tracking.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public TrackingResponse getTracking() {
 			return tracking;
@@ -232,7 +236,7 @@ public class DataSecurityApiController extends CoreApiController {
 		 * Set the tracking.
 		 *
 		 * @param tracking The tracking to set.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public void setTracking(TrackingResponse tracking) {
 			this.tracking = tracking;
@@ -245,7 +249,7 @@ public class DataSecurityApiController extends CoreApiController {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class DataSecurityRequest extends SecurityOwner {
 		/**

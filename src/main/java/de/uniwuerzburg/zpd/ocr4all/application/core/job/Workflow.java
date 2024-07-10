@@ -19,7 +19,9 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snaps
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Metadata;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.workflow.Processor;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 
 /**
  * Defines workflows.
@@ -38,6 +40,12 @@ public class Workflow extends Process {
 	 * The root snapshot.
 	 */
 	private final de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot rootSnapshot;
+
+	/**
+	 * The target snapshot in which the process is being executed. Null if not
+	 * started.
+	 */
+	private de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot targetSnapshot = null;
 
 	/**
 	 * The metadata.
@@ -217,7 +225,7 @@ public class Workflow extends Process {
 								provider.getProcessor(), configurationService.getInstance());
 
 						/*
-						 * The snapshot is lockable iif the path reaches its target.
+						 * The snapshot is lockable iff the path reaches its target.
 						 */
 						instance = new Instance(provider.getServiceProvider(), snapshot, isTarget(path),
 								getJournal().getStep());
@@ -228,6 +236,7 @@ public class Workflow extends Process {
 					}
 
 					// executes the instance
+					targetSnapshot = snapshot;
 					State state = instance.execute();
 					if (!State.completed.equals(state))
 						return state;
@@ -241,6 +250,17 @@ public class Workflow extends Process {
 		return isCanceled ? State.canceled : State.completed;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Process#geTargetSnapshot()
+	 */
+	@Override
+	public de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot geTargetSnapshot() {
+		return targetSnapshot;
+	}
+
 	/**
 	 * Provider is an immutable class that defines workflow providers.
 	 *
@@ -252,7 +272,7 @@ public class Workflow extends Process {
 		/**
 		 * The service provider.
 		 */
-		private final ProcessServiceProvider serviceProvider;
+		private final ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider;
 
 		/**
 		 * The snapshot type.
@@ -272,7 +292,8 @@ public class Workflow extends Process {
 		 * @param processor       The processor.
 		 * @since 1.8
 		 */
-		public Provider(ProcessServiceProvider serviceProvider, Type snapshotType, Processor processor) {
+		public Provider(ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> serviceProvider,
+				Type snapshotType, Processor processor) {
 			super();
 			this.serviceProvider = serviceProvider;
 			this.snapshotType = snapshotType;
@@ -285,7 +306,7 @@ public class Workflow extends Process {
 		 * @return The service provider.
 		 * @since 1.8
 		 */
-		public ProcessServiceProvider getServiceProvider() {
+		public ProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework> getServiceProvider() {
 			return serviceProvider;
 		}
 

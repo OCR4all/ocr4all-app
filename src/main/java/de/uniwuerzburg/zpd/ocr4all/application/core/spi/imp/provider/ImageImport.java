@@ -37,9 +37,10 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Framework;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Premise;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.env.ProcessFramework;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.SystemCommand;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Model;
@@ -255,8 +256,8 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 	 * ProcessServiceProvider#newProcessor()
 	 */
 	@Override
-	public ProcessServiceProvider.Processor newProcessor() {
-		return new CoreProcessorServiceProvider() {
+	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
+		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
 			/**
 			 * The image formats sorted by enumeration order.
 			 */
@@ -316,7 +317,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			 *         interrupted on troubles or canceled if the process was canceled.
 			 * @since 1.8
 			 */
-			private ProcessServiceProvider.Processor.State createDerivatives(SystemProcess convertJob,
+			private ProcessorServiceProvider.Processor.State createDerivatives(SystemProcess convertJob,
 					Set<String> fileNames, Path target, String resize, int quality) {
 
 				try {
@@ -324,11 +325,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 							getFramework().getTarget().getProject().getImages().getDerivatives().getFormat().name(),
 							fileNames, target, resize, quality);
 
-					return isCanceled() ? ProcessServiceProvider.Processor.State.canceled : null;
+					return isCanceled() ? ProcessorServiceProvider.Processor.State.canceled : null;
 				} catch (IOException e) {
 					updatedStandardError(e.getMessage());
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 			}
 
@@ -372,17 +373,18 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 			/*
 			 * (non-Javadoc)
 			 * 
-			 * @see
-			 * de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.Processor#
+			 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessorServiceProvider.
+			 * Processor#
 			 * execute(de.uniwuerzburg.zpd.ocr4all.application.spi.ProcessServiceProvider.
 			 * Processor.Callback, de.uniwuerzburg.zpd.ocr4all.application.spi.Framework,
 			 * de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument)
 			 */
 			@Override
-			public ProcessServiceProvider.Processor.State execute(ProcessServiceProvider.Processor.Callback callback,
-					Framework framework, ModelArgument modelArgument) {
+			public ProcessorServiceProvider.Processor.State execute(
+					ProcessorServiceProvider.Processor.LockSnapshotCallback callback, ProcessFramework framework,
+					ModelArgument modelArgument) {
 				if (!initialize(identifier, callback, framework))
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				// The system commands
 				String convertCommand = configuration.getSystemCommand(SystemCommand.Type.convert).getCommand()
@@ -408,11 +410,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					updatedStandardError("Missed required '"
 							+ (missedArguments.size() == 1 ? "argument: " : "arguments: ") + buffer.toString() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Recover the arguments and test for right type
@@ -424,7 +426,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					updatedStandardError(
 							"The argument '" + Field.imageFormats.getName() + "' is not of selection type.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				StringArgument sourceFolder;
@@ -433,11 +435,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				} catch (ClassCastException e) {
 					updatedStandardError("The argument '" + Field.sourceFolder.getName() + "' is not of string type.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * The image formats sorted by enumeration order
@@ -455,14 +457,14 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				if (formats.isEmpty()) {
 					updatedStandardError("No image formats have been selected for the import.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				this.imageFormats = new ArrayList<>(formats);
 				Collections.sort(this.imageFormats, (o1, o2) -> o1.ordinal() - o2.ordinal());
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * The source folder
@@ -474,11 +476,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				if (!source.startsWith(framework.getTarget().getExchange())) {
 					updatedStandardError("The folios are located outside the project exchange folder.");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * The folio configuration.
@@ -488,7 +490,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				folioManager = new PersistenceManager(framework.getTarget().getProject().getFolio(), Type.folio_v1);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Select the the folios to be imported
@@ -503,7 +505,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					updatedStandardError("The folios cannot be read from the project exchange folder '"
 							+ source.toString() + "' - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				// sort the folios
@@ -532,7 +534,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 							+ source.toString() + "'.");
 
 					callback.updatedProgress(1);
-					return ProcessServiceProvider.Processor.State.completed;
+					return ProcessorServiceProvider.Processor.State.completed;
 				}
 
 				updatedStandardOutput((importFolios.size() == 1 ? "One folio" : importFolios.size() + " folios")
@@ -557,7 +559,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				} catch (IOException e) {
 					updatedStandardError("could not create required temporary directory - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
@@ -578,7 +580,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 						try {
 							size = getSize(identifyJob, file.toString(), id + "." + imageFormat.name());
 						} catch (IOException e) {
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 
 						de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
@@ -588,7 +590,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 							updatedStandardError(
 									"The folio does not supports the image type " + imageFormat.name() + ".");
 
-							return ProcessServiceProvider.Processor.State.interrupted;
+							return ProcessorServiceProvider.Processor.State.interrupted;
 						}
 
 						folios.add(new Folio(new Date(), framework.getUser(), id,
@@ -599,11 +601,11 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 						updatedStandardError(
 								"Cannot copy the folio '" + file.toString() + "' - " + e.getMessage() + ".");
 
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Create derivatives
@@ -612,7 +614,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 
 				final Target.Project.Images images = framework.getTarget().getProject().getImages();
 
-				ProcessServiceProvider.Processor.State state;
+				ProcessorServiceProvider.Processor.State state;
 				// quality best
 				try {
 					state = createDerivatives(new SystemProcess(folderFolios, convertCommand),
@@ -645,7 +647,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				} catch (Exception e) {
 					updatedStandardError("Cannot create derivatives - " + e.getMessage());
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				if (state != null)
@@ -674,14 +676,14 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 										getSize(identifyDetailJob, folio.getName(), target),
 										getSize(identifyBestJob, folio.getName(), target)));
 					} catch (IOException e) {
-						return ProcessServiceProvider.Processor.State.interrupted;
+						return ProcessorServiceProvider.Processor.State.interrupted;
 					}
 				}
 
 				callback.updatedProgress(0.6F);
 
 				if (isCanceled())
-					return ProcessServiceProvider.Processor.State.canceled;
+					return ProcessorServiceProvider.Processor.State.canceled;
 
 				/*
 				 * Move the folios to the project
@@ -693,22 +695,22 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 					move(foliosFiles, folderFolios, images.getFolios());
 					callback.updatedProgress(0.7F);
 					if (isCanceled())
-						return ProcessServiceProvider.Processor.State.canceled;
+						return ProcessorServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderThumbnail, images.getDerivatives().getThumbnail().getFolder());
 					callback.updatedProgress(0.75F);
 					if (isCanceled())
-						return ProcessServiceProvider.Processor.State.canceled;
+						return ProcessorServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderDetail, images.getDerivatives().getDetail().getFolder());
 					callback.updatedProgress(0.8F);
 					if (isCanceled())
-						return ProcessServiceProvider.Processor.State.canceled;
+						return ProcessorServiceProvider.Processor.State.canceled;
 
 					move(derivativeFiles, folderBest, images.getDerivatives().getBest().getFolder());
 					callback.updatedProgress(0.9F);
 					if (isCanceled())
-						return ProcessServiceProvider.Processor.State.canceled;
+						return ProcessorServiceProvider.Processor.State.canceled;
 				} catch (IOException e) {
 					int remain = remove(foliosFiles, images.getFolios());
 					remain += remove(derivativeFiles, images.getDerivatives().getThumbnail().getFolder());
@@ -719,7 +721,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
 							+ ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				/*
@@ -732,7 +734,7 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				} catch (Exception e) {
 					updatedStandardError("Cannot persist project folios configuration file - " + e.getMessage() + ".");
 
-					return ProcessServiceProvider.Processor.State.interrupted;
+					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
 				updatedStandardOutput((foliosFiles.size() == 1 ? "One folio" : foliosFiles.size() + " folios")

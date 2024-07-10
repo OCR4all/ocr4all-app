@@ -25,7 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.administration.AdministrationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Group;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.Password;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityEntity;
@@ -80,12 +82,16 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The administration service.
 	 * @since 1.8
 	 */
 	public AdministrationSecurityApiController(ConfigurationService configurationService,
-			SecurityService securityService, AdministrationService service) {
-		super(AdministrationSecurityApiController.class, configurationService, securityService);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			AdministrationService service) {
+		super(AdministrationSecurityApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.service = service;
 	}
@@ -117,22 +123,23 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the users sorted by login in the response body.
+	 * Returns the users sorted by login with respective groups in the response
+	 * body.
 	 * 
-	 * @return The users sorted by login in the response body.
+	 * @return The users sorted by login with respective in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the users sorted by login in the response body")
+	@Operation(summary = "returns the users sorted by login with respective groups in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Users with Groups", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = UserResponse.class))) }),
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = UserGroupResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@GetMapping(userRequestMapping + listRequestMapping)
-	public ResponseEntity<List<UserResponse>> userList() {
+	public ResponseEntity<List<UserGroupResponse>> userList() {
 		try {
-			List<UserResponse> users = new ArrayList<>();
+			List<UserGroupResponse> users = new ArrayList<>();
 
 			for (User user : service.getUsers())
-				users.add(new UserResponse(user));
+				users.add(new UserGroupResponse(user, service.getGroups()));
 
 			return ResponseEntity.ok().body(users);
 		} catch (Exception ex) {

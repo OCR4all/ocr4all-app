@@ -27,7 +27,9 @@ import org.springframework.web.server.ResponseStatusException;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.BasicRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.HistoryResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.ProjectResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
@@ -69,12 +71,15 @@ public class ProjectApiController extends CoreApiController {
 	 * 
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param service              The project service.
 	 * @since 1.8
 	 */
 	public ProjectApiController(ConfigurationService configurationService, SecurityService securityService,
-			ProjectService service) {
-		super(ProjectApiController.class, configurationService, securityService, service);
+			CollectionService collectionService, ModelService modelService, ProjectService service) {
+		super(ProjectApiController.class, configurationService, securityService, collectionService, modelService,
+				service);
 
 		this.service = service;
 	}

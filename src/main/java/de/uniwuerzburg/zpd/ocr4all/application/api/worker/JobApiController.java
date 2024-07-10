@@ -27,7 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
@@ -166,12 +168,16 @@ public class JobApiController extends CoreApiController {
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param service              The scheduler service.
+	 * @param collectionService    The collection service.
+	 * @param modelService         The model service.
 	 * @param projectService       The project service.
 	 * @since 1.8
 	 */
 	public JobApiController(ConfigurationService configurationService, SecurityService securityService,
-			SchedulerService service, ProjectService projectService) {
-		super(ProjectApiController.class, configurationService, securityService, projectService);
+			CollectionService collectionService, ModelService modelService, SchedulerService service,
+			ProjectService projectService) {
+		super(ProjectApiController.class, configurationService, securityService, collectionService, modelService,
+				projectService);
 
 		this.service = service;
 		this.projectService = projectService;
@@ -265,6 +271,8 @@ public class JobApiController extends CoreApiController {
 			if (!isCoordinator()) {
 				if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process process)
 					authorizationFactory.authorize(process.getProject().getId(), ProjectRight.execute);
+				else if (job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Training training)
+					authorizeModelSpecial(training.getModelId());
 				else
 					throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 			}
@@ -363,23 +371,31 @@ public class JobApiController extends CoreApiController {
 		try {
 			switch (schedulerSnapshotType) {
 			case administration:
-				return isCoordinator() ? ResponseEntity.ok().body(new JobOverviewResponse(service, null))
+				return isCoordinator() ? ResponseEntity.ok().body(new JobOverviewResponse(service, null, null))
 						: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 			case project:
 				Authorization authorization = authorizationFactory.authorize(id, ProjectRight.execute);
 
-				return ResponseEntity.ok().body(new JobOverviewResponse(service, Arrays.asList(authorization.project)));
+				return ResponseEntity.ok()
+						.body(new JobOverviewResponse(service, Arrays.asList(authorization.project), null));
 			case domain:
 				if (!isSecured())
 					return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
 
+				// The process jobs
 				Set<Job.Cluster> clusters = new HashSet<>();
 				for (Project project : projectService.getProjectsRightExist())
 					if (project.isCoordinator()
 							|| (!project.getConfiguration().getConfiguration().isStateBlocked() && project.isExecute()))
 						clusters.add(project);
 
-				return ResponseEntity.ok().body(new JobOverviewResponse(service, clusters));
+				// The training model ids
+				Set<String> trainingModelIds = new HashSet<>();
+				for (ModelService.Model model : modelService.getModels())
+					if (model.getRight().isReadFulfilled())
+						trainingModelIds.add(model.getConfiguration().getId());
+
+				return ResponseEntity.ok().body(new JobOverviewResponse(service, clusters, trainingModelIds));
 			default:
 				logger.warn("The scheduler snapshot type \"" + schedulerSnapshotType.name() + "\" is not implemented.");
 
@@ -724,15 +740,18 @@ public class JobApiController extends CoreApiController {
 		/**
 		 * Creates a job overview response for the api.
 		 *
-		 * @param service  The scheduler service.
-		 * @param clusters The clusters to select the jobs under control of the
-		 *                 scheduler. If null, all jobs are selected.
+		 * @param service          The scheduler service.
+		 * @param clusters         The clusters to select the jobs under control of the
+		 *                         scheduler. If null, all jobs are selected.
+		 * @param trainingModelIds The training jobs to add, that are running on the
+		 *                         given assemble model ids.
 		 * @since 1.8
 		 */
-		public JobOverviewResponse(SchedulerService service, Collection<Job.Cluster> clusters) {
+		public JobOverviewResponse(SchedulerService service, Collection<Job.Cluster> clusters,
+				Set<String> trainingModelIds) {
 			super();
 
-			SchedulerService.Container jobs = service.getJobs(clusters);
+			SchedulerService.Container jobs = service.getJobs(clusters, trainingModelIds);
 
 			scheduled = getJobResponses(jobs.getScheduled());
 			running = getJobResponses(jobs.getRunning());

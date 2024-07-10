@@ -25,7 +25,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
@@ -130,6 +132,8 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * 
 	 * @param configurationService  The configuration service.
 	 * @param securityService       The security service.
+	 * @param collectionService     The collection service.
+	 * @param modelService          The model service.
 	 * @param importService         The import service.
 	 * @param launcherService       The launcher service.
 	 * @param preprocessingService  The preprocessing service.
@@ -142,11 +146,13 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
-			SecurityService securityService, ImportService importService, LauncherService launcherService,
-			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
-			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
-			ToolService toolService, ExportService exportService, TrainingService trainingService) {
-		super(OverviewServiceProviderApiController.class, configurationService, securityService);
+			SecurityService securityService, CollectionService collectionService, ModelService modelService,
+			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
+			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
+			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
+			TrainingService trainingService) {
+		super(OverviewServiceProviderApiController.class, configurationService, securityService, collectionService,
+				modelService);
 
 		this.importService = importService;
 		this.launcherService = launcherService;
@@ -173,8 +179,9 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private List<ServiceProviderResponse> serviceProviders(CoreServiceProviderApiController.Type type,
 			CoreServiceProvider<? extends ServiceProvider> service, String lang) throws ServiceProviderException {
 		final Locale locale = getLocale(lang);
-		final Target target = new Target(configurationService.getExchange().getFolder().normalize(),
-				configurationService.getOpt().getFolder().normalize(), null, null);
+		final Target target = new Target(configurationService.getExchange().getFolder(),
+				configurationService.getOpt().getFolder(), configurationService.getData().getFolder(),
+				configurationService.getAssemble().getFolder(), null, null);
 
 		final List<ServiceProviderResponse> providers = new ArrayList<>();
 		for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders())
@@ -277,11 +284,13 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the workflow service providers in the response body.
+	 * Returns the workflow service providers in the response body. The workflow
+	 * providers has to conform with the workflow providers defined in the workflow
+	 * service.
 	 * 
 	 * @param lang The language. if null, then use the application preferred locale.
 	 * @return The workflow service providers in the response body.
-	 * @since 1.8
+	 * @since 17
 	 */
 	@Operation(summary = "returns the workflow service providers in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Workflow Service Providers", content = {
@@ -291,6 +300,10 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersWorkflow(
 			@RequestParam(required = false) String lang) {
 		try {
+			/*
+			 * The workflow providers has to conform with the workflow providers defined in
+			 * the workflow service (see WorkflowService#getActiveProcessServiceProvider()).
+			 */
 			final List<ServiceProviderResponse> providers = serviceProviders(
 					CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang);
 
