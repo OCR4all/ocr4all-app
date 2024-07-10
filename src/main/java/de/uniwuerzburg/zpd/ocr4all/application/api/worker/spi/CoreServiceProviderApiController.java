@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.WeightArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Dataset;
 
@@ -197,8 +197,8 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	/**
 	 * Authorizes the session user for read security operations on assemble models.
 	 * 
-	 * @param recognitionModels The recognition models. If it is null or no models
-	 *                          are available, then it is authorized.
+	 * @param weights The weights. If it is null or no models are available, then it
+	 *                is authorized.
 	 * @return The authorized models. Null if the given models is null.
 	 * @throws ResponseStatusException Throw with http status:
 	 *                                 <ul>
@@ -210,15 +210,14 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	 *                                 </ul>
 	 * @since 17
 	 */
-	protected List<ModelService.Model> authorizeRead(List<RecognitionModelArgument> recognitionModels)
-			throws ResponseStatusException {
-		if (recognitionModels == null)
+	protected List<ModelService.Model> authorizeRead(List<WeightArgument> weights) throws ResponseStatusException {
+		if (weights == null)
 			return null;
 		else {
 			List<ModelService.Model> models = new ArrayList<>();
-			for (RecognitionModelArgument recognitionModel : recognitionModels)
+			for (WeightArgument recognitionModel : weights)
 				if (recognitionModel != null && recognitionModel.getAssembles() != null)
-					for (RecognitionModelArgument.Assemble assemble : recognitionModel.getAssembles())
+					for (WeightArgument.Assemble assemble : recognitionModel.getAssembles())
 						models.add(authorizeModelRead(assemble.getId()));
 
 			return models;

@@ -22,7 +22,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.DecimalArgumen
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ImageArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.IntegerArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.RecognitionModelArgument;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.WeightArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.SelectArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.StringArgument;
 
@@ -170,21 +170,20 @@ public abstract class InstanceCore<T extends de.uniwuerzburg.zpd.ocr4all.applica
 					arguments.add(new ImageArgument(image.getArgument(), image.getValues()));
 
 		/*
-		 * The recognition model arguments.
+		 * The weight arguments.
 		 */
-		if (serviceProviderArgument.getRecognitionModels() != null)
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument recognitionModel : serviceProviderArgument
-					.getRecognitionModels())
+		if (serviceProviderArgument.getWeights() != null)
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.WeightArgument recognitionModel : serviceProviderArgument
+					.getWeights())
 				if (recognitionModel != null) {
-					List<RecognitionModelArgument.Assemble> assembles = new ArrayList<>();
+					List<WeightArgument.Assemble> assembles = new ArrayList<>();
 					if (recognitionModel.getAssembles() != null)
-						for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.RecognitionModelArgument.Assemble assemble : recognitionModel
+						for (de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.WeightArgument.Assemble assemble : recognitionModel
 								.getAssembles())
 							if (assemble != null)
-								assembles.add(
-										new RecognitionModelArgument.Assemble(assemble.getId(), assemble.getModels()));
+								assembles.add(new WeightArgument.Assemble(assemble.getId(), assemble.getModels()));
 
-					arguments.add(new RecognitionModelArgument(recognitionModel.getArgument(), assembles));
+					arguments.add(new WeightArgument(recognitionModel.getArgument(), assembles));
 				}
 
 		/*

@@ -204,8 +204,8 @@ public class ProcessServiceProviderApiController<P extends ProcessorServiceProvi
 			HttpServletResponse response) throws ResponseStatusException {
 		if (!isAvailable(authorization.project, authorization.sandbox))
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
-		
-		authorizeRead(request.getRecognitionModels());
+
+		authorizeRead(request.getWeights());
 
 		try {
 			final P provider = service.getActiveProvider(request.getId());

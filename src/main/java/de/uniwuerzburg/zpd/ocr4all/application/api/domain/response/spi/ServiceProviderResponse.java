@@ -23,7 +23,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Entry;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.Group;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.ImageField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.IntegerField;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.model.RecognitionModelField;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.WeightField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.SelectField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
 
@@ -167,8 +167,8 @@ public class ServiceProviderResponse implements Serializable {
 				list.add(new DecimalResponse(locale, field));
 			else if (entry instanceof IntegerField field)
 				list.add(new IntegerResponse(locale, field));
-			else if (entry instanceof RecognitionModelField field)
-				list.add(new RecognitionModelResponse(locale, field));
+			else if (entry instanceof WeightField field)
+				list.add(new WeightResponse(locale, field));
 			else if (entry instanceof SelectField field)
 				list.add(new SelectResponse(locale, field));
 			else if (entry instanceof StringField field)

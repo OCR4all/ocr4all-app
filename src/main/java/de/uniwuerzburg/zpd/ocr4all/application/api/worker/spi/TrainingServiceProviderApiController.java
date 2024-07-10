@@ -184,8 +184,8 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 			if (dataset == null || dataset.getCollections().isEmpty())
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-			authorizeRead(request.getRecognitionModels());
-			
+			authorizeRead(request.getWeights());
+
 			try {
 				// Create the model
 				ModelService.Model model = modelService.create(request.getAssembleModel().getName(),

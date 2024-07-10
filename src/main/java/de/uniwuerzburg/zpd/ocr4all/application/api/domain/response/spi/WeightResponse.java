@@ -1,5 +1,5 @@
 /**
- * File:     RecognitionModelResponse.java
+ * File:     WeightResponse.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -12,26 +12,26 @@ import java.util.Locale;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.uniwuerzburg.zpd.ocr4all.application.spi.model.RecognitionModelField;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.model.WeightField;
 
 /**
- * Defines recognition model responses for the api.
+ * Defines weight responses for the api.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class RecognitionModelResponse extends FieldResponse<String, RecognitionModelField> {
+public class WeightResponse extends FieldResponse<String, WeightField> {
 	/**
 	 * The serial version UID.
 	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * The model type.
+	 * The weight type.
 	 */
-	@JsonProperty("model-type")
-	private RecognitionModelField.Type modelType;
+	@JsonProperty("weight-type")
+	private WeightField.Type weightType;
 
 	/**
 	 * /** The minimum version. Null if not set.
@@ -46,10 +46,10 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	private String maximumVersion;
 
 	/**
-	 * True if multiple models can be selected.
+	 * True if multiple weights can be selected.
 	 */
-	@JsonProperty("multiple-models")
-	private boolean isMultipleModels;
+	@JsonProperty("multiple-select")
+	private boolean isMultipleSelect;
 
 	/**
 	 * The suffix for the model file names.
@@ -57,40 +57,40 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	private String suffix;
 
 	/**
-	 * Creates a recognition model response for the api.
+	 * Creates a weight response for the api.
 	 * 
-	 * @param locale                The locale.
-	 * @param recognitionModelField The recognition model field.
+	 * @param locale      The locale.
+	 * @param weightField The weight field.
 	 * @since 1.8
 	 */
-	public RecognitionModelResponse(Locale locale, RecognitionModelField recognitionModelField) {
-		super(locale, Type.recognition, recognitionModelField);
+	public WeightResponse(Locale locale, WeightField weightField) {
+		super(locale, Type.weight, weightField);
 
-		modelType = recognitionModelField.getType();
-		minimumVersion = recognitionModelField.getMinimumVersion().orElse(null);
-		maximumVersion = recognitionModelField.getMaximumVersion().orElse(null);
-		isMultipleModels = recognitionModelField.isMultipleModels();
-		suffix = recognitionModelField.getSuffix();
+		weightType = weightField.getType();
+		minimumVersion = weightField.getMinimumVersion().orElse(null);
+		maximumVersion = weightField.getMaximumVersion().orElse(null);
+		isMultipleSelect = weightField.isMultipleSelect();
+		suffix = weightField.getSuffix();
 	}
 
 	/**
-	 * Returns the model type.
+	 * Returns the weight type.
 	 *
-	 * @return The model type.
+	 * @return The weight type.
 	 * @since 17
 	 */
-	public RecognitionModelField.Type getModelType() {
-		return modelType;
+	public WeightField.Type getWeightType() {
+		return weightType;
 	}
 
 	/**
-	 * Set the model type.
+	 * Set the weight type.
 	 *
-	 * @param modelType The model type flag to set.
+	 * @param weightType The weight type to set.
 	 * @since 17
 	 */
-	public void setModelType(RecognitionModelField.Type modelType) {
-		this.modelType = modelType;
+	public void setWeightType(WeightField.Type weightType) {
+		this.weightType = weightType;
 	}
 
 	/**
@@ -134,24 +134,24 @@ public class RecognitionModelResponse extends FieldResponse<String, RecognitionM
 	}
 
 	/**
-	 * Returns true if multiple models can be selected.
+	 * Returns true if multiple weights can be selected.
 	 *
-	 * @return True if multiple models can be selected.
-	 * @since 1.8
+	 * @return True if multiple weights can be selected.
+	 * @since 17
 	 */
-	@JsonGetter("multiple-models")
-	public boolean isMultipleModels() {
-		return isMultipleModels;
+	@JsonGetter("multiple-select")
+	public boolean isMultipleSelect() {
+		return isMultipleSelect;
 	}
 
 	/**
-	 * Set to true if multiple models can be selected.
+	 * Set to true if multiple weights can be selected.
 	 *
-	 * @param isMultipleModels The multiple models flag to set.
-	 * @since 1.8
+	 * @param isMultipleSelect The select flag to set.
+	 * @since 17
 	 */
-	public void setMultipleModels(boolean isMultipleModels) {
-		this.isMultipleModels = isMultipleModels;
+	public void setMultipleSelect(boolean isMultipleSelect) {
+		this.isMultipleSelect = isMultipleSelect;
 	}
 
 	/**
