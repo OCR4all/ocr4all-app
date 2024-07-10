@@ -40,7 +40,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.Preprocess
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
-import de.uniwuerzburg.zpd.ocr4all.application.core.workflow.WorkflowService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Target;
 import io.swagger.v3.oas.annotations.Operation;
@@ -291,7 +290,6 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * 
 	 * @param lang The language. if null, then use the application preferred locale.
 	 * @return The workflow service providers in the response body.
-	 * @see WorkflowService#getActiveProcessServiceProvider()
 	 * @since 17
 	 */
 	@Operation(summary = "returns the workflow service providers in the response body")

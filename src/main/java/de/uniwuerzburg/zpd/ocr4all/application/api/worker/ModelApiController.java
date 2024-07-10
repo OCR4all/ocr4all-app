@@ -361,7 +361,7 @@ public class ModelApiController extends CoreApiController {
 	/**
 	 * Upload the models.
 	 * 
-	 * @param id       The model id.
+	 * @param modelId  The model id.
 	 * @param files    The files to upload in a multipart request.
 	 * @param response The HTTP-specific functionality in sending a response to the
 	 *                 client.
@@ -431,7 +431,7 @@ public class ModelApiController extends CoreApiController {
 	/**
 	 * Returns the model with its file names.
 	 * 
-	 * @param id The model id.
+	 * @param modelId The model id.
 	 * @return The model with its file names in the response body.
 	 * @since 1.8
 	 */
@@ -441,7 +441,7 @@ public class ModelApiController extends CoreApiController {
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
-	@PostMapping(fileRequestMapping)
+	@GetMapping(fileRequestMapping + modelPathVariable)
 	public ResponseEntity<ModelFileResponse> file(
 			@Parameter(description = "the model id - this is the folder name") @PathVariable String modelId) {
 		authorizeRead(modelId);
@@ -1582,7 +1582,7 @@ public class ModelApiController extends CoreApiController {
 		/**
 		 * Creates an available model with right response for the api without security.
 		 *
-		 * @param model The model.
+		 * @param modelFile The model file.
 		 * @since 1.8
 		 */
 		public ModelFileResponse(ModelService.ModelFile modelFile) {
