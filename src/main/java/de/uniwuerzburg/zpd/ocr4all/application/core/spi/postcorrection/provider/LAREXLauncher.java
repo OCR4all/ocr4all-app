@@ -243,7 +243,6 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		/**
 		 * Returns the main mets xml tag in the given line.
 		 * 
-		 * @param isOpen True if it is an open tag. Otherwise it is a close tag.
 		 * @param line   The line to search for the tag.
 		 * @return The main mets xml tag. Null if no tag is found.
 		 * @since 1.8
