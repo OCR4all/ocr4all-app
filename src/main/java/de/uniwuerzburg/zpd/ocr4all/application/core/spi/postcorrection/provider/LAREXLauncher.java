@@ -24,8 +24,6 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
@@ -41,6 +39,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.BooleanArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.StringArgument;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsParser;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsParser.Root.FileGroup.File;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 
 /**

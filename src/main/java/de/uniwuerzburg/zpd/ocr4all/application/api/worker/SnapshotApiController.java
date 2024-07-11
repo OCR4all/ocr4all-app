@@ -43,7 +43,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -52,6 +51,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -531,8 +531,7 @@ public class SnapshotApiController extends CoreApiController {
 				temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
 
 				final Set<String> availableSets = new HashSet<>();
-				for (de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File file : fileGroup
-						.getFiles()) {
+				for (MetsParser.Root.FileGroup.File file : fileGroup.getFiles()) {
 					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
 
 					if (ocr4allId != null && (isAllSets || importSets.contains(ocr4allId))
@@ -608,15 +607,15 @@ public class SnapshotApiController extends CoreApiController {
 		if (collection == null)
 			return set;
 
-		Set<String> names;
+		List<String> names;
 		try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
 			names = stream.filter(file -> !Files.isDirectory(file)).map(Path::getFileName).map(Path::toString)
-					.collect(Collectors.toSet());
+					.collect(Collectors.toList());
 		}
 
 		for (String name : names) {
-			String[] split = name.split(name, 2);
-			if (split.length == 2) {
+			String[] split = name.split("\\.", 2);
+			if (split.length == 2 && !split[0].isEmpty()) {
 				List<String> files = set.get(split[0]);
 				if (files == null) {
 					files = new ArrayList<String>();

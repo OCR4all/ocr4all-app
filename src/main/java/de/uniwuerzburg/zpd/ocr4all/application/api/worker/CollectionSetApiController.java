@@ -110,23 +110,23 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @since 17
 	 */
 	private Hashtable<String, List<String>> getSetFiles(Path folder, String id) throws IOException {
-		Set<String> names;
+		List<String> names;
 
 		try (Stream<Path> stream = Files.list(folder)) {
 			names = stream.filter(file -> {
-				if (!Files.isDirectory(file))
+				if (Files.isDirectory(file))
 					return false;
 				else {
 					String name = file.getFileName().toString();
 					return (id == null || name.startsWith(id + "."));
 				}
-			}).map(Path::getFileName).map(Path::toString).collect(Collectors.toSet());
+			}).map(Path::getFileName).map(Path::toString).collect(Collectors.toList());
 		}
 
 		Hashtable<String, List<String>> set = new Hashtable<>();
 		for (String name : names) {
-			String[] split = name.split(name, 2);
-			if (split.length == 2) {
+			String[] split = name.split("\\.", 2);
+			if (split.length == 2 && !split[0].isEmpty()) {
 				List<String> files = set.get(split[0]);
 				if (files == null) {
 					files = new ArrayList<String>();
