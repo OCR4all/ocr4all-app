@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -591,6 +593,44 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the files for the sets.
+	 * 
+	 * @param collectionId The collection id.
+	 * @return The files for the sets. The key is the set id.
+	 * @throws IOException
+	 * @since 17
+	 */
+	private Hashtable<String, List<String>> getSetFiles(String collectionId) throws IOException {
+		Hashtable<String, List<String>> set = new Hashtable<>();
+
+		CollectionService.Collection collection = collectionService.getCollection(collectionId);
+
+		if (collection == null)
+			return set;
+
+		Set<String> names;
+		try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
+			names = stream.filter(file -> !Files.isDirectory(file)).map(Path::getFileName).map(Path::toString)
+					.collect(Collectors.toSet());
+		}
+
+		for (String name : names) {
+			String[] split = name.split(name, 2);
+			if (split.length == 2) {
+				List<String> files = set.get(split[0]);
+				if (files == null) {
+					files = new ArrayList<String>();
+					set.put(split[0], files);
+				}
+
+				files.add(name);
+			}
+		}
+
+		return set;
+	}
+
+	/**
 	 * Adds all snapshot sets to a collection and returns the list of added sets of
 	 * the collection in the response body.
 	 * 
@@ -617,14 +657,22 @@ public class SnapshotApiController extends CoreApiController {
 			@RequestBody @Valid SnapshotCollectionRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addedSets = addSnapshot2collection(true,
+					authorization.sandbox, request);
+
+			Hashtable<String, List<String>> setFiles = getSetFiles(request.getCollectionId());
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(true,
-					authorization.sandbox, request))
-				sets.add(new SetResponse(set));
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (ResponseStatusException ex) {
 			return ResponseEntity.status(ex.getStatusCode()).build();
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
 
@@ -655,14 +703,22 @@ public class SnapshotApiController extends CoreApiController {
 			@RequestBody @Valid SnapshotCollectionSetRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addedSets = addSnapshot2collection(false,
+					authorization.sandbox, request);
+
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(false,
-					authorization.sandbox, request))
-				sets.add(new SetResponse(set));
+			Hashtable<String, List<String>> setFiles = getSetFiles(request.getCollectionId());
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (ResponseStatusException ex) {
 			return ResponseEntity.status(ex.getStatusCode()).build();
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
 

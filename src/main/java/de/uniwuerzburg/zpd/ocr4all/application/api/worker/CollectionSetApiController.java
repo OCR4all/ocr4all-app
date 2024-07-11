@@ -12,11 +12,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -85,6 +89,58 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the files for all sets.
+	 * 
+	 * @param folder The collection path.
+	 * @return The files for the sets. The key is the set id.
+	 * @throws IOException
+	 * @since 17
+	 */
+	private Hashtable<String, List<String>> getSetFiles(Path folder) throws IOException {
+		return getSetFiles(folder, null);
+	}
+
+	/**
+	 * Returns the files for the sets.
+	 * 
+	 * @param folder The collection path.
+	 * @param id     The set id. If null, returns the files for all sets.
+	 * @return The files for the sets. The key is the set id.
+	 * @throws IOException
+	 * @since 17
+	 */
+	private Hashtable<String, List<String>> getSetFiles(Path folder, String id) throws IOException {
+		Set<String> names;
+
+		try (Stream<Path> stream = Files.list(folder)) {
+			names = stream.filter(file -> {
+				if (!Files.isDirectory(file))
+					return false;
+				else {
+					String name = file.getFileName().toString();
+					return (id == null || name.startsWith(id + "."));
+				}
+			}).map(Path::getFileName).map(Path::toString).collect(Collectors.toSet());
+		}
+
+		Hashtable<String, List<String>> set = new Hashtable<>();
+		for (String name : names) {
+			String[] split = name.split(name, 2);
+			if (split.length == 2) {
+				List<String> files = set.get(split[0]);
+				if (files == null) {
+					files = new ArrayList<String>();
+					set.put(split[0], files);
+				}
+
+				files.add(name);
+			}
+		}
+
+		return set;
+	}
+
+	/**
 	 * Upload the sets.
 	 * 
 	 * @param collectionId The collection id. This is the folder name.
@@ -112,9 +168,11 @@ public class CollectionSetApiController extends CoreApiController {
 			if (uploaded == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 			else {
+				Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 				final List<SetResponse> sets = new ArrayList<>();
+
 				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : uploaded)
-					sets.add(new SetResponse(set));
+					sets.add(new SetResponse(set, setFiles));
 
 				return ResponseEntity.ok().body(sets);
 			}
@@ -149,7 +207,8 @@ public class CollectionSetApiController extends CoreApiController {
 			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = collectionService.getSet(collection, id);
 
 			return set == null ? ResponseEntity.status(HttpStatus.NO_CONTENT).build()
-					: ResponseEntity.ok().body(new SetResponse(set));
+					: ResponseEntity.ok()
+							.body(new SetResponse(set, getSetFiles(collection.getConfiguration().getFolder(), id)));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -176,10 +235,12 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
+			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
+
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
 					.getSets(collection))
-				sets.add(new SetResponse(set));
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (Exception ex) {
@@ -210,10 +271,12 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
+			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
+
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
 					.sortSets(collection, request.getIds(), request.isAfter()))
-				sets.add(new SetResponse(set));
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (Exception ex) {
@@ -250,10 +313,12 @@ public class CollectionSetApiController extends CoreApiController {
 					metadata.add(
 							new CollectionService.Metadata(update.getId(), update.getName(), update.getKeywords()));
 
+			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
+
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
 					.updateSets(collection, metadata))
-				sets.add(new SetResponse(set));
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (Exception ex) {
@@ -284,10 +349,12 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
+			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
 			final List<SetResponse> sets = new ArrayList<>();
+
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
 					.removeSets(collection, Set.of(id)))
-				sets.add(new SetResponse(set));
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (Exception ex) {
@@ -318,10 +385,12 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
+			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
+
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
 					.removeSets(collection, request.getIds()))
-				sets.add(new SetResponse(set));
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (Exception ex) {
