@@ -48,8 +48,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ImageArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.IntegerArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.SelectArgument;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
 
 /**
  * Defines service providers for sandbox launchers.

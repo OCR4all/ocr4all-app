@@ -1,3 +1,0 @@
-      <mets:file ID="[ocr4all-file_id]" MIMETYPE="[ocr4all-file_mime_type]">
-        <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="[ocr4all-file_name]" />
-      </mets:file>

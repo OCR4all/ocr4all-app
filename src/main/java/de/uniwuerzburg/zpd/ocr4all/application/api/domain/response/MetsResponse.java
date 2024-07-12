@@ -22,9 +22,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsParser;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsParser.Root;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser.Root;
 
 /**
  * Defines mets responses for the api.
