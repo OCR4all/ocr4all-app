@@ -24,10 +24,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
-import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.PostcorrectionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
@@ -41,7 +38,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.model.StringField;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.BooleanArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.StringArgument;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser.Root.FileGroup.File;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsResource;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsTag;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
 
 /**
  * Defines service providers for LAREX launchers.
@@ -62,201 +63,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	private static final String identifier = "ocr4all-LAREX-launcher";
 
 	/**
-	 * Defines templates.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
+	 * The other role value.
 	 */
-	private enum Template {
-		mets_agent("mets-agent"), mets_file_group("mets-file-group"), mets_file("mets-file"), mets_page("mets-page");
-
-		/**
-		 * The folder.
-		 */
-		private static final String folder = "templates/spi/postcorrection/larex-launcher/";
-
-		/**
-		 * The suffix.
-		 */
-		private static final String suffix = ".template";
-
-		/**
-		 * The name.
-		 */
-		private final String name;
-
-		/**
-		 * Creates a template.
-		 * 
-		 * @param name The name.
-		 * @since 1.8
-		 */
-		private Template(String name) {
-			this.name = name;
-		}
-
-		/**
-		 * Returns the resource name.
-		 * 
-		 * @return The resource name.
-		 * @since 1.8
-		 */
-		public String getResourceName() {
-			return folder + name + suffix;
-		}
-
-		/**
-		 * Returns the template content.
-		 * 
-		 * @return The template content
-		 * @throws IllegalArgumentException Throws if the resource could not be found.
-		 * @throws IOException              If an I/O error occurs.
-		 * @since 1.8
-		 */
-		public String getResourceAsText() throws IllegalArgumentException, IOException {
-			return OCR4allUtils.getResourceAsText(getResourceName());
-		}
-	}
-
-	/**
-	 * Define patterns for mets templates.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	private enum MetsPattern {
-		other_role, software_name, input_file_group, output_file_group, parameter,
-
-		file_group, file_template,
-
-		file_id, file_mime_type, file_name,
-
-		page_id;
-
-		/**
-		 * The other role value.
-		 */
-		private static final String otherRoleValue = "postcorrection/larex";
-
-		/**
-		 * Returns the pattern.
-		 * 
-		 * @return The pattern.
-		 * @since 1.8
-		 */
-		public String getPattern() {
-			return "[ocr4all-" + name() + "]";
-		}
-	}
-
-	/**
-	 * Defines mets xml tags.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	private enum MetsTag {
-		header("metsHdr"),
-
-		fileSection("fileSec"),
-
-		structureMap("structMap"), physicalSequence(false, "div"), pages(false, "div"), fileId(false, "fptr");
-
-		/**
-		 * True if it is a main tag.
-		 */
-		private final boolean isMainTag;
-
-		/**
-		 * The name.
-		 */
-		private final String name;
-
-		/**
-		 * Creates a main mets xml tag.
-		 * 
-		 * @param name The name.
-		 * @since 1.8
-		 */
-		private MetsTag(String name) {
-			this.isMainTag = true;
-			this.name = name;
-		}
-
-		/**
-		 * Creates a mets xml tag.
-		 * 
-		 * @param isMainTag True if it is a main tag.
-		 * @param name      The name.
-		 * @since 1.8
-		 */
-		private MetsTag(boolean isMainTag, String name) {
-			this.isMainTag = isMainTag;
-			this.name = name;
-		}
-
-		/**
-		 * Returns true if it is a main tag.
-		 *
-		 * @return True if it is a main tag.
-		 * @since 1.8
-		 */
-		public boolean isMainTag() {
-			return isMainTag;
-		}
-
-		/**
-		 * Returns the tag.
-		 * 
-		 * @return The tag.
-		 * @since 1.8
-		 */
-		public String getTag() {
-			return "mets:" + name;
-		}
-
-		/**
-		 * Returns true if the given line contains the open tag.
-		 * 
-		 * @param line The line.
-		 * @return True if the given line contains the open tag.
-		 * @since 1.8
-		 */
-		public boolean isOpenTag(String line) {
-			return line != null && line.contains("<" + getTag());
-		}
-
-		/**
-		 * Returns true if the given line contains the close tag.
-		 * 
-		 * @param line The line.
-		 * @return True if the given line contains the close tag.
-		 * @since 1.8
-		 */
-		public boolean isCloseTag(String line) {
-			return line != null && line.contains("</" + getTag() + ">");
-		}
-
-		/**
-		 * Returns the main mets xml tag in the given line.
-		 * 
-		 * @param isOpen True if it is an open tag. Otherwise it is a close tag.
-		 * @param line   The line to search for the tag.
-		 * @return The main mets xml tag. Null if no tag is found.
-		 * @since 1.8
-		 */
-		public static MetsTag getMainOpenTag(String line) {
-			if (line != null)
-				for (MetsTag tag : MetsTag.values())
-					if (tag.isMainTag() && tag.isOpenTag(line))
-						return tag;
-
-			return null;
-		}
-	}
+	private static final String otherRoleValue = "postcorrection/larex";
 
 	/**
 	 * Defines fields.
@@ -524,43 +333,12 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
 
-				// mets templates
-				final String metsAgentTemplate;
+				// mets resources
+				MetsResource metsResource;
 				try {
-					metsAgentTemplate = Template.mets_agent.getResourceAsText();
+					metsResource = new MetsResource();
 				} catch (Exception e) {
-					updatedStandardError("Internal error: missed mets agent resource '"
-							+ Template.mets_agent.getResourceName() + ".");
-
-					return ProcessorServiceProvider.Processor.State.interrupted;
-				}
-
-				final String metsFileGroupTemplate;
-				try {
-					metsFileGroupTemplate = Template.mets_file_group.getResourceAsText();
-				} catch (Exception e) {
-					updatedStandardError("Internal error: missed mets file group resource '"
-							+ Template.mets_file_group.getResourceName() + ".");
-
-					return ProcessorServiceProvider.Processor.State.interrupted;
-				}
-
-				final String metsFileTemplate;
-				try {
-					metsFileTemplate = Template.mets_file.getResourceAsText();
-				} catch (Exception e) {
-					updatedStandardError(
-							"Internal error: missed mets file resource '" + Template.mets_file.getResourceName() + ".");
-
-					return ProcessorServiceProvider.Processor.State.interrupted;
-				}
-
-				final String metsPageTemplate;
-				try {
-					metsPageTemplate = Template.mets_page.getResourceAsText();
-				} catch (Exception e) {
-					updatedStandardError(
-							"Internal error: missed page file resource '" + Template.mets_page.getResourceName() + ".");
+					updatedStandardError("Internal error: missed mets agent resource - " + e.getMessage() + ".");
 
 					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
@@ -721,26 +499,27 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 						targetPage.add(xmlContainer.getTargetFileID());
 						targetPages.put(xmlContainer.getSourceFile().getId(), targetPage);
 
-						metsFileBuffer.append(metsFileTemplate
-								.replace(MetsPattern.file_id.getPattern(), xmlContainer.getTargetFileID())
+						metsFileBuffer.append(metsResource.getResources(MetsResource.Template.mets_file)
+								.replace(MetsResource.Pattern.file_id.getPattern(), xmlContainer.getTargetFileID())
 
-								.replace(MetsPattern.file_mime_type.getPattern(),
+								.replace(MetsResource.Pattern.file_mime_type.getPattern(),
 										xmlContainer.getSourceFile().getMimeType())
 
-								.replace(MetsPattern.file_name.getPattern(),
+								.replace(MetsResource.Pattern.file_name.getPattern(),
 										sandboxRelativePath + "/" + xmlContainer.getTargetFilename()));
 
 						if (larexFile.isImageContainerSet()) {
 							final LarexFile.Container imageContainer = larexFile.getImageContainer();
 							targetPage.add(imageContainer.getTargetFileID());
 
-							metsFileBuffer.append(metsFileTemplate
-									.replace(MetsPattern.file_id.getPattern(), imageContainer.getTargetFileID())
+							metsFileBuffer.append(metsResource.getResources(MetsResource.Template.mets_file)
+									.replace(MetsResource.Pattern.file_id.getPattern(),
+											imageContainer.getTargetFileID())
 
-									.replace(MetsPattern.file_mime_type.getPattern(),
+									.replace(MetsResource.Pattern.file_mime_type.getPattern(),
 											imageContainer.getSourceFile().getMimeType())
 
-									.replace(MetsPattern.file_name.getPattern(),
+									.replace(MetsResource.Pattern.file_name.getPattern(),
 											sandboxRelativePath + "/" + imageContainer.getTargetFilename()));
 						}
 					}
@@ -766,15 +545,15 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 							switch (handlingTag) {
 							case header:
 								if (isCloseTag) {
-									buffer.append(metsAgentTemplate
-											.replace(MetsPattern.other_role.getPattern(), MetsPattern.otherRoleValue)
-											.replace(MetsPattern.software_name.getPattern(),
+									buffer.append(metsResource.getResources(MetsResource.Template.mets_agent)
+											.replace(MetsResource.Pattern.other_role.getPattern(), otherRoleValue)
+											.replace(MetsResource.Pattern.software_name.getPattern(),
 													identifier + " v" + getVersion())
-											.replace(MetsPattern.input_file_group.getPattern(),
+											.replace(MetsResource.Pattern.input_file_group.getPattern(),
 													metsFrameworkFileGroup.getInput())
-											.replace(MetsPattern.output_file_group.getPattern(),
+											.replace(MetsResource.Pattern.output_file_group.getPattern(),
 													metsFrameworkFileGroup.getOutput())
-											.replace(MetsPattern.parameter.getPattern(),
+											.replace(MetsResource.Pattern.parameter.getPattern(),
 													objectMapper.writeValueAsString(argument)));
 
 									handlingTag = null;
@@ -783,10 +562,10 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								break;
 							case fileSection:
 								if (isCloseTag) {
-									buffer.append(metsFileGroupTemplate
-											.replace(MetsPattern.file_group.getPattern(),
+									buffer.append(metsResource.getResources(MetsResource.Template.mets_file_group)
+											.replace(MetsResource.Pattern.file_group.getPattern(),
 													metsFrameworkFileGroup.getOutput())
-											.replace(MetsPattern.file_template.getPattern(),
+											.replace(MetsResource.Pattern.file_template.getPattern(),
 													metsFileBuffer.toString()));
 
 									handlingTag = null;
@@ -810,8 +589,8 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 							case pages:
 								if (isCloseTag) {
 									for (String fileGroup : pageFileIds)
-										buffer.append(
-												metsPageTemplate.replace(MetsPattern.file_id.getPattern(), fileGroup));
+										buffer.append(metsResource.getResources(MetsResource.Template.mets_page)
+												.replace(MetsResource.Pattern.file_id.getPattern(), fileGroup));
 
 									pageFileIds.clear();
 									handlingTag = MetsTag.physicalSequence;

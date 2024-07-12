@@ -22,9 +22,9 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
 
 /**
  * Defines sandbox responses for the api.

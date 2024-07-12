@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -41,7 +43,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
-import de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -50,7 +51,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.provider.LAREXLauncher;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.util.MetsUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsParser;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -529,8 +531,7 @@ public class SnapshotApiController extends CoreApiController {
 				temporaryFolder = configurationService.getTemporary().getTemporaryDirectory();
 
 				final Set<String> availableSets = new HashSet<>();
-				for (de.uniwuerzburg.zpd.ocr4all.application.core.parser.mets.MetsParser.Root.FileGroup.File file : fileGroup
-						.getFiles()) {
+				for (MetsParser.Root.FileGroup.File file : fileGroup.getFiles()) {
 					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
 
 					if (ocr4allId != null && (isAllSets || importSets.contains(ocr4allId))
@@ -591,6 +592,43 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the files for the sets.
+	 * 
+	 * @param collectionId The collection id.
+	 * @return The files for the sets. The key is the set id.
+	 * @throws IOException
+	 * @since 17
+	 */
+	private Hashtable<String, List<Path>> getSetFiles(String collectionId) throws IOException {
+		Hashtable<String, List<Path>> set = new Hashtable<>();
+
+		CollectionService.Collection collection = collectionService.getCollection(collectionId);
+
+		if (collection == null)
+			return set;
+
+		List<Path> files;
+		try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
+			files = stream.filter(file -> !Files.isDirectory(file)).collect(Collectors.toList());
+		}
+
+		for (Path name : files) {
+			String[] split = name.getFileName().toString().split("\\.", 2);
+			if (split.length == 2 && !split[0].isEmpty()) {
+				List<Path> list = set.get(split[0]);
+				if (list == null) {
+					list = new ArrayList<Path>();
+					set.put(split[0], list);
+				}
+
+				list.add(name);
+			}
+		}
+
+		return set;
+	}
+
+	/**
 	 * Adds all snapshot sets to a collection and returns the list of added sets of
 	 * the collection in the response body.
 	 * 
@@ -617,14 +655,22 @@ public class SnapshotApiController extends CoreApiController {
 			@RequestBody @Valid SnapshotCollectionRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addedSets = addSnapshot2collection(true,
+					authorization.sandbox, request);
+
+			Hashtable<String, List<Path>> setFiles = getSetFiles(request.getCollectionId());
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(true,
-					authorization.sandbox, request))
-				sets.add(new SetResponse(set));
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (ResponseStatusException ex) {
 			return ResponseEntity.status(ex.getStatusCode()).build();
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
 
@@ -655,14 +701,22 @@ public class SnapshotApiController extends CoreApiController {
 			@RequestBody @Valid SnapshotCollectionSetRequest request) {
 		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
 		try {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addedSets = addSnapshot2collection(false,
+					authorization.sandbox, request);
+
 			final List<SetResponse> sets = new ArrayList<>();
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addSnapshot2collection(false,
-					authorization.sandbox, request))
-				sets.add(new SetResponse(set));
+			Hashtable<String, List<Path>> setFiles = getSetFiles(request.getCollectionId());
+
+			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
+				sets.add(new SetResponse(set, setFiles));
 
 			return ResponseEntity.ok().body(sets);
 		} catch (ResponseStatusException ex) {
 			return ResponseEntity.status(ex.getStatusCode()).build();
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
 
