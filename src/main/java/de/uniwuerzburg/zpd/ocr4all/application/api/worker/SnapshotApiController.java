@@ -599,30 +599,29 @@ public class SnapshotApiController extends CoreApiController {
 	 * @throws IOException
 	 * @since 17
 	 */
-	private Hashtable<String, List<String>> getSetFiles(String collectionId) throws IOException {
-		Hashtable<String, List<String>> set = new Hashtable<>();
+	private Hashtable<String, List<Path>> getSetFiles(String collectionId) throws IOException {
+		Hashtable<String, List<Path>> set = new Hashtable<>();
 
 		CollectionService.Collection collection = collectionService.getCollection(collectionId);
 
 		if (collection == null)
 			return set;
 
-		List<String> names;
+		List<Path> files;
 		try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
-			names = stream.filter(file -> !Files.isDirectory(file)).map(Path::getFileName).map(Path::toString)
-					.collect(Collectors.toList());
+			files = stream.filter(file -> !Files.isDirectory(file)).collect(Collectors.toList());
 		}
 
-		for (String name : names) {
-			String[] split = name.split("\\.", 2);
+		for (Path name : files) {
+			String[] split = name.getFileName().toString().split("\\.", 2);
 			if (split.length == 2 && !split[0].isEmpty()) {
-				List<String> files = set.get(split[0]);
-				if (files == null) {
-					files = new ArrayList<String>();
-					set.put(split[0], files);
+				List<Path> list = set.get(split[0]);
+				if (list == null) {
+					list = new ArrayList<Path>();
+					set.put(split[0], list);
 				}
 
-				files.add(name);
+				list.add(name);
 			}
 		}
 
@@ -659,7 +658,7 @@ public class SnapshotApiController extends CoreApiController {
 			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> addedSets = addSnapshot2collection(true,
 					authorization.sandbox, request);
 
-			Hashtable<String, List<String>> setFiles = getSetFiles(request.getCollectionId());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(request.getCollectionId());
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
@@ -706,7 +705,7 @@ public class SnapshotApiController extends CoreApiController {
 					authorization.sandbox, request);
 
 			final List<SetResponse> sets = new ArrayList<>();
-			Hashtable<String, List<String>> setFiles = getSetFiles(request.getCollectionId());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(request.getCollectionId());
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : addedSets)
 				sets.add(new SetResponse(set, setFiles));

@@ -96,7 +96,7 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @throws IOException
 	 * @since 17
 	 */
-	private Hashtable<String, List<String>> getSetFiles(Path folder) throws IOException {
+	private Hashtable<String, List<Path>> getSetFiles(Path folder) throws IOException {
 		return getSetFiles(folder, null);
 	}
 
@@ -109,31 +109,31 @@ public class CollectionSetApiController extends CoreApiController {
 	 * @throws IOException
 	 * @since 17
 	 */
-	private Hashtable<String, List<String>> getSetFiles(Path folder, String id) throws IOException {
-		List<String> names;
+	private Hashtable<String, List<Path>> getSetFiles(Path folder, String id) throws IOException {
+		List<Path> files;
 
 		try (Stream<Path> stream = Files.list(folder)) {
-			names = stream.filter(file -> {
+			files = stream.filter(file -> {
 				if (Files.isDirectory(file))
 					return false;
 				else {
 					String name = file.getFileName().toString();
 					return (id == null || name.startsWith(id + "."));
 				}
-			}).map(Path::getFileName).map(Path::toString).collect(Collectors.toList());
+			}).collect(Collectors.toList());
 		}
 
-		Hashtable<String, List<String>> set = new Hashtable<>();
-		for (String name : names) {
-			String[] split = name.split("\\.", 2);
+		Hashtable<String, List<Path>> set = new Hashtable<>();
+		for (Path file : files) {
+			String[] split = file.getFileName().toString().split("\\.", 2);
 			if (split.length == 2 && !split[0].isEmpty()) {
-				List<String> files = set.get(split[0]);
-				if (files == null) {
-					files = new ArrayList<String>();
-					set.put(split[0], files);
+				List<Path> list = set.get(split[0]);
+				if (list == null) {
+					list = new ArrayList<Path>();
+					set.put(split[0], list);
 				}
 
-				files.add(name);
+				list.add(file);
 			}
 		}
 
@@ -168,7 +168,7 @@ public class CollectionSetApiController extends CoreApiController {
 			if (uploaded == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 			else {
-				Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+				Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 				final List<SetResponse> sets = new ArrayList<>();
 
 				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : uploaded)
@@ -235,7 +235,7 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
-			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
@@ -271,7 +271,7 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
@@ -313,7 +313,7 @@ public class CollectionSetApiController extends CoreApiController {
 					metadata.add(
 							new CollectionService.Metadata(update.getId(), update.getName(), update.getKeywords()));
 
-			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
@@ -349,7 +349,7 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
+			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
@@ -385,7 +385,7 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			Hashtable<String, List<String>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
 			final List<SetResponse> sets = new ArrayList<>();
 
 			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
