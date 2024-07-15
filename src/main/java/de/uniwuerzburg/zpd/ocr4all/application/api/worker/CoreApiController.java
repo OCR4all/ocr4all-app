@@ -90,6 +90,11 @@ public class CoreApiController {
 	public static final String environmentRequestMapping = "/environment";
 
 	/**
+	 * The domain request mapping.
+	 */
+	public static final String domainRequestMapping = "/domain";
+
+	/**
 	 * The configuration request mapping.
 	 */
 	public static final String configurationRequestMapping = "/configuration";
