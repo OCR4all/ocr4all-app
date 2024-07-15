@@ -416,9 +416,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 					setImages(framework, metsFrameworkFileGroup, root, larexFiles);
 
 					for (LarexFile larexFile : larexFiles)
-						if (larexFile.isImageContainerSet()) {
+						for (LarexFile.Container imageContainer : larexFile.getImageContainers()) {
 							final Path inputFile = Paths.get(processorWorkspace.toString(),
-									larexFile.getImageContainer().getSourceFile().getLocation().getPath());
+									imageContainer.getSourceFile().getLocation().getPath());
 
 							if (!Files.exists(inputFile) || Files.isDirectory(inputFile)) {
 								updatedStandardError(
@@ -430,7 +430,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 							try {
 								Files.copy(inputFile,
 										Paths.get(framework.getTemporary().toString(),
-												larexFile.getImageContainer().getTargetFilename()),
+												imageContainer.getTargetFilename()),
 										StandardCopyOption.REPLACE_EXISTING);
 							} catch (IOException e) {
 								updatedStandardError("Cannot copy the required input image '" + inputFile.toString()
@@ -462,12 +462,10 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 										larexFile.getXmlContainer().getTargetFilename()),
 								StandardCopyOption.REPLACE_EXISTING);
 
-						if (larexFile.isImageContainerSet())
+						for (LarexFile.Container imageContainer : larexFile.getImageContainers())
 							Files.move(
-									Paths.get(framework.getTemporary().toString(),
-											larexFile.getImageContainer().getTargetFilename()),
-									Paths.get(framework.getOutput().toString(),
-											larexFile.getImageContainer().getTargetFilename()),
+									Paths.get(framework.getTemporary().toString(), imageContainer.getTargetFilename()),
+									Paths.get(framework.getOutput().toString(), imageContainer.getTargetFilename()),
 									StandardCopyOption.REPLACE_EXISTING);
 					}
 
@@ -508,8 +506,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								.replace(MetsResource.Pattern.file_name.getPattern(),
 										sandboxRelativePath + "/" + xmlContainer.getTargetFilename()));
 
-						if (larexFile.isImageContainerSet()) {
-							final LarexFile.Container imageContainer = larexFile.getImageContainer();
+						for (LarexFile.Container imageContainer : larexFile.getImageContainers()) {
 							targetPage.add(imageContainer.getTargetFileID());
 
 							metsFileBuffer.append(metsResource.getResources(MetsResource.Template.mets_file)
@@ -683,18 +680,21 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 				}
 
 			if (page != null) {
-				LarexImage larexImage = getImage(metsFrameworkFileGroup, fileGroups, page,
+				List<LarexImage> images = new ArrayList<>();
+
+				getImages(images, metsFrameworkFileGroup, fileGroups, page,
 						new ArrayList<>(framework.getTarget().getSandbox().getSnapshotTrack()));
 
-				if (larexImage != null)
-					larexFile.setImageContainer(larexImage.getSnapshotTrack(), larexImage.getFile());
+				for (LarexImage image : images)
+					larexFile.addImageContainer(image.getSnapshotTrack(), image.getFile());
 			}
 		}
 	}
 
 	/**
-	 * Search for the Larex image.
+	 * Search for the Larex images.
 	 * 
+	 * @param images                 The images.
 	 * @param metsFrameworkFileGroup The framework for the processor.
 	 * @param fileGroups             The mets file groups.
 	 * @param page                   The mets page.
@@ -702,7 +702,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 	 * @return The Larex image. Null if no image was found.
 	 * @since 1.8
 	 */
-	private LarexImage getImage(MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
+	private void getImages(List<LarexImage> images, MetsUtils.FrameworkFileGroup metsFrameworkFileGroup,
 			Hashtable<String, Hashtable<String, MetsParser.Root.FileGroup.File>> fileGroups, Set<String> page,
 			List<Integer> snapshotTrack) {
 
@@ -711,15 +711,13 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		if (fileGroup != null)
 			for (String fileId : page)
 				if (fileGroup.containsKey(fileId) && fileGroup.get(fileId).isMimeTypeImage())
-					return new LarexImage(snapshotTrack, fileGroup.get(fileId));
+					images.add(new LarexImage(snapshotTrack, fileGroup.get(fileId)));
 
 		// Search recursively if not found in fileGroups
-		if (snapshotTrack.isEmpty())
-			return null;
-		else {
+		if (!snapshotTrack.isEmpty()) {
 			snapshotTrack.remove(snapshotTrack.size() - 1);
 
-			return getImage(metsFrameworkFileGroup, fileGroups, page, snapshotTrack);
+			getImages(images, metsFrameworkFileGroup, fileGroups, page, snapshotTrack);
 		}
 
 	}
@@ -877,9 +875,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		private final Container xmlContainer;
 
 		/**
-		 * The image container.
+		 * The image containers.
 		 */
-		private Container imageContainer = null;
+		private List<Container> imageContainers = new ArrayList<>();
 
 		/**
 		 * Creates a LAREX file.
@@ -893,7 +891,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			super();
 			this.metsFrameworkFileGroup = metsFrameworkFileGroup;
 
-			xmlContainer = new Container(ContainerType.xml, sourceFile, null, this.metsFrameworkFileGroup.getInput(),
+			xmlContainer = new Container(ContainerType.xml, sourceFile, null, 0, this.metsFrameworkFileGroup.getInput(),
 					this.metsFrameworkFileGroup.getOutput());
 		}
 
@@ -908,34 +906,35 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 		}
 
 		/**
-		 * Returns true if the image container is set.
+		 * Returns the image containers.
 		 *
-		 * @return True if the image container is set.
+		 * @return The image containers.
 		 * @since 1.8
 		 */
-		public boolean isImageContainerSet() {
-			return imageContainer != null;
+		public List<Container> getImageContainers() {
+			return imageContainers;
 		}
 
 		/**
-		 * Returns the image container.
+		 * Adds the image container if target name is not available.
 		 *
-		 * @return The image container.
+		 * @param imageContainer The image container to add.
 		 * @since 1.8
 		 */
-		public Container getImageContainer() {
-			return imageContainer;
-		}
-
-		/**
-		 * Set the image container.
-		 *
-		 * @param imageContainer The image container to set.
-		 * @since 1.8
-		 */
-		public void setImageContainer(List<Integer> track, MetsParser.Root.FileGroup.File sourceFile) {
-			imageContainer = new Container(ContainerType.image, sourceFile, xmlContainer.getTargetFileCoreID(),
+		public void addImageContainer(List<Integer> track, MetsParser.Root.FileGroup.File sourceFile) {
+			Container imageContainer = new Container(ContainerType.image, sourceFile,
+					xmlContainer.getTargetFileCoreID(), imageContainers.size() + 1,
 					metsFrameworkFileGroup.getFileGroup(track), metsFrameworkFileGroup.getOutput());
+
+			boolean isFilenameAvailable = false;
+			for (Container container : imageContainers)
+				if (container.getTargetFilename().equals(imageContainer.getTargetFilename())) {
+					isFilenameAvailable = true;
+					break;
+				}
+
+			if (!isFilenameAvailable)
+				imageContainers.add(imageContainer);
 		}
 
 		/**
@@ -967,6 +966,11 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			private final String targetFileCoreID;
 
 			/**
+			 * The target file id index. If 0, no index is required.
+			 */
+			private final int targetIndex;
+
+			/**
 			 * The target file name.
 			 */
 			private final String targetFilename;
@@ -977,17 +981,19 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * @param type             The container type.
 			 * @param sourceFile       The source mets file.
 			 * @param targetFileCoreID The source mets file.
-			 * @param targetFileCoreID The target file id.
-			 * @param targetFilename   The target file name.
-			 * @since 1.8
+			 * @param targetIndex      The target file id index. If 0, no index is required.
+			 * @param inputFileGroup   The input file group.
+			 * @param outputFileGroup  The output file group.
+			 * @since 17
 			 */
 			private Container(ContainerType type, MetsParser.Root.FileGroup.File sourceFile, String targetFileCoreID,
-					String inputFileGroup, String outputFileGroup) {
+					int targetIndex, String inputFileGroup, String outputFileGroup) {
 				super();
 
 				this.fileIndex = ++nextFileIndex;
 				this.type = type;
 				this.sourceFile = sourceFile;
+				this.targetIndex = targetIndex;
 
 				this.targetFileCoreID = targetFileCoreID != null ? targetFileCoreID
 						: outputFileGroup + (sourceFile.getId().startsWith(inputFileGroup)
@@ -1027,7 +1033,7 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * @since 1.8
 			 */
 			public String getTargetFileID() {
-				return targetFileCoreID + "_" + type.name();
+				return targetFileCoreID + "_" + type.name() + (targetIndex > 0 ? "-" + targetIndex : "");
 			}
 
 			/**
