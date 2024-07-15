@@ -651,9 +651,34 @@ public class Application {
 	 */
 	public static class SPI {
 		/**
+		 * The isolation property.
+		 */
+		private Isolation isolation = new Isolation();
+
+		/**
 		 * The microservice architecture (MSA) properties.
 		 */
 		private List<MSA> msa = new ArrayList<>();
+
+		/**
+		 * Returns the isolation property.
+		 *
+		 * @return The isolation property.
+		 * @since 17
+		 */
+		public Isolation getIsolation() {
+			return isolation;
+		}
+
+		/**
+		 * Set the isolation property.
+		 *
+		 * @param isolation The isolation property to set.
+		 * @since 17
+		 */
+		public void setIsolation(Isolation isolation) {
+			this.isolation = isolation;
+		}
 
 		/**
 		 * Returns the microservice architecture (MSA) properties.
@@ -673,6 +698,73 @@ public class Application {
 		 */
 		public void setMsa(List<MSA> msa) {
 			this.msa = msa;
+		}
+
+		/**
+		 * Defines isolation properties.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+
+		public static class Isolation {
+			/**
+			 * The number of attempts before giving up, including the first call. This is a
+			 * positive integer with default value 12.
+			 */
+			private int maxAttempts = 12;
+
+			/**
+			 * The delay time in milliseconds between the attempt. This is a non negative
+			 * integer with default value 5000 ms.
+			 */
+			private long delayBetweenAttempts = 5000;
+
+			/**
+			 * Returns the number of attempts before giving up, including the first call.
+			 * This is a positive integer.
+			 *
+			 * @return The number of attempts before giving up, including the first call.
+			 * @since 17
+			 */
+			public int getMaxAttempts() {
+				return maxAttempts;
+			}
+
+			/**
+			 * Set the number of attempts before giving up, including the first call.
+			 *
+			 * @param maxAttempts The number of attempts to set. This is a positive integer.
+			 * @since 17
+			 */
+			public void setMaxAttempts(int maxAttempts) {
+				if (maxAttempts > 0)
+					this.maxAttempts = maxAttempts;
+			}
+
+			/**
+			 * Returns the delay time in milliseconds between the attempt. This is a non
+			 * negative integer.
+			 *
+			 * @return The delay time in milliseconds between the attempt.
+			 * @since 17
+			 */
+			public long getDelayBetweenAttempts() {
+				return delayBetweenAttempts;
+			}
+
+			/**
+			 * Set the delay time between in milliseconds the attempt.
+			 *
+			 * @param delayBetweenAttempts The delay time in milliseconds to set. This is a
+			 *                             non negative integer.
+			 * @since 17
+			 */
+			public void setDelayBetweenAttempts(long delayBetweenAttempts) {
+				if (delayBetweenAttempts >= 0)
+					this.delayBetweenAttempts = delayBetweenAttempts;
+			}
 		}
 
 		/**
@@ -938,7 +1030,6 @@ public class Application {
 						if (waitDuration > 0)
 							this.waitDuration = waitDuration;
 					}
-
 				}
 			}
 		}

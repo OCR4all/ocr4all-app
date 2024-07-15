@@ -19,6 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.communication.CommunicationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ApplicationConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.TaskExecutorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
@@ -98,11 +99,17 @@ public class CoreServiceProvider<P extends ServiceProvider> extends CoreService 
 					 * is set, the initialization is performed in a new thread.
 					 */
 					if (provider.isEnabled()) {
-						if (provider.isEagerInitialized())
+						if (provider.isEagerInitialized()) {
 							initialize(provider);
-						else
+
+							if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
+								isolation(provider);
+						} else
 							taskExecutor.execute(() -> {
 								initialize(provider);
+
+								if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
+									isolation(provider);
 							});
 					}
 				}
@@ -130,18 +137,53 @@ public class CoreServiceProvider<P extends ServiceProvider> extends CoreService 
 			this.logger.info("Loaded " + providers.size() + " providers for " + service.getName() + ": "
 					+ buffer.toString() + ".");
 		}
+	}
 
+	/**
+	 * Isolates the service provider and try to start it later.
+	 * 
+	 * @param provider The provider.
+	 * @since 17
+	 */
+	private void isolation(final P provider) {
+		new Thread(() -> {
+			final ApplicationConfiguration.SPI.Isolation isolation = configurationService.getApplication().getSpi()
+					.getIsolation();
+
+			int attempt = 0;
+			while (ServiceProvider.Status.inactive.equals(provider.getStatus())
+					&& attempt < isolation.getMaxAttempts()) {
+				attempt++;
+
+				logger.warn("service provider isolation (attempt " + attempt + "/" + isolation.getMaxAttempts()
+						+ "): key " + provider.getClass().getName() + " go sleep for "
+						+ isolation.getDelayBetweenAttempts() + "ms.");
+
+				try {
+					Thread.sleep(isolation.getDelayBetweenAttempts());
+				} catch (InterruptedException ie) {
+					// Nothing to do
+				}
+
+				if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
+					provider.start(null);
+			}
+
+			if (attempt > 0) {
+				if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
+					logger.warn("service provider isolation fails: key " + provider.getClass().getName()
+							+ " could not started after " + attempt + " attempts.");
+				else
+					logger.info("service provider isolation success: key " + provider.getClass().getName()
+							+ " started after " + attempt + (attempt == 1 ? " attempt." : " attempts."));
+			}
+		}).start();
 	}
 
 	/**
 	 * Initializes the service provider.
 	 *
-	 * @param provider                        The provider.
-	 * @param id                              The provider id.
-	 * @param lazyInitializedServiceProviders The lazy initialized service
-	 *                                        providers.
-	 * @param disabledServiceProviders        The disabled service providers.
-	 * @param configuration                   The configuration.
+	 * @param provider The provider.
 	 * @since 1.8
 	 */
 	private void initialize(P provider) {
