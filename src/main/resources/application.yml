@@ -69,25 +69,29 @@ ocr4all:
       task: 6
       workflow: 12
       training: 6
-    spi.msa:
-      - id: ocrd
-        url: localhost:9091
-        websocket:
-          end-point: /event
-          topic: /topic/spi
-          resilience:
-            max-attempts: 3
-            delay-between-attempts: 1000
-            wait-duration: 15000
-      - id: calamari
-        url: localhost:9092
-        websocket:
-          end-point: /event
-          topic: /topic/spi
-          resilience:
-            max-attempts: 3
-            delay-between-attempts: 1000
-            wait-duration: 15000
+    spi:
+      isolation:
+        max-attempts: 12
+        delay-between-attempts: 5000
+      msa:
+        - id: ocrd
+          url: localhost:9091
+          websocket:
+            end-point: /event
+            topic: /topic/spi
+            resilience:
+              max-attempts: 3
+              delay-between-attempts: 1000
+              wait-duration: 15000
+        - id: calamari
+          url: localhost:9092
+          websocket:
+            end-point: /event
+            topic: /topic/spi
+            resilience:
+              max-attempts: 3
+              delay-between-attempts: 1000
+              wait-duration: 15000
     security:
       groups:
         administrator: admin

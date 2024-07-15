@@ -462,6 +462,11 @@ public class ApplicationConfiguration {
 	 */
 	public static class SPI {
 		/**
+		 * The isolation.
+		 */
+		private final Isolation isolation;
+
+		/**
 		 * The microservice architectures (MSA).
 		 */
 		private final List<MSA> msa = new ArrayList<>();
@@ -474,9 +479,21 @@ public class ApplicationConfiguration {
 		public SPI(Application.SPI spi) {
 			super();
 
+			isolation = new Isolation(spi.getIsolation());
+
 			if (spi != null && spi.getMsa() != null)
 				for (Application.SPI.MSA msa : spi.getMsa())
 					this.msa.add(new MSA(msa));
+		}
+
+		/**
+		 * Returns the isolation.
+		 *
+		 * @return The isolation.
+		 * @since 17
+		 */
+		public Isolation getIsolation() {
+			return isolation;
 		}
 
 		/**
@@ -487,6 +504,62 @@ public class ApplicationConfiguration {
 		 */
 		public List<MSA> getMsa() {
 			return msa;
+		}
+
+		/**
+		 * Defines isolation configurations.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+
+		public static class Isolation {
+			/**
+			 * The number of attempts before giving up, including the first call. This is a
+			 * positive integer.
+			 */
+			private final int maxAttempts;
+
+			/**
+			 * The delay time in milliseconds between the attempt. This is a non negative
+			 * integer.
+			 */
+			private final long delayBetweenAttempts;
+
+			/**
+			 * Creates an isolation configuration.
+			 * 
+			 * @param isolation The isolation property.
+			 * @since 17
+			 */
+			public Isolation(Application.SPI.Isolation isolation) {
+				super();
+				this.maxAttempts = isolation.getMaxAttempts();
+				this.delayBetweenAttempts = isolation.getDelayBetweenAttempts();
+			}
+
+			/**
+			 * Returns the number of attempts before giving up, including the first call.
+			 * This is a positive integer.
+			 *
+			 * @return The number of attempts before giving up, including the first call.
+			 * @since 17
+			 */
+			public int getMaxAttempts() {
+				return maxAttempts;
+			}
+
+			/**
+			 * Returns the delay time in milliseconds between the attempt. This is a non
+			 * negative integer.
+			 *
+			 * @return The delay time in milliseconds between the attempt.
+			 * @since 17
+			 */
+			public long getDelayBetweenAttempts() {
+				return delayBetweenAttempts;
+			}
 		}
 
 		/**

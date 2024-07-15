@@ -640,7 +640,7 @@ public class AdministrationSecurityApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines user with group requests for the api.
+	 * Defines user with group responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
