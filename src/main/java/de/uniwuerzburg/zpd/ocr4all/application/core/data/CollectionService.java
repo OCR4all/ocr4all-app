@@ -756,15 +756,15 @@ public class CollectionService extends CoreService {
 					if (id != null && !id.isBlank())
 						removeIds.add(id.trim());
 
-				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set folio : getSets(collection))
-					if (removeIds.contains(folio.getId()))
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : getSets(collection))
+					if (removeIds.contains(set.getId()))
 						try {
-							OCR4allUtils.delete(OCR4allUtils.getFiles(folder, folio.getId() + ".", null));
+							OCR4allUtils.delete(OCR4allUtils.getFiles(folder, set.getId() + ".", null));
 						} catch (Exception e) {
 							// Ignore troubles removing files
 						}
 					else
-						sets.add(folio);
+						sets.add(set);
 			}
 
 			persist(collection, sets);
@@ -772,6 +772,50 @@ public class CollectionService extends CoreService {
 			return sets;
 		} else
 			return null;
+	}
+
+	/**
+	 * Removes the file from the set. If no more files are available for the set,
+	 * the set is also removed.
+	 * 
+	 * @param collection The collection.
+	 * @param id         The id of the set.
+	 * @param suffix     The file suffix.
+	 * @return The sets. Null if the collection, id or suffix is null or the write
+	 *         right is not fulfilled.
+	 * @throws IOException Throws if the sets metadata file can not be read or
+	 *                     persisted.
+	 * @since 1.8
+	 */
+	public List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> removeFile(Collection collection,
+			String id, String suffix) throws IOException {
+		if (collection != null && id != null && suffix != null && !suffix.isBlank()
+				&& collection.getRight().isWriteFulfilled()) {
+			de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set = getSet(collection, id);
+
+			if (set != null) {
+				final Path folder = collection.getConfiguration().getFolder();
+
+				Files.deleteIfExists(folder.resolve(set.getId() + "." + suffix.trim()));
+
+				if (!OCR4allUtils.getFiles(folder, set.getId() + ".", null).isEmpty())
+					return getSets(collection);
+				else {
+					// The set is empty
+					List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new ArrayList<>();
+
+					for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set bundle : getSets(collection))
+						if (!set.getId().equals(bundle.getId()))
+							sets.add(bundle);
+
+					persist(collection, sets);
+
+					return sets;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**

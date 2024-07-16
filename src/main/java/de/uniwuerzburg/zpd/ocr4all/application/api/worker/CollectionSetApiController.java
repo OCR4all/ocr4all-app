@@ -349,14 +349,20 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
-			final List<SetResponse> sets = new ArrayList<>();
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> bundles = collectionService
+					.removeSets(collection, Set.of(id));
 
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
-					.removeSets(collection, Set.of(id)))
-				sets.add(new SetResponse(set, setFiles));
+			if (bundles == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
+				final List<SetResponse> sets = new ArrayList<>();
 
-			return ResponseEntity.ok().body(sets);
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : bundles)
+					sets.add(new SetResponse(set, setFiles));
+
+				return ResponseEntity.ok().body(sets);
+			}
 		} catch (Exception ex) {
 			log(ex);
 
@@ -385,14 +391,64 @@ public class CollectionSetApiController extends CoreApiController {
 		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
 
 		try {
-			Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
-			final List<SetResponse> sets = new ArrayList<>();
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> bundles = collectionService
+					.removeSets(collection, request.getIds());
 
-			for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : collectionService
-					.removeSets(collection, request.getIds()))
-				sets.add(new SetResponse(set, setFiles));
+			if (bundles == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder());
+				final List<SetResponse> sets = new ArrayList<>();
 
-			return ResponseEntity.ok().body(sets);
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : bundles)
+					sets.add(new SetResponse(set, setFiles));
+
+				return ResponseEntity.ok().body(sets);
+			}
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Removes the file of the set.
+	 * 
+	 * @param collectionId The collection id. This is the folder name.
+	 * @param id           The set id.
+	 * @param suffix       The suffix.
+	 * @return The sets in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "removes the file of the set and returns the sets in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Set", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SetResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(removeRequestMapping + fileRequestMapping + collectionPathVariable)
+	public ResponseEntity<List<SetResponse>> removeFile(
+			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
+			@Parameter(description = "the set id") @RequestParam String id,
+			@Parameter(description = "the suffix") @RequestParam String suffix) {
+		CollectionService.Collection collection = authorizeCollectionWrite(collectionId);
+
+		try {
+			List<de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> bundles = collectionService
+					.removeFile(collection, id, suffix);
+
+			if (bundles == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				Hashtable<String, List<Path>> setFiles = getSetFiles(collection.getConfiguration().getFolder(), id);
+				final List<SetResponse> sets = new ArrayList<>();
+
+				for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : bundles)
+					sets.add(new SetResponse(set, setFiles));
+
+				return ResponseEntity.ok().body(sets);
+			}
 		} catch (Exception ex) {
 			log(ex);
 
