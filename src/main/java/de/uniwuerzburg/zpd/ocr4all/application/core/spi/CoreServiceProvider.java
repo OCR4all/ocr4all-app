@@ -103,13 +103,13 @@ public class CoreServiceProvider<P extends ServiceProvider> extends CoreService 
 							initialize(provider);
 
 							if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
-								isolation(provider);
+								quarantine(provider);
 						} else
 							taskExecutor.execute(() -> {
 								initialize(provider);
 
 								if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
-									isolation(provider);
+									quarantine(provider);
 							});
 					}
 				}
@@ -145,22 +145,22 @@ public class CoreServiceProvider<P extends ServiceProvider> extends CoreService 
 	 * @param provider The provider.
 	 * @since 17
 	 */
-	private void isolation(final P provider) {
+	private void quarantine(final P provider) {
 		new Thread(() -> {
-			final ApplicationConfiguration.SPI.Isolation isolation = configurationService.getApplication().getSpi()
-					.getIsolation();
+			final ApplicationConfiguration.SPI.Quarantine quarantine = configurationService.getApplication().getSpi()
+					.getQuarantine();
 
 			int attempt = 0;
 			while (ServiceProvider.Status.inactive.equals(provider.getStatus())
-					&& attempt < isolation.getMaxAttempts()) {
+					&& attempt < quarantine.getMaxAttempts()) {
 				attempt++;
 
-				logger.warn("service provider isolation (attempt " + attempt + "/" + isolation.getMaxAttempts()
+				logger.warn("service provider quarantine (attempt " + attempt + "/" + quarantine.getMaxAttempts()
 						+ "): key " + provider.getClass().getName() + " go sleep for "
-						+ isolation.getDelayBetweenAttempts() + "ms.");
+						+ quarantine.getDelayBetweenAttempts() + "ms.");
 
 				try {
-					Thread.sleep(isolation.getDelayBetweenAttempts());
+					Thread.sleep(quarantine.getDelayBetweenAttempts());
 				} catch (InterruptedException ie) {
 					// Nothing to do
 				}
@@ -171,10 +171,10 @@ public class CoreServiceProvider<P extends ServiceProvider> extends CoreService 
 
 			if (attempt > 0) {
 				if (ServiceProvider.Status.inactive.equals(provider.getStatus()))
-					logger.warn("service provider isolation fails: key " + provider.getClass().getName()
+					logger.warn("service provider quarantine fails: key " + provider.getClass().getName()
 							+ " could not started after " + attempt + " attempts.");
 				else
-					logger.info("service provider isolation success: key " + provider.getClass().getName()
+					logger.info("service provider quarantine success: key " + provider.getClass().getName()
 							+ " started after " + attempt + (attempt == 1 ? " attempt." : " attempts."));
 			}
 		}).start();

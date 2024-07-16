@@ -651,9 +651,9 @@ public class Application {
 	 */
 	public static class SPI {
 		/**
-		 * The isolation property.
+		 * The quarantine property.
 		 */
-		private Isolation isolation = new Isolation();
+		private Quarantine quarantine = new Quarantine();
 
 		/**
 		 * The microservice architecture (MSA) properties.
@@ -661,23 +661,23 @@ public class Application {
 		private List<MSA> msa = new ArrayList<>();
 
 		/**
-		 * Returns the isolation property.
+		 * Returns the quarantine property.
 		 *
-		 * @return The isolation property.
+		 * @return The quarantine property.
 		 * @since 17
 		 */
-		public Isolation getIsolation() {
-			return isolation;
+		public Quarantine getQuarantine() {
+			return quarantine;
 		}
 
 		/**
-		 * Set the isolation property.
+		 * Set the quarantine property.
 		 *
-		 * @param isolation The isolation property to set.
+		 * @param quarantine The quarantine property to set.
 		 * @since 17
 		 */
-		public void setIsolation(Isolation isolation) {
-			this.isolation = isolation;
+		public void setQuarantine(Quarantine quarantine) {
+			this.quarantine = quarantine;
 		}
 
 		/**
@@ -701,14 +701,14 @@ public class Application {
 		}
 
 		/**
-		 * Defines isolation properties.
+		 * Defines quarantine properties.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 17
 		 */
 
-		public static class Isolation {
+		public static class Quarantine {
 			/**
 			 * The number of attempts before giving up, including the first call. This is a
 			 * positive integer with default value 12.

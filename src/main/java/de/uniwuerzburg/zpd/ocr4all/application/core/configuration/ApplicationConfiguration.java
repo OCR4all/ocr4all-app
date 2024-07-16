@@ -462,9 +462,9 @@ public class ApplicationConfiguration {
 	 */
 	public static class SPI {
 		/**
-		 * The isolation.
+		 * The quarantine.
 		 */
-		private final Isolation isolation;
+		private final Quarantine quarantine;
 
 		/**
 		 * The microservice architectures (MSA).
@@ -479,7 +479,7 @@ public class ApplicationConfiguration {
 		public SPI(Application.SPI spi) {
 			super();
 
-			isolation = new Isolation(spi.getIsolation());
+			quarantine = new Quarantine(spi.getQuarantine());
 
 			if (spi != null && spi.getMsa() != null)
 				for (Application.SPI.MSA msa : spi.getMsa())
@@ -487,13 +487,13 @@ public class ApplicationConfiguration {
 		}
 
 		/**
-		 * Returns the isolation.
+		 * Returns the quarantine.
 		 *
-		 * @return The isolation.
+		 * @return The quarantine.
 		 * @since 17
 		 */
-		public Isolation getIsolation() {
-			return isolation;
+		public Quarantine getQuarantine() {
+			return quarantine;
 		}
 
 		/**
@@ -507,14 +507,14 @@ public class ApplicationConfiguration {
 		}
 
 		/**
-		 * Defines isolation configurations.
+		 * Defines quarantine configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 17
 		 */
 
-		public static class Isolation {
+		public static class Quarantine {
 			/**
 			 * The number of attempts before giving up, including the first call. This is a
 			 * positive integer.
@@ -528,15 +528,15 @@ public class ApplicationConfiguration {
 			private final long delayBetweenAttempts;
 
 			/**
-			 * Creates an isolation configuration.
+			 * Creates an quarantine configuration.
 			 * 
-			 * @param isolation The isolation property.
+			 * @param quarantine The quarantine property.
 			 * @since 17
 			 */
-			public Isolation(Application.SPI.Isolation isolation) {
+			public Quarantine(Application.SPI.Quarantine quarantine) {
 				super();
-				this.maxAttempts = isolation.getMaxAttempts();
-				this.delayBetweenAttempts = isolation.getDelayBetweenAttempts();
+				this.maxAttempts = quarantine.getMaxAttempts();
+				this.delayBetweenAttempts = quarantine.getDelayBetweenAttempts();
 			}
 
 			/**

@@ -65,19 +65,16 @@
 			"type": "java.lang.Integer",
 			"description": "ocr4all application thread pool size for training. This is optional, the default value is 6."
 		},
-
 		{
-			"name": "ocr4all.application.spi.isolation.max-attempts",
+			"name": "ocr4all.application.spi.quarantine.max-attempts",
 			"type": "java.lang.Integer",
-			"description": "ocr4all application spi isolation maximal attempts. This means, the number of attempts before giving up, including the first call. This is a positive integer with default value 12."
+			"description": "ocr4all application spi quarantine maximal attempts. This means, the number of attempts before giving up, including the first call. This is a positive integer with default value 12."
 		},
 		{
-			"name": "ocr4all.application.spi.isolation.delay-between-attempts",
+			"name": "ocr4all.application.spi.quarantine.delay-between-attempts",
 			"type": "java.lang.Long",
-			"description": "ocr4all application spi isolation delay between attempts. This means, the delay time in milliseconds between the attempt. This is a non negative integer with default value 5000 ms."
+			"description": "ocr4all application spi quarantine delay between attempts. This means, the delay time in milliseconds between the attempt. This is a non negative integer with default value 5000 ms."
 		},
-
-
 		{
 			"name": "ocr4all.application.spi.msa.id",
 			"type": "java.lang.String",
