@@ -70,7 +70,7 @@ ocr4all:
       workflow: 12
       training: 6
     spi:
-      isolation:
+      quarantine:
         max-attempts: 12
         delay-between-attempts: 5000
       msa:
