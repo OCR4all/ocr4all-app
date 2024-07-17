@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -36,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifierRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SetResponse;
@@ -44,6 +47,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.pagexml.PageXMLLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -612,6 +616,53 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the codec.
+	 * 
+	 * @param request The codec request.
+	 * @return The sets in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the codec in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Codec", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = CodecResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(codecRequestMapping)
+	public ResponseEntity<List<CodecResponse>> codec(@RequestBody @Valid CodecRequest request) {
+
+		try {
+			List<CodecResponse> codecs = new ArrayList<>();
+
+			for (CodecRequest.Dataset dataset : request.getDatasets()) {
+
+				try {
+					CollectionService.Collection collection = authorizeCollectionRead(dataset.getId());
+
+					List<CodecResponse.Page> pages = new ArrayList<>();
+
+					for (String filename : dataset.getFilenames())
+						if (filename != null && !filename.isBlank())
+							pages.add(new CodecResponse.Page(filename.trim(),
+									collectionService.getPageXMLCodec(collection, filename, request.getLevel(),
+											request.getIndex(), request.getNormalizer())));
+
+					codecs.add(new CodecResponse(collection.getConfiguration().getId(), pages));
+
+				} catch (ResponseStatusException e) {
+					codecs.add(new CodecResponse(dataset.getId().trim()));
+				}
+			}
+
+			return ResponseEntity.ok().body(codecs);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Defines set sort requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -762,5 +813,378 @@ public class CollectionSetApiController extends CoreApiController {
 				this.keywords = keywords;
 			}
 		}
+	}
+
+	/**
+	 * Defines codec requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class CodecRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The datasets.
+		 */
+		@NotNull
+		private List<Dataset> datasets;
+
+		/**
+		 * The PageXML level.
+		 */
+		@NotNull
+		private PageXMLLevel level;
+
+		/**
+		 * The PageXML index.
+		 */
+		@NotNull
+		private int index;
+
+		/**
+		 * The normalizer. If null, do not normalize.
+		 */
+		private Normalizer.Form normalizer;
+
+		/**
+		 * Returns the datasets.
+		 *
+		 * @return The datasets.
+		 * @since 17
+		 */
+		public List<Dataset> getDatasets() {
+			return datasets;
+		}
+
+		/**
+		 * Set the datasets.
+		 *
+		 * @param datasets The datasets to set.
+		 * @since 17
+		 */
+		public void setDatasets(List<Dataset> datasets) {
+			this.datasets = datasets;
+		}
+
+		/**
+		 * Returns the PageXML level.
+		 *
+		 * @return The PageXML level.
+		 * @since 17
+		 */
+		public PageXMLLevel getLevel() {
+			return level;
+		}
+
+		/**
+		 * Set the PageXML level.
+		 *
+		 * @param level The PageXML level to set.
+		 * @since 17
+		 */
+		public void setLevel(PageXMLLevel level) {
+			this.level = level;
+		}
+
+		/**
+		 * Returns the PageXML index.
+		 *
+		 * @return The PageXML index.
+		 * @since 17
+		 */
+		public int getIndex() {
+			return index;
+		}
+
+		/**
+		 * Set the PageXML index.
+		 *
+		 * @param index The PageXML index to set.
+		 * @since 17
+		 */
+		public void setIndex(int index) {
+			this.index = index;
+		}
+
+		/**
+		 * Returns the normalizer. If null, do not normalize.
+		 *
+		 * @return The normalizer.
+		 * @since 17
+		 */
+		public Normalizer.Form getNormalizer() {
+			return normalizer;
+		}
+
+		/**
+		 * Set the normalizer. If null, do not normalize.
+		 *
+		 * @param normalizer The normalizer to set.
+		 * @since 17
+		 */
+		public void setNormalizer(Normalizer.Form normalizer) {
+			this.normalizer = normalizer;
+		}
+
+		/**
+		 * Defines datasets requests for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class Dataset implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The id.
+			 */
+			@NotBlank
+			private String id;
+
+			/**
+			 * The filenames.
+			 */
+			@NotNull
+			private List<String> filenames;
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the filenames.
+			 *
+			 * @return The filenames.
+			 * @since 17
+			 */
+			public List<String> getFilenames() {
+				return filenames;
+			}
+
+			/**
+			 * Set the filenames.
+			 *
+			 * @param filenames The filenames to set.
+			 * @since 17
+			 */
+			public void setFilenames(List<String> filenames) {
+				this.filenames = filenames;
+			}
+
+		}
+	}
+
+	/**
+	 * Defines codec responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class CodecResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The collection id.
+		 */
+		@JsonProperty("collection-id")
+		@NotBlank
+		private String collectionId;
+
+		/**
+		 * The pages.
+		 */
+		private List<Page> pages;
+
+		/**
+		 * Default constructor for a codec response for the api.
+		 * 
+		 * @since 17
+		 */
+		public CodecResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a codec response for the api.
+		 * 
+		 * @param collectionId The collection id.
+		 * @since 17
+		 */
+		public CodecResponse(@NotBlank String collectionId) {
+			this(collectionId, null);
+		}
+
+		/**
+		 * Creates a codec response for the api.
+		 * 
+		 * @param collectionId The collection id.
+		 * @param pages        The pages.
+		 * @since 17
+		 */
+		public CodecResponse(@NotBlank String collectionId, List<Page> pages) {
+			super();
+
+			this.collectionId = collectionId;
+			this.pages = pages;
+		}
+
+		/**
+		 * Returns the collection id.
+		 *
+		 * @return The collection id.
+		 * @since 17
+		 */
+		public String getCollectionId() {
+			return collectionId;
+		}
+
+		/**
+		 * Set the collection id.
+		 *
+		 * @param collectionId The collection id to set.
+		 * @since 17
+		 */
+		public void setCollectionId(String collectionId) {
+			this.collectionId = collectionId;
+		}
+
+		/**
+		 * Returns the pages.
+		 *
+		 * @return The pages.
+		 * @since 17
+		 */
+		public List<Page> getPages() {
+			return pages;
+		}
+
+		/**
+		 * Set the pages.
+		 *
+		 * @param pages The pages to set.
+		 * @since 17
+		 */
+		public void setPages(List<Page> pages) {
+			this.pages = pages;
+		}
+
+		/**
+		 * Defines page responses for the api.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class Page implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The id.
+			 */
+			@NotBlank
+			private String id;
+
+			/**
+			 * The codec.
+			 */
+			private Hashtable<String, Integer> codec;
+
+			/**
+			 * Default constructor for a page response for the api.
+			 * 
+			 * @since 17
+			 */
+			public Page() {
+				super();
+			}
+
+			/**
+			 * Creates a page response for the api.
+			 * 
+			 * @param id    The id.
+			 * @param codec The codec.
+			 * @since 17
+			 */
+			public Page(@NotBlank String id, Hashtable<String, Integer> codec) {
+				super();
+
+				this.id = id;
+				this.codec = codec;
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the codec.
+			 *
+			 * @return The codec.
+			 * @since 17
+			 */
+			public Hashtable<String, Integer> getCodec() {
+				return codec;
+			}
+
+			/**
+			 * Set the codec.
+			 *
+			 * @param codec The codec to set.
+			 * @since 17
+			 */
+			public void setCodec(Hashtable<String, Integer> codec) {
+				this.codec = codec;
+			}
+
+		}
+
 	}
 }

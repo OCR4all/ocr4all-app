@@ -280,6 +280,11 @@ public class CoreApiController {
 	public static final String setRequestMapping = "/set";
 
 	/**
+	 * The codec request mapping.
+	 */
+	public static final String codecRequestMapping = "/codec";
+
+	/**
 	 * The all request mapping.
 	 */
 	public static final String allRequestMapping = "/all";

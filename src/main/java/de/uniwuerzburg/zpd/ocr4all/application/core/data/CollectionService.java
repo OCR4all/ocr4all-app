@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +38,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.pagexml.PageXMLLevel;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.util.pagexml.PageXMLParser;
 
 /**
  * Defines collection services.
@@ -816,6 +819,93 @@ public class CollectionService extends CoreService {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns the PageXML codec.
+	 * 
+	 * @param collection The collection.
+	 * @param filename   The filename.
+	 * @param level      The PageXML level.
+	 * @param index      The PageXML index.
+	 * @param normalizer The normalizer. If null, do not normalize.
+	 * @return The PageXML codec. Null on troubles.
+	 * @since 17
+	 */
+	public Hashtable<String, Integer> getPageXMLCodec(Collection collection, String filename, PageXMLLevel level,
+			int index, Normalizer.Form normalizer) {
+		if (collection != null && filename != null && !filename.isBlank() && level != null
+				&& collection.getRight().isWriteFulfilled()) {
+			final Path folder = collection.getConfiguration().getFolder();
+
+			try {
+				PageXMLParser.Root root = (new PageXMLParser()).deserialise(folder.resolve(filename).toFile());
+
+				if (root.getPage() != null) {
+					StringBuffer buffer = new StringBuffer();
+
+					for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
+						if (PageXMLLevel.TextRegion.equals(level))
+							buffer.append(getTextEquivalenceUnicode(region, index));
+						else {
+							for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
+								if (PageXMLLevel.TextLine.equals(level))
+									buffer.append(getTextEquivalenceUnicode(line, index));
+								else {
+									for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line.getWords())
+										if (PageXMLLevel.Word.equals(level))
+											buffer.append(getTextEquivalenceUnicode(word, index));
+										else {
+											for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
+													.getGlyphs())
+												if (PageXMLLevel.Glyph.equals(level))
+													buffer.append(getTextEquivalenceUnicode(glyph, index));
+										}
+								}
+						}
+
+					Hashtable<String, Integer> codec = new Hashtable<>();
+					if (buffer.length() > 0) {
+						String text = normalizer == null ? buffer.toString()
+								: Normalizer.normalize(buffer.toString(), normalizer);
+
+						for (int i = 0; i < text.length(); i++) {
+							String glyph = "" + text.charAt(i);
+							Integer frequency = codec.get(glyph);
+
+							codec.put(glyph, frequency == null ? 1 : frequency.intValue() + 1);
+						}
+					}
+
+					return codec;
+				}
+
+			} catch (Exception e) {
+				// Ignore malformed PageXML
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the PageXML text equivalence unicode if the index matches. All
+	 * whitespaces and non-visible characters are removed from text.
+	 * 
+	 * @param textEquivalence The text equivalence.
+	 * @param index           The PageXML index.
+	 * @return The PageXML text equivalence unicode. Empty if the index does not
+	 *         matches.
+	 * @since 17
+	 */
+	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
+		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
+				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
+				&& textEquivalence.getTextEquivalence().getUnicode() != null
+				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null
+						? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
+						: "";
+
 	}
 
 	/**
