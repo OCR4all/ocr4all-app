@@ -231,6 +231,32 @@ public class ProjectFolioApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the normalized image with given id.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The image id.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the normalized image with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Normalized Image"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(normalizedRequestMapping + projectPathVariable)
+	public void getNormalizedThumbnail(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
+		Authorization authorization = authorizationFactory.authorize(projectId, ProjectRight.read);
+
+		getImage(authorization.project.getConfiguration().getImages().getNormalized(), id,
+				configurationService.getRepository().getContainerNormalizedImageFormat().name(), response);
+	}
+
+	/**
 	 * Returns the derivative with given id.
 	 * 
 	 * @param project  The project.

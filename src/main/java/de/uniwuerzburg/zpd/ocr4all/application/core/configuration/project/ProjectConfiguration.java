@@ -1087,6 +1087,11 @@ public class ProjectConfiguration extends CoreFolder {
 		private final Path folios;
 
 		/**
+		 * The folder for normalized.
+		 */
+		private final Path normalized;
+
+		/**
 		 * The folder for folios derivatives.
 		 */
 		private final Derivatives derivatives;
@@ -1102,6 +1107,7 @@ public class ProjectConfiguration extends CoreFolder {
 
 			// Initializes the folders
 			folios = getPath(null, properties.getFolios().getFolder(), "folios");
+			normalized = getPath(null, properties.getNormalized().getFolder(), "normalized");
 
 			final String derivativesFolder = properties.getDerivatives().getFolder();
 
@@ -1157,6 +1163,29 @@ public class ProjectConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Returns true if the folder for normalized is a directory.
+		 *
+		 * @return True if the folder is a directory; false if the folder does not
+		 *         exist, is not a directory, or it cannot be determined if the folder
+		 *         is a directory or not.
+		 * 
+		 * @since 1.8
+		 */
+		public boolean isNormalizedDirectory() {
+			return Files.isDirectory(normalized);
+		}
+
+		/**
+		 * Returns the folder for normalized.
+		 *
+		 * @return The folder for normalized.
+		 * @since 17
+		 */
+		public Path getNormalized() {
+			return normalized;
+		}
+
+		/**
 		 * Returns the derivatives quality image folders for folios.
 		 *
 		 * @return The derivatives quality image folders for folios.
@@ -1167,28 +1196,17 @@ public class ProjectConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Reset the folios.
-		 *
-		 * @return True if the folios could be reset.
-		 * @since 1.8
-		 */
-		public boolean resetFolios() {
-			return Files.exists(folios) ? deleteContents(folios) : true;
-		}
-
-		/**
 		 * Reset the images.
 		 *
 		 * @return True if the images could be reset.
 		 * @since 1.8
 		 */
-		public boolean reset() {
-			boolean isReset = resetFolios();
+		private boolean reset() {
+			boolean isResetFolios = Files.exists(folios) ? deleteContents(folios) : true;
+			boolean isResetNormalized = Files.exists(normalized) ? deleteContents(normalized) : true;
+			boolean isResetDerivatives = derivatives.reset();
 
-			if (!derivatives.reset())
-				isReset = false;
-
-			return isReset;
+			return isResetFolios && isResetNormalized && isResetDerivatives;
 		}
 
 	}

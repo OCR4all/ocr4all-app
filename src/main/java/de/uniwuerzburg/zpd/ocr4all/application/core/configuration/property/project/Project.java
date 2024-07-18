@@ -300,6 +300,11 @@ public class Project {
 		private static final String defaultFoliosFolder = "folios";
 
 		/**
+		 * The default normalized folder.
+		 */
+		private static final String defaultNormalizedFolder = "normalized";
+
+		/**
 		 * The folder. The default folder is images.
 		 */
 		private String folder = defaultFolder;
@@ -308,6 +313,11 @@ public class Project {
 		 * The folios.
 		 */
 		private FolderDefault folios = new FolderDefault(defaultFoliosFolder);
+
+		/**
+		 * The normalized.
+		 */
+		private FolderDefault normalized = new FolderDefault(defaultNormalizedFolder);
 
 		/**
 		 * The derivatives.
@@ -352,6 +362,26 @@ public class Project {
 		 */
 		public void setFolios(FolderDefault folios) {
 			this.folios = folios;
+		}
+
+		/**
+		 * Returns the normalized.
+		 *
+		 * @return The normalized.
+		 * @since 17
+		 */
+		public FolderDefault getNormalized() {
+			return normalized;
+		}
+
+		/**
+		 * Set the normalized.
+		 *
+		 * @param normalized The normalized to set.
+		 * @since 17
+		 */
+		public void setNormalized(FolderDefault normalized) {
+			this.normalized = normalized;
 		}
 
 		/**

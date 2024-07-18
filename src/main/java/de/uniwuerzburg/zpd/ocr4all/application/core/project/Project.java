@@ -368,6 +368,7 @@ public class Project implements Job.Cluster {
 	 */
 	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
+				configuration.getImages().getNormalized(),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
 						new Target.Project.Images.Derivatives.Resolution(
 								configuration.getImages().getDerivatives().getThumbnail(),
@@ -777,16 +778,22 @@ public class Project implements Job.Cluster {
 			// container folders
 			final Path foliosContainerFolder = container.getConfiguration().getImages().getFolios();
 
+			final Path normalizedContainerFolder = container.getConfiguration().getImages().getNormalized().getFolder();
+
 			final Path thumbnailContainerFolder = container.getConfiguration().getImages().getDerivatives()
 					.getThumbnail();
 			final Path detailContainerFolder = container.getConfiguration().getImages().getDerivatives().getDetail();
 			final Path bestContainerFolder = container.getConfiguration().getImages().getDerivatives().getBest();
 
+			// container formats
+			final String normalizedFormat = container.getConfiguration().getImages().getNormalized().getFormat().name();
 			final String derivativesFormat = container.getConfiguration().getImages().getDerivatives().getFormat()
 					.name();
 
 			// project folders
 			final Path foliosProjectFolder = configuration.getImages().getFolios();
+
+			final Path normalizedProjectFolder = configuration.getImages().getNormalized();
 
 			final Path thumbnailProjectFolder = configuration.getImages().getDerivatives().getThumbnail();
 			final Path detailProjectFolder = configuration.getImages().getDerivatives().getDetail();
@@ -800,6 +807,9 @@ public class Project implements Job.Cluster {
 					try {
 						copy(folio.getId() + "." + folio.getFormat().name(), foliosContainerFolder,
 								foliosProjectFolder);
+
+						copy(folio.getId() + "." + normalizedFormat, normalizedContainerFolder,
+								normalizedProjectFolder);
 
 						copy(folio.getId() + "." + derivativesFormat, thumbnailContainerFolder, thumbnailProjectFolder);
 						copy(folio.getId() + "." + derivativesFormat, detailContainerFolder, detailProjectFolder);

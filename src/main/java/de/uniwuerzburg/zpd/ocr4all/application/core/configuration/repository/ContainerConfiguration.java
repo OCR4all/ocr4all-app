@@ -707,7 +707,12 @@ public class ContainerConfiguration extends CoreFolder {
 		private final Path folios;
 
 		/**
-		 * The folder for folios derivatives.
+		 * The normalized.
+		 */
+		private final Normalized normalized;
+
+		/**
+		 * The folios derivatives.
 		 */
 		private final Derivatives derivatives;
 
@@ -722,6 +727,8 @@ public class ContainerConfiguration extends CoreFolder {
 
 			// Initializes the folders
 			folios = getPath(null, properties.getFolios().getFolder(), "folios");
+			normalized = new Normalized(ImageFormat.getImageFormat(properties.getNormalized().getFormat()),
+					getPath(null, properties.getNormalized().getFolder(), "normalized"));
 
 			final String derivativesFolder = properties.getDerivatives().getFolder();
 
@@ -778,6 +785,16 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
+		 * Returns the normalized.
+		 *
+		 * @return The normalized.
+		 * @since 17
+		 */
+		public Normalized getNormalized() {
+			return normalized;
+		}
+
+		/**
 		 * Returns the derivatives quality image folders for folios.
 		 *
 		 * @return The derivatives quality image folders for folios.
@@ -788,28 +805,89 @@ public class ContainerConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Reset the folios.
-		 *
-		 * @return True if the folios could be reset.
-		 * @since 1.8
-		 */
-		public boolean resetFolios() {
-			return Files.exists(folios) ? deleteContents(folios) : true;
-		}
-
-		/**
 		 * Reset the images.
 		 *
 		 * @return True if the images could be reset.
 		 * @since 1.8
 		 */
 		public boolean reset() {
-			boolean isReset = resetFolios();
+			boolean isResetFolios = Files.exists(folios) ? deleteContents(folios) : true;
+			boolean isResetNormalized = Files.exists(normalized.getFolder()) ? deleteContents(normalized.getFolder())
+					: true;
+			boolean isResetDerivatives = derivatives.reset();
 
-			if (!derivatives.reset())
-				isReset = false;
+			return isResetFolios && isResetNormalized && isResetDerivatives;
+		}
 
-			return isReset;
+		/**
+		 * Derivatives is an immutable class that defines normalized image folders for
+		 * folios.
+		 *
+		 * 
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public class Normalized {
+			/**
+			 * The normalized image format. The format must be suitable for use on web
+			 * pages, since are required by LAREX.
+			 */
+			private final ImageFormat format;
+
+			/**
+			 * The folder.
+			 */
+			private final Path folder;
+
+			/**
+			 * Creates normalized image folders for folios.
+			 * 
+			 * @param format The normalized image format. The format must be suitable for
+			 *               use on web pages, since are required by LAREX.
+			 * @param folder The folder.
+			 * @since 17
+			 */
+			public Normalized(ImageFormat format, Path folder) {
+				super();
+
+				this.format = format.isWebPages() ? format : ImageFormat.png;
+				this.folder = folder;
+			}
+
+			/**
+			 * Returns the folios derivatives format.
+			 *
+			 * @return The folios derivatives format.
+			 * @since 1.8
+			 */
+			public ImageFormat getFormat() {
+				return format;
+			}
+
+			/**
+			 * Returns true if the folder is a directory.
+			 *
+			 * @return True if the folder is a directory; false if the folder does not
+			 *         exist, is not a directory, or it cannot be determined if the folder
+			 *         is a directory or not.
+			 * 
+			 * @since 1.8
+			 */
+			public boolean isDirectory() {
+				return Files.isDirectory(folder);
+			}
+
+			/**
+			 * Returns the folder.
+			 *
+			 * @return The folder.
+			 * @since 1.8
+			 */
+			public Path getFolder() {
+				return folder;
+			}
+
 		}
 
 		/**

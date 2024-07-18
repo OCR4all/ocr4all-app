@@ -34,6 +34,11 @@ public class Container {
 	private FolderDefault folios = new FolderDefault(defaultFoliosFolder);
 
 	/**
+	 * The normalized.
+	 */
+	private Normalized normalized = new Normalized();
+
+	/**
 	 * The derivatives.
 	 */
 	private Derivatives derivatives = new Derivatives();
@@ -76,6 +81,26 @@ public class Container {
 	 */
 	public void setFolios(FolderDefault folios) {
 		this.folios = folios;
+	}
+
+	/**
+	 * Returns the normalized.
+	 *
+	 * @return The normalized.
+	 * @since 17
+	 */
+	public Normalized getNormalized() {
+		return normalized;
+	}
+
+	/**
+	 * Set the normalized.
+	 *
+	 * @param normalized The normalized to set.
+	 * @since 17
+	 */
+	public void setNormalized(Normalized normalized) {
+		this.normalized = normalized;
 	}
 
 	/**
@@ -228,6 +253,76 @@ public class Container {
 		 */
 		public void setFolio(String fileName) {
 			folio = fileName;
+		}
+
+	}
+
+	/**
+	 * Defines normalized images.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class Normalized {
+		/**
+		 * The default folder.
+		 */
+		private static final String defaultFolder = "normalized";
+
+		/**
+		 * The default format.
+		 */
+		private static final String defaultFormat = "png";
+
+		/**
+		 * The folder. The default value is normalized.
+		 */
+		private String folder = defaultFolder;
+
+		/**
+		 * The format. The default value is png.
+		 */
+		private String format = defaultFormat;
+
+		/**
+		 * Returns the folder.
+		 *
+		 * @return The folder.
+		 * @since 1.8
+		 */
+		public String getFolder() {
+			return OCR4all.getNotEmpty(folder, defaultFolder);
+		}
+
+		/**
+		 * Set the folder.
+		 *
+		 * @param folder The folder to set.
+		 * @since 1.8
+		 */
+		public void setFolder(String folder) {
+			this.folder = folder;
+		}
+
+		/**
+		 * Returns the format.
+		 *
+		 * @return The format.
+		 * @since 1.8
+		 */
+		public String getFormat() {
+			return OCR4all.getNotEmpty(format, defaultFormat);
+		}
+
+		/**
+		 * Set the format.
+		 *
+		 * @param format The format to set.
+		 * @since 1.8
+		 */
+		public void setFormat(String format) {
+			this.format = format;
 		}
 
 	}

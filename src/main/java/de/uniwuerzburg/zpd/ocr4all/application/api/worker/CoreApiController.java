@@ -205,6 +205,11 @@ public class CoreApiController {
 	public static final String imageRequestMapping = "/image";
 
 	/**
+	 * The normalized image request mapping.
+	 */
+	public static final String normalizedRequestMapping = "/normalized";
+
+	/**
 	 * The derivative request mapping.
 	 */
 	public static final String derivativeRequestMapping = "/derivative";

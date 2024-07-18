@@ -368,12 +368,14 @@ public class ContainerService extends CoreService {
 				Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
 
 				Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
+				Path folderNormalized = Paths.get(temporaryDirectory.toString(), "normalized");
 				Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
 				Path folderDetail = Paths.get(temporaryDirectory.toString().toString(), "detail");
 				Path folderBest = Paths.get(temporaryDirectory.toString().toString(), "best");
 
 				try {
 					Files.createDirectory(folderFolios);
+					Files.createDirectory(folderNormalized);
 					Files.createDirectory(folderThumbnail);
 					Files.createDirectory(folderDetail);
 					Files.createDirectory(folderBest);
@@ -442,6 +444,20 @@ public class ContainerService extends CoreService {
 				}
 
 				/*
+				 * Create normalized
+				 */
+				final String normalizedImageFormat = container.getConfiguration().getImages().getNormalized()
+						.getFormat().name();
+				try {
+					ImageUtils.createNormalized(new SystemProcess(folderFolios, convertCommand), normalizedImageFormat,
+							OCR4allUtils.getFileNames(folderFolios), folderNormalized);
+				} catch (Exception e) {
+					deleteRecursively(temporaryDirectory);
+
+					throw new IOException("Cannot create normalized for container - " + e.getMessage());
+				}
+
+				/*
 				 * Create derivatives
 				 */
 				final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
@@ -478,12 +494,15 @@ public class ContainerService extends CoreService {
 				SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
 
 				List<String> foliosFiles = new ArrayList<>();
+				List<String> normalizedFiles = new ArrayList<>();
 				List<String> derivativeFiles = new ArrayList<>();
 
 				final String foliosDerivativesImageFormat = derivatives.getFormat().name();
 				for (Folio folio : folios) {
 					try {
 						foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
+
+						normalizedFiles.add(folio.getId() + "." + normalizedImageFormat);
 
 						String target = folio.getId() + "." + foliosDerivativesImageFormat;
 						derivativeFiles.add(target);
@@ -505,6 +524,9 @@ public class ContainerService extends CoreService {
 				try {
 					move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
 
+					move(normalizedFiles, folderNormalized,
+							container.getConfiguration().getImages().getNormalized().getFolder());
+
 					move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
 
 					move(derivativeFiles, folderDetail, derivatives.getDetail());
@@ -512,6 +534,8 @@ public class ContainerService extends CoreService {
 					move(derivativeFiles, folderBest, derivatives.getBest());
 				} catch (IOException e) {
 					int remain = remove(foliosFiles, container.getConfiguration().getImages().getFolios());
+					remain += remove(normalizedFiles,
+							container.getConfiguration().getImages().getNormalized().getFolder());
 					remain += remove(derivativeFiles, derivatives.getThumbnail());
 					remain += remove(derivativeFiles, derivatives.getDetail());
 					remain += remove(derivativeFiles, derivatives.getBest());
@@ -678,6 +702,7 @@ public class ContainerService extends CoreService {
 			final List<Folio> folios = new ArrayList<>();
 
 			final Path foliosFolder = container.getConfiguration().getImages().getFolios();
+			final Path normalizedFolder = container.getConfiguration().getImages().getNormalized().getFolder();
 
 			final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
 					.getDerivatives();
@@ -686,8 +711,10 @@ public class ContainerService extends CoreService {
 			final Path bestFolder = derivatives.getBest();
 
 			if (ids == null) {
-				// Clear all folios and derivatives
+				// Clear all images
 				FileUtils.cleanDirectory(foliosFolder.toFile());
+
+				FileUtils.cleanDirectory(normalizedFolder.toFile());
 
 				FileUtils.cleanDirectory(thumbnailFolder.toFile());
 				FileUtils.cleanDirectory(detailFolder.toFile());
@@ -700,6 +727,8 @@ public class ContainerService extends CoreService {
 					if (id != null && !id.isBlank())
 						removeIds.add(id.trim());
 
+				final String normalizedFormat = container.getConfiguration().getImages().getNormalized().getFormat()
+						.name();
 				final String derivativesFormat = derivatives.getFormat().name();
 
 				for (Folio folio : getFolios(container))
@@ -707,6 +736,9 @@ public class ContainerService extends CoreService {
 						try {
 							Files.delete(
 									Paths.get(foliosFolder.toString(), folio.getId() + "." + folio.getFormat().name()));
+
+							Files.delete(
+									Paths.get(normalizedFolder.toString(), folio.getId() + "." + normalizedFormat));
 
 							Files.delete(
 									Paths.get(thumbnailFolder.toString(), folio.getId() + "." + derivativesFormat));

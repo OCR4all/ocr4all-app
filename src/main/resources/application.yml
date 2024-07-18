@@ -139,6 +139,9 @@ ocr4all:
             main: container
             folio: folio
         folios.folder: folios
+        normalized:
+          folder: normalized
+          format: png
         derivatives:
           folder: derivatives
           format: jpg
@@ -202,6 +205,7 @@ ocr4all:
         images:
           folder: images
           folios.folder: folios
+          normalized.folder: normalized
           derivatives:
             folder: derivatives
             format: jpg
