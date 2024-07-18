@@ -1,5 +1,5 @@
 /**
- * File:     SandboxLauncher.java
+ * File:     SandboxFolioLauncher.java
  * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.provider
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
@@ -25,13 +25,11 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProviderWorker;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.CoreProcessorServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorCore;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ProcessorServiceProvider;
@@ -52,105 +50,17 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.mets.MetsUtils;
 
 /**
- * Defines service providers for sandbox launchers.
+ * Defines service providers for sandbox folio launchers.
  * 
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
  */
-public class SandboxLauncher extends CoreServiceProviderWorker implements LauncherServiceProvider {
-	/**
-	 * The prefix of the message keys in the resource bundle.
-	 */
-	private static final String messageKeyPrefix = "launcher.sandbox.launcher.";
-
+public class SandboxFolioLauncher extends SandboxCoreLauncher {
 	/**
 	 * The service provider identifier.
 	 */
-	private static final String identifier = "ocr4all-sandbox-launcher";
-
-	/**
-	 * Defines templates.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	private enum Template {
-		mets_core("mets-core"), mets_file("mets-file"), mets_page("mets-page");
-
-		/**
-		 * The folder.
-		 */
-		private static final String folder = "templates/spi/launcher/sandbox-launcher/";
-
-		/**
-		 * The suffix.
-		 */
-		private static final String suffix = ".template";
-
-		/**
-		 * The name.
-		 */
-		private final String name;
-
-		/**
-		 * Creates a template.
-		 * 
-		 * @param name The name.
-		 * @since 1.8
-		 */
-		private Template(String name) {
-			this.name = name;
-		}
-
-		/**
-		 * Returns the resource name.
-		 * 
-		 * @return The resource name.
-		 * @since 1.8
-		 */
-		public String getResourceName() {
-			return folder + name + suffix;
-		}
-
-		/**
-		 * Returns the template content.
-		 * 
-		 * @return The template content
-		 * @throws IllegalArgumentException Throws if the resource could not be found.
-		 * @throws IOException              If an I/O error occurs.
-		 * @since 1.8
-		 */
-		public String getResourceAsText() throws IllegalArgumentException, IOException {
-			return OCR4allUtils.getResourceAsText(getResourceName());
-		}
-	}
-
-	/**
-	 * Define patterns for mets templates.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	private enum MetsPattern {
-		create_date, software_creator, parameter, file_group, file_template, page_template,
-
-		file_mime_type, file_id, file_name,
-
-		page_id;
-
-		/**
-		 * Returns the pattern.
-		 * 
-		 * @return The pattern.
-		 * @since 1.8
-		 */
-		public String getPattern() {
-			return "[ocr4all-" + name() + "]";
-		}
-	}
+	private static final String identifier = "ocr4all-sandbox-folio-launcher";
 
 	/**
 	 * Defines fields.
@@ -289,12 +199,12 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	}
 
 	/**
-	 * Default constructor for a service provider for sandbox launcher.
+	 * Default constructor for a service provider for sandbox folio launcher.
 	 * 
 	 * @since 1.8
 	 */
-	public SandboxLauncher() {
-		super(messageKeyPrefix);
+	public SandboxFolioLauncher() {
+		super(messageKeyPrefix, identifier);
 	}
 
 	/*
@@ -306,7 +216,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 */
 	@Override
 	public String getName(Locale locale) {
-		return getString(locale, "name");
+		return getString(locale, "name.folio");
 	}
 
 	/*
@@ -330,29 +240,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 */
 	@Override
 	public Optional<String> getDescription(Locale locale) {
-		return Optional.of(getString(locale, "description"));
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#
-	 * getCategories()
-	 */
-	@Override
-	public List<String> getCategories() {
-		return Arrays.asList("Sandbox launcher");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider#getSteps()
-	 */
-	@Override
-	public List<String> getSteps() {
-		return Arrays.asList("initialization/sandbox/launcher");
+		return Optional.of(getString(locale, "description.folio"));
 	}
 
 	/*
@@ -376,7 +264,7 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	 */
 	@Override
 	public int getIndex() {
-		return 100;
+		return 200;
 	}
 
 	/*
@@ -463,36 +351,6 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 	@Override
 	public ProcessorServiceProvider.Processor<ProcessorCore.LockSnapshotCallback, ProcessFramework> newProcessor() {
 		return new CoreProcessorServiceProvider<ProcessorCore.LockSnapshotCallback, ProcessFramework>() {
-			/**
-			 * Persists the mets file.
-			 * 
-			 * @param path             The mets file path.
-			 * @param coreTemplate     The mets core template.
-			 * @param launcherArgument The launcher arguments.
-			 * @param group            The file group.
-			 * @param file             The files.
-			 * @param page             The pages.
-			 * @throws JsonProcessingException Throws when processing (parsing, generating)
-			 *                                 JSON content that are not pure I/O problems.
-			 * @throws IOException             Throws if an I/O error occurs writing to or
-			 *                                 creating the file.
-			 * @since 1.8
-			 */
-			private void persistMets(Path path, String coreTemplate, LauncherArgument launcherArgument, String group,
-					String file, String page) throws JsonProcessingException, IOException {
-				Files.write(path, coreTemplate
-						.replace(MetsPattern.create_date.getPattern(), MetsUtils.getFormattedDate())
-
-						.replace(MetsPattern.software_creator.getPattern(), identifier + " v" + getVersion())
-
-						.replace(MetsPattern.parameter.getPattern(), objectMapper.writeValueAsString(launcherArgument))
-
-						.replace(MetsPattern.file_group.getPattern(), group)
-
-						.replace(MetsPattern.file_template.getPattern(), file)
-
-						.replace(MetsPattern.page_template.getPattern(), page).getBytes());
-			}
 
 			/*
 			 * (non-Javadoc)
@@ -791,7 +649,8 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 
 					// Persist mets file
 					try {
-						persistMets(metsPath, metsCoreTemplate, launcherArgument, metsGroup, "", "");
+						persistMets(metsPath, metsCoreTemplate, objectMapper.writeValueAsString(launcherArgument),
+								metsGroup, "", "");
 					} catch (Exception e) {
 						updatedStandardError("Can not create mets file - " + e.getMessage() + ".");
 
@@ -965,8 +824,9 @@ public class SandboxLauncher extends CoreServiceProviderWorker implements Launch
 					// Persist mets file
 					try {
 						updatedStandardOutput("Create mets file " + metsPath.toString() + ".");
-						persistMets(metsPath, metsCoreTemplate, launcherArgument, metsGroup, metsFileBuffer.toString(),
-								metsPageBuffer.toString());
+
+						persistMets(metsPath, metsCoreTemplate, objectMapper.writeValueAsString(launcherArgument),
+								metsGroup, metsFileBuffer.toString(), metsPageBuffer.toString());
 					} catch (Exception e) {
 						updatedStandardError("Can not create mets file - " + e.getMessage() + ".");
 
