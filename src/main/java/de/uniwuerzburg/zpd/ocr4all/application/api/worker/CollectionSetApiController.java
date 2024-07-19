@@ -616,6 +616,40 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the PageXML filenames.
+	 * 
+	 * @param collectionId The collection id. This is the folder name.
+	 * @param request      The PageXML request.
+	 * @return The sets in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the PageXML filenames in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "PageXML Filenames", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = PageXMLFilenamesResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(pageXMLRequestMapping + collectionPathVariable)
+	public ResponseEntity<PageXMLFilenamesResponse> pageXML(
+			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
+			@RequestBody @Valid PageXMLRequest request) {
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
+
+		try {
+			List<String> filenames = collectionService.getPageXMLFilenames(collection, request.getLevel(),
+					request.getIndex());
+
+			return filenames == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new PageXMLFilenamesResponse(filenames));
+
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Returns the codec.
 	 * 
 	 * @param request The codec request.
@@ -828,13 +862,80 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines PageXML requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class PageXMLRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The PageXML level.
+		 */
+		@NotNull
+		private PageXMLLevel level;
+
+		/**
+		 * The PageXML index.
+		 */
+		@NotNull
+		private int index;
+
+		/**
+		 * Returns the PageXML level.
+		 *
+		 * @return The PageXML level.
+		 * @since 17
+		 */
+		public PageXMLLevel getLevel() {
+			return level;
+		}
+
+		/**
+		 * Set the PageXML level.
+		 *
+		 * @param level The PageXML level to set.
+		 * @since 17
+		 */
+		public void setLevel(PageXMLLevel level) {
+			this.level = level;
+		}
+
+		/**
+		 * Returns the PageXML index.
+		 *
+		 * @return The PageXML index.
+		 * @since 17
+		 */
+		public int getIndex() {
+			return index;
+		}
+
+		/**
+		 * Set the PageXML index.
+		 *
+		 * @param index The PageXML index to set.
+		 * @since 17
+		 */
+		public void setIndex(int index) {
+			this.index = index;
+		}
+
+	}
+
+	/**
 	 * Defines codec requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class CodecRequest implements Serializable {
+	public static class CodecRequest extends PageXMLRequest {
 		/**
 		 * The serial version UID.
 		 */
@@ -1009,6 +1110,67 @@ public class CollectionSetApiController extends CoreApiController {
 			}
 
 		}
+	}
+
+	/**
+	 * Defines PageXML filenames responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class PageXMLFilenamesResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The filenames.
+		 */
+		private List<String> filenames;
+
+		/**
+		 * Default constructor for a PageXML filenames response for the api.
+		 * 
+		 * @since 17
+		 */
+		public PageXMLFilenamesResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a PageXML filenames response for the api.
+		 * 
+		 * @param filenames The filenames.
+		 * @since 17
+		 */
+		public PageXMLFilenamesResponse(List<String> filenames) {
+			super();
+
+			this.filenames = filenames;
+		}
+
+		/**
+		 * Returns the filenames.
+		 *
+		 * @return The filenames.
+		 * @since 17
+		 */
+		public List<String> getFilenames() {
+			return filenames;
+		}
+
+		/**
+		 * Set the filenames.
+		 *
+		 * @param filenames The filenames to set.
+		 * @since 17
+		 */
+		public void setFilenames(List<String> filenames) {
+			this.filenames = filenames;
+		}
+
 	}
 
 	/**

@@ -24,7 +24,10 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -822,6 +825,40 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
+	 * Returns true if the PageXML text equivalence unicode matches the index.
+	 * 
+	 * @param textEquivalence The text equivalence.
+	 * @param index           The PageXML index.
+	 * @return The PageXML text equivalence unicode. Empty if the index does not
+	 *         matches.
+	 * @since 17
+	 */
+	private boolean isTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
+		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
+				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
+				&& textEquivalence.getTextEquivalence().getUnicode() != null
+				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null;
+
+	}
+
+	/**
+	 * Returns the PageXML text equivalence unicode if the index matches. All
+	 * whitespaces and non-visible characters are removed from text.
+	 * 
+	 * @param textEquivalence The text equivalence.
+	 * @param index           The PageXML index.
+	 * @return The PageXML text equivalence unicode. Empty if the index does not
+	 *         matches.
+	 * @since 17
+	 */
+	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
+		return isTextEquivalenceUnicode(textEquivalence, index)
+				? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
+				: "";
+
+	}
+
+	/**
 	 * Returns the PageXML codec.
 	 * 
 	 * @param collection The collection.
@@ -835,7 +872,7 @@ public class CollectionService extends CoreService {
 	public Hashtable<String, Integer> getPageXMLCodec(Collection collection, String filename, PageXMLLevel level,
 			int index, Normalizer.Form normalizer) {
 		if (collection != null && filename != null && !filename.isBlank() && level != null
-				&& collection.getRight().isWriteFulfilled()) {
+				&& collection.getRight().isReadFulfilled()) {
 			final Path folder = collection.getConfiguration().getFolder();
 
 			try {
@@ -889,22 +926,102 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Returns the PageXML text equivalence unicode if the index matches. All
-	 * whitespaces and non-visible characters are removed from text.
+	 * Returns the PageXML filenames.
 	 * 
-	 * @param textEquivalence The text equivalence.
-	 * @param index           The PageXML index.
-	 * @return The PageXML text equivalence unicode. Empty if the index does not
-	 *         matches.
+	 * @param collection The collection.
+	 * @param level      The PageXML level.
+	 * @param index      The PageXML index.
+	 * @return The PageXML filenames. Null on troubles.
 	 * @since 17
 	 */
-	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
-		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
-				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
-				&& textEquivalence.getTextEquivalence().getUnicode() != null
-				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null
-						? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
-						: "";
+	public List<String> getPageXMLFilenames(Collection collection, PageXMLLevel level, int index) {
+		if (collection != null && level != null && collection.getRight().isReadFulfilled()) {
+			List<Path> files = null;
+
+			try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
+				files = stream.filter(file -> {
+					if (Files.isDirectory(file))
+						return false;
+					else {
+						try {
+							return MediaType.APPLICATION_XML_VALUE.equals(Files.probeContentType(file));
+						} catch (IOException e) {
+							return false;
+						}
+					}
+				}).collect(Collectors.toList());
+			} catch (Exception e) {
+				return null;
+			}
+
+			if (files != null) {
+				List<String> filenames = new ArrayList<>();
+
+				for (Path file : files)
+					try {
+						PageXMLParser.Root root = (new PageXMLParser()).deserialise(file.toFile());
+
+						boolean isFound = false;
+						if (root.getPage() != null) {
+							for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
+								if (PageXMLLevel.TextRegion.equals(level)) {
+									if (isTextEquivalenceUnicode(region, index)) {
+										isFound = true;
+
+										break;
+									}
+								} else {
+									for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
+										if (PageXMLLevel.TextLine.equals(level)) {
+											if (isTextEquivalenceUnicode(line, index)) {
+												isFound = true;
+
+												break;
+											}
+										} else {
+											for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line
+													.getWords())
+
+												if (PageXMLLevel.Word.equals(level)) {
+													if (isTextEquivalenceUnicode(word, index)) {
+														isFound = true;
+
+														break;
+													}
+												} else {
+													for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
+															.getGlyphs())
+														if (PageXMLLevel.Glyph.equals(level)
+																&& isTextEquivalenceUnicode(glyph, index)) {
+															isFound = true;
+
+															break;
+														}
+
+													if (isFound)
+														break;
+												}
+
+											if (isFound)
+												break;
+										}
+
+									if (isFound)
+										break;
+								}
+						}
+
+						if (isFound)
+							filenames.add(file.getFileName().toString());
+					} catch (Exception e) {
+						// Ignore malformed PageXML
+					}
+
+				return filenames;
+			}
+		}
+
+		return null;
 
 	}
 
