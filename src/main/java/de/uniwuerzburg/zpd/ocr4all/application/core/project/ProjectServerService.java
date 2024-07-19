@@ -49,7 +49,7 @@ public class ProjectServerService extends ProjectService {
 		final String user = securityService.getUser();
 
 		Project project = new Project(configurationService.getWorkspace().getProjects().getProject(path, user),
-				configurationService.getImage());
+				configurationService.getImage(), configurationService.getRepository());
 		project.setSecurityLevel(securityService.getSecurityLevel());
 
 		/*

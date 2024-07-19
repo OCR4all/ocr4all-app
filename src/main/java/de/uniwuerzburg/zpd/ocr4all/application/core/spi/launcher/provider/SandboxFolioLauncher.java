@@ -418,8 +418,8 @@ public class SandboxFolioLauncher extends SandboxCoreLauncher {
 				try {
 					metsPageTemplate = Template.mets_page.getResourceAsText();
 				} catch (Exception e) {
-					updatedStandardError(
-							"Internal error: missed page file resource '" + Template.mets_page.getResourceName() + ".");
+					updatedStandardError("Internal error: missed mets page file resource '"
+							+ Template.mets_page.getResourceName() + ".");
 
 					return ProcessorServiceProvider.Processor.State.interrupted;
 				}
@@ -630,14 +630,14 @@ public class SandboxFolioLauncher extends SandboxCoreLauncher {
 				}
 
 				if (folios.isEmpty()) {
-					updatedStandardOutput("There are no project images for sandbox launcher.");
+					updatedStandardOutput("There are no project images for sandbox folio launcher.");
 
 					callback.updatedProgress(1);
 					return ProcessorServiceProvider.Processor.State.completed;
 				}
 
 				// The images
-				updatedStandardOutput("Determine sandbox launcher images.");
+				updatedStandardOutput("Determine sandbox folio launcher images.");
 
 				Set<String> images = new HashSet<>();
 				for (String id : launcherArgument.getImages())
@@ -645,7 +645,7 @@ public class SandboxFolioLauncher extends SandboxCoreLauncher {
 						images.add(id);
 
 				if (images.isEmpty()) {
-					updatedStandardOutput("There are no images for sandbox launcher.");
+					updatedStandardOutput("There are no images for sandbox folio launcher.");
 
 					// Persist mets file
 					try {
