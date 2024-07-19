@@ -1,1 +1,2 @@
-de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.provider.ImageImport
+# Depreciated -> use repository
+#de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.provider.ImageImport

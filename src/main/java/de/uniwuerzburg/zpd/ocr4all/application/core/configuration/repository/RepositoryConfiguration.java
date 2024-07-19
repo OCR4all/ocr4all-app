@@ -19,6 +19,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Container;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityOwner;
@@ -42,6 +43,12 @@ public class RepositoryConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
+	 * The container normalized image format. The format must be suitable for use on
+	 * web pages, since are required by LAREX.
+	 */
+	private final ImageFormat containerNormalizedImageFormat;
+
+	/**
 	 * The container properties.
 	 */
 	private final Container container;
@@ -56,7 +63,11 @@ public class RepositoryConfiguration extends CoreFolder {
 		super(Paths.get(properties.getRepository().getFolder()));
 
 		configuration = new Configuration(properties.getRepository().getConfiguration());
+
 		container = properties.getRepository().getContainer();
+
+		ImageFormat format = ImageFormat.getImageFormat(container.getNormalized().getFormat());
+		containerNormalizedImageFormat = format.isWebPages() ? format : ImageFormat.png;
 	}
 
 	/**
@@ -77,6 +88,18 @@ public class RepositoryConfiguration extends CoreFolder {
 	 */
 	public Container getContainer() {
 		return container;
+	}
+
+	/**
+	 * Returns the container normalized image format. The format must be suitable
+	 * for use on web pages, since are required by LAREX.
+	 *
+	 * @return The container normalized image format. The format must be suitable
+	 *         for use on web pages, since are required by LAREX.
+	 * @since 17
+	 */
+	public ImageFormat getContainerNormalizedImageFormat() {
+		return containerNormalizedImageFormat;
 	}
 
 	/**

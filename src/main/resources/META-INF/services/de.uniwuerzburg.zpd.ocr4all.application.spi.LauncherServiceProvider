@@ -1,1 +1,2 @@
-de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.provider.SandboxLauncher
+de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.provider.SandboxFolioLauncher
+de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.provider.SandboxNormalizedLauncher

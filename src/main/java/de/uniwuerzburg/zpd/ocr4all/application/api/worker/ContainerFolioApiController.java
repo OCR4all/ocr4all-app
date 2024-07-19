@@ -521,6 +521,30 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the normalized image with given id.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param id          The image id.
+	 * @param response    The HTTP-specific functionality in sending a response to
+	 *                    the client.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the normalized image with given id")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Downloaded Normalized Image"),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(normalizedRequestMapping + containerPathVariable)
+	public void getNormalizedThumbnail(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the image id") @RequestParam String id, HttpServletResponse response) {
+		ContainerService.Container container = authorizeRead(containerId);
+
+		getImage(container.getConfiguration().getImages().getNormalized().getFolder(), id,
+				container.getConfiguration().getImages().getNormalized().getFormat().name(), response);
+	}
+
+	/**
 	 * Returns the derivative with given id.
 	 * 
 	 * @param containerId The container id. This is the folder name.

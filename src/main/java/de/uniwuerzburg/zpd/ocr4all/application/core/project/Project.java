@@ -25,11 +25,13 @@ import java.util.Set;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.ProjectConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Process;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.History;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
@@ -188,6 +190,12 @@ public class Project implements Job.Cluster {
 	private final ImageConfiguration imageConfiguration;
 
 	/**
+	 * The container normalized image format.
+	 */
+	private final ImageFormat containerNormalizedImageFormat;
+
+
+	/**
 	 * The security level. The default level is user.
 	 */
 	private SecurityService.Level securityLevel = SecurityService.Level.user;
@@ -207,11 +215,12 @@ public class Project implements Job.Cluster {
 	 * 
 	 * @param configuration      The configuration.
 	 * @param imageConfiguration The image configuration.
+	 * @param repositoryConfiguration The repository configuration.
 	 * @throws IllegalArgumentException Thrown if the configuration is not
 	 *                                  available.
 	 * @since 1.8
 	 */
-	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration)
+	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration, RepositoryConfiguration repositoryConfiguration)
 			throws IllegalArgumentException {
 		super();
 
@@ -220,6 +229,7 @@ public class Project implements Job.Cluster {
 
 		this.configuration = configuration;
 		this.imageConfiguration = imageConfiguration;
+		containerNormalizedImageFormat = repositoryConfiguration.getContainerNormalizedImageFormat();
 	}
 
 	/**
@@ -368,6 +378,7 @@ public class Project implements Job.Cluster {
 	 */
 	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
+				new Target.Project.Images.Normalized(containerNormalizedImageFormat.getSPI(), configuration.getImages().getNormalized()),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
 						new Target.Project.Images.Derivatives.Resolution(
 								configuration.getImages().getDerivatives().getThumbnail(),
@@ -777,16 +788,22 @@ public class Project implements Job.Cluster {
 			// container folders
 			final Path foliosContainerFolder = container.getConfiguration().getImages().getFolios();
 
+			final Path normalizedContainerFolder = container.getConfiguration().getImages().getNormalized().getFolder();
+
 			final Path thumbnailContainerFolder = container.getConfiguration().getImages().getDerivatives()
 					.getThumbnail();
 			final Path detailContainerFolder = container.getConfiguration().getImages().getDerivatives().getDetail();
 			final Path bestContainerFolder = container.getConfiguration().getImages().getDerivatives().getBest();
 
+			// container formats
+			final String normalizedFormat = container.getConfiguration().getImages().getNormalized().getFormat().name();
 			final String derivativesFormat = container.getConfiguration().getImages().getDerivatives().getFormat()
 					.name();
 
 			// project folders
 			final Path foliosProjectFolder = configuration.getImages().getFolios();
+
+			final Path normalizedProjectFolder = configuration.getImages().getNormalized();
 
 			final Path thumbnailProjectFolder = configuration.getImages().getDerivatives().getThumbnail();
 			final Path detailProjectFolder = configuration.getImages().getDerivatives().getDetail();
@@ -800,6 +817,9 @@ public class Project implements Job.Cluster {
 					try {
 						copy(folio.getId() + "." + folio.getFormat().name(), foliosContainerFolder,
 								foliosProjectFolder);
+
+						copy(folio.getId() + "." + normalizedFormat, normalizedContainerFolder,
+								normalizedProjectFolder);
 
 						copy(folio.getId() + "." + derivativesFormat, thumbnailContainerFolder, thumbnailProjectFolder);
 						copy(folio.getId() + "." + derivativesFormat, detailContainerFolder, detailProjectFolder);

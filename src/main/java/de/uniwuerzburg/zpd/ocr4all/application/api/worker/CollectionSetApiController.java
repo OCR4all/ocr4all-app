@@ -624,37 +624,49 @@ public class CollectionSetApiController extends CoreApiController {
 	 */
 	@Operation(summary = "returns the codec in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Codec", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = CodecResponse.class))) }),
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = CodecResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(codecRequestMapping)
-	public ResponseEntity<List<CodecResponse>> codec(@RequestBody @Valid CodecRequest request) {
+	public ResponseEntity<CodecResponse> codec(@RequestBody @Valid CodecRequest request) {
 
 		try {
-			List<CodecResponse> codecs = new ArrayList<>();
+			Hashtable<String, Integer> codec = new Hashtable<String, Integer>();
+			List<CodecResponse.Collection> collections = new ArrayList<>();
 
 			for (CodecRequest.Dataset dataset : request.getDatasets()) {
 
 				try {
 					CollectionService.Collection collection = authorizeCollectionRead(dataset.getId());
 
-					List<CodecResponse.Page> pages = new ArrayList<>();
+					List<CodecResponse.Collection.Page> pages = new ArrayList<>();
 
 					for (String filename : dataset.getFilenames())
-						if (filename != null && !filename.isBlank())
-							pages.add(new CodecResponse.Page(filename.trim(),
-									collectionService.getPageXMLCodec(collection, filename, request.getLevel(),
-											request.getIndex(), request.getNormalizer())));
+						if (filename != null && !filename.isBlank()) {
+							Hashtable<String, Integer> pageCodec = collectionService.getPageXMLCodec(collection,
+									filename, request.getLevel(), request.getIndex(), request.getNormalizer());
 
-					codecs.add(new CodecResponse(collection.getConfiguration().getId(), pages));
+							pages.add(new CodecResponse.Collection.Page(filename.trim(), pageCodec));
 
+							if (pageCodec != null)
+								for (String glyph : pageCodec.keySet()) {
+									Integer pageFrequency = pageCodec.get(glyph);
+
+									Integer frequency = codec.get(glyph);
+
+									codec.put(glyph, frequency == null ? pageFrequency.intValue()
+											: frequency.intValue() + pageFrequency.intValue());
+								}
+						}
+
+					collections.add(new CodecResponse.Collection(collection.getConfiguration().getId(), pages));
 				} catch (ResponseStatusException e) {
-					codecs.add(new CodecResponse(dataset.getId().trim()));
+					collections.add(new CodecResponse.Collection(dataset.getId().trim()));
 				}
 			}
 
-			return ResponseEntity.ok().body(codecs);
+			return ResponseEntity.ok().body(new CodecResponse(codec, collections));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -1013,19 +1025,17 @@ public class CollectionSetApiController extends CoreApiController {
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * The collection id.
+		 * The codec.
 		 */
-		@JsonProperty("collection-id")
-		@NotBlank
-		private String collectionId;
+		private Hashtable<String, Integer> codec;
 
 		/**
-		 * The pages.
+		 * The collections.
 		 */
-		private List<Page> pages;
+		private List<Collection> collections;
 
 		/**
-		 * Default constructor for a codec response for the api.
+		 * Default constructor for a codec responses for the api.
 		 * 
 		 * @since 17
 		 */
@@ -1034,157 +1044,245 @@ public class CollectionSetApiController extends CoreApiController {
 		}
 
 		/**
-		 * Creates a codec response for the api.
+		 * Creates a codec responses for the api.
 		 * 
-		 * @param collectionId The collection id.
+		 * @param codec       The codec.
+		 * @param collections The collections.
 		 * @since 17
 		 */
-		public CodecResponse(@NotBlank String collectionId) {
-			this(collectionId, null);
-		}
-
-		/**
-		 * Creates a codec response for the api.
-		 * 
-		 * @param collectionId The collection id.
-		 * @param pages        The pages.
-		 * @since 17
-		 */
-		public CodecResponse(@NotBlank String collectionId, List<Page> pages) {
+		public CodecResponse(Hashtable<String, Integer> codec, List<Collection> collections) {
 			super();
 
-			this.collectionId = collectionId;
-			this.pages = pages;
+			this.codec = codec;
+			this.collections = collections;
 		}
 
 		/**
-		 * Returns the collection id.
+		 * Returns the codec.
 		 *
-		 * @return The collection id.
+		 * @return The codec.
 		 * @since 17
 		 */
-		public String getCollectionId() {
-			return collectionId;
+		public Hashtable<String, Integer> getCodec() {
+			return codec;
 		}
 
 		/**
-		 * Set the collection id.
+		 * Set the codec.
 		 *
-		 * @param collectionId The collection id to set.
+		 * @param codec The codec to set.
 		 * @since 17
 		 */
-		public void setCollectionId(String collectionId) {
-			this.collectionId = collectionId;
+		public void setCodec(Hashtable<String, Integer> codec) {
+			this.codec = codec;
 		}
 
 		/**
-		 * Returns the pages.
+		 * Returns the collections.
 		 *
-		 * @return The pages.
+		 * @return The collections.
 		 * @since 17
 		 */
-		public List<Page> getPages() {
-			return pages;
+		public List<Collection> getCollections() {
+			return collections;
 		}
 
 		/**
-		 * Set the pages.
+		 * Set the collections.
 		 *
-		 * @param pages The pages to set.
+		 * @param collections The collections to set.
 		 * @since 17
 		 */
-		public void setPages(List<Page> pages) {
-			this.pages = pages;
+		public void setCollections(List<Collection> collections) {
+			this.collections = collections;
 		}
 
 		/**
-		 * Defines page responses for the api.
+		 * Defines collection responses for the api.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
 		 * @since 1.8
 		 */
-		public static class Page implements Serializable {
+		public static class Collection implements Serializable {
 			/**
 			 * The serial version UID.
 			 */
 			private static final long serialVersionUID = 1L;
 
 			/**
-			 * The id.
+			 * The collection id.
 			 */
+			@JsonProperty("collection-id")
 			@NotBlank
-			private String id;
+			private String collectionId;
 
 			/**
-			 * The codec.
+			 * The pages.
 			 */
-			private Hashtable<String, Integer> codec;
+			private List<Page> pages;
 
 			/**
-			 * Default constructor for a page response for the api.
+			 * Default constructor for a collection response for the api.
 			 * 
 			 * @since 17
 			 */
-			public Page() {
+			public Collection() {
 				super();
 			}
 
 			/**
-			 * Creates a page response for the api.
+			 * Creates a collection response for the api.
 			 * 
-			 * @param id    The id.
-			 * @param codec The codec.
+			 * @param collectionId The collection id.
 			 * @since 17
 			 */
-			public Page(@NotBlank String id, Hashtable<String, Integer> codec) {
+			public Collection(@NotBlank String collectionId) {
+				this(collectionId, null);
+			}
+
+			/**
+			 * Creates a collection response for the api.
+			 * 
+			 * @param collectionId The collection id.
+			 * @param pages        The pages.
+			 * @since 17
+			 */
+			public Collection(@NotBlank String collectionId, List<Page> pages) {
 				super();
 
-				this.id = id;
-				this.codec = codec;
+				this.collectionId = collectionId;
+				this.pages = pages;
 			}
 
 			/**
-			 * Returns the id.
+			 * Returns the collection id.
 			 *
-			 * @return The id.
+			 * @return The collection id.
 			 * @since 17
 			 */
-			public String getId() {
-				return id;
+			public String getCollectionId() {
+				return collectionId;
 			}
 
 			/**
-			 * Set the id.
+			 * Set the collection id.
 			 *
-			 * @param id The id to set.
+			 * @param collectionId The collection id to set.
 			 * @since 17
 			 */
-			public void setId(String id) {
-				this.id = id;
+			public void setCollectionId(String collectionId) {
+				this.collectionId = collectionId;
 			}
 
 			/**
-			 * Returns the codec.
+			 * Returns the pages.
 			 *
-			 * @return The codec.
+			 * @return The pages.
 			 * @since 17
 			 */
-			public Hashtable<String, Integer> getCodec() {
-				return codec;
+			public List<Page> getPages() {
+				return pages;
 			}
 
 			/**
-			 * Set the codec.
+			 * Set the pages.
 			 *
-			 * @param codec The codec to set.
+			 * @param pages The pages to set.
 			 * @since 17
 			 */
-			public void setCodec(Hashtable<String, Integer> codec) {
-				this.codec = codec;
+			public void setPages(List<Page> pages) {
+				this.pages = pages;
 			}
 
+			/**
+			 * Defines page responses for the api.
+			 *
+			 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+			 * @version 1.0
+			 * @since 1.8
+			 */
+			public static class Page implements Serializable {
+				/**
+				 * The serial version UID.
+				 */
+				private static final long serialVersionUID = 1L;
+
+				/**
+				 * The id.
+				 */
+				@NotBlank
+				private String id;
+
+				/**
+				 * The codec.
+				 */
+				private Hashtable<String, Integer> codec;
+
+				/**
+				 * Default constructor for a page response for the api.
+				 * 
+				 * @since 17
+				 */
+				public Page() {
+					super();
+				}
+
+				/**
+				 * Creates a page response for the api.
+				 * 
+				 * @param id    The id.
+				 * @param codec The codec.
+				 * @since 17
+				 */
+				public Page(@NotBlank String id, Hashtable<String, Integer> codec) {
+					super();
+
+					this.id = id;
+					this.codec = codec;
+				}
+
+				/**
+				 * Returns the id.
+				 *
+				 * @return The id.
+				 * @since 17
+				 */
+				public String getId() {
+					return id;
+				}
+
+				/**
+				 * Set the id.
+				 *
+				 * @param id The id to set.
+				 * @since 17
+				 */
+				public void setId(String id) {
+					this.id = id;
+				}
+
+				/**
+				 * Returns the codec.
+				 *
+				 * @return The codec.
+				 * @since 17
+				 */
+				public Hashtable<String, Integer> getCodec() {
+					return codec;
+				}
+
+				/**
+				 * Set the codec.
+				 *
+				 * @param codec The codec to set.
+				 * @since 17
+				 */
+				public void setCodec(Hashtable<String, Integer> codec) {
+					this.codec = codec;
+				}
+
+			}
 		}
-
 	}
 }

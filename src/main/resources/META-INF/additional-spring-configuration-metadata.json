@@ -246,6 +246,16 @@
 			"description": "ocr4all repository folios folder; the default value is 'folios'."
 		},
 		{
+			"name": "ocr4all.repository.container.normalized.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all repository normalized folder; the default value is 'normalized'."
+		},
+		{
+			"name": "ocr4all.repository.container.normalized.format",
+			"type": "java.lang.String",
+			"description": "ocr4all repository normalized format. The format must be suitable for use on web pages (jpg, png), since required by LAREX; the default value is 'png'."
+		},
+		{
 			"name": "ocr4all.repository.container.derivatives.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all repository derivatives folder; the default value is 'derivatives'."
@@ -434,6 +444,11 @@
 			"name": "ocr4all.workspace.projects.project.images.folios.folder",
 			"type": "java.lang.String",
 			"description": "ocr4all workspace project images folios folder; the default value is 'folios'."
+		},
+		{
+			"name": "ocr4all.workspace.projects.project.images.normalized.folder",
+			"type": "java.lang.String",
+			"description": "ocr4all workspace project images normalized folder; the default value is 'normalized'."
 		},
 		{
 			"name": "ocr4all.workspace.projects.project.images.derivatives.folder",
