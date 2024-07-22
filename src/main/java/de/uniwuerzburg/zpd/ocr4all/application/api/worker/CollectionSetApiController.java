@@ -616,31 +616,39 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the PageXML filenames.
+	 * Returns the PageXML file sets.
 	 * 
 	 * @param collectionId The collection id. This is the folder name.
 	 * @param request      The PageXML request.
 	 * @return The sets in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the PageXML filenames in the response body")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "PageXML Filenames", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = PageXMLFilenamesResponse.class)) }),
+	@Operation(summary = "returns the PageXML file sets in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "PageXML File Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FileSetResponse.class))) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(pageXMLRequestMapping + collectionPathVariable)
-	public ResponseEntity<PageXMLFilenamesResponse> pageXML(
+	public ResponseEntity<List<FileSetResponse>> pageXML(
 			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
 			@RequestBody @Valid PageXMLRequest request) {
 		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
 
 		try {
-			List<String> filenames = collectionService.getPageXMLFilenames(collection, request.getLevel(),
-					request.getIndex());
+			Collection<CollectionService.FileSet> fileSets = collectionService.getPageXMLFiles(collection,
+					request.getLevel(), request.getIndex());
 
-			return filenames == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new PageXMLFilenamesResponse(filenames));
+			if (fileSets == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				List<FileSetResponse> response = new ArrayList<>();
+
+				for (CollectionService.FileSet fileSet : fileSets)
+					response.add(new FileSetResponse(fileSet));
+
+				return ResponseEntity.ok().body(response);
+			}
 
 		} catch (Exception ex) {
 			log(ex);
@@ -1113,62 +1121,37 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines PageXML filenames responses for the api.
+	 * Defines sets with files responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class PageXMLFilenamesResponse implements Serializable {
+	public static class FileSetResponse extends CollectionService.FileSet {
 		/**
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * The filenames.
-		 */
-		private List<String> filenames;
-
-		/**
-		 * Default constructor for a PageXML filenames response for the api.
+		 * Default constructor for set files response for the api.
 		 * 
 		 * @since 17
 		 */
-		public PageXMLFilenamesResponse() {
+		public FileSetResponse() {
 			super();
 		}
 
 		/**
-		 * Creates a PageXML filenames response for the api.
+		 * Creates a set files response for the api.
 		 * 
-		 * @param filenames The filenames.
+		 * @param fileSet The file set.
 		 * @since 17
 		 */
-		public PageXMLFilenamesResponse(List<String> filenames) {
-			super();
+		public FileSetResponse(CollectionService.FileSet fileSet) {
+			super(fileSet);
 
-			this.filenames = filenames;
-		}
-
-		/**
-		 * Returns the filenames.
-		 *
-		 * @return The filenames.
-		 * @since 17
-		 */
-		public List<String> getFilenames() {
-			return filenames;
-		}
-
-		/**
-		 * Set the filenames.
-		 *
-		 * @param filenames The filenames to set.
-		 * @since 17
-		 */
-		public void setFilenames(List<String> filenames) {
-			this.filenames = filenames;
+			setExtensions(fileSet.getExtensions());
 		}
 
 	}
@@ -1197,7 +1180,7 @@ public class CollectionSetApiController extends CoreApiController {
 		private List<Collection> collections;
 
 		/**
-		 * Default constructor for a codec responses for the api.
+		 * Default constructor for a codec response for the api.
 		 * 
 		 * @since 17
 		 */
@@ -1206,7 +1189,7 @@ public class CollectionSetApiController extends CoreApiController {
 		}
 
 		/**
-		 * Creates a codec responses for the api.
+		 * Creates a codec response for the api.
 		 * 
 		 * @param codec       The codec.
 		 * @param collections The collections.

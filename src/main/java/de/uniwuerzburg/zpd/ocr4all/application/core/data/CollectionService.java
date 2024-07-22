@@ -934,7 +934,7 @@ public class CollectionService extends CoreService {
 	 * @return The PageXML filenames. Null on troubles.
 	 * @since 17
 	 */
-	public List<String> getPageXMLFilenames(Collection collection, PageXMLLevel level, int index) {
+	public java.util.Collection<FileSet> getPageXMLFiles(Collection collection, PageXMLLevel level, int index) {
 		if (collection != null && level != null && collection.getRight().isReadFulfilled()) {
 			List<Path> files = null;
 
@@ -951,11 +951,23 @@ public class CollectionService extends CoreService {
 					}
 				}).collect(Collectors.toList());
 			} catch (Exception e) {
+				logger.warn("could not read files - " + e.getMessage());
+
 				return null;
 			}
 
 			if (files != null) {
-				List<String> filenames = new ArrayList<>();
+				Hashtable<String, FileSet> fileSets = new Hashtable<>();
+
+				Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new Hashtable<>();
+				try {
+					for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : getSets(collection))
+						sets.put(set.getId(), set);
+				} catch (IOException e) {
+					logger.warn("could not load sets - " + e.getMessage());
+
+					return null;
+				}
 
 				for (Path file : files)
 					try {
@@ -1011,13 +1023,23 @@ public class CollectionService extends CoreService {
 								}
 						}
 
-						if (isFound)
-							filenames.add(file.getFileName().toString());
+						if (isFound) {
+							NameExtension nameExtension = getNameExtension(file.getFileName().toString());
+
+							FileSet fileSet = fileSets.get(nameExtension.getName());
+							if (fileSet == null && sets.containsKey(nameExtension.getName())) {
+								fileSet = new FileSet(sets.get(nameExtension.getName()));
+								fileSets.put(nameExtension.getName(), fileSet);
+							}
+
+							if (fileSet != null)
+								fileSet.getExtensions().add(nameExtension.getExtension());
+						}
 					} catch (Exception e) {
 						// Ignore malformed PageXML
 					}
 
-				return filenames;
+				return fileSets.values();
 			}
 		}
 
@@ -1225,6 +1247,66 @@ public class CollectionService extends CoreService {
 		 */
 		public Set<String> getKeywords() {
 			return keywords;
+		}
+	}
+
+	/**
+	 * FileSet is an immutable class that defines sets with files.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class FileSet extends de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The file extensions.
+		 */
+		private Set<String> extensions;
+
+		/**
+		 * Default constructor for a set with files.
+		 * 
+		 * @since 17
+		 */
+		public FileSet() {
+			super();
+		}
+
+		/**
+		 * Creates a set with files.
+		 * 
+		 * @param set The set.
+		 * @since 17
+		 */
+		public FileSet(de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set) {
+			super(set.getDate(), set.getUser(), set.getKeywords(), set.getId(), set.getName());
+
+			extensions = new HashSet<>();
+		}
+
+		/**
+		 * Returns the extensions.
+		 *
+		 * @return The extensions.
+		 * @since 17
+		 */
+		public Set<String> getExtensions() {
+			return extensions;
+		}
+
+		/**
+		 * Set the extensions.
+		 *
+		 * @param extensions The extensions to set.
+		 * @since 17
+		 */
+		public void setExtensions(Set<String> extensions) {
+			this.extensions = extensions;
 		}
 
 	}
