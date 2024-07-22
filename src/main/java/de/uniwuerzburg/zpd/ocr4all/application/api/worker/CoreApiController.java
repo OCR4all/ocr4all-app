@@ -287,6 +287,11 @@ public class CoreApiController {
 	/**
 	 * The codec request mapping.
 	 */
+	public static final String pageXMLRequestMapping = "/pageXML";
+
+	/**
+	 * The codec request mapping.
+	 */
 	public static final String codecRequestMapping = "/codec";
 
 	/**

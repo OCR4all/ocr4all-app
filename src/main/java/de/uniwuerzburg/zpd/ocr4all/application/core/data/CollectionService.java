@@ -24,7 +24,10 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -822,6 +825,40 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
+	 * Returns true if the PageXML text equivalence unicode matches the index.
+	 * 
+	 * @param textEquivalence The text equivalence.
+	 * @param index           The PageXML index.
+	 * @return The PageXML text equivalence unicode. Empty if the index does not
+	 *         matches.
+	 * @since 17
+	 */
+	private boolean isTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
+		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
+				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
+				&& textEquivalence.getTextEquivalence().getUnicode() != null
+				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null;
+
+	}
+
+	/**
+	 * Returns the PageXML text equivalence unicode if the index matches. All
+	 * whitespaces and non-visible characters are removed from text.
+	 * 
+	 * @param textEquivalence The text equivalence.
+	 * @param index           The PageXML index.
+	 * @return The PageXML text equivalence unicode. Empty if the index does not
+	 *         matches.
+	 * @since 17
+	 */
+	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
+		return isTextEquivalenceUnicode(textEquivalence, index)
+				? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
+				: "";
+
+	}
+
+	/**
 	 * Returns the PageXML codec.
 	 * 
 	 * @param collection The collection.
@@ -835,7 +872,7 @@ public class CollectionService extends CoreService {
 	public Hashtable<String, Integer> getPageXMLCodec(Collection collection, String filename, PageXMLLevel level,
 			int index, Normalizer.Form normalizer) {
 		if (collection != null && filename != null && !filename.isBlank() && level != null
-				&& collection.getRight().isWriteFulfilled()) {
+				&& collection.getRight().isReadFulfilled()) {
 			final Path folder = collection.getConfiguration().getFolder();
 
 			try {
@@ -889,22 +926,124 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
-	 * Returns the PageXML text equivalence unicode if the index matches. All
-	 * whitespaces and non-visible characters are removed from text.
+	 * Returns the PageXML filenames.
 	 * 
-	 * @param textEquivalence The text equivalence.
-	 * @param index           The PageXML index.
-	 * @return The PageXML text equivalence unicode. Empty if the index does not
-	 *         matches.
+	 * @param collection The collection.
+	 * @param level      The PageXML level.
+	 * @param index      The PageXML index.
+	 * @return The PageXML filenames. Null on troubles.
 	 * @since 17
 	 */
-	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
-		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
-				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
-				&& textEquivalence.getTextEquivalence().getUnicode() != null
-				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null
-						? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
-						: "";
+	public java.util.Collection<FileSet> getPageXMLFiles(Collection collection, PageXMLLevel level, int index) {
+		if (collection != null && level != null && collection.getRight().isReadFulfilled()) {
+			List<Path> files = null;
+
+			try (Stream<Path> stream = Files.list(collection.getConfiguration().getFolder())) {
+				files = stream.filter(file -> {
+					if (Files.isDirectory(file))
+						return false;
+					else {
+						try {
+							return MediaType.APPLICATION_XML_VALUE.equals(Files.probeContentType(file));
+						} catch (IOException e) {
+							return false;
+						}
+					}
+				}).collect(Collectors.toList());
+			} catch (Exception e) {
+				logger.warn("could not read files - " + e.getMessage());
+
+				return null;
+			}
+
+			if (files != null) {
+				Hashtable<String, FileSet> fileSets = new Hashtable<>();
+
+				Hashtable<String, de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set> sets = new Hashtable<>();
+				try {
+					for (de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set : getSets(collection))
+						sets.put(set.getId(), set);
+				} catch (IOException e) {
+					logger.warn("could not load sets - " + e.getMessage());
+
+					return null;
+				}
+
+				for (Path file : files)
+					try {
+						PageXMLParser.Root root = (new PageXMLParser()).deserialise(file.toFile());
+
+						boolean isFound = false;
+						if (root.getPage() != null) {
+							for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
+								if (PageXMLLevel.TextRegion.equals(level)) {
+									if (isTextEquivalenceUnicode(region, index)) {
+										isFound = true;
+
+										break;
+									}
+								} else {
+									for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
+										if (PageXMLLevel.TextLine.equals(level)) {
+											if (isTextEquivalenceUnicode(line, index)) {
+												isFound = true;
+
+												break;
+											}
+										} else {
+											for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line
+													.getWords())
+
+												if (PageXMLLevel.Word.equals(level)) {
+													if (isTextEquivalenceUnicode(word, index)) {
+														isFound = true;
+
+														break;
+													}
+												} else {
+													for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
+															.getGlyphs())
+														if (PageXMLLevel.Glyph.equals(level)
+																&& isTextEquivalenceUnicode(glyph, index)) {
+															isFound = true;
+
+															break;
+														}
+
+													if (isFound)
+														break;
+												}
+
+											if (isFound)
+												break;
+										}
+
+									if (isFound)
+										break;
+								}
+						}
+
+						if (isFound) {
+							NameExtension nameExtension = getNameExtension(file.getFileName().toString());
+
+							FileSet fileSet = fileSets.get(nameExtension.getName());
+							if (fileSet == null && sets.containsKey(nameExtension.getName())) {
+								fileSet = new FileSet(sets.get(nameExtension.getName()));
+								fileSets.put(nameExtension.getName(), fileSet);
+							}
+
+							if (fileSet != null)
+								fileSet.getExtensions().add(nameExtension.getExtension());
+						}
+					} catch (Exception e) {
+						// Ignore malformed PageXML
+					}
+
+				return fileSets.values();
+			}
+		}
+
+		return null;
 
 	}
 
@@ -1108,6 +1247,66 @@ public class CollectionService extends CoreService {
 		 */
 		public Set<String> getKeywords() {
 			return keywords;
+		}
+	}
+
+	/**
+	 * FileSet is an immutable class that defines sets with files.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class FileSet extends de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The file extensions.
+		 */
+		private Set<String> extensions;
+
+		/**
+		 * Default constructor for a set with files.
+		 * 
+		 * @since 17
+		 */
+		public FileSet() {
+			super();
+		}
+
+		/**
+		 * Creates a set with files.
+		 * 
+		 * @param set The set.
+		 * @since 17
+		 */
+		public FileSet(de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Set set) {
+			super(set.getDate(), set.getUser(), set.getKeywords(), set.getId(), set.getName());
+
+			extensions = new HashSet<>();
+		}
+
+		/**
+		 * Returns the extensions.
+		 *
+		 * @return The extensions.
+		 * @since 17
+		 */
+		public Set<String> getExtensions() {
+			return extensions;
+		}
+
+		/**
+		 * Set the extensions.
+		 *
+		 * @param extensions The extensions to set.
+		 * @since 17
+		 */
+		public void setExtensions(Set<String> extensions) {
+			this.extensions = extensions;
 		}
 
 	}

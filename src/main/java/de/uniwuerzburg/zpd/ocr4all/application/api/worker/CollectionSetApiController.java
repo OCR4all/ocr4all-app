@@ -616,6 +616,48 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the PageXML file sets.
+	 * 
+	 * @param collectionId The collection id. This is the folder name.
+	 * @param request      The PageXML request.
+	 * @return The sets in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the PageXML file sets in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "PageXML File Sets", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = FileSetResponse.class))) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(pageXMLRequestMapping + collectionPathVariable)
+	public ResponseEntity<List<FileSetResponse>> pageXML(
+			@Parameter(description = "the collection id - this is the folder name") @PathVariable String collectionId,
+			@RequestBody @Valid PageXMLRequest request) {
+		CollectionService.Collection collection = authorizeCollectionRead(collectionId);
+
+		try {
+			Collection<CollectionService.FileSet> fileSets = collectionService.getPageXMLFiles(collection,
+					request.getLevel(), request.getIndex());
+
+			if (fileSets == null)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else {
+				List<FileSetResponse> response = new ArrayList<>();
+
+				for (CollectionService.FileSet fileSet : fileSets)
+					response.add(new FileSetResponse(fileSet));
+
+				return ResponseEntity.ok().body(response);
+			}
+
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
 	 * Returns the codec.
 	 * 
 	 * @param request The codec request.
@@ -828,13 +870,80 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines PageXML requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class PageXMLRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The PageXML level.
+		 */
+		@NotNull
+		private PageXMLLevel level;
+
+		/**
+		 * The PageXML index.
+		 */
+		@NotNull
+		private int index;
+
+		/**
+		 * Returns the PageXML level.
+		 *
+		 * @return The PageXML level.
+		 * @since 17
+		 */
+		public PageXMLLevel getLevel() {
+			return level;
+		}
+
+		/**
+		 * Set the PageXML level.
+		 *
+		 * @param level The PageXML level to set.
+		 * @since 17
+		 */
+		public void setLevel(PageXMLLevel level) {
+			this.level = level;
+		}
+
+		/**
+		 * Returns the PageXML index.
+		 *
+		 * @return The PageXML index.
+		 * @since 17
+		 */
+		public int getIndex() {
+			return index;
+		}
+
+		/**
+		 * Set the PageXML index.
+		 *
+		 * @param index The PageXML index to set.
+		 * @since 17
+		 */
+		public void setIndex(int index) {
+			this.index = index;
+		}
+
+	}
+
+	/**
 	 * Defines codec requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class CodecRequest implements Serializable {
+	public static class CodecRequest extends PageXMLRequest {
 		/**
 		 * The serial version UID.
 		 */
@@ -1012,6 +1121,42 @@ public class CollectionSetApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines sets with files responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class FileSetResponse extends CollectionService.FileSet {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * Default constructor for set files response for the api.
+		 * 
+		 * @since 17
+		 */
+		public FileSetResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a set files response for the api.
+		 * 
+		 * @param fileSet The file set.
+		 * @since 17
+		 */
+		public FileSetResponse(CollectionService.FileSet fileSet) {
+			super(fileSet);
+
+			setExtensions(fileSet.getExtensions());
+		}
+
+	}
+
+	/**
 	 * Defines codec responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -1035,7 +1180,7 @@ public class CollectionSetApiController extends CoreApiController {
 		private List<Collection> collections;
 
 		/**
-		 * Default constructor for a codec responses for the api.
+		 * Default constructor for a codec response for the api.
 		 * 
 		 * @since 17
 		 */
@@ -1044,7 +1189,7 @@ public class CollectionSetApiController extends CoreApiController {
 		}
 
 		/**
-		 * Creates a codec responses for the api.
+		 * Creates a codec response for the api.
 		 * 
 		 * @param codec       The codec.
 		 * @param collections The collections.
