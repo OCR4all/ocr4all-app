@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -147,7 +148,8 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Upload the folios.
+	 * Upload the folios. The transaction timeout is set to 900 seconds, this means,
+	 * 15 minutes.
 	 * 
 	 * @param containerId The container id. This is the folder name.
 	 * @param files       The files to upload in a multipart request.
@@ -162,6 +164,7 @@ public class ContainerFolioApiController extends CoreApiController {
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(uploadRequestMapping + containerPathVariable)
+	@Transactional(timeout = 900)
 	public ResponseEntity<List<FolioResponse>> upload(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
