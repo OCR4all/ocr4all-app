@@ -51,6 +51,11 @@
 			"description": "ocr4all application administrator group. This is optional, the default value is admin."
 		},
 		{
+			"name": "ocr4all.application.thread.pool.size.work",
+			"type": "java.lang.Integer",
+			"description": "ocr4all application thread pool size for work. This is optional, the default value is 12."
+		},
+		{
 			"name": "ocr4all.application.thread.pool.size.task",
 			"type": "java.lang.Integer",
 			"description": "ocr4all application thread pool size for task. This is optional, the default value is 6."

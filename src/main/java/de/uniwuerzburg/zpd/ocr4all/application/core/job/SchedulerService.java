@@ -49,6 +49,10 @@ public class SchedulerService extends CoreService {
 	 */
 	public enum ThreadPool {
 		/**
+		 * The work thread pool.
+		 */
+		work("wk"),
+		/**
 		 * The task thread pool.
 		 */
 		task("tk"),
@@ -150,6 +154,11 @@ public class SchedulerService extends CoreService {
 	private boolean isRunning = true;
 
 	/**
+	 * The thread pool for work.
+	 */
+	private final ThreadPoolTaskExecutor threadPoolWork;
+
+	/**
 	 * The thread pool for task.
 	 */
 	private final ThreadPoolTaskExecutor threadPoolTask;
@@ -181,6 +190,8 @@ public class SchedulerService extends CoreService {
 		/*
 		 * The application thread pools
 		 */
+		threadPoolWork = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.work.getLabel(),
+				configurationService.getApplication().getThreadPoolSizeProperties().getWork());
 		threadPoolTask = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.task.getLabel(),
 				configurationService.getApplication().getThreadPoolSizeProperties().getTask());
 		threadPoolWorkflow = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.workflow.getLabel(),
@@ -357,8 +368,11 @@ public class SchedulerService extends CoreService {
 				threadPool = threadPoolWorkflow;
 				break;
 			case task:
-			default:
 				threadPool = threadPoolTask;
+				break;
+			case work:
+			default:
+				threadPool = threadPoolWork;
 				break;
 			}
 

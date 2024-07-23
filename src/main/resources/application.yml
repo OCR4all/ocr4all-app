@@ -66,6 +66,7 @@ ocr4all:
       - de
     monitor.interval: 15000
     thread.pool.size: 
+      work: 12
       task: 6
       workflow: 12
       training: 6

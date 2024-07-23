@@ -9,6 +9,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +36,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortReque
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
@@ -155,37 +156,99 @@ public class ContainerFolioApiController extends CoreApiController {
 	 * @param files       The files to upload in a multipart request.
 	 * @param response    The HTTP-specific functionality in sending a response to
 	 *                    the client.
-	 * @return The list of uploaded folios in the response body.
+	 * @return The job with the folios in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Folios"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job With Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobFolioResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(uploadRequestMapping + containerPathVariable)
-	@Transactional(timeout = 900)
-	public ResponseEntity<List<FolioResponse>> upload(
+	public ResponseEntity<JobFolioResponse> upload(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
 		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
-			final List<Folio> uploaded = service.store(container, files);
+			final ContainerService.JobFolio jobFolio = service.store(container, files);
 
-			if (uploaded == null)
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-			else {
-				final List<FolioResponse> folios = new ArrayList<>();
-				for (Folio folio : uploaded)
-					folios.add(new FolioResponse(folio));
-
-				return ResponseEntity.ok().body(folios);
-			}
+			return jobFolio == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new JobFolioResponse(jobFolio));
 		} catch (Exception ex) {
 			log(ex);
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Defines job with folios responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class JobFolioResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The job.
+		 */
+		private JobResponse job;
+
+		/**
+		 * The folios.
+		 */
+		private List<FolioResponse> folios;
+
+		/**
+		 * Default constructor for a job with folios response for the api.
+		 * 
+		 * @since 17
+		 */
+		public JobFolioResponse() {
+			super();
+		}
+
+		/**
+		 * Creates a job with folios response for the api.
+		 * 
+		 * @param job    The job.
+		 * @param folios The folios.
+		 * @since 17
+		 */
+		public JobFolioResponse(ContainerService.JobFolio folioJob) {
+			super();
+
+			job = new JobResponse(folioJob.getJob());
+			folios = new ArrayList<>();
+			for (Folio folio : folioJob.getFolios())
+				folios.add(new FolioResponse(folio));
+		}
+
+		/**
+		 * Returns the job.
+		 *
+		 * @return The job.
+		 * @since 17
+		 */
+		public JobResponse getJob() {
+			return job;
+		}
+
+		/**
+		 * Returns the folios.
+		 *
+		 * @return The folios.
+		 * @since 17
+		 */
+		public List<FolioResponse> getFolios() {
+			return folios;
 		}
 	}
 

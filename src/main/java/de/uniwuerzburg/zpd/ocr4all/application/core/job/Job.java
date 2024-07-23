@@ -882,7 +882,7 @@ public abstract class Job {
 			 * @param message The message to set.
 			 * @since 1.8
 			 */
-			void setStandardOutput(String message) {
+			public void setStandardOutput(String message) {
 				standardOutput = message;
 			}
 
@@ -891,7 +891,7 @@ public abstract class Job {
 			 *
 			 * @since 1.8
 			 */
-			void resetStandardOutput() {
+			public void resetStandardOutput() {
 				standardOutput = null;
 			}
 
@@ -921,7 +921,7 @@ public abstract class Job {
 			 * @param message The message to set.
 			 * @since 1.8
 			 */
-			void setStandardError(String message) {
+			public void setStandardError(String message) {
 				standardError = message;
 			}
 
@@ -930,7 +930,7 @@ public abstract class Job {
 			 *
 			 * @since 1.8
 			 */
-			void resetStandardError() {
+			public void resetStandardError() {
 				standardError = null;
 			}
 

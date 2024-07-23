@@ -562,6 +562,12 @@ public class Application {
 			 */
 			public static class Size {
 				/**
+				 * The thread pool size for work. The default value is 12.
+				 */
+				@Min(value = 1, message = "The thread pool size for work should not be less than 1")
+				private int work = 12;
+
+				/**
 				 * The thread pool size for task. The default value is 6.
 				 */
 				@Min(value = 1, message = "The thread pool size for task should not be less than 1")
@@ -578,6 +584,26 @@ public class Application {
 				 */
 				@Min(value = 1, message = "The thread pool size for training should not be less than 1")
 				private int training = 6;
+
+				/**
+				 * Returns the thread pool size for work.
+				 *
+				 * @return The thread pool size for work.
+				 * @since 17
+				 */
+				public int getWork() {
+					return work;
+				}
+
+				/**
+				 * Set the thread pool size for work.
+				 *
+				 * @param size The size to set.
+				 * @since 17
+				 */
+				public void setWork(int size) {
+					work = size;
+				}
 
 				/**
 				 * Returns the thread pool size for task.

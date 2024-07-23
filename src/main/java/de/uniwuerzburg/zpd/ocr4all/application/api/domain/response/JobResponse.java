@@ -42,7 +42,7 @@ public class JobResponse implements Serializable {
 	 * @since 17
 	 */
 	public enum Type {
-		task, workflow, training, unknown
+		work, task, workflow, training, unknown
 	}
 
 	/**
@@ -99,10 +99,17 @@ public class JobResponse implements Serializable {
 	private ProcessResponse process;
 
 	/**
-	 * The action specific data.
+	 * The processor action specific data.
 	 */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	private ActionResponse action;
+	@JsonProperty("processor-action")
+	private ProcessorActionResponse processorAction;
+
+	/**
+	 * The work specific data.
+	 */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private WorkResponse work;
 
 	/**
 	 * Creates a job response for the api.
@@ -125,8 +132,10 @@ public class JobResponse implements Serializable {
 
 		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process p ? new ProcessResponse(p)
 				: null;
-		action = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Action p ? new ActionResponse(p)
+		processorAction = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.ProcessorAction p
+				? new ProcessorActionResponse(p)
 				: null;
+		work = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Work p ? new WorkResponse(p) : null;
 	}
 
 	/**
@@ -332,23 +341,43 @@ public class JobResponse implements Serializable {
 	}
 
 	/**
-	 * Returns the action.
+	 * Returns the processor action.
 	 *
-	 * @return The action.
+	 * @return The processor action.
 	 * @since 17
 	 */
-	public ActionResponse getAction() {
-		return action;
+	public ProcessorActionResponse getProcessorAction() {
+		return processorAction;
 	}
 
 	/**
-	 * Set the action.
+	 * Set the processor action.
 	 *
-	 * @param action The action to set.
+	 * @param processorAction The processor action to set.
 	 * @since 17
 	 */
-	public void setAction(ActionResponse action) {
-		this.action = action;
+	public void setProcessorAction(ProcessorActionResponse processorAction) {
+		this.processorAction = processorAction;
+	}
+
+	/**
+	 * Returns the work.
+	 *
+	 * @return The work.
+	 * @since 17
+	 */
+	public WorkResponse getWork() {
+		return work;
+	}
+
+	/**
+	 * Set the work.
+	 *
+	 * @param work The work to set.
+	 * @since 17
+	 */
+	public void setWork(WorkResponse work) {
+		this.work = work;
 	}
 
 	/**
@@ -492,13 +521,13 @@ public class JobResponse implements Serializable {
 	}
 
 	/**
-	 * Defines action responses for the api.
+	 * Defines processor action responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class ActionResponse implements Serializable {
+	public static class ProcessorActionResponse implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -516,12 +545,12 @@ public class JobResponse implements Serializable {
 		private String modelId = null;
 
 		/**
-		 * Creates an action response for the api.
+		 * Creates a processor action response for the api.
 		 * 
 		 * @param action The action.
 		 * @since 1.8
 		 */
-		public ActionResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.Action action) {
+		public ProcessorActionResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.ProcessorAction action) {
 			super();
 
 			if (action instanceof Training training) {
@@ -572,7 +601,58 @@ public class JobResponse implements Serializable {
 		public void setModelId(String modelId) {
 			this.modelId = modelId;
 		}
+	}
 
+	/**
+	 * Defines work responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class WorkResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The type.
+		 */
+		private Type type;
+
+		/**
+		 * Creates a work response for the api.
+		 * 
+		 * @param work The work.
+		 * @since 1.8
+		 */
+		public WorkResponse(de.uniwuerzburg.zpd.ocr4all.application.core.job.Work work) {
+			super();
+
+			type = Type.training;
+
+		}
+
+		/**
+		 * Returns the type.
+		 *
+		 * @return The type.
+		 * @since 17
+		 */
+		public Type getType() {
+			return type;
+		}
+
+		/**
+		 * Set the type.
+		 *
+		 * @param type The type to set.
+		 * @since 17
+		 */
+		public void setType(Type type) {
+			this.type = type;
+		}
 	}
 
 	/**
