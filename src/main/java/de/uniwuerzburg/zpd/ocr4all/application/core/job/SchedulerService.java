@@ -709,7 +709,7 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public Container getJobs() {
-		return getJobs(null, null);
+		return getJobs(null, null, null);
 	}
 
 	/**
@@ -719,10 +719,11 @@ public class SchedulerService extends CoreService {
 	 *                         snapshot.
 	 * @param trainingModelIds The training jobs to add, that are running on the
 	 *                         given assemble model ids.
+	 * @param owner            The owner for the work jobs.
 	 * @return The jobs that are associated to the given clusters.
 	 * @since 1.8
 	 */
-	public Container getJobs(Collection<Job.Cluster> clusters, Set<String> trainingModelIds) {
+	public Container getJobs(Collection<Job.Cluster> clusters, Set<String> trainingModelIds, String owner) {
 		// Filter target jobs
 		Set<Job> jobs;
 		if (clusters == null)
@@ -733,11 +734,14 @@ public class SchedulerService extends CoreService {
 				if (cluster != null)
 					jobs.addAll(associated(cluster));
 
-			if (trainingModelIds != null && !trainingModelIds.isEmpty())
-				for (Job job : this.jobs.values())
-					if (job instanceof Training training)
-						if (trainingModelIds.contains(training.getModelId()))
-							jobs.add(job);
+			for (Job job : this.jobs.values())
+				if (job instanceof Training training) {
+					if (trainingModelIds != null && trainingModelIds.contains(training.getModelId()))
+						jobs.add(job);
+				} else if (job instanceof Work work)
+					if (work.isOwnerRequirements(owner))
+						jobs.add(job);
+
 		}
 
 		// Add scheduled target jobs to the container in the same order

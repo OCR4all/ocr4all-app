@@ -218,8 +218,7 @@ public class ContainerFolioApiController extends CoreApiController {
 		/**
 		 * Creates a job with folios response for the api.
 		 * 
-		 * @param job    The job.
-		 * @param folios The folios.
+		 * @param folioJob The job with folios.
 		 * @since 17
 		 */
 		public JobFolioResponse(ContainerService.JobFolio folioJob) {

@@ -19,6 +19,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService.ThreadP
  */
 public class Work extends Action {
 	/**
+	 * The owner.
+	 */
+	private final String owner;
+
+	/**
 	 * The description.
 	 */
 	private final String description;
@@ -31,15 +36,27 @@ public class Work extends Action {
 	/**
 	 * Creates a work. No locale is defined.
 	 * 
+	 * @param owner                The owner.
 	 * @param configurationService The configuration service.
 	 * @param description          The description.
 	 * @since 17
 	 */
-	public Work(ConfigurationService configurationService, String description, Instance instance) {
+	public Work(String owner, ConfigurationService configurationService, String description, Instance instance) {
 		super(Work.class, configurationService, null, Job.Processing.parallel, 1);
 
+		this.owner = owner == null || owner.isBlank() ? null : owner.trim();
 		this.description = description;
 		this.instance = instance;
+	}
+
+	/**
+	 * Returns true the owner requirements are fulfilled.
+	 *
+	 * @return True the owner requirements are fulfilled.
+	 * @since 17
+	 */
+	public boolean isOwnerRequirements(String user) {
+		return owner == null || owner.equals(user == null ? null : user.trim());
 	}
 
 	/*
