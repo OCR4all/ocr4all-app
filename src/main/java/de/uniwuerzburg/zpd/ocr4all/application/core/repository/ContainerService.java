@@ -356,15 +356,15 @@ public class ContainerService extends CoreService {
 	/**
 	 * Store the folios.
 	 * 
-	 * @param container The container.
-	 * @param files     The folios.
-	 * @return The job with the folios to stored. Null if container is unknown or
-	 *         the write right is not fulfilled. If no job is required, the job is
-	 *         null.
+	 * @param container      The container.
+	 * @param jobDescription The job description.
+	 * @param files          The folios.
+	 * @return The job storing the folios. Null if container is unknown or the write
+	 *         right is not fulfilled or no images are available.
 	 * @throws IOException Throws on storage troubles.
 	 * @since 1.8
 	 */
-	public JobFolio store(Container container, MultipartFile[] files) throws IOException {
+	public Work store(Container container, String jobDescription, MultipartFile[] files) throws IOException {
 		if (container != null && files != null) {
 			if (container.getRight().isWriteFulfilled()) {
 				// The system commands
@@ -452,11 +452,17 @@ public class ContainerService extends CoreService {
 				if (folios.isEmpty()) {
 					deleteRecursively(temporaryDirectory);
 
-					return new JobFolio(null, folios);
+					logger.info("there are no images available.");
+
+					return null;
 				}
 
 				Work work = new Work(securityService.getUser(), configurationService,
-						"upload " + folios.size() + " folios", new Work.Instance() {
+						jobDescription == null || jobDescription.isBlank()
+								? "upload " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s") + " into "
+										+ container.getConfiguration().getConfiguration().getName()
+								: jobDescription.trim(),
+						new Work.Instance() {
 							/**
 							 * True if the work was canceled.
 							 */
@@ -471,6 +477,8 @@ public class ContainerService extends CoreService {
 							 */
 							@Override
 							public Job.State execute(Journal.Step journal) {
+								journal.setProgress(0.1F);
+
 								/*
 								 * Create normalized
 								 */
@@ -488,6 +496,8 @@ public class ContainerService extends CoreService {
 
 									return Job.State.interrupted;
 								}
+
+								journal.setProgress(0.40F);
 
 								// Handles canceled job
 								if (isCanceled) {
@@ -511,6 +521,8 @@ public class ContainerService extends CoreService {
 											folderBest, derivativeResolution.getBest().getMaxSize(),
 											derivativeResolution.getBest().getQuality());
 
+									journal.setProgress(0.50F);
+
 									// Handles canceled job
 									if (isCanceled) {
 										deleteRecursively(temporaryDirectory);
@@ -524,6 +536,8 @@ public class ContainerService extends CoreService {
 											folderDetail, derivativeResolution.getDetail().getMaxSize(),
 											derivativeResolution.getDetail().getQuality());
 
+									journal.setProgress(0.60F);
+
 									// Handles canceled job
 									if (isCanceled) {
 										deleteRecursively(temporaryDirectory);
@@ -536,6 +550,8 @@ public class ContainerService extends CoreService {
 											derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderDetail),
 											folderThumbnail, derivativeResolution.getThumbnail().getMaxSize(),
 											derivativeResolution.getThumbnail().getQuality());
+
+									journal.setProgress(0.70F);
 
 									// Handles canceled job
 									if (isCanceled) {
@@ -593,6 +609,8 @@ public class ContainerService extends CoreService {
 									}
 								}
 
+								journal.setProgress(0.85F);
+
 								/*
 								 * Move the folios to the container
 								 */
@@ -631,6 +649,8 @@ public class ContainerService extends CoreService {
 								// remove temporary data
 								deleteRecursively(temporaryDirectory);
 
+								journal.setProgress(0.95F);
+
 								// Persist the configuration
 								try {
 									(new PersistenceManager(
@@ -642,6 +662,8 @@ public class ContainerService extends CoreService {
 
 									return Job.State.interrupted;
 								}
+
+								journal.setProgress(1F);
 
 								return Job.State.completed;
 							}
@@ -662,7 +684,7 @@ public class ContainerService extends CoreService {
 				// schedule the job
 				schedulerService.schedule(work);
 
-				return new JobFolio(work, folios);
+				return work;
 			}
 		}
 
@@ -910,60 +932,6 @@ public class ContainerService extends CoreService {
 		 */
 		public ContainerConfiguration getConfiguration() {
 			return configuration;
-		}
-
-	}
-
-	/**
-	 * JobFolio is an immutable class that defines a job with folios.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class JobFolio {
-		/**
-		 * The job.
-		 */
-		private final Job job;
-
-		/**
-		 * The folios.
-		 */
-		private final List<Folio> folios;
-
-		/**
-		 * Creates a job with folios.
-		 * 
-		 * @param job    The job.
-		 * @param folios The folios.
-		 * @since 17
-		 */
-		public JobFolio(Job job, List<Folio> folios) {
-			super();
-
-			this.job = job;
-			this.folios = folios;
-		}
-
-		/**
-		 * Returns the job.
-		 *
-		 * @return The job.
-		 * @since 17
-		 */
-		public Job getJob() {
-			return job;
-		}
-
-		/**
-		 * Returns the folios.
-		 *
-		 * @return The folios.
-		 * @since 17
-		 */
-		public List<Folio> getFolios() {
-			return folios;
 		}
 
 	}

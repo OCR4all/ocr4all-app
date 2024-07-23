@@ -9,7 +9,6 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +39,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Work;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
@@ -153,101 +153,35 @@ public class ContainerFolioApiController extends CoreApiController {
 	 * 15 minutes.
 	 * 
 	 * @param containerId The container id. This is the folder name.
+	 * @param job         The job description.
 	 * @param files       The files to upload in a multipart request.
 	 * @param response    The HTTP-specific functionality in sending a response to
 	 *                    the client.
-	 * @return The job with the folios in the response body.
+	 * @return The job in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload folios")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job With Folios", content = {
-			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobFolioResponse.class)) }),
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(uploadRequestMapping + containerPathVariable)
-	public ResponseEntity<JobFolioResponse> upload(
+	public ResponseEntity<JobResponse> upload(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the job description") @RequestParam(required = false) String job,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
 		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
-			final ContainerService.JobFolio jobFolio = service.store(container, files);
+			final Work work = service.store(container, job, files);
 
-			return jobFolio == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new JobFolioResponse(jobFolio));
+			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new JobResponse(work));
 		} catch (Exception ex) {
 			log(ex);
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
-		}
-	}
-
-	/**
-	 * Defines job with folios responses for the api.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class JobFolioResponse implements Serializable {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * The job.
-		 */
-		private JobResponse job;
-
-		/**
-		 * The folios.
-		 */
-		private List<FolioResponse> folios;
-
-		/**
-		 * Default constructor for a job with folios response for the api.
-		 * 
-		 * @since 17
-		 */
-		public JobFolioResponse() {
-			super();
-		}
-
-		/**
-		 * Creates a job with folios response for the api.
-		 * 
-		 * @param folioJob The job with folios.
-		 * @since 17
-		 */
-		public JobFolioResponse(ContainerService.JobFolio folioJob) {
-			super();
-
-			job = new JobResponse(folioJob.getJob());
-			folios = new ArrayList<>();
-			for (Folio folio : folioJob.getFolios())
-				folios.add(new FolioResponse(folio));
-		}
-
-		/**
-		 * Returns the job.
-		 *
-		 * @return The job.
-		 * @since 17
-		 */
-		public JobResponse getJob() {
-			return job;
-		}
-
-		/**
-		 * Returns the folios.
-		 *
-		 * @return The folios.
-		 * @since 17
-		 */
-		public List<FolioResponse> getFolios() {
-			return folios;
 		}
 	}
 

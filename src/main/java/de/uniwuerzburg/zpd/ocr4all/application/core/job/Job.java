@@ -838,7 +838,7 @@ public abstract class Job {
 			 * @param progress The progress to set.
 			 * @since 1.8
 			 */
-			void setProgress(float progress) {
+			public void setProgress(float progress) {
 				if (progress >= 1)
 					this.progress = 1;
 				else if (progress <= 0)
