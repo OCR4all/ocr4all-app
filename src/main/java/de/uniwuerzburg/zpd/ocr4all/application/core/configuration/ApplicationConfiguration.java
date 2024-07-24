@@ -169,7 +169,8 @@ public class ApplicationConfiguration {
 		// The monitor interval
 		monitorInterval = properties.getMonitor().getInterval();
 
-		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getTask(),
+		threadPoolSizeProperties = new ThreadPoolSizeProperties(properties.getThread().getPool().getSize().getWork(),
+				properties.getThread().getPool().getSize().getTask(),
 				properties.getThread().getPool().getSize().getWorkflow(),
 				properties.getThread().getPool().getSize().getTraining());
 
@@ -391,6 +392,11 @@ public class ApplicationConfiguration {
 	 */
 	public static class ThreadPoolSizeProperties {
 		/**
+		 * The work pool size.
+		 */
+		private final int work;
+
+		/**
 		 * The task pool size.
 		 */
 		private final int task;
@@ -408,17 +414,29 @@ public class ApplicationConfiguration {
 		/**
 		 * Creates properties for the thread pool size.
 		 * 
+		 * @param work     The work pool size.
 		 * @param task     The task pool size.
 		 * @param workflow The workflow pool size.
 		 * @param training The training pool size.
 		 * @since 1.8
 		 */
-		public ThreadPoolSizeProperties(int task, int workflow, int training) {
+		public ThreadPoolSizeProperties(int work, int task, int workflow, int training) {
 			super();
 
+			this.work = work;
 			this.task = task;
 			this.workflow = workflow;
 			this.training = training;
+		}
+
+		/**
+		 * Returns the work pool size.
+		 *
+		 * @return The work pool size.
+		 * @since 17
+		 */
+		public int getWork() {
+			return work;
 		}
 
 		/**

@@ -49,6 +49,10 @@ public class SchedulerService extends CoreService {
 	 */
 	public enum ThreadPool {
 		/**
+		 * The work thread pool.
+		 */
+		work("wk"),
+		/**
 		 * The task thread pool.
 		 */
 		task("tk"),
@@ -150,6 +154,11 @@ public class SchedulerService extends CoreService {
 	private boolean isRunning = true;
 
 	/**
+	 * The thread pool for work.
+	 */
+	private final ThreadPoolTaskExecutor threadPoolWork;
+
+	/**
 	 * The thread pool for task.
 	 */
 	private final ThreadPoolTaskExecutor threadPoolTask;
@@ -181,6 +190,8 @@ public class SchedulerService extends CoreService {
 		/*
 		 * The application thread pools
 		 */
+		threadPoolWork = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.work.getLabel(),
+				configurationService.getApplication().getThreadPoolSizeProperties().getWork());
 		threadPoolTask = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.task.getLabel(),
 				configurationService.getApplication().getThreadPoolSizeProperties().getTask());
 		threadPoolWorkflow = createThreadPool(taskExecutorThreadNamePrefix, ThreadPool.workflow.getLabel(),
@@ -357,8 +368,11 @@ public class SchedulerService extends CoreService {
 				threadPool = threadPoolWorkflow;
 				break;
 			case task:
-			default:
 				threadPool = threadPoolTask;
+				break;
+			case work:
+			default:
+				threadPool = threadPoolWork;
 				break;
 			}
 
@@ -695,7 +709,7 @@ public class SchedulerService extends CoreService {
 	 * @since 1.8
 	 */
 	public Container getJobs() {
-		return getJobs(null, null);
+		return getJobs(null, null, null);
 	}
 
 	/**
@@ -705,10 +719,11 @@ public class SchedulerService extends CoreService {
 	 *                         snapshot.
 	 * @param trainingModelIds The training jobs to add, that are running on the
 	 *                         given assemble model ids.
+	 * @param owner            The owner for the work jobs.
 	 * @return The jobs that are associated to the given clusters.
 	 * @since 1.8
 	 */
-	public Container getJobs(Collection<Job.Cluster> clusters, Set<String> trainingModelIds) {
+	public Container getJobs(Collection<Job.Cluster> clusters, Set<String> trainingModelIds, String owner) {
 		// Filter target jobs
 		Set<Job> jobs;
 		if (clusters == null)
@@ -719,11 +734,14 @@ public class SchedulerService extends CoreService {
 				if (cluster != null)
 					jobs.addAll(associated(cluster));
 
-			if (trainingModelIds != null && !trainingModelIds.isEmpty())
-				for (Job job : this.jobs.values())
-					if (job instanceof Training training)
-						if (trainingModelIds.contains(training.getModelId()))
-							jobs.add(job);
+			for (Job job : this.jobs.values())
+				if (job instanceof Training training) {
+					if (trainingModelIds != null && trainingModelIds.contains(training.getModelId()))
+						jobs.add(job);
+				} else if (job instanceof Work work)
+					if (work.isOwnerRequirements(owner))
+						jobs.add(job);
+
 		}
 
 		// Add scheduled target jobs to the container in the same order

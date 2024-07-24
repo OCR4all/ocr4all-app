@@ -35,7 +35,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.env.TrainingFramework;
  * @version 1.0
  * @since 17
  */
-public class Training extends Action {
+public class Training extends ProcessorAction {
 	/**
 	 * The process instance.
 	 */

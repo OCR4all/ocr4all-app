@@ -371,13 +371,13 @@ public class JobApiController extends CoreApiController {
 		try {
 			switch (schedulerSnapshotType) {
 			case administration:
-				return isCoordinator() ? ResponseEntity.ok().body(new JobOverviewResponse(service, null, null))
+				return isCoordinator() ? ResponseEntity.ok().body(new JobOverviewResponse(service, null, null, null))
 						: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 			case project:
 				Authorization authorization = authorizationFactory.authorize(id, ProjectRight.execute);
 
 				return ResponseEntity.ok()
-						.body(new JobOverviewResponse(service, Arrays.asList(authorization.project), null));
+						.body(new JobOverviewResponse(service, Arrays.asList(authorization.project), null, null));
 			case domain:
 				if (!isSecured())
 					return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
@@ -395,7 +395,8 @@ public class JobApiController extends CoreApiController {
 					if (model.getRight().isReadFulfilled())
 						trainingModelIds.add(model.getConfiguration().getId());
 
-				return ResponseEntity.ok().body(new JobOverviewResponse(service, clusters, trainingModelIds));
+				return ResponseEntity.ok()
+						.body(new JobOverviewResponse(service, clusters, trainingModelIds, securityService.getUser()));
 			default:
 				logger.warn("The scheduler snapshot type \"" + schedulerSnapshotType.name() + "\" is not implemented.");
 
@@ -745,13 +746,14 @@ public class JobApiController extends CoreApiController {
 		 *                         scheduler. If null, all jobs are selected.
 		 * @param trainingModelIds The training jobs to add, that are running on the
 		 *                         given assemble model ids.
+		 * @param owner            The owner for the work jobs.
 		 * @since 1.8
 		 */
 		public JobOverviewResponse(SchedulerService service, Collection<Job.Cluster> clusters,
-				Set<String> trainingModelIds) {
+				Set<String> trainingModelIds, String owner) {
 			super();
 
-			SchedulerService.Container jobs = service.getJobs(clusters, trainingModelIds);
+			SchedulerService.Container jobs = service.getJobs(clusters, trainingModelIds, owner);
 
 			scheduled = getJobResponses(jobs.getScheduled());
 			running = getJobResponses(jobs.getRunning());

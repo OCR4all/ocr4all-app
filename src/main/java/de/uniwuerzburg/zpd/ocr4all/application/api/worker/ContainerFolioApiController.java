@@ -35,9 +35,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioSortReque
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.FolioUpdateRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.IdentifiersRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.FolioResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.job.Work;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageUtils;
@@ -147,38 +149,35 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Upload the folios.
+	 * Upload the folios. The transaction timeout is set to 900 seconds, this means,
+	 * 15 minutes.
 	 * 
 	 * @param containerId The container id. This is the folder name.
+	 * @param job         The job description.
 	 * @param files       The files to upload in a multipart request.
 	 * @param response    The HTTP-specific functionality in sending a response to
 	 *                    the client.
-	 * @return The list of uploaded folios in the response body.
+	 * @return The job in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Uploaded Folios"),
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job With Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(uploadRequestMapping + containerPathVariable)
-	public ResponseEntity<List<FolioResponse>> upload(
+	public ResponseEntity<JobResponse> upload(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the job description") @RequestParam(required = false) String job,
 			@RequestParam MultipartFile[] files, HttpServletResponse response) {
 		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
-			final List<Folio> uploaded = service.store(container, files);
+			final Work work = service.store(container, job, files);
 
-			if (uploaded == null)
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-			else {
-				final List<FolioResponse> folios = new ArrayList<>();
-				for (Folio folio : uploaded)
-					folios.add(new FolioResponse(folio));
-
-				return ResponseEntity.ok().body(folios);
-			}
+			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new JobResponse(work));
 		} catch (Exception ex) {
 			log(ex);
 
