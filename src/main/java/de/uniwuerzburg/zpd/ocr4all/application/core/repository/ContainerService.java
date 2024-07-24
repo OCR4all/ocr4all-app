@@ -468,6 +468,22 @@ public class ContainerService extends CoreService {
 							 */
 							private boolean isCanceled = false;
 
+							/**
+							 * Push the information to the job.
+							 * 
+							 * @param journal  The journal.
+							 * @param progress The progress.
+							 * @param message  The message.
+							 * @since 17
+							 */
+							private void push(Journal.Step journal, float progress, String message) {
+								journal.setProgress(progress);
+
+								journal.setStandardOutput(
+										(journal.isStandardOutputSet() ? journal.getStandardOutput() : "") + message
+												+ System.lineSeparator());
+							}
+
 							/*
 							 * (non-Javadoc)
 							 * 
@@ -477,7 +493,10 @@ public class ContainerService extends CoreService {
 							 */
 							@Override
 							public Job.State execute(Journal.Step journal) {
-								journal.setProgress(0.1F);
+								push(journal, 0.1F,
+										"uploaded " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s")
+												+ " into " + container.getConfiguration().getConfiguration().getName()
+												+ System.lineSeparator());
 
 								/*
 								 * Create normalized
@@ -497,7 +516,7 @@ public class ContainerService extends CoreService {
 									return Job.State.interrupted;
 								}
 
-								journal.setProgress(0.40F);
+								push(journal, 0.4F, "normalized folios");
 
 								// Handles canceled job
 								if (isCanceled) {
@@ -521,7 +540,7 @@ public class ContainerService extends CoreService {
 											folderBest, derivativeResolution.getBest().getMaxSize(),
 											derivativeResolution.getBest().getQuality());
 
-									journal.setProgress(0.50F);
+									push(journal, 0.5F, "created quality best derivatives");
 
 									// Handles canceled job
 									if (isCanceled) {
@@ -536,7 +555,7 @@ public class ContainerService extends CoreService {
 											folderDetail, derivativeResolution.getDetail().getMaxSize(),
 											derivativeResolution.getDetail().getQuality());
 
-									journal.setProgress(0.60F);
+									push(journal, 0.6F, "created quality detail derivatives");
 
 									// Handles canceled job
 									if (isCanceled) {
@@ -551,7 +570,7 @@ public class ContainerService extends CoreService {
 											folderThumbnail, derivativeResolution.getThumbnail().getMaxSize(),
 											derivativeResolution.getThumbnail().getQuality());
 
-									journal.setProgress(0.70F);
+									push(journal, 0.7F, "created quality thumbnail derivatives");
 
 									// Handles canceled job
 									if (isCanceled) {
@@ -609,7 +628,7 @@ public class ContainerService extends CoreService {
 									}
 								}
 
-								journal.setProgress(0.85F);
+								push(journal, 0.85F, "set sizes");
 
 								/*
 								 * Move the folios to the container
@@ -649,7 +668,7 @@ public class ContainerService extends CoreService {
 								// remove temporary data
 								deleteRecursively(temporaryDirectory);
 
-								journal.setProgress(0.95F);
+								push(journal, 0.95F, "moved folios to the container");
 
 								// Persist the configuration
 								try {
@@ -663,7 +682,7 @@ public class ContainerService extends CoreService {
 									return Job.State.interrupted;
 								}
 
-								journal.setProgress(1F);
+								push(journal, 0.1F, "persisted the folios configuration");
 
 								return Job.State.completed;
 							}
