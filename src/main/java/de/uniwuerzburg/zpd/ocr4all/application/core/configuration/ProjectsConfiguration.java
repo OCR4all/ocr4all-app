@@ -37,11 +37,6 @@ public class ProjectsConfiguration extends CoreFolder {
 	private final Projects properties;
 
 	/**
-	 * The configuration for the exchange.
-	 */
-	private final ExchangeConfiguration exchangeConfiguration;
-
-	/**
 	 * The configuration for the opt.
 	 */
 	private final OptConfiguration optConfiguration;
@@ -60,21 +55,19 @@ public class ProjectsConfiguration extends CoreFolder {
 	 * Creates a configuration for a project container.
 	 * 
 	 * @param properties             The project properties.
-	 * @param exchangeConfiguration  The configuration for the exchange.
 	 * @param optConfiguration       The configuration for the opt.
 	 * @param dataConfiguration      The configuration for the data.
 	 * @param assembleConfiguration  The configuration for the assemble.
 	 * @param workspaceConfiguration The configuration for the workspace.
 	 * @since 1.8
 	 */
-	public ProjectsConfiguration(Projects properties, ExchangeConfiguration exchangeConfiguration,
-			OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
-			AssembleConfiguration assembleConfiguration, WorkspaceConfiguration workspaceConfiguration) {
+	public ProjectsConfiguration(Projects properties, OptConfiguration optConfiguration,
+			DataConfiguration dataConfiguration, AssembleConfiguration assembleConfiguration,
+			WorkspaceConfiguration workspaceConfiguration) {
 		super(Paths.get(workspaceConfiguration.getFolder().toString(), properties.getFolder()));
 
 		this.properties = properties;
 
-		this.exchangeConfiguration = exchangeConfiguration;
 		this.optConfiguration = optConfiguration;
 		this.dataConfiguration = dataConfiguration;
 		this.assembleConfiguration = assembleConfiguration;
@@ -103,7 +96,7 @@ public class ProjectsConfiguration extends CoreFolder {
 	 */
 	public ProjectConfiguration getProject(Path folder, String user) {
 		return isValid(folder) && Files.isDirectory(folder) ? new ProjectConfiguration(properties.getProject(),
-				exchangeConfiguration, optConfiguration, dataConfiguration, assembleConfiguration, folder, user) : null;
+				optConfiguration, dataConfiguration, assembleConfiguration, folder, user) : null;
 	}
 
 	/**
