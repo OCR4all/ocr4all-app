@@ -23,6 +23,7 @@ import org.springframework.web.context.annotation.ApplicationScope;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.AssembleConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.DataConfiguration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.exchange.ExchangeConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.OCR4all;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.RepositoryConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;

@@ -46,7 +46,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.folio.Folio;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
 
 /**
@@ -106,7 +106,7 @@ public class ContainerService extends CoreService {
 	 * @since 1.8
 	 */
 	private Container getContainer(ContainerConfiguration configuration) {
-		return new Container(repositoryService.isAdministrator() ? SecurityGrant.Right.maximal
+		return new Container(repositoryService.isAdministrator() ? SecurityGrantRWS.Right.maximal
 				: configuration.getConfiguration().getRight(securityService.getUser(),
 						securityService.getActiveGroups()),
 				configuration);
@@ -286,7 +286,7 @@ public class ContainerService extends CoreService {
 	 * @return The updated container. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public Container update(String uuid, SecurityGrant security) {
+	public Container update(String uuid, SecurityGrantRWS security) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -912,7 +912,7 @@ public class ContainerService extends CoreService {
 		/**
 		 * The right.
 		 */
-		private final SecurityGrant.Right right;
+		private final SecurityGrantRWS.Right right;
 
 		/**
 		 * The configuration.
@@ -926,7 +926,7 @@ public class ContainerService extends CoreService {
 		 * @param configuration The configuration.
 		 * @since 1.8
 		 */
-		public Container(SecurityGrant.Right right, ContainerConfiguration configuration) {
+		public Container(SecurityGrantRWS.Right right, ContainerConfiguration configuration) {
 			super();
 
 			this.right = right;
@@ -939,7 +939,7 @@ public class ContainerService extends CoreService {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 

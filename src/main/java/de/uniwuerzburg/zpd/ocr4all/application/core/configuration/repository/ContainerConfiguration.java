@@ -23,14 +23,14 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repos
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ImageFormat;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 
 /**
  * Defines configurations for the container.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
- * @since 1.8
+ * @since 17
  */
 public class ContainerConfiguration extends CoreFolder {
 	/**
@@ -58,7 +58,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 * 
 	 * @param properties The ocr4all container properties.
 	 * @param folder     The container folder.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ContainerConfiguration(Container properties, Path folder) {
 		this(properties, folder, null);
@@ -72,7 +72,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 * @param coreData   The core data for a container configuration. If non null
 	 *                   and the main configuration is not available, then this
 	 *                   basic data is used to initialize the main configuration.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ContainerConfiguration(Container properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
@@ -97,7 +97,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 * Returns the configuration.
 	 *
 	 * @return The configuration.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Configuration getConfiguration() {
 		return configuration;
@@ -107,7 +107,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 * Returns the images.
 	 *
 	 * @return The images.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Images getImages() {
 		return images;
@@ -118,7 +118,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public class Configuration extends CoreFolder implements TrackingData {
 		/**
@@ -143,7 +143,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param coreData   The core data for a container configuration. If non null
 		 *                   and the main configuration is not available, then this
 		 *                   basic data is used to initialize the main configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
 		Configuration(Container.Configuration properties, CoreData coreData) {
 			super(Paths.get(ContainerConfiguration.this.folder.toString(), properties.getFolder()));
@@ -167,7 +167,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param coreData The core data for a container configuration. If non null and
 		 *                 the main configuration is not available, then this basic data
 		 *                 is used to initialize the main configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private void loadMainConfiguration(CoreData coreData) {
 			// Load main configuration
@@ -189,9 +189,9 @@ public class ContainerConfiguration extends CoreFolder {
 							container.setKeywords(coreData.getKeywords());
 
 							if (coreData.getUser() != null)
-								container.setSecurity(new SecurityGrant(
+								container.setSecurity(new SecurityGrantRWS(
 
-										SecurityGrant.Right.maximal, coreData.getUser()));
+										SecurityGrantRWS.Right.maximal, coreData.getUser()));
 
 						}
 					} else
@@ -202,7 +202,7 @@ public class ContainerConfiguration extends CoreFolder {
 						container.setName(ContainerConfiguration.this.folder.getFileName().toString());
 
 					if (container.getSecurity() == null)
-						container.setSecurity(new SecurityGrant());
+						container.setSecurity(new SecurityGrantRWS());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
@@ -217,7 +217,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns true if the main configuration is available.
 		 * 
 		 * @return True if the main configuration is available.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isMainConfigurationAvailable() {
 			return container != null;
@@ -228,7 +228,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * 
 		 * @param user The user.
 		 * @return True if the main configuration could be persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private boolean persist(String user) {
 			return persist(user, null);
@@ -240,7 +240,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user    The user.
 		 * @param updated The updated time. If null, uses the current time stamp.
 		 * @return True if the main configuration could be persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private boolean persist(String user, Date updated) {
 			if (isMainConfigurationAvailable())
@@ -266,7 +266,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Reloads the main configuration file.
 		 * 
 		 * @return True if the main configuration is available.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean reloadMainConfiguration() {
 			loadMainConfiguration(null);
@@ -278,7 +278,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the folio configuration file.
 		 *
 		 * @return The folio configuration file.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Path getFolioFile() {
 			return folioFile;
@@ -288,7 +288,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the name.
 		 * 
 		 * @return The name.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public String getName() {
 			return isMainConfigurationAvailable() ? container.getName() : null;
@@ -298,7 +298,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the container information.
 		 * 
 		 * @return The container information.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Information getInformation() {
 			return isMainConfigurationAvailable()
@@ -314,7 +314,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user        The user.
 		 * @param information The container information.
 		 * @return True if the container information was updated and persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean update(String user, Information information) {
 			if (isMainConfigurationAvailable() && information != null && information.getName() != null
@@ -335,15 +335,17 @@ public class ContainerConfiguration extends CoreFolder {
 		 * 
 		 * @param grants The grants to clone.
 		 * @return The cloned the grants.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private static Set<SecurityGrant.Grant> cloneGrant(Set<SecurityGrant.Grant> grants) {
-			Set<SecurityGrant.Grant> clone = new HashSet<>();
+		private static Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> cloneGrant(
+				Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> grants) {
+			Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> clone = new HashSet<>();
 
 			if (grants != null)
-				for (SecurityGrant.Grant grant : grants) {
+				for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : grants) {
 					if (grant.getRight() != null && grant.getTargets() != null)
-						clone.add(new SecurityGrant.Grant(grant.getRight(), grant.getTargets()));
+						clone.add(new SecurityGrantRWS.Grant<SecurityGrantRWS.Right>(grant.getRight(),
+								grant.getTargets()));
 
 				}
 
@@ -355,12 +357,12 @@ public class ContainerConfiguration extends CoreFolder {
 		 * 
 		 * @param grants The security grants to clone.
 		 * @return The cloned the security grants.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private static SecurityGrant cloneSecurity(SecurityGrant security) {
+		private static SecurityGrantRWS cloneSecurity(SecurityGrantRWS security) {
 
 			return security == null ? null
-					: new SecurityGrant(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
+					: new SecurityGrantRWS(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
 							security.getOther());
 		}
 
@@ -368,9 +370,9 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the security.
 		 * 
 		 * @return The security.
-		 * @since 1.8
+		 * @since 17
 		 */
-		public SecurityGrant getSecurity() {
+		public SecurityGrantRWS getSecurity() {
 			return cloneSecurity(container.getSecurity());
 		}
 
@@ -380,9 +382,9 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user     The user.
 		 * @param security The container security.
 		 * @return True if the container security was updated and persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
-		public boolean update(String user, SecurityGrant security) {
+		public boolean update(String user, SecurityGrantRWS security) {
 			if (isMainConfigurationAvailable()) {
 				container.setSecurity(cloneSecurity(security));
 
@@ -397,9 +399,9 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param source The source right.
 		 * @param target The target right.
 		 * @return True if the source right is fulfilled with the target right.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private boolean isRightFulfilled(SecurityGrant.Right source, SecurityGrant.Right target) {
+		private boolean isRightFulfilled(SecurityGrantRWS.Right source, SecurityGrantRWS.Right target) {
 			return source != null && source.iFulfilled(target);
 		}
 
@@ -411,17 +413,17 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return The container right.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private SecurityGrant.Right getRightFulfilled(SecurityGrant.Right target, String user,
+		private SecurityGrantRWS.Right getRightFulfilled(SecurityGrantRWS.Right target, String user,
 				Collection<String> groups) {
 			if (target == null)
-				target = SecurityGrant.Right.maximal;
+				target = SecurityGrantRWS.Right.maximal;
 
-			SecurityGrant.Right right = null;
+			SecurityGrantRWS.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = SecurityGrant.Right.getMaximnal(right, container.getSecurity().getOther());
+				right = SecurityGrantRWS.Right.getMaximnal(right, container.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
@@ -429,9 +431,9 @@ public class ContainerConfiguration extends CoreFolder {
 				if (container.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (SecurityGrant.Grant grant : container.getSecurity().getUsers())
+					for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : container.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
-							right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
+							right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
 
 							if (isRightFulfilled(right, target))
 								return right;
@@ -443,9 +445,10 @@ public class ContainerConfiguration extends CoreFolder {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (SecurityGrant.Grant grant : container.getSecurity().getGroups())
+							for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : container.getSecurity()
+									.getGroups())
 								if (grant.getTargets().contains(group)) {
-									right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
+									right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
 
 									if (isRightFulfilled(right, target))
 										return right;
@@ -464,9 +467,9 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return The container right.
-		 * @since 1.8
+		 * @since 17
 		 */
-		public SecurityGrant.Right getRight(String user, Collection<String> groups) {
+		public SecurityGrantRWS.Right getRight(String user, Collection<String> groups) {
 			return getRightFulfilled(null, user, groups);
 		}
 
@@ -476,10 +479,10 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return True if the read right is fulfilled for given user and groups.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isRightRead(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.read, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.read, user, groups);
 
 			return right != null && right.isReadFulfilled();
 		}
@@ -490,10 +493,10 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return True if the write right is fulfilled for given user and groups.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isRightWrite(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.write, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.write, user, groups);
 
 			return right != null && right.isWriteFulfilled();
 		}
@@ -504,10 +507,10 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return True if the special right is fulfilled for given user and groups.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isRightSpecial(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.special, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.special, user, groups);
 
 			return right != null && right.isSpecialFulfilled();
 		}
@@ -584,7 +587,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
-		 * @since 1.8
+		 * @since 17
 		 */
 		public static class Information {
 			/**
@@ -608,7 +611,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * @param name        The name.
 			 * @param description The description.
 			 * @param keywords    The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Information(String name, String description, Set<String> keywords) {
 				super();
@@ -622,7 +625,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the name.
 			 *
 			 * @return The name.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getName() {
 				return name;
@@ -632,7 +635,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the description.
 			 *
 			 * @return The description.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getDescription() {
 				return description;
@@ -642,7 +645,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the keywords.
 			 *
 			 * @return The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Set<String> getKeywords() {
 				return keywords;
@@ -656,7 +659,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
-		 * @since 1.8
+		 * @since 17
 		 */
 		public static class CoreData extends Information {
 			/**
@@ -671,7 +674,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * @param name        The name.
 			 * @param description The description.
 			 * @param keywords    The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public CoreData(String user, String name, String description, Set<String> keywords) {
 				super(name, description, keywords);
@@ -683,7 +686,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the user.
 			 *
 			 * @return The user.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getUser() {
 				return user;
@@ -697,7 +700,7 @@ public class ContainerConfiguration extends CoreFolder {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public class Images {
 
@@ -720,7 +723,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Creates images folder for a project.
 		 * 
 		 * @param properties The container properties.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Images(Container properties) {
 			super();
@@ -748,7 +751,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * @param folder      The folder.
 		 * @param name        The folder name.
 		 * @return The path.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private Path getPath(String derivatives, String folder, String name) {
 			Path path = derivatives == null
@@ -768,7 +771,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 *         exist, is not a directory, or it cannot be determined if the folder
 		 *         is a directory or not.
 		 * 
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isFoliosDirectory() {
 			return Files.isDirectory(folios);
@@ -778,7 +781,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the folder for folios.
 		 *
 		 * @return The folder for folios.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Path getFolios() {
 			return folios;
@@ -798,7 +801,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Returns the derivatives quality image folders for folios.
 		 *
 		 * @return The derivatives quality image folders for folios.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Derivatives getDerivatives() {
 			return derivatives;
@@ -808,7 +811,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * Reset the images.
 		 *
 		 * @return True if the images could be reset.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean reset() {
 			boolean isResetFolios = Files.exists(folios) ? deleteContents(folios) : true;
@@ -859,7 +862,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folios derivatives format.
 			 *
 			 * @return The folios derivatives format.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public ImageFormat getFormat() {
 				return format;
@@ -872,7 +875,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 *         exist, is not a directory, or it cannot be determined if the folder
 			 *         is a directory or not.
 			 * 
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean isDirectory() {
 				return Files.isDirectory(folder);
@@ -882,7 +885,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folder.
 			 *
 			 * @return The folder.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Path getFolder() {
 				return folder;
@@ -897,7 +900,7 @@ public class ContainerConfiguration extends CoreFolder {
 		 * 
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
-		 * @since 1.8
+		 * @since 17
 		 */
 		public class Derivatives {
 			/**
@@ -929,7 +932,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * @param thumbnail The folder for folios derivatives quality thumbnail.
 			 * @param detail    The folder for folios derivatives quality detail.
 			 * @param best      The folder for folios derivatives quality best.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Derivatives(ImageFormat format, Path thumbnail, Path detail, Path best) {
 				super();
@@ -944,7 +947,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folios derivatives format.
 			 *
 			 * @return The folios derivatives format.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public ImageFormat getFormat() {
 				return format;
@@ -958,7 +961,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 *         exist, is not a directory, or it cannot be determined if the folder
 			 *         is a directory or not.
 			 * 
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean isThumbnailDirectory() {
 				return Files.isDirectory(thumbnail);
@@ -968,7 +971,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folder for folios derivatives quality thumbnail.
 			 *
 			 * @return The folder for folios derivatives quality thumbnail.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Path getThumbnail() {
 				return thumbnail;
@@ -978,7 +981,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Reset the folios derivatives quality thumbnail.
 			 *
 			 * @return True if the folios derivatives quality thumbnail could be reset.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean resetThumbnail() {
 				return Files.exists(thumbnail) ? deleteContents(thumbnail) : true;
@@ -992,7 +995,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 *         exist, is not a directory, or it cannot be determined if the folder
 			 *         is a directory or not.
 			 * 
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean isDetailDirectory() {
 				return Files.isDirectory(detail);
@@ -1002,7 +1005,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folder for folios derivatives quality detail.
 			 *
 			 * @return The folder for folios derivatives quality detail.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Path getDetail() {
 				return detail;
@@ -1012,7 +1015,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Reset the folios derivatives quality detail.
 			 *
 			 * @return True if the folios derivatives quality detail could be reset.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean resetDetail() {
 				return Files.exists(detail) ? deleteContents(detail) : true;
@@ -1026,7 +1029,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 *         exist, is not a directory, or it cannot be determined if the folder
 			 *         is a directory or not.
 			 * 
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean isBestDirectory() {
 				return Files.isDirectory(best);
@@ -1036,7 +1039,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Returns the folder for folios derivatives quality best.
 			 *
 			 * @return The folder for folios derivatives quality best.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Path getBest() {
 				return best;
@@ -1046,7 +1049,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Reset the folios derivatives quality best.
 			 *
 			 * @return True if the folios derivatives quality best could be reset.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean resetBest() {
 				return Files.exists(best) ? deleteContents(best) : true;
@@ -1056,7 +1059,7 @@ public class ContainerConfiguration extends CoreFolder {
 			 * Reset the folios derivatives.
 			 *
 			 * @return True if the folios derivatives could be reset.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public boolean reset() {
 				boolean isReset = resetThumbnail();

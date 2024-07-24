@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.assemble.Assemble;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Data;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.exchange.Exchange;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.repository.Repository;
 
 /**
@@ -44,7 +45,7 @@ public class OCR4all {
 	/**
 	 * The exchange properties.
 	 */
-	private FolderRequired exchange = new FolderRequired();
+	private Exchange exchange = new Exchange();
 
 	/**
 	 * The repository properties.
@@ -141,23 +142,24 @@ public class OCR4all {
 		this.image = image;
 	}
 
+
 	/**
-	 * Returns the exchange properties.
+	 * Returns the exchange.
 	 *
-	 * @return The exchange properties.
-	 * @since 1.8
+	 * @return The exchange.
+	 * @since 17
 	 */
-	public FolderRequired getExchange() {
+	public Exchange getExchange() {
 		return exchange;
 	}
 
 	/**
-	 * Set the exchange properties.
+	 * Set the exchange.
 	 *
-	 * @param exchange The exchange properties to set.
-	 * @since 1.8
+	 * @param exchange The exchange to set.
+	 * @since 17
 	 */
-	public void setExchange(FolderRequired exchange) {
+	public void setExchange(Exchange exchange) {
 		this.exchange = exchange;
 	}
 

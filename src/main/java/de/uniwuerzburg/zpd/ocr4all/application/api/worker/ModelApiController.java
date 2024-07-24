@@ -39,7 +39,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -911,7 +911,7 @@ public class ModelApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ModelSecurityRequest extends SecurityGrant {
+	public static class ModelSecurityRequest extends SecurityGrantRWS {
 		/**
 		 * The serial version UID.
 		 */
@@ -1524,7 +1524,7 @@ public class ModelApiController extends CoreApiController {
 		/**
 		 * The right.
 		 */
-		private SecurityGrant.Right right;
+		private SecurityGrantRWS.Right right;
 
 		/**
 		 * Creates a model with right response for the api without security.
@@ -1544,7 +1544,7 @@ public class ModelApiController extends CoreApiController {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 
@@ -1554,7 +1554,7 @@ public class ModelApiController extends CoreApiController {
 		 * @param right The right to set.
 		 * @since 1.8
 		 */
-		public void setRight(SecurityGrant.Right right) {
+		public void setRight(SecurityGrantRWS.Right right) {
 			this.right = right;
 		}
 
@@ -1619,7 +1619,7 @@ public class ModelApiController extends CoreApiController {
 		/**
 		 * The security.
 		 */
-		private SecurityGrant security;
+		private SecurityGrantRWS security;
 
 		/**
 		 * Creates a model with right response for the api without security.
@@ -1639,7 +1639,7 @@ public class ModelApiController extends CoreApiController {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public SecurityGrant getSecurity() {
+		public SecurityGrantRWS getSecurity() {
 			return security;
 		}
 
@@ -1649,7 +1649,7 @@ public class ModelApiController extends CoreApiController {
 		 * @param security The security to set.
 		 * @since 1.8
 		 */
-		public void setSecurity(SecurityGrant security) {
+		public void setSecurity(SecurityGrantRWS security) {
 			this.security = security;
 		}
 
