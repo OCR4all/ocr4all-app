@@ -479,20 +479,6 @@ public class PartitionConfiguration extends CoreFolder {
 			return right != null && right.isWriteFulfilled();
 		}
 
-		/**
-		 * Returns true if the special right is fulfilled for given user and groups.
-		 * 
-		 * @param user   The user.
-		 * @param groups The user groups.
-		 * @return True if the special right is fulfilled for given user and groups.
-		 * @since 17
-		 */
-		public boolean isRightSpecial(String user, Collection<String> groups) {
-			SecurityGrantRW.Right right = getRightFulfilled(SecurityGrantRW.Right.special, user, groups);
-
-			return right != null && right.isSpecialFulfilled();
-		}
-
 		/*
 		 * (non-Javadoc)
 		 * 
