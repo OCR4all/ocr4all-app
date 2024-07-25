@@ -33,16 +33,6 @@ public class ProjectResponse implements Serializable {
 	private String id;
 
 	/**
-	 * The folder for exchange.
-	 */
-	private String exchange;
-
-	/**
-	 * True if the folder for exchange is available.
-	 */
-	private boolean isExchangeAvailable;
-
-	/**
 	 * The name.
 	 */
 	private String name;
@@ -88,9 +78,6 @@ public class ProjectResponse implements Serializable {
 
 		id = project.getId();
 
-		exchange = project.getConfiguration().getConfiguration().getExchangeSubfolder();
-		isExchangeAvailable = project.getConfiguration().getConfiguration().isExchangeDirectory();
-
 		name = project.getName();
 		description = project.getDescription();
 
@@ -122,46 +109,6 @@ public class ProjectResponse implements Serializable {
 	 */
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	/**
-	 * Returns the folder for exchange.
-	 *
-	 * @return The folder for exchange.
-	 * @since 1.8
-	 */
-	public String getExchange() {
-		return exchange;
-	}
-
-	/**
-	 * Set the folder for exchange.
-	 *
-	 * @param exchange The folder for exchange to set.
-	 * @since 1.8
-	 */
-	public void setExchange(String exchange) {
-		this.exchange = exchange;
-	}
-
-	/**
-	 * Returns true if the folder for exchange is available.
-	 *
-	 * @return True if the folder for exchange is available.
-	 * @since 1.8
-	 */
-	public boolean isExchangeAvailable() {
-		return isExchangeAvailable;
-	}
-
-	/**
-	 * Set true if the folder for exchange is available.
-	 *
-	 * @param isExchangeAvailable The exchange available flag to set.
-	 * @since 1.8
-	 */
-	public void setExchangeAvailable(boolean isExchangeAvailable) {
-		this.isExchangeAvailable = isExchangeAvailable;
 	}
 
 	/**

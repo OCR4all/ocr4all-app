@@ -57,6 +57,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.spi.util.SystemProcess;
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 1.8
+ * @deprecated
  */
 public class ImageImport extends CoreServiceProviderWorker implements ImportServiceProvider {
 	/**
@@ -471,9 +472,10 @@ public class ImageImport extends CoreServiceProviderWorker implements ImportServ
 				 */
 				Optional<String> value = sourceFolder.getValue();
 
-				Path source = value.isEmpty() ? framework.getTarget().getExchange()
-						: Paths.get(framework.getTarget().getExchange().toString(), value.get()).normalize();
-				if (!source.startsWith(framework.getTarget().getExchange())) {
+				// TODO: depreciated -> removed exchange
+				Path source = value.isEmpty() ? Paths.get("/EXCHANGE/DEPRECIATED/TODO")
+						: Paths.get("/EXCHANGE/DEPRECIATED/TODO", value.get()).normalize();
+				if (!source.startsWith("/EXCHANGE/DEPRECIATED/TODO")) {
 					updatedStandardError("The folios are located outside the project exchange folder.");
 
 					return ProcessorServiceProvider.Processor.State.interrupted;

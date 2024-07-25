@@ -22,7 +22,6 @@ import java.util.Set;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
-import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ExchangeConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.OptConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.AssembleConfiguration;
@@ -65,7 +64,6 @@ public class ProjectConfiguration extends CoreFolder {
 	 * Creates a configuration for a project.
 	 * 
 	 * @param properties            The project properties.
-	 * @param exchangeConfiguration The configuration for the exchange.
 	 * @param optConfiguration      The configuration for the opt.
 	 * @param dataConfiguration     The configuration for the data.
 	 * @param assembleConfiguration The configuration for the assemble.
@@ -73,13 +71,13 @@ public class ProjectConfiguration extends CoreFolder {
 	 * @param user                  The user.
 	 * @since 1.8
 	 */
-	public ProjectConfiguration(Project properties, ExchangeConfiguration exchangeConfiguration,
-			OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
-			AssembleConfiguration assembleConfiguration, Path folder, String user) {
+	public ProjectConfiguration(Project properties, OptConfiguration optConfiguration,
+			DataConfiguration dataConfiguration, AssembleConfiguration assembleConfiguration, Path folder,
+			String user) {
 		super(folder);
 
-		configuration = new Configuration(properties.getConfiguration(), exchangeConfiguration, optConfiguration,
-				dataConfiguration, assembleConfiguration, user);
+		configuration = new Configuration(properties.getConfiguration(), optConfiguration, dataConfiguration,
+				assembleConfiguration, user);
 		images = new Images(properties.getImages());
 		sandboxesConfiguration = new SandboxesConfiguration(properties.getSandboxes(), this);
 	}
@@ -143,11 +141,6 @@ public class ProjectConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The configuration for the exchange.
-		 */
-		private final ExchangeConfiguration exchangeConfiguration;
-
-		/**
 		 * The configuration for the opt.
 		 */
 		private final OptConfiguration optConfiguration;
@@ -186,19 +179,16 @@ public class ProjectConfiguration extends CoreFolder {
 		 * Creates a configuration for the project.
 		 * 
 		 * @param properties            The configuration properties for the project.
-		 * @param exchangeConfiguration The configuration for the exchange.
 		 * @param optConfiguration      The configuration for the opt.
 		 * @param dataConfiguration     The configuration for the data.
 		 * @param assembleConfiguration The configuration for the assemble.
 		 * @param user                  The user.
 		 * @since 1.8
 		 */
-		Configuration(Project.Configuration properties, ExchangeConfiguration exchangeConfiguration,
-				OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
-				AssembleConfiguration assembleConfiguration, String user) {
+		Configuration(Project.Configuration properties, OptConfiguration optConfiguration,
+				DataConfiguration dataConfiguration, AssembleConfiguration assembleConfiguration, String user) {
 			super(Paths.get(ProjectConfiguration.this.folder.toString(), properties.getFolder()));
 
-			this.exchangeConfiguration = exchangeConfiguration;
 			this.optConfiguration = optConfiguration;
 			this.dataConfiguration = dataConfiguration;
 			this.assembleConfiguration = assembleConfiguration;
@@ -233,8 +223,8 @@ public class ProjectConfiguration extends CoreFolder {
 						de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Project.class, null,
 						message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || project.getName() == null || project.getExchange() == null
-						|| project.getState() == null || project.getSecurity() == null) {
+				if (!isMainConfigurationAvailable() || project.getName() == null || project.getState() == null
+						|| project.getSecurity() == null) {
 					Date currentTimeStamp = new Date();
 					if (!isMainConfigurationAvailable()) {
 						project = new de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Project();
@@ -243,9 +233,6 @@ public class ProjectConfiguration extends CoreFolder {
 					}
 
 					project.setName(getName());
-
-					if (project.getExchange() == null)
-						updateExchange(null);
 
 					if (project.getState() == null)
 						project.setState(
@@ -426,68 +413,6 @@ public class ProjectConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Updates the folder for exchange.
-		 * 
-		 * @param exchange The folder for exchange. If null, set the default folder for
-		 *                 exchange.
-		 * @return True if the folder for exchange was updated.
-		 * @since 1.8
-		 */
-		private boolean updateExchange(String exchange) {
-			if (isMainConfigurationAvailable()) {
-				if (exchange == null) {
-					project.setExchange(getId());
-
-					return true;
-				} else {
-					final Path folder = exchangeConfiguration.getFolder();
-					Path path = Paths.get(folder.toString(), exchange).normalize();
-
-					if (path.startsWith(folder) && !folder.equals(path)) {
-						project.setExchange(path.toString().substring(folder.toString().length() + 1));
-
-						return true;
-					} else
-						return false;
-				}
-			} else
-				return false;
-		}
-
-		/**
-		 * Returns true if the folder for exchange is a directory.
-		 *
-		 * @return True if the folder is a directory; false if the folder does not
-		 *         exist, is not a directory, or it cannot be determined if the folder
-		 *         is a directory or not.
-		 * 
-		 * @since 1.8
-		 */
-		public boolean isExchangeDirectory() {
-			return isMainConfigurationAvailable() && Files.isDirectory(getExchange());
-		}
-
-		/**
-		 * Returns the folder for exchange.
-		 *
-		 * @return The folder for exchange.
-		 * @since 1.8
-		 */
-		public Path getExchange() {
-			return Paths.get(exchangeConfiguration.getFolder().toString(), project.getExchange()).normalize();
-		}
-
-		/**
-		 * Returns the subfolder for exchange.
-		 *
-		 * @return The subfolder for exchange.
-		 * @since 1.8
-		 */
-		public String getExchangeSubfolder() {
-			return project.getExchange();
-		}
-
-		/**
 		 * Returns true if the folder for opt is a directory.
 		 *
 		 * @return True if the folder is a directory; false if the folder does not
@@ -537,13 +462,11 @@ public class ProjectConfiguration extends CoreFolder {
 		 * @param name        The name to set.
 		 * @param description The description to set.
 		 * @param keywords    The keywords to set.
-		 * @param exchange    The folder for exchange. If null, set the default folder
-		 *                    for exchange.
 		 * @param state       The state. If null, do not update the state.
 		 * @return True if the basic data was updated and persisted.
 		 * @since 1.8
 		 */
-		public boolean updateBasicData(String name, String description, Set<String> keywords, String exchange,
+		public boolean updateBasicData(String name, String description, Set<String> keywords,
 				de.uniwuerzburg.zpd.ocr4all.application.persistence.project.Project.State state) {
 			if (state == null)
 				state = getState();
@@ -553,11 +476,6 @@ public class ProjectConfiguration extends CoreFolder {
 				project.setName(name.trim());
 				project.setDescription(description == null || description.isBlank() ? null : description.trim());
 				project.setKeywords(keywords);
-
-				if (exchange == null || exchange.isBlank())
-					updateExchange(null);
-				else
-					updateExchange(exchange.trim());
 
 				Date currentTimeStamp = new Date();
 

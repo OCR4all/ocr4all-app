@@ -194,7 +194,6 @@ public class Project implements Job.Cluster {
 	 */
 	private final ImageFormat containerNormalizedImageFormat;
 
-
 	/**
 	 * The security level. The default level is user.
 	 */
@@ -213,15 +212,15 @@ public class Project implements Job.Cluster {
 	/**
 	 * Creates a project.
 	 * 
-	 * @param configuration      The configuration.
-	 * @param imageConfiguration The image configuration.
+	 * @param configuration           The configuration.
+	 * @param imageConfiguration      The image configuration.
 	 * @param repositoryConfiguration The repository configuration.
 	 * @throws IllegalArgumentException Thrown if the configuration is not
 	 *                                  available.
 	 * @since 1.8
 	 */
-	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration, RepositoryConfiguration repositoryConfiguration)
-			throws IllegalArgumentException {
+	public Project(ProjectConfiguration configuration, ImageConfiguration imageConfiguration,
+			RepositoryConfiguration repositoryConfiguration) throws IllegalArgumentException {
 		super();
 
 		if (configuration == null)
@@ -378,7 +377,8 @@ public class Project implements Job.Cluster {
 	 */
 	public Target getTarget(Sandbox sandbox, SnapshotConfiguration snapshotConfiguration) {
 		Target.Project.Images images = new Target.Project.Images(configuration.getImages().getFolios(),
-				new Target.Project.Images.Normalized(containerNormalizedImageFormat.getSPI(), configuration.getImages().getNormalized()),
+				new Target.Project.Images.Normalized(containerNormalizedImageFormat.getSPI(),
+						configuration.getImages().getNormalized()),
 				new Target.Project.Images.Derivatives(configuration.getImages().getDerivatives().getFormat().getSPI(),
 						new Target.Project.Images.Derivatives.Resolution(
 								configuration.getImages().getDerivatives().getThumbnail(),
@@ -393,8 +393,8 @@ public class Project implements Job.Cluster {
 								imageConfiguration.getDerivatives().getBest().getQuality(),
 								imageConfiguration.getDerivatives().getBest().getMaxSize())));
 
-		return new Target(configuration.getConfiguration().getExchange(), configuration.getConfiguration().getOpt(),
-				configuration.getConfiguration().getData(), configuration.getConfiguration().getAssemble(),
+		return new Target(configuration.getConfiguration().getOpt(), configuration.getConfiguration().getData(),
+				configuration.getConfiguration().getAssemble(),
 				new Target.Project(configuration.getConfiguration().getFolder(),
 						configuration.getConfiguration().getFolioFile(), images),
 				sandbox == null && snapshotConfiguration == null ? null
@@ -645,9 +645,7 @@ public class Project implements Job.Cluster {
 				+ (configuration.getConfiguration().isDoneSet() ? ", done=" + configuration.getConfiguration().getDone()
 						: "")
 				+ ", state=" + configuration.getConfiguration().getState().name()
-				+ (isUserSet() ? ", user=" + getUser() : "") + ", path=" + configuration.getFolder() + ", exchange"
-				+ (configuration.getConfiguration().isExchangeDirectory() ? "" : "[missed folder]") + "="
-				+ configuration.getConfiguration().getExchange()
+				+ (isUserSet() ? ", user=" + getUser() : "") + ", path=" + configuration.getFolder()
 				+ (configuration.getConfiguration().isDescriptionSet()
 						? ", description=" + configuration.getConfiguration().getDescription()
 						: "");

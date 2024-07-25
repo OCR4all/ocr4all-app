@@ -252,16 +252,14 @@ public class WorkspaceConfiguration extends CoreFolder {
 	 * @param properties               The workspace properties.
 	 * @param systemCommand            The system command.
 	 * @param applicationConfiguration The configuration for the application.
-	 * @param exchangeConfiguration    The configuration for the exchange.
 	 * @param optConfiguration         The configuration for the opt.
 	 * @param dataConfiguration        The configuration for the data.
 	 * @param assembleConfiguration    The configuration for the assemble.
 	 * @since 1.8
 	 */
 	public WorkspaceConfiguration(Workspace properties, ConfigurationService.SystemCommand systemCommand,
-			ApplicationConfiguration applicationConfiguration, ExchangeConfiguration exchangeConfiguration,
-			OptConfiguration optConfiguration, DataConfiguration dataConfiguration,
-			AssembleConfiguration assembleConfiguration) {
+			ApplicationConfiguration applicationConfiguration, OptConfiguration optConfiguration,
+			DataConfiguration dataConfiguration, AssembleConfiguration assembleConfiguration) {
 		super(Paths.get(properties.getFolder()));
 
 		this.applicationConfiguration = applicationConfiguration;
@@ -270,8 +268,8 @@ public class WorkspaceConfiguration extends CoreFolder {
 
 		configuration = new Configuration(properties.getConfiguration(), systemCommand);
 		workflows = new WorkflowsConfiguration(properties.getWorkflows(), this);
-		projects = new ProjectsConfiguration(properties.getProjects(), exchangeConfiguration, optConfiguration,
-				dataConfiguration, assembleConfiguration, this);
+		projects = new ProjectsConfiguration(properties.getProjects(), optConfiguration, dataConfiguration,
+				assembleConfiguration, this);
 	}
 
 	/**

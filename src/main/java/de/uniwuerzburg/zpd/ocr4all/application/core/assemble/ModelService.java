@@ -32,7 +32,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.assemble.Model
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 
 /**
  * Defines model services.
@@ -84,7 +84,7 @@ public class ModelService extends CoreService {
 	 * @since 1.8
 	 */
 	private Model getModel(ModelConfiguration configuration) {
-		return new Model(dataService.isAdministrator() ? SecurityGrant.Right.maximal
+		return new Model(dataService.isAdministrator() ? SecurityGrantRWS.Right.maximal
 				: configuration.getConfiguration().getRight(securityService.getUser(),
 						securityService.getActiveGroups()),
 				configuration);
@@ -383,7 +383,7 @@ public class ModelService extends CoreService {
 	 * @return The updated model. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public Model update(String uuid, SecurityGrant security) {
+	public Model update(String uuid, SecurityGrantRWS security) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -475,7 +475,7 @@ public class ModelService extends CoreService {
 		/**
 		 * The right.
 		 */
-		private final SecurityGrant.Right right;
+		private final SecurityGrantRWS.Right right;
 
 		/**
 		 * The configuration.
@@ -489,7 +489,7 @@ public class ModelService extends CoreService {
 		 * @param configuration The configuration.
 		 * @since 1.8
 		 */
-		public Model(SecurityGrant.Right right, ModelConfiguration configuration) {
+		public Model(SecurityGrantRWS.Right right, ModelConfiguration configuration) {
 			super();
 
 			this.right = right;
@@ -502,7 +502,7 @@ public class ModelService extends CoreService {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 

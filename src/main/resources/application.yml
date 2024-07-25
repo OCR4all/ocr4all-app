@@ -127,7 +127,13 @@ ocr4all:
     thumbnail:
       quality: 50
       max-size: 128x128
-  exchange.folder: ${user.home}/ocr4all/exchange
+  exchange:
+    folder: ${user.home}/ocr4all/exchange
+    partition:
+      configuration:
+        folder: .partition
+        files.main: partition
+      data.folder: data
   repository:
     folder: ${user.home}/ocr4all/repository
     configuration:

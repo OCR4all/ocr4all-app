@@ -1,16 +1,15 @@
 /**
- * File:     CollectionConfiguration.java
- * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data
+ * File:     PartitionConfiguration.java
+ * Package:  de.uniwuerzburg.zpd.ocr4all.application.core.configuration.exchange
  * 
  * Author:   Herbert Baier (herbert.baier@uni-wuerzburg.de)
- * Date:     22.05.2024
+ * Date:     24.06.2024
  */
-package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data;
+package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.exchange;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -19,22 +18,23 @@ import java.util.Set;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.CoreFolder;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.TrackingData;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.exchange.Partition;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRW;
 
 /**
- * Defines configurations for the collection.
+ * Defines configurations for the partition.
  *
  * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
  * @version 1.0
  * @since 17
  */
-public class CollectionConfiguration extends CoreFolder {
+public class PartitionConfiguration extends CoreFolder {
 	/**
 	 * The logger.
 	 */
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CollectionConfiguration.class);
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PartitionConfiguration.class);
 
 	/**
 	 * The id.
@@ -47,36 +47,42 @@ public class CollectionConfiguration extends CoreFolder {
 	private final Configuration configuration;
 
 	/**
-	 * Creates a configuration for the collection.
-	 * 
-	 * @param properties The ocr4all collection properties.
-	 * @param folder     The collection folder.
-	 * @since 1.8
+	 * The folder for data.
 	 */
-	public CollectionConfiguration(
-			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties,
-			Path folder) {
+	private final Path data;
+
+	/**
+	 * Creates a configuration for the partition.
+	 * 
+	 * @param properties The ocr4all partition properties.
+	 * @param folder     The partition folder.
+	 * @since 17
+	 */
+	public PartitionConfiguration(Partition properties, Path folder) {
 		this(properties, folder, null);
 	}
 
 	/**
-	 * Creates a configuration for the collection.
+	 * Creates a configuration for the partition.
 	 * 
-	 * @param properties The ocr4all collection properties.
-	 * @param folder     The collection folder.
-	 * @param coreData   The core data for a collection configuration. If non null
+	 * @param properties The ocr4all partition properties.
+	 * @param folder     The partition folder.
+	 * @param coreData   The core data for a container configuration. If non null
 	 *                   and the main configuration is not available, then this
 	 *                   basic data is used to initialize the main configuration.
-	 * @since 1.8
+	 * @since 17
 	 */
-	public CollectionConfiguration(
-			de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection properties, Path folder,
-			Configuration.CoreData coreData) {
+	public PartitionConfiguration(Partition properties, Path folder, Configuration.CoreData coreData) {
 		super(folder);
 
 		id = folder == null || !Files.isDirectory(folder) ? null : folder.getFileName().toString();
 
 		configuration = new Configuration(properties.getConfiguration(), coreData);
+
+		// Initializes the folders
+		data = this.folder.resolve(properties.getData().getFolder()).normalize();
+
+		ConfigurationService.initializeFolder(true, data, "partition '" + this.folder.getFileName() + "' data ");
 	}
 
 	/**
@@ -93,18 +99,28 @@ public class CollectionConfiguration extends CoreFolder {
 	 * Returns the configuration.
 	 *
 	 * @return The configuration.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Configuration getConfiguration() {
 		return configuration;
 	}
 
 	/**
-	 * Defines configurations for the collection.
+	 * Returns the folder for data.
+	 *
+	 * @return The folder for data.
+	 * @since 17
+	 */
+	public Path getData() {
+		return data;
+	}
+
+	/**
+	 * Defines configurations for the partition.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public class Configuration extends CoreFolder implements TrackingData {
 		/**
@@ -113,91 +129,75 @@ public class CollectionConfiguration extends CoreFolder {
 		private final PersistenceManager mainConfigurationManager;
 
 		/**
-		 * The sets configuration file.
+		 * The partition.
 		 */
-		private final Path setsFile;
+		private de.uniwuerzburg.zpd.ocr4all.application.persistence.exchange.Partition partition = null;
 
 		/**
-		 * The collection.
-		 */
-		private de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection collection = null;
-
-		/**
-		 * Creates a configuration for the collection.
+		 * Creates a configuration for the partition.
 		 * 
-		 * @param properties The configuration properties for the collection.
-		 * @param coreData   The core data for a collection configuration. If non null
+		 * @param properties The configuration properties for the partition.
+		 * @param coreData   The core data for a container configuration. If non null
 		 *                   and the main configuration is not available, then this
 		 *                   basic data is used to initialize the main configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
-		Configuration(
-				de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.data.Collection.Configuration properties,
-				CoreData coreData) {
-			super(Paths.get(CollectionConfiguration.this.folder.toString(), properties.getFolder()));
+		Configuration(Partition.Configuration properties, CoreData coreData) {
+			super(PartitionConfiguration.this.folder.resolve(properties.getFolder()));
 
-			// Initialize the collection configuration folder and consequently the
-			// collection
-			ConfigurationService.initializeFolder(true, folder, "collection configuration");
-
-			// Initializes the configuration files
-			setsFile = getPath(properties.getFiles().getSets());
+			// Initialize the partition configuration folder and consequently the
+			// partition
+			ConfigurationService.initializeFolder(true, folder, "partition configuration");
 
 			// Loads the main configuration file
 			mainConfigurationManager = new PersistenceManager(getPath(properties.getFiles().getMain()),
-					Type.data_collection_v1);
+					Type.exchange_partition_v1);
 			loadMainConfiguration(coreData);
 		}
 
 		/**
 		 * Loads the main configuration file.
 		 * 
-		 * @param coreData The core data for a collection configuration. If non null and
+		 * @param coreData The core data for a container configuration. If non null and
 		 *                 the main configuration is not available, then this basic data
 		 *                 is used to initialize the main configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private void loadMainConfiguration(CoreData coreData) {
 			// Load main configuration
 			try {
-				collection = mainConfigurationManager.getEntity(
-						de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection.class, null,
+				partition = mainConfigurationManager.getEntity(
+						de.uniwuerzburg.zpd.ocr4all.application.persistence.exchange.Partition.class, null,
 						message -> logger.warn(message));
 
-				if (!isMainConfigurationAvailable() || collection.getName() == null
-						|| collection.getSecurity() == null) {
+				if (!isMainConfigurationAvailable() || partition.getName() == null || partition.getSecurity() == null) {
 					Date currentTimeStamp = new Date();
 					if (!isMainConfigurationAvailable()) {
-						collection = new de.uniwuerzburg.zpd.ocr4all.application.persistence.data.Collection();
+						partition = new de.uniwuerzburg.zpd.ocr4all.application.persistence.exchange.Partition();
 
-						collection.setDate(currentTimeStamp);
+						partition.setDate(currentTimeStamp);
 
 						if (coreData != null) {
-							collection.setName(coreData.getName());
-							collection.setDescription(coreData.getDescription());
-							collection.setKeywords(coreData.getKeywords());
-
-							if (coreData.getUser() != null)
-								collection.setSecurity(
-										new SecurityGrantRWS(SecurityGrantRWS.Right.maximal, coreData.getUser()));
-
+							partition.setName(coreData.getName());
+							partition.setDescription(coreData.getDescription());
+							partition.setKeywords(coreData.getKeywords());
 						}
 					} else
 						// avoid using basic data if not creating a main configuration
 						coreData = null;
 
-					if (collection.getName() == null)
-						collection.setName(CollectionConfiguration.this.folder.getFileName().toString());
+					if (partition.getName() == null)
+						partition.setName(PartitionConfiguration.this.folder.getFileName().toString());
 
-					if (collection.getSecurity() == null)
-						collection.setSecurity(new SecurityGrantRWS());
+					if (partition.getSecurity() == null)
+						partition.setSecurity(new SecurityGrantRW());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
 			} catch (IOException e) {
 				logger.warn(e.getMessage());
 
-				collection = null;
+				partition = null;
 			}
 		}
 
@@ -205,10 +205,10 @@ public class CollectionConfiguration extends CoreFolder {
 		 * Returns true if the main configuration is available.
 		 * 
 		 * @return True if the main configuration is available.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isMainConfigurationAvailable() {
-			return collection != null;
+			return partition != null;
 		}
 
 		/**
@@ -216,7 +216,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 * 
 		 * @param user The user.
 		 * @return True if the main configuration could be persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private boolean persist(String user) {
 			return persist(user, null);
@@ -228,23 +228,23 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @param user    The user.
 		 * @param updated The updated time. If null, uses the current time stamp.
 		 * @return True if the main configuration could be persisted.
-		 * @since 1.8
+		 * @since 17
 		 */
 		private boolean persist(String user, Date updated) {
 			if (isMainConfigurationAvailable())
 				try {
-					collection.setUser(user);
-					collection.setUpdated(updated == null ? new Date() : updated);
+					partition.setUser(user);
+					partition.setUpdated(updated == null ? new Date() : updated);
 
-					mainConfigurationManager.persist(collection);
+					mainConfigurationManager.persist(partition);
 
-					logger.info("Persisted the collection configuration.");
+					logger.info("Persisted the partition configuration.");
 
 					return true;
 				} catch (Exception e) {
 					reloadMainConfiguration();
 
-					logger.warn("Could not persist the collection configuration - " + e.getMessage());
+					logger.warn("Could not persist the partition configuration - " + e.getMessage());
 				}
 
 			return false;
@@ -254,7 +254,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 * Reloads the main configuration file.
 		 * 
 		 * @return True if the main configuration is available.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean reloadMainConfiguration() {
 			loadMainConfiguration(null);
@@ -263,35 +263,25 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the sets configuration file.
-		 *
-		 * @return The sets configuration file.
-		 * @since 1.8
-		 */
-		public Path getSetsFile() {
-			return setsFile;
-		}
-
-		/**
 		 * Returns the name.
 		 * 
 		 * @return The name.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public String getName() {
-			return isMainConfigurationAvailable() ? collection.getName() : null;
+			return isMainConfigurationAvailable() ? partition.getName() : null;
 		}
 
 		/**
-		 * Returns the collection information.
+		 * Returns the partition information.
 		 * 
-		 * @return The collection information.
-		 * @since 1.8
+		 * @return The partition information.
+		 * @since 17
 		 */
 		public Information getInformation() {
 			return isMainConfigurationAvailable()
-					? new Information(collection.getName(), collection.getDescription(),
-							collection.getKeywords() == null ? null : new HashSet<>(collection.getKeywords()))
+					? new Information(partition.getName(), partition.getDescription(),
+							partition.getKeywords() == null ? null : new HashSet<>(partition.getKeywords()))
 					: null;
 		}
 
@@ -300,18 +290,18 @@ public class CollectionConfiguration extends CoreFolder {
 		 * configuration is available and the name is not null and empty.
 		 *
 		 * @param user        The user.
-		 * @param information The collection information.
-		 * @return True if the collection information was updated and persisted.
-		 * @since 1.8
+		 * @param information The partition information.
+		 * @return True if the partition information was updated and persisted.
+		 * @since 17
 		 */
 		public boolean update(String user, Information information) {
 			if (isMainConfigurationAvailable() && information != null && information.getName() != null
 					&& !information.getName().isBlank()) {
-				collection.setName(information.getName().trim());
-				collection.setDescription(
+				partition.setName(information.getName().trim());
+				partition.setDescription(
 						information.getDescription() == null || information.getDescription().isBlank() ? null
 								: information.getDescription().trim());
-				collection.setKeywords(information.getKeywords());
+				partition.setKeywords(information.getKeywords());
 
 				return persist(user);
 			} else
@@ -323,15 +313,17 @@ public class CollectionConfiguration extends CoreFolder {
 		 * 
 		 * @param grants The grants to clone.
 		 * @return The cloned the grants.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private static Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> cloneGrant(Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> grants) {
-			Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> clone = new HashSet<>();
+		private static Set<SecurityGrantRW.Grant<SecurityGrantRW.Right>> cloneGrant(
+				Set<SecurityGrantRW.Grant<SecurityGrantRW.Right>> grants) {
+			Set<SecurityGrantRW.Grant<SecurityGrantRW.Right>> clone = new HashSet<>();
 
 			if (grants != null)
-				for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : grants) {
+				for (SecurityGrantRW.Grant<SecurityGrantRW.Right> grant : grants) {
 					if (grant.getRight() != null && grant.getTargets() != null)
-						clone.add(new SecurityGrantRWS.Grant<SecurityGrantRWS.Right>(grant.getRight(), grant.getTargets()));
+						clone.add(
+								new SecurityGrantRW.Grant<SecurityGrantRW.Right>(grant.getRight(), grant.getTargets()));
 
 				}
 
@@ -343,12 +335,12 @@ public class CollectionConfiguration extends CoreFolder {
 		 * 
 		 * @param grants The security grants to clone.
 		 * @return The cloned the security grants.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private static SecurityGrantRWS cloneSecurity(SecurityGrantRWS security) {
+		private static SecurityGrantRW cloneSecurity(SecurityGrantRW security) {
 
 			return security == null ? null
-					: new SecurityGrantRWS(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
+					: new SecurityGrantRW(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
 							security.getOther());
 		}
 
@@ -356,23 +348,23 @@ public class CollectionConfiguration extends CoreFolder {
 		 * Returns the security.
 		 * 
 		 * @return The security.
-		 * @since 1.8
+		 * @since 17
 		 */
-		public SecurityGrantRWS getSecurity() {
-			return cloneSecurity(collection.getSecurity());
+		public SecurityGrantRW getSecurity() {
+			return cloneSecurity(partition.getSecurity());
 		}
 
 		/**
 		 * Updates the security.
 		 *
 		 * @param user     The user.
-		 * @param security The collection security.
-		 * @return True if the collection security was updated and persisted.
-		 * @since 1.8
+		 * @param security The partition security.
+		 * @return True if the partition security was updated and persisted.
+		 * @since 17
 		 */
-		public boolean update(String user, SecurityGrantRWS security) {
+		public boolean update(String user, SecurityGrantRW security) {
 			if (isMainConfigurationAvailable()) {
-				collection.setSecurity(cloneSecurity(security));
+				partition.setSecurity(cloneSecurity(security));
 
 				return persist(user);
 			} else
@@ -385,55 +377,56 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @param source The source right.
 		 * @param target The target right.
 		 * @return True if the source right is fulfilled with the target right.
-		 * @since 1.8
+		 * @since 17
 		 */
-		private boolean isRightFulfilled(SecurityGrantRWS.Right source, SecurityGrantRWS.Right target) {
+		private boolean isRightFulfilled(SecurityGrantRW.Right source, SecurityGrantRW.Right target) {
 			return source != null && source.iFulfilled(target);
 		}
 
 		/**
-		 * Returns the collection right for given user and groups.
+		 * Returns the partition right for given user and groups.
 		 * 
 		 * @param target If not null, the search is ended as soon as the target right is
 		 *               fulfilled. Otherwise search for the maximal fulfilled right.
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The collection right.
-		 * @since 1.8
+		 * @return The partition right.
+		 * @since 17
 		 */
-		private SecurityGrantRWS.Right getRightFulfilled(SecurityGrantRWS.Right target, String user,
+		private SecurityGrantRW.Right getRightFulfilled(SecurityGrantRW.Right target, String user,
 				Collection<String> groups) {
 			if (target == null)
-				target = SecurityGrantRWS.Right.maximal;
+				target = SecurityGrantRW.Right.maximal;
 
-			SecurityGrantRWS.Right right = null;
+			SecurityGrantRW.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = SecurityGrantRWS.Right.getMaximnal(right, collection.getSecurity().getOther());
+				right = SecurityGrantRW.Right.getMaximnal(right, partition.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
 
-				if (collection.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
+				if (partition.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : collection.getSecurity().getUsers())
+					for (SecurityGrantRW.Grant<SecurityGrantRW.Right> grant : partition.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
-							right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
+							right = SecurityGrantRW.Right.getMaximnal(right, grant.getRight());
 
 							if (isRightFulfilled(right, target))
 								return right;
 						}
 				}
 
-				if (collection.getSecurity().getGroups() != null && groups != null)
+				if (partition.getSecurity().getGroups() != null && groups != null)
 					for (String group : groups) {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : collection.getSecurity().getGroups())
+							for (SecurityGrantRW.Grant<SecurityGrantRW.Right> grant : partition.getSecurity()
+									.getGroups())
 								if (grant.getTargets().contains(group)) {
-									right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
+									right = SecurityGrantRW.Right.getMaximnal(right, grant.getRight());
 
 									if (isRightFulfilled(right, target))
 										return right;
@@ -447,14 +440,14 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * Returns the maximal fulfilled collection right for given user and groups.
+		 * Returns the maximal fulfilled partition right for given user and groups.
 		 * 
 		 * @param user   The user.
 		 * @param groups The user groups.
-		 * @return The collection right.
-		 * @since 1.8
+		 * @return The partition right.
+		 * @since 17
 		 */
-		public SecurityGrantRWS.Right getRight(String user, Collection<String> groups) {
+		public SecurityGrantRW.Right getRight(String user, Collection<String> groups) {
 			return getRightFulfilled(null, user, groups);
 		}
 
@@ -464,10 +457,10 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return True if the read right is fulfilled for given user and groups.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isRightRead(String user, Collection<String> groups) {
-			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.read, user, groups);
+			SecurityGrantRW.Right right = getRightFulfilled(SecurityGrantRW.Right.read, user, groups);
 
 			return right != null && right.isReadFulfilled();
 		}
@@ -478,26 +471,12 @@ public class CollectionConfiguration extends CoreFolder {
 		 * @param user   The user.
 		 * @param groups The user groups.
 		 * @return True if the write right is fulfilled for given user and groups.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public boolean isRightWrite(String user, Collection<String> groups) {
-			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.write, user, groups);
+			SecurityGrantRW.Right right = getRightFulfilled(SecurityGrantRW.Right.write, user, groups);
 
 			return right != null && right.isWriteFulfilled();
-		}
-
-		/**
-		 * Returns true if the special right is fulfilled for given user and groups.
-		 * 
-		 * @param user   The user.
-		 * @param groups The user groups.
-		 * @return True if the special right is fulfilled for given user and groups.
-		 * @since 1.8
-		 */
-		public boolean isRightSpecial(String user, Collection<String> groups) {
-			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.special, user, groups);
-
-			return right != null && right.isSpecialFulfilled();
 		}
 
 		/*
@@ -519,7 +498,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public String getUser() {
-			return isMainConfigurationAvailable() ? collection.getUser() : null;
+			return isMainConfigurationAvailable() ? partition.getUser() : null;
 		}
 
 		/*
@@ -541,7 +520,7 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getCreated() {
-			return isMainConfigurationAvailable() ? collection.getDate() : null;
+			return isMainConfigurationAvailable() ? partition.getDate() : null;
 		}
 
 		/*
@@ -563,16 +542,16 @@ public class CollectionConfiguration extends CoreFolder {
 		 */
 		@Override
 		public Date getUpdated() {
-			return isMainConfigurationAvailable() ? collection.getUpdated() : null;
+			return isMainConfigurationAvailable() ? partition.getUpdated() : null;
 		}
 
 		/**
-		 * Information is an immutable class that defines information for collection
+		 * Information is an immutable class that defines information for partition
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
-		 * @since 1.8
+		 * @since 17
 		 */
 		public static class Information {
 			/**
@@ -591,12 +570,12 @@ public class CollectionConfiguration extends CoreFolder {
 			private final Set<String> keywords;
 
 			/**
-			 * Creates an information for a collection configuration.
+			 * Creates an information for a partition configuration.
 			 * 
 			 * @param name        The name.
 			 * @param description The description.
 			 * @param keywords    The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Information(String name, String description, Set<String> keywords) {
 				super();
@@ -610,7 +589,7 @@ public class CollectionConfiguration extends CoreFolder {
 			 * Returns the name.
 			 *
 			 * @return The name.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getName() {
 				return name;
@@ -620,7 +599,7 @@ public class CollectionConfiguration extends CoreFolder {
 			 * Returns the description.
 			 *
 			 * @return The description.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getDescription() {
 				return description;
@@ -630,7 +609,7 @@ public class CollectionConfiguration extends CoreFolder {
 			 * Returns the keywords.
 			 *
 			 * @return The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public Set<String> getKeywords() {
 				return keywords;
@@ -639,12 +618,12 @@ public class CollectionConfiguration extends CoreFolder {
 		}
 
 		/**
-		 * CoreData is an immutable class that defines core data for collection
+		 * CoreData is an immutable class that defines core data for partition
 		 * configurations.
 		 *
 		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 		 * @version 1.0
-		 * @since 1.8
+		 * @since 17
 		 */
 		public static class CoreData extends Information {
 			/**
@@ -653,13 +632,13 @@ public class CollectionConfiguration extends CoreFolder {
 			private final String user;
 
 			/**
-			 * Creates core data for a collection configuration.
+			 * Creates core data for a partition configuration.
 			 * 
 			 * @param user        The user.
 			 * @param name        The name.
 			 * @param description The description.
 			 * @param keywords    The keywords.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public CoreData(String user, String name, String description, Set<String> keywords) {
 				super(name, description, keywords);
@@ -671,7 +650,7 @@ public class CollectionConfiguration extends CoreFolder {
 			 * Returns the user.
 			 *
 			 * @return The user.
-			 * @since 1.8
+			 * @since 17
 			 */
 			public String getUser() {
 				return user;

@@ -199,7 +199,7 @@ public class ProjectApiController extends CoreApiController {
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(updateRequestMapping)
-	public ResponseEntity<ProjectResponse> update(@RequestBody @Valid ProjectRequest request) {
+	public ResponseEntity<ProjectResponse> update(@RequestBody @Valid BasicRequest request) {
 		if (request.getName() == null || request.getName().isBlank())
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -214,7 +214,7 @@ public class ProjectApiController extends CoreApiController {
 		Authorization authorization = authorizationFactory.authorize(request.getId(), ProjectRight.none);
 		try {
 			if (authorization.project.getConfiguration().getConfiguration().updateBasicData(request.getName(),
-					request.getDescription(), request.getKeywords(), request.getExchange(), state)) {
+					request.getDescription(), request.getKeywords(), state)) {
 				Project updatedProject = service.getProject(request.getId());
 
 				return updatedProject == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
@@ -395,46 +395,6 @@ public class ProjectApiController extends CoreApiController {
 
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
 		}
-	}
-
-	/**
-	 * Defines project requests for the api.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class ProjectRequest extends BasicRequest {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * The exchange.
-		 */
-		private String exchange = null;
-
-		/**
-		 * Returns the exchange.
-		 *
-		 * @return The exchange.
-		 * @since 1.8
-		 */
-		public String getExchange() {
-			return exchange;
-		}
-
-		/**
-		 * Set the exchange.
-		 *
-		 * @param exchange The exchange to set.
-		 * @since 1.8
-		 */
-		public void setExchange(String exchange) {
-			this.exchange = exchange;
-		}
-
 	}
 
 }

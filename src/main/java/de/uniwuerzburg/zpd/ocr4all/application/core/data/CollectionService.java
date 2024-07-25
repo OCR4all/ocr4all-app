@@ -40,7 +40,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.OCR4allUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.pagexml.PageXMLLevel;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.util.pagexml.PageXMLParser;
 
@@ -94,7 +94,7 @@ public class CollectionService extends CoreService {
 	 * @since 1.8
 	 */
 	private Collection getCollection(CollectionConfiguration configuration) {
-		return new Collection(dataService.isAdministrator() ? SecurityGrant.Right.maximal
+		return new Collection(dataService.isAdministrator() ? SecurityGrantRWS.Right.maximal
 				: configuration.getConfiguration().getRight(securityService.getUser(),
 						securityService.getActiveGroups()),
 				configuration);
@@ -274,7 +274,7 @@ public class CollectionService extends CoreService {
 	 * @return The updated collection. Null if it can not be updated.
 	 * @since 1.8
 	 */
-	public Collection update(String uuid, SecurityGrant security) {
+	public Collection update(String uuid, SecurityGrantRWS security) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -1132,7 +1132,7 @@ public class CollectionService extends CoreService {
 		/**
 		 * The right.
 		 */
-		private final SecurityGrant.Right right;
+		private final SecurityGrantRWS.Right right;
 
 		/**
 		 * The configuration.
@@ -1146,7 +1146,7 @@ public class CollectionService extends CoreService {
 		 * @param configuration The configuration.
 		 * @since 1.8
 		 */
-		public Collection(SecurityGrant.Right right, CollectionConfiguration configuration) {
+		public Collection(SecurityGrantRWS.Right right, CollectionConfiguration configuration) {
 			super();
 
 			this.right = right;
@@ -1159,7 +1159,7 @@ public class CollectionService extends CoreService {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 

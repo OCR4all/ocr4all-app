@@ -30,7 +30,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.Con
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -409,7 +409,7 @@ public class ContainerApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class ContainerSecurityRequest extends SecurityGrant {
+	public static class ContainerSecurityRequest extends SecurityGrantRWS {
 		/**
 		 * The serial version UID.
 		 */
@@ -593,7 +593,7 @@ public class ContainerApiController extends CoreApiController {
 		/**
 		 * The right.
 		 */
-		private SecurityGrant.Right right;
+		private SecurityGrantRWS.Right right;
 
 		/**
 		 * Creates a container with right response for the api without security.
@@ -613,7 +613,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 
@@ -623,7 +623,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @param right The right to set.
 		 * @since 1.8
 		 */
-		public void setRight(SecurityGrant.Right right) {
+		public void setRight(SecurityGrantRWS.Right right) {
 			this.right = right;
 		}
 
@@ -645,7 +645,7 @@ public class ContainerApiController extends CoreApiController {
 		/**
 		 * The security.
 		 */
-		private SecurityGrant security;
+		private SecurityGrantRWS security;
 
 		/**
 		 * Creates a container with right response for the api without security.
@@ -665,7 +665,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public SecurityGrant getSecurity() {
+		public SecurityGrantRWS getSecurity() {
 			return security;
 		}
 
@@ -675,7 +675,7 @@ public class ContainerApiController extends CoreApiController {
 		 * @param security The security to set.
 		 * @since 1.8
 		 */
-		public void setSecurity(SecurityGrant security) {
+		public void setSecurity(SecurityGrantRWS security) {
 			this.security = security;
 		}
 

@@ -24,7 +24,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.assem
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.PersistenceManager;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.Type;
 import de.uniwuerzburg.zpd.ocr4all.application.persistence.assemble.Engine;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 
 /**
  * Defines configurations for the model.
@@ -203,7 +203,8 @@ public class ModelConfiguration extends CoreFolder {
 							model.setKeywords(coreData.getKeywords());
 
 							if (coreData.getUser() != null)
-								model.setSecurity(new SecurityGrant(SecurityGrant.Right.maximal, coreData.getUser()));
+								model.setSecurity(
+										new SecurityGrantRWS(SecurityGrantRWS.Right.maximal, coreData.getUser()));
 
 						}
 					} else
@@ -214,7 +215,7 @@ public class ModelConfiguration extends CoreFolder {
 						model.setName(ModelConfiguration.this.folder.getFileName().toString());
 
 					if (model.getSecurity() == null)
-						model.setSecurity(new SecurityGrant());
+						model.setSecurity(new SecurityGrantRWS());
 
 					persist(coreData == null ? null : coreData.getUser(), currentTimeStamp);
 				}
@@ -381,13 +382,15 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return The cloned the grants.
 		 * @since 1.8
 		 */
-		private static Set<SecurityGrant.Grant> cloneGrant(Set<SecurityGrant.Grant> grants) {
-			Set<SecurityGrant.Grant> clone = new HashSet<>();
+		private static Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> cloneGrant(
+				Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> grants) {
+			Set<SecurityGrantRWS.Grant<SecurityGrantRWS.Right>> clone = new HashSet<>();
 
 			if (grants != null)
-				for (SecurityGrant.Grant grant : grants) {
+				for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : grants) {
 					if (grant.getRight() != null && grant.getTargets() != null)
-						clone.add(new SecurityGrant.Grant(grant.getRight(), grant.getTargets()));
+						clone.add(new SecurityGrantRWS.Grant<SecurityGrantRWS.Right>(grant.getRight(),
+								grant.getTargets()));
 
 				}
 
@@ -401,10 +404,10 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return The cloned the security grants.
 		 * @since 1.8
 		 */
-		private static SecurityGrant cloneSecurity(SecurityGrant security) {
+		private static SecurityGrantRWS cloneSecurity(SecurityGrantRWS security) {
 
 			return security == null ? null
-					: new SecurityGrant(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
+					: new SecurityGrantRWS(cloneGrant(security.getUsers()), cloneGrant(security.getGroups()),
 							security.getOther());
 		}
 
@@ -414,7 +417,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public SecurityGrant getSecurity() {
+		public SecurityGrantRWS getSecurity() {
 			return cloneSecurity(model.getSecurity());
 		}
 
@@ -426,7 +429,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return True if the model security was updated and persisted.
 		 * @since 1.8
 		 */
-		public boolean update(String user, SecurityGrant security) {
+		public boolean update(String user, SecurityGrantRWS security) {
 			if (isMainConfigurationAvailable()) {
 				model.setSecurity(cloneSecurity(security));
 
@@ -443,7 +446,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return True if the source right is fulfilled with the target right.
 		 * @since 1.8
 		 */
-		private boolean isRightFulfilled(SecurityGrant.Right source, SecurityGrant.Right target) {
+		private boolean isRightFulfilled(SecurityGrantRWS.Right source, SecurityGrantRWS.Right target) {
 			return source != null && source.iFulfilled(target);
 		}
 
@@ -457,15 +460,15 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return The model right.
 		 * @since 1.8
 		 */
-		private SecurityGrant.Right getRightFulfilled(SecurityGrant.Right target, String user,
+		private SecurityGrantRWS.Right getRightFulfilled(SecurityGrantRWS.Right target, String user,
 				Collection<String> groups) {
 			if (target == null)
-				target = SecurityGrant.Right.maximal;
+				target = SecurityGrantRWS.Right.maximal;
 
-			SecurityGrant.Right right = null;
+			SecurityGrantRWS.Right right = null;
 
 			if (isMainConfigurationAvailable()) {
-				right = SecurityGrant.Right.getMaximnal(right, model.getSecurity().getOther());
+				right = SecurityGrantRWS.Right.getMaximnal(right, model.getSecurity().getOther());
 
 				if (isRightFulfilled(right, target))
 					return right;
@@ -473,9 +476,9 @@ public class ModelConfiguration extends CoreFolder {
 				if (model.getSecurity().getUsers() != null && user != null && !user.isBlank()) {
 					user = user.trim().toLowerCase();
 
-					for (SecurityGrant.Grant grant : model.getSecurity().getUsers())
+					for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : model.getSecurity().getUsers())
 						if (grant.getTargets().contains(user)) {
-							right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
+							right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
 
 							if (isRightFulfilled(right, target))
 								return right;
@@ -487,9 +490,9 @@ public class ModelConfiguration extends CoreFolder {
 						if (group != null && !group.isBlank()) {
 							group = group.trim().toLowerCase();
 
-							for (SecurityGrant.Grant grant : model.getSecurity().getGroups())
+							for (SecurityGrantRWS.Grant<SecurityGrantRWS.Right> grant : model.getSecurity().getGroups())
 								if (grant.getTargets().contains(group)) {
-									right = SecurityGrant.Right.getMaximnal(right, grant.getRight());
+									right = SecurityGrantRWS.Right.getMaximnal(right, grant.getRight());
 
 									if (isRightFulfilled(right, target))
 										return right;
@@ -510,7 +513,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @return The model right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight(String user, Collection<String> groups) {
+		public SecurityGrantRWS.Right getRight(String user, Collection<String> groups) {
 			return getRightFulfilled(null, user, groups);
 		}
 
@@ -523,7 +526,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightRead(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.read, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.read, user, groups);
 
 			return right != null && right.isReadFulfilled();
 		}
@@ -537,7 +540,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightWrite(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.write, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.write, user, groups);
 
 			return right != null && right.isWriteFulfilled();
 		}
@@ -551,7 +554,7 @@ public class ModelConfiguration extends CoreFolder {
 		 * @since 1.8
 		 */
 		public boolean isRightSpecial(String user, Collection<String> groups) {
-			SecurityGrant.Right right = getRightFulfilled(SecurityGrant.Right.special, user, groups);
+			SecurityGrantRWS.Right right = getRightFulfilled(SecurityGrantRWS.Right.special, user, groups);
 
 			return right != null && right.isSpecialFulfilled();
 		}

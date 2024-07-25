@@ -29,7 +29,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.data.CollectionConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
-import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrant;
+import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGrantRWS;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -400,7 +400,7 @@ public class CollectionApiController extends CoreApiController {
 	 * @version 1.0
 	 * @since 1.8
 	 */
-	public static class CollectionSecurityRequest extends SecurityGrant {
+	public static class CollectionSecurityRequest extends SecurityGrantRWS {
 		/**
 		 * The serial version UID.
 		 */
@@ -584,7 +584,7 @@ public class CollectionApiController extends CoreApiController {
 		/**
 		 * The right.
 		 */
-		private SecurityGrant.Right right;
+		private SecurityGrantRWS.Right right;
 
 		/**
 		 * Creates a collection with right response for the api without security.
@@ -604,7 +604,7 @@ public class CollectionApiController extends CoreApiController {
 		 * @return The right.
 		 * @since 1.8
 		 */
-		public SecurityGrant.Right getRight() {
+		public SecurityGrantRWS.Right getRight() {
 			return right;
 		}
 
@@ -614,7 +614,7 @@ public class CollectionApiController extends CoreApiController {
 		 * @param right The right to set.
 		 * @since 1.8
 		 */
-		public void setRight(SecurityGrant.Right right) {
+		public void setRight(SecurityGrantRWS.Right right) {
 			this.right = right;
 		}
 
@@ -636,7 +636,7 @@ public class CollectionApiController extends CoreApiController {
 		/**
 		 * The security.
 		 */
-		private SecurityGrant security;
+		private SecurityGrantRWS security;
 
 		/**
 		 * Creates a collection with right response for the api without security.
@@ -656,7 +656,7 @@ public class CollectionApiController extends CoreApiController {
 		 * @return The security.
 		 * @since 1.8
 		 */
-		public SecurityGrant getSecurity() {
+		public SecurityGrantRWS getSecurity() {
 			return security;
 		}
 
@@ -666,7 +666,7 @@ public class CollectionApiController extends CoreApiController {
 		 * @param security The security to set.
 		 * @since 1.8
 		 */
-		public void setSecurity(SecurityGrant security) {
+		public void setSecurity(SecurityGrantRWS security) {
 			this.security = security;
 		}
 
