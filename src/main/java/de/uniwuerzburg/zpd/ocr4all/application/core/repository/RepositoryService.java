@@ -58,6 +58,16 @@ public class RepositoryService extends CoreService {
 	}
 
 	/**
+	 * Returns the folder.
+	 *
+	 * @return The folder.
+	 * @since 17
+	 */
+	public Path getFolder() {
+		return folder;
+	}
+
+	/**
 	 * Returns true if the administrator security permission is achievable by the
 	 * session user.
 	 *

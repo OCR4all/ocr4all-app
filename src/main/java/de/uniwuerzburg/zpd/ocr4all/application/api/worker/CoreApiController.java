@@ -275,6 +275,11 @@ public class CoreApiController {
 	public static final String collectionRequestMapping = "/collection";
 
 	/**
+	 * The partition request mapping.
+	 */
+	public static final String partitionRequestMapping = "/partition";
+
+	/**
 	 * The model request mapping.
 	 */
 	public static final String modelRequestMapping = "/model";
