@@ -35,6 +35,8 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ImageConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.repository.ContainerConfiguration.Configuration;
+import de.uniwuerzburg.zpd.ocr4all.application.core.exchange.PartitionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.exchange.PartitionService.Partition;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.Job.Journal;
 import de.uniwuerzburg.zpd.ocr4all.application.core.job.SchedulerService;
@@ -69,6 +71,11 @@ public class ContainerService extends CoreService {
 	private final RepositoryService repositoryService;
 
 	/**
+	 * The partition service.
+	 */
+	private final PartitionService partitionService;
+
+	/**
 	 * The scheduler service.
 	 */
 	private final SchedulerService schedulerService;
@@ -84,15 +91,17 @@ public class ContainerService extends CoreService {
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param repositoryService    The repository service.
+	 * @param partitionService     The partition service.
 	 * @param schedulerService     The scheduler service.
 	 * @since 1.8
 	 */
 	public ContainerService(ConfigurationService configurationService, SecurityService securityService,
-			RepositoryService repositoryService, SchedulerService schedulerService) {
+			RepositoryService repositoryService, PartitionService partitionService, SchedulerService schedulerService) {
 		super(ContainerService.class, configurationService);
 
 		this.securityService = securityService;
 		this.repositoryService = repositoryService;
+		this.partitionService = partitionService;
 		this.schedulerService = schedulerService;
 
 		folder = configurationService.getRepository().getFolder().normalize();
@@ -354,39 +363,96 @@ public class ContainerService extends CoreService {
 	}
 
 	/**
-	 * Store the folios.
-	 * 
-	 * @param container      The container.
-	 * @param jobDescription The job description.
-	 * @param files          The folios.
-	 * @return The job storing the folios. Null if container is unknown or the write
-	 *         right is not fulfilled or no images are available.
-	 * @throws IOException Throws on storage troubles.
-	 * @since 1.8
+	 * Defines callback methods for schedule import job.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
 	 */
-	public Work store(Container container, String jobDescription, MultipartFile[] files) throws IOException {
-		if (container != null && files != null) {
-			if (container.getRight().isWriteFulfilled()) {
+	@FunctionalInterface
+	private interface ScheduleImportJobCallback {
+		/**
+		 * Returns the available jobs to process in the temporary folios folder.
+		 * 
+		 * @return The available jobs to process in the temporary folios folder.
+		 * @since 17
+		 */
+		List<Folio> getFolios();
+	}
+
+	private Work scheduleImportJob(String description, Container container, Path temporaryDirectory, Path folderFolios,
+			ScheduleImportJobCallback callback) {
+		Work work = new Work(securityService.getUser(), configurationService, description, new Work.Instance() {
+			/**
+			 * True if the work was canceled.
+			 */
+			private boolean isCanceled = false;
+
+			/**
+			 * Push the information to the job.
+			 * 
+			 * @param journal  The journal.
+			 * @param progress The progress.
+			 * @param message  The message.
+			 * @since 17
+			 */
+			private void push(Journal.Step journal, float progress, String message) {
+				journal.setProgress(progress);
+
+				journal.setStandardOutput((journal.isStandardOutputSet() ? journal.getStandardOutput() : "") + message
+						+ System.lineSeparator());
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Work.Instance#execute(de.
+			 * uniwuerzburg.zpd.ocr4all.application.core.job.Job.Journal)
+			 */
+			@Override
+			public Job.State execute(Journal.Step journal) {
+				List<Folio> folios = callback.getFolios();
+
+				if (folios == null) {
+					deleteRecursively(temporaryDirectory);
+
+					journal.setStandardError("troubles recovering folios");
+
+					return Job.State.interrupted;
+				} else if (folios.isEmpty()) {
+					deleteRecursively(temporaryDirectory);
+
+					push(journal, 1F, "there are no folios available.");
+
+					return Job.State.completed;
+				}
+
 				// The system commands
 				final String identifyCommand = configurationService.getSystemCommand().getIdentify();
-				if (!configurationService.getSystemCommand().isIdentifyAvailable())
-					throw new IOException("the system identify command " + identifyCommand + " is not available.");
+				if (!configurationService.getSystemCommand().isIdentifyAvailable()) {
+					deleteRecursively(temporaryDirectory);
+
+					journal.setStandardError("the system identify command " + identifyCommand + " is not available.");
+
+					return Job.State.interrupted;
+				}
 
 				final String convertCommand = configurationService.getSystemCommand().getConvert();
-				if (!configurationService.getSystemCommand().isConvertAvailable())
-					throw new IOException("the system convert command " + convertCommand + " is not available.");
+				if (!configurationService.getSystemCommand().isConvertAvailable()) {
+					deleteRecursively(temporaryDirectory);
 
-				// create tmp directories
-				Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
+					journal.setStandardError("the system convert command " + convertCommand + " is not available.");
 
-				Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
+					return Job.State.interrupted;
+				}
+
 				Path folderNormalized = Paths.get(temporaryDirectory.toString(), "normalized");
 				Path folderThumbnail = Paths.get(temporaryDirectory.toString(), "thumbnail");
 				Path folderDetail = Paths.get(temporaryDirectory.toString().toString(), "detail");
 				Path folderBest = Paths.get(temporaryDirectory.toString().toString(), "best");
 
 				try {
-					Files.createDirectory(folderFolios);
 					Files.createDirectory(folderNormalized);
 					Files.createDirectory(folderThumbnail);
 					Files.createDirectory(folderDetail);
@@ -394,317 +460,427 @@ public class ContainerService extends CoreService {
 				} catch (IOException e) {
 					deleteRecursively(temporaryDirectory);
 
-					throw e;
+					journal.setStandardError("Cannot create folder - " + e.getMessage());
+
+					return Job.State.interrupted;
 				}
 
-				SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
+				push(journal, 0.1F, "uploaded " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s") + " into "
+						+ container.getConfiguration().getConfiguration().getName() + System.lineSeparator());
 
-				// store the files
-				List<Folio> folios = new ArrayList<>();
-				for (MultipartFile file : files)
-					if (file != null && !file.isEmpty()) {
-						String fileName = file.getOriginalFilename();
-
-						final ImageFormat imageFormat = ImageFormat.getImageFormatFilename(fileName);
-
-						if (imageFormat != null)
-							try {
-								final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
-										.getPersistence();
-
-								if (format == null) {
-									logger.warn(
-											"The folio does not supports the image type " + imageFormat.name() + ".");
-
-									continue;
-								}
-
-								final String id = OCR4allUtils.getUUID();
-								final Path destinationFile = folderFolios
-										.resolve(Paths.get(id + "." + imageFormat.name()));
-
-								try (InputStream inputStream = file.getInputStream()) {
-									Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-								} catch (IOException e) {
-									logger.warn("Failed to store image '" + destinationFile + "' with uuid " + id
-											+ " - " + e.getMessage());
-
-									continue;
-								}
-
-								final Folio.Size size;
-								try {
-									size = ImageUtils.getSize(identifyJob, fileName, id + "." + imageFormat.name());
-								} catch (IOException e) {
-									Files.delete(destinationFile);
-
-									continue;
-								}
-
-								folios.add(new Folio(new Date(), securityService.getUser(), id,
-										FilenameUtils.removeExtension(fileName), format, size, null));
-
-							} catch (Exception e) {
-								logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
-							}
-					}
-
-				if (folios.isEmpty()) {
+				/*
+				 * Create normalized
+				 */
+				final String normalizedImageFormat = container.getConfiguration().getImages().getNormalized()
+						.getFormat().name();
+				try {
+					ImageUtils.createNormalized(new SystemProcess(folderFolios, convertCommand), normalizedImageFormat,
+							OCR4allUtils.getFileNames(folderFolios), folderNormalized);
+				} catch (Exception e) {
 					deleteRecursively(temporaryDirectory);
 
-					logger.info("there are no images available.");
+					journal.setStandardError("Cannot create normalized for container - " + e.getMessage());
 
-					return null;
+					return Job.State.interrupted;
 				}
 
-				Work work = new Work(securityService.getUser(), configurationService,
-						jobDescription == null || jobDescription.isBlank()
-								? "upload " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s") + " into "
-										+ container.getConfiguration().getConfiguration().getName()
-								: jobDescription.trim(),
-						new Work.Instance() {
-							/**
-							 * True if the work was canceled.
-							 */
-							private boolean isCanceled = false;
+				push(journal, 0.4F, "normalized folios");
 
-							/**
-							 * Push the information to the job.
-							 * 
-							 * @param journal  The journal.
-							 * @param progress The progress.
-							 * @param message  The message.
-							 * @since 17
-							 */
-							private void push(Journal.Step journal, float progress, String message) {
-								journal.setProgress(progress);
+				// Handles canceled job
+				if (isCanceled) {
+					deleteRecursively(temporaryDirectory);
 
-								journal.setStandardOutput(
-										(journal.isStandardOutputSet() ? journal.getStandardOutput() : "") + message
-												+ System.lineSeparator());
-							}
+					return Job.State.canceled;
+				}
 
-							/*
-							 * (non-Javadoc)
-							 * 
-							 * @see
-							 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Work.Instance#execute(de.
-							 * uniwuerzburg.zpd.ocr4all.application.core.job.Job.Journal)
-							 */
-							@Override
-							public Job.State execute(Journal.Step journal) {
-								push(journal, 0.1F,
-										"uploaded " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s")
-												+ " into " + container.getConfiguration().getConfiguration().getName()
-												+ System.lineSeparator());
+				/*
+				 * Create derivatives
+				 */
+				final ContainerConfiguration.Images.Derivatives derivatives = container.getConfiguration().getImages()
+						.getDerivatives();
+				try {
+					final ImageConfiguration.Derivatives derivativeResolution = configurationService.getImage()
+							.getDerivatives();
 
-								/*
-								 * Create normalized
-								 */
-								final String normalizedImageFormat = container.getConfiguration().getImages()
-										.getNormalized().getFormat().name();
-								try {
-									ImageUtils.createNormalized(new SystemProcess(folderFolios, convertCommand),
-											normalizedImageFormat, OCR4allUtils.getFileNames(folderFolios),
-											folderNormalized);
-								} catch (Exception e) {
-									deleteRecursively(temporaryDirectory);
+					// quality best
+					ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderFolios), folderBest,
+							derivativeResolution.getBest().getMaxSize(), derivativeResolution.getBest().getQuality());
 
-									journal.setStandardError(
-											"Cannot create normalized for container - " + e.getMessage());
+					push(journal, 0.5F, "created quality best derivatives");
 
-									return Job.State.interrupted;
-								}
+					// Handles canceled job
+					if (isCanceled) {
+						deleteRecursively(temporaryDirectory);
 
-								push(journal, 0.4F, "normalized folios");
+						return Job.State.canceled;
+					}
 
-								// Handles canceled job
-								if (isCanceled) {
-									deleteRecursively(temporaryDirectory);
+					// quality detail
+					ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderBest), folderDetail,
+							derivativeResolution.getDetail().getMaxSize(),
+							derivativeResolution.getDetail().getQuality());
 
-									return Job.State.canceled;
-								}
+					push(journal, 0.6F, "created quality detail derivatives");
 
-								/*
-								 * Create derivatives
-								 */
-								final ContainerConfiguration.Images.Derivatives derivatives = container
-										.getConfiguration().getImages().getDerivatives();
-								try {
-									final ImageConfiguration.Derivatives derivativeResolution = configurationService
-											.getImage().getDerivatives();
+					// Handles canceled job
+					if (isCanceled) {
+						deleteRecursively(temporaryDirectory);
 
-									// quality best
-									ImageUtils.createDerivatives(new SystemProcess(folderFolios, convertCommand),
-											derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderFolios),
-											folderBest, derivativeResolution.getBest().getMaxSize(),
-											derivativeResolution.getBest().getQuality());
+						return Job.State.canceled;
+					}
 
-									push(journal, 0.5F, "created quality best derivatives");
+					// quality thumbnail
+					ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
+							derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderDetail), folderThumbnail,
+							derivativeResolution.getThumbnail().getMaxSize(),
+							derivativeResolution.getThumbnail().getQuality());
 
-									// Handles canceled job
-									if (isCanceled) {
-										deleteRecursively(temporaryDirectory);
+					push(journal, 0.7F, "created quality thumbnail derivatives");
 
-										return Job.State.canceled;
-									}
+					// Handles canceled job
+					if (isCanceled) {
+						deleteRecursively(temporaryDirectory);
 
-									// quality detail
-									ImageUtils.createDerivatives(new SystemProcess(folderBest, convertCommand),
-											derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderBest),
-											folderDetail, derivativeResolution.getDetail().getMaxSize(),
-											derivativeResolution.getDetail().getQuality());
+						return Job.State.canceled;
+					}
+				} catch (Exception e) {
+					deleteRecursively(temporaryDirectory);
 
-									push(journal, 0.6F, "created quality detail derivatives");
+					journal.setStandardError("Cannot create derivatives for container - " + e.getMessage());
 
-									// Handles canceled job
-									if (isCanceled) {
-										deleteRecursively(temporaryDirectory);
+					return Job.State.interrupted;
+				}
 
-										return Job.State.canceled;
-									}
+				// set sizes
+				SystemProcess identifyThumbnailJob = new SystemProcess(folderThumbnail, identifyCommand);
+				SystemProcess identifyDetailJob = new SystemProcess(folderDetail, identifyCommand);
+				SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
 
-									// quality thumbnail
-									ImageUtils.createDerivatives(new SystemProcess(folderDetail, convertCommand),
-											derivatives.getFormat().name(), OCR4allUtils.getFileNames(folderDetail),
-											folderThumbnail, derivativeResolution.getThumbnail().getMaxSize(),
-											derivativeResolution.getThumbnail().getQuality());
+				List<String> foliosFiles = new ArrayList<>();
+				List<String> normalizedFiles = new ArrayList<>();
+				List<String> derivativeFiles = new ArrayList<>();
 
-									push(journal, 0.7F, "created quality thumbnail derivatives");
+				final String foliosDerivativesImageFormat = derivatives.getFormat().name();
+				for (Folio folio : folios) {
+					try {
+						foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
 
-									// Handles canceled job
-									if (isCanceled) {
-										deleteRecursively(temporaryDirectory);
+						normalizedFiles.add(folio.getId() + "." + normalizedImageFormat);
 
-										return Job.State.canceled;
-									}
-								} catch (Exception e) {
-									deleteRecursively(temporaryDirectory);
+						String target = folio.getId() + "." + foliosDerivativesImageFormat;
+						derivativeFiles.add(target);
 
-									journal.setStandardError(
-											"Cannot create derivatives for container - " + e.getMessage());
+						folio.setDerivatives(
+								new Folio.Derivatives(ImageUtils.getSize(identifyThumbnailJob, folio.getName(), target),
+										ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
+										ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
 
-									return Job.State.interrupted;
-								}
+						// Handles canceled job
+						if (isCanceled) {
+							deleteRecursively(temporaryDirectory);
 
-								// set sizes
-								SystemProcess identifyThumbnailJob = new SystemProcess(folderThumbnail,
-										identifyCommand);
-								SystemProcess identifyDetailJob = new SystemProcess(folderDetail, identifyCommand);
-								SystemProcess identifyBestJob = new SystemProcess(folderBest, identifyCommand);
+							return Job.State.canceled;
+						}
+					} catch (IOException e) {
+						deleteRecursively(temporaryDirectory);
 
-								List<String> foliosFiles = new ArrayList<>();
-								List<String> normalizedFiles = new ArrayList<>();
-								List<String> derivativeFiles = new ArrayList<>();
+						journal.setStandardError("Cannot restore derivatives information - " + e.getMessage() + ".");
 
-								final String foliosDerivativesImageFormat = derivatives.getFormat().name();
-								for (Folio folio : folios) {
-									try {
-										foliosFiles.add(folio.getId() + "." + folio.getFormat().name());
+						return Job.State.interrupted;
+					}
+				}
 
-										normalizedFiles.add(folio.getId() + "." + normalizedImageFormat);
+				push(journal, 0.85F, "set sizes");
 
-										String target = folio.getId() + "." + foliosDerivativesImageFormat;
-										derivativeFiles.add(target);
+				/*
+				 * Move the folios to the container
+				 */
+				try {
+					move(foliosFiles, folderFolios, container.getConfiguration().getImages().getFolios());
 
-										folio.setDerivatives(new Folio.Derivatives(
-												ImageUtils.getSize(identifyThumbnailJob, folio.getName(), target),
-												ImageUtils.getSize(identifyDetailJob, folio.getName(), target),
-												ImageUtils.getSize(identifyBestJob, folio.getName(), target)));
+					move(normalizedFiles, folderNormalized,
+							container.getConfiguration().getImages().getNormalized().getFolder());
 
-										// Handles canceled job
-										if (isCanceled) {
-											deleteRecursively(temporaryDirectory);
+					move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
 
-											return Job.State.canceled;
-										}
-									} catch (IOException e) {
-										deleteRecursively(temporaryDirectory);
+					move(derivativeFiles, folderDetail, derivatives.getDetail());
 
-										journal.setStandardError(
-												"Cannot restore derivatives information - " + e.getMessage() + ".");
+					move(derivativeFiles, folderBest, derivatives.getBest());
+				} catch (IOException e) {
+					int remain = remove(foliosFiles, container.getConfiguration().getImages().getFolios());
+					remain += remove(normalizedFiles,
+							container.getConfiguration().getImages().getNormalized().getFolder());
+					remain += remove(derivativeFiles, derivatives.getThumbnail());
+					remain += remove(derivativeFiles, derivatives.getDetail());
+					remain += remove(derivativeFiles, derivatives.getBest());
 
-										return Job.State.interrupted;
-									}
-								}
+					final String message = "Cannot move the folios to container"
+							+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - " + e.getMessage()
+							+ ".";
 
-								push(journal, 0.85F, "set sizes");
+					deleteRecursively(temporaryDirectory);
 
-								/*
-								 * Move the folios to the container
-								 */
-								try {
-									move(foliosFiles, folderFolios,
-											container.getConfiguration().getImages().getFolios());
+					journal.setStandardError(message);
 
-									move(normalizedFiles, folderNormalized,
-											container.getConfiguration().getImages().getNormalized().getFolder());
+					return Job.State.interrupted;
+				}
 
-									move(derivativeFiles, folderThumbnail, derivatives.getThumbnail());
+				// remove temporary data
+				deleteRecursively(temporaryDirectory);
 
-									move(derivativeFiles, folderDetail, derivatives.getDetail());
+				push(journal, 0.95F, "moved folios to the container");
 
-									move(derivativeFiles, folderBest, derivatives.getBest());
-								} catch (IOException e) {
-									int remain = remove(foliosFiles,
-											container.getConfiguration().getImages().getFolios());
-									remain += remove(normalizedFiles,
-											container.getConfiguration().getImages().getNormalized().getFolder());
-									remain += remove(derivativeFiles, derivatives.getThumbnail());
-									remain += remove(derivativeFiles, derivatives.getDetail());
-									remain += remove(derivativeFiles, derivatives.getBest());
+				// Persist the configuration
+				try {
+					(new PersistenceManager(container.getConfiguration().getConfiguration().getFolioFile(),
+							Type.folio_v1)).persist(true, folios);
+				} catch (Exception e) {
+					journal.setStandardError(
+							"Cannot persist container folios configuration file - " + e.getMessage() + ".");
 
-									final String message = "Cannot move the folios to container"
-											+ (remain == 0 ? "" : " (" + remain + " could not cleaned up)") + " - "
-											+ e.getMessage() + ".";
+					return Job.State.interrupted;
+				}
 
-									deleteRecursively(temporaryDirectory);
+				push(journal, 0.1F, "persisted the folios configuration");
 
-									journal.setStandardError(message);
-
-									return Job.State.interrupted;
-								}
-
-								// remove temporary data
-								deleteRecursively(temporaryDirectory);
-
-								push(journal, 0.95F, "moved folios to the container");
-
-								// Persist the configuration
-								try {
-									(new PersistenceManager(
-											container.getConfiguration().getConfiguration().getFolioFile(),
-											Type.folio_v1)).persist(true, folios);
-								} catch (Exception e) {
-									journal.setStandardError("Cannot persist container folios configuration file - "
-											+ e.getMessage() + ".");
-
-									return Job.State.interrupted;
-								}
-
-								push(journal, 0.1F, "persisted the folios configuration");
-
-								return Job.State.completed;
-							}
-
-							/*
-							 * (non-Javadoc)
-							 * 
-							 * @see
-							 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Work.Instance#cancel(de.
-							 * uniwuerzburg.zpd.ocr4all.application.core.job.Job.Journal)
-							 */
-							@Override
-							public void cancel(Journal.Step journal) {
-								isCanceled = true;
-							}
-						});
-
-				// schedule the job
-				schedulerService.schedule(work);
-
-				return work;
+				return Job.State.completed;
 			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * de.uniwuerzburg.zpd.ocr4all.application.core.job.Work.Instance#cancel(de.
+			 * uniwuerzburg.zpd.ocr4all.application.core.job.Job.Journal)
+			 */
+			@Override
+			public void cancel(Journal.Step journal) {
+				isCanceled = true;
+			}
+		});
+
+		// schedule the job
+		schedulerService.schedule(work);
+
+		return work;
+	}
+
+	/**
+	 * Upload the folios.
+	 * 
+	 * @param container      The container.
+	 * @param jobDescription The job description.
+	 * @param files          The folios.
+	 * @return The job storing the folios. Null if container is unknown or the write
+	 *         right is not fulfilled.
+	 * @throws IOException Throws on storage troubles.
+	 * @since 1.8
+	 */
+	public Work upload(Container container, String jobDescription, MultipartFile[] files) throws IOException {
+		if (container != null && files != null && container.getRight().isWriteFulfilled()) {
+			// The system commands
+			final String identifyCommand = configurationService.getSystemCommand().getIdentify();
+			if (!configurationService.getSystemCommand().isIdentifyAvailable())
+				throw new IOException("the system identify command " + identifyCommand + " is not available.");
+
+			// create tmp directories
+			Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
+
+			Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
+
+			try {
+				Files.createDirectory(folderFolios);
+			} catch (IOException e) {
+				deleteRecursively(temporaryDirectory);
+
+				throw e;
+			}
+
+			SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
+
+			// store the files
+			List<Folio> folios = new ArrayList<>();
+			for (MultipartFile file : files)
+				if (file != null && !file.isEmpty()) {
+					String fileName = file.getOriginalFilename();
+
+					final ImageFormat imageFormat = ImageFormat.getImageFormatFilename(fileName);
+
+					if (imageFormat != null)
+						try {
+							final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
+									.getPersistence();
+
+							if (format == null) {
+								logger.warn("The folio does not supports the image type " + imageFormat.name() + ".");
+
+								continue;
+							}
+
+							final String id = OCR4allUtils.getUUID();
+							final Path destinationFile = folderFolios.resolve(Paths.get(id + "." + imageFormat.name()));
+
+							try (InputStream inputStream = file.getInputStream()) {
+								Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+							} catch (IOException e) {
+								logger.warn("Failed to store image '" + fileName + "' with uuid " + id + " - "
+										+ e.getMessage());
+
+								continue;
+							}
+
+							final Folio.Size size;
+							try {
+								size = ImageUtils.getSize(identifyJob, fileName, id + "." + imageFormat.name());
+							} catch (IOException e) {
+								Files.delete(destinationFile);
+
+								continue;
+							}
+
+							folios.add(new Folio(new Date(), securityService.getUser(), id,
+									FilenameUtils.removeExtension(fileName), format, size, null));
+
+						} catch (Exception e) {
+							logger.warn("Troubles to store image '" + fileName + "' - " + e.getMessage());
+						}
+				}
+
+			return scheduleImportJob(
+					jobDescription == null || jobDescription.isBlank()
+							? "upload " + folios.size() + " folio" + (folios.size() == 1 ? "" : "s") + " into "
+									+ container.getConfiguration().getConfiguration().getName()
+							: jobDescription.trim(),
+					container, temporaryDirectory, folderFolios, () -> folios);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Import exchange folios.
+	 * 
+	 * @param container      The container.
+	 * @param jobDescription The job description.
+	 * @param fileSet        The exchange file set.
+	 * @return The job storing the folios. Null if container is unknown or the write
+	 *         right is not fulfilled or no images are available.
+	 * @throws IOException Throws on storage troubles.
+	 * @since 1.8
+	 */
+	public Work exchangeImport(Container container, String jobDescription, FileSet fileSet) throws IOException {
+		if (container != null && fileSet != null && fileSet.getDatasets() != null
+				&& container.getRight().isWriteFulfilled()) {
+			// The system commands
+			final String identifyCommand = configurationService.getSystemCommand().getIdentify();
+			if (!configurationService.getSystemCommand().isIdentifyAvailable())
+				throw new IOException("the system identify command " + identifyCommand + " is not available.");
+
+			// create tmp directories
+			Path temporaryDirectory = configurationService.getTemporary().getTemporaryDirectory();
+
+			Path folderFolios = Paths.get(temporaryDirectory.toString(), "folios");
+
+			try {
+				Files.createDirectory(folderFolios);
+			} catch (IOException e) {
+				deleteRecursively(temporaryDirectory);
+
+				throw e;
+			}
+
+			ScheduleImportJobCallback scheduleImportJobCallback = new ScheduleImportJobCallback() {
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * de.uniwuerzburg.zpd.ocr4all.application.core.repository.ContainerService.
+				 * ScheduleImportJobCallback#getFolios()
+				 */
+				@Override
+				public List<Folio> getFolios() {
+					SystemProcess identifyJob = new SystemProcess(folderFolios, identifyCommand);
+
+					// store the files
+					List<Folio> folios = new ArrayList<>();
+
+					for (FileSet.Dataset dataset : fileSet.getDatasets())
+						if (dataset.getId() != null && dataset.getPaths() != null) {
+							Partition partition = partitionService.getPartition(dataset.getId());
+
+							if (partition != null && partition.getRight().isReadFulfilled()) {
+								final Path data = partition.getConfiguration().getData();
+
+								for (String path : dataset.getPaths())
+									if (path != null) {
+										Path file = data.resolve(path).normalize();
+
+										if (file.startsWith(data) && Files.isRegularFile(file)) {
+											final String fileName = file.getFileName().toString();
+											final ImageFormat imageFormat = ImageFormat
+													.getImageFormatFilename(fileName);
+
+											if (imageFormat != null)
+												try {
+													final de.uniwuerzburg.zpd.ocr4all.application.persistence.util.ImageFormat format = imageFormat
+															.getPersistence();
+
+													if (format == null) {
+														logger.warn("The folio does not supports the image type "
+																+ imageFormat.name() + ".");
+
+														continue;
+													}
+
+													final String id = OCR4allUtils.getUUID();
+													final Path destinationFile = folderFolios
+															.resolve(Paths.get(id + "." + imageFormat.name()));
+
+													try {
+														Files.copy(file, destinationFile,
+																StandardCopyOption.REPLACE_EXISTING);
+													} catch (IOException e) {
+														logger.warn("Failed to import image '" + fileName
+																+ "' with uuid " + id + " - " + e.getMessage());
+
+														continue;
+													}
+
+													final Folio.Size size;
+													try {
+														size = ImageUtils.getSize(identifyJob, fileName,
+																id + "." + imageFormat.name());
+													} catch (IOException e) {
+														Files.delete(destinationFile);
+
+														continue;
+													}
+
+													folios.add(new Folio(new Date(), securityService.getUser(), id,
+															FilenameUtils.removeExtension(fileName), format, size,
+															null));
+
+												} catch (Exception e) {
+													logger.warn("Troubles to import image '" + fileName + "' - "
+															+ e.getMessage());
+												}
+
+										}
+									}
+							}
+						}
+
+					return folios;
+				}
+			};
+
+			return scheduleImportJob(
+					jobDescription == null || jobDescription.isBlank()
+							? "import exchange files into " + container.getConfiguration().getConfiguration().getName()
+							: jobDescription.trim(),
+					container, temporaryDirectory, folderFolios, scheduleImportJobCallback);
 		}
 
 		return null;
@@ -953,5 +1129,94 @@ public class ContainerService extends CoreService {
 			return configuration;
 		}
 
+	}
+
+	/**
+	 * FileSet is an immutable class that defines file sets.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class FileSet {
+		/**
+		 * The data sets.
+		 */
+		private final List<Dataset> datasets;
+
+		/**
+		 * Creates a file set.
+		 * 
+		 * @param datasets The data sets.
+		 * @since 17
+		 */
+		public FileSet(List<Dataset> datasets) {
+			super();
+
+			this.datasets = datasets;
+		}
+
+		/**
+		 * Returns the data sets.
+		 *
+		 * @return The data sets.
+		 * @since 17
+		 */
+		public List<Dataset> getDatasets() {
+			return datasets;
+		}
+
+		/**
+		 * Defines data sets.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class Dataset {
+			/**
+			 * The id.
+			 */
+			private final String id;
+
+			/**
+			 * The paths.
+			 */
+			private final List<String> paths;
+
+			/**
+			 * Creates a dataset.
+			 * 
+			 * @param id    The id.
+			 * @param paths The paths.
+			 * @since 17
+			 */
+			public Dataset(String id, List<String> paths) {
+				super();
+				this.id = id;
+				this.paths = paths;
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Returns the paths.
+			 *
+			 * @return The paths.
+			 * @since 17
+			 */
+			public List<String> getPaths() {
+				return paths;
+			}
+
+		}
 	}
 }

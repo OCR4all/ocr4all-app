@@ -60,7 +60,8 @@ public class PartitionApiController extends CoreApiController {
 	/**
 	 * The context path.
 	 */
-	public static final String contextPath = apiContextPathVersion_1_0 + "/exchange" + partitionRequestMapping;
+	public static final String contextPath = apiContextPathVersion_1_0 + exchangeRequestMapping
+			+ partitionRequestMapping;
 
 	/**
 	 * The partition service.

@@ -217,9 +217,9 @@ public class Workflow extends Process {
 					try {
 						snapshot = getSandbox().createSnapshot(provider.getSnapshotType(),
 								parentSnapshot.getConfiguration().getTrack(),
-								"workflow  " + metadata.getLabel() + " (" + (getJournal().getIndex() + 1) + "/"
-										+ getJournal().getSize() + ")",
-								"workflow ID " + metadata.getId() + " / root snaptshot "
+								provider.getServiceProvider().getName(null),
+								"workflow '" + metadata.getLabel() + "' (" + (getJournal().getIndex() + 1) + "/"
+										+ getJournal().getSize() + ") / ID " + metadata.getId() + " / root snaptshot "
 										+ rootSnapshot.getConfiguration().getTrack()
 										+ (metadata.getDescription() == null ? "" : " / " + metadata.getDescription()),
 								provider.getProcessor(), configurationService.getInstance());

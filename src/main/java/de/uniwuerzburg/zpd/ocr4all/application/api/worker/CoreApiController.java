@@ -280,6 +280,11 @@ public class CoreApiController {
 	public static final String collectionRequestMapping = "/collection";
 
 	/**
+	 * The exchange request mapping.
+	 */
+	public static final String exchangeRequestMapping = "/exchange";
+
+	/**
 	 * The partition request mapping.
 	 */
 	public static final String partitionRequestMapping = "/partition";

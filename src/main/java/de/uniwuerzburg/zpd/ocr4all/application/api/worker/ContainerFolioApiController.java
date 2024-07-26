@@ -9,6 +9,7 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +56,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines container folio repository controllers for the api.
@@ -149,19 +152,16 @@ public class ContainerFolioApiController extends CoreApiController {
 	}
 
 	/**
-	 * Upload the folios. The transaction timeout is set to 900 seconds, this means,
-	 * 15 minutes.
+	 * Upload the folios.
 	 * 
 	 * @param containerId The container id. This is the folder name.
 	 * @param job         The job description.
 	 * @param files       The files to upload in a multipart request.
-	 * @param response    The HTTP-specific functionality in sending a response to
-	 *                    the client.
 	 * @return The job in the response body.
 	 * @since 1.8
 	 */
 	@Operation(summary = "upload folios")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job With Folios", content = {
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job Upload Folios", content = {
 			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -170,11 +170,49 @@ public class ContainerFolioApiController extends CoreApiController {
 	public ResponseEntity<JobResponse> upload(
 			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
 			@Parameter(description = "the job description") @RequestParam(required = false) String job,
-			@RequestParam MultipartFile[] files, HttpServletResponse response) {
+			@RequestParam MultipartFile[] files) {
 		ContainerService.Container container = authorizeWrite(containerId);
 
 		try {
-			final Work work = service.store(container, job, files);
+			final Work work = service.upload(container, job, files);
+
+			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new JobResponse(work));
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Import exchange folios.
+	 * 
+	 * @param containerId The container id. This is the folder name.
+	 * @param job         The job description.
+	 * @param request     The file set request.
+	 * @return The job in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "import exchange folios")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job Import Exchange Folios", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(exchangeRequestMapping + importRequestMapping + containerPathVariable)
+	public ResponseEntity<JobResponse> importExchange(
+			@Parameter(description = "the container id - this is the folder name") @PathVariable String containerId,
+			@Parameter(description = "the job description") @RequestParam(required = false) String job,
+			@RequestBody @Valid FileSetRequest request) {
+		ContainerService.Container container = authorizeWrite(containerId);
+
+		try {
+			List<ContainerService.FileSet.Dataset> datasets = new ArrayList<>();
+			for (FileSetRequest.Dataset dataset : request.getDatasets())
+				datasets.add(new ContainerService.FileSet.Dataset(dataset.getId(), dataset.getPaths()));
+
+			final Work work = service.exchangeImport(container, job, new ContainerService.FileSet(datasets));
 
 			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
 					: ResponseEntity.ok().body(new JobResponse(work));
@@ -628,6 +666,108 @@ public class ContainerFolioApiController extends CoreApiController {
 		ContainerService.Container container = authorizeRead(containerId);
 
 		getDerivative(container, container.getConfiguration().getImages().getDerivatives().getBest(), id, response);
+	}
+
+	/**
+	 * Defines file set requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class FileSetRequest implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The data sets.
+		 */
+		@NotNull
+		private List<Dataset> datasets;
+
+		/**
+		 * Returns the data sets.
+		 *
+		 * @return The data sets.
+		 * @since 17
+		 */
+		public List<Dataset> getDatasets() {
+			return datasets;
+		}
+
+		/**
+		 * Set the data sets.
+		 *
+		 * @param datasets The data sets to set.
+		 * @since 17
+		 */
+		public void setDatasets(List<Dataset> datasets) {
+			this.datasets = datasets;
+		}
+
+		/**
+		 * Defines data sets.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class Dataset {
+			/**
+			 * The id.
+			 */
+			@NotBlank
+			private String id;
+
+			/**
+			 * The paths.
+			 */
+			@NotNull
+			private List<String> paths;
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the paths.
+			 *
+			 * @return The paths.
+			 * @since 17
+			 */
+			public List<String> getPaths() {
+				return paths;
+			}
+
+			/**
+			 * Set the paths.
+			 *
+			 * @param paths The paths to set.
+			 * @since 17
+			 */
+			public void setPaths(List<String> paths) {
+				this.paths = paths;
+			}
+
+		}
 	}
 
 }
