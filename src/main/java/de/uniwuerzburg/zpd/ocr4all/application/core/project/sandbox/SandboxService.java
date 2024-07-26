@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.project.SnapshotConfiguration;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 
 /**
@@ -143,4 +144,103 @@ public class SandboxService extends CoreService {
 						: null;
 	}
 
+	/**
+	 * Return the snapshot tree.
+	 * 
+	 * @param project The project.
+	 * @param sandbox The sandbox.
+	 * @return The snapshot tree if authorized. Otherwise returns null. If no
+	 *         snapshots are available, the root snapshot and its children are null.
+	 * @since 17
+	 */
+	public SnapshotTree getSnapshotTree(Project project, Sandbox sandbox) {
+		sandbox = authorize(project, sandbox);
+
+		return sandbox == null ? null : new SnapshotTree(sandbox);
+	}
+
+	/**
+	 * SnapshotTree is an immutable class that defines the snapshot trees.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public static class SnapshotTree {
+		/**
+		 * The snapshot.
+		 */
+		private final Snapshot snapshot;
+
+		/**
+		 * The children.
+		 */
+		private final List<SnapshotTree> children;
+
+		/**
+		 * Creates a snapshot tree.
+		 * 
+		 * @param sandbox The sandbox.
+		 * @since 17
+		 */
+		SnapshotTree(Sandbox sandbox) {
+			super();
+
+			snapshot = sandbox.getSnapshot();
+
+			children = snapshot == null ? null : build(sandbox, snapshot);
+		}
+
+		/**
+		 * Creates a snapshot tree.
+		 * 
+		 * @param snapshot The snapshot.
+		 * @param children The children.
+		 * @since 17
+		 */
+		private SnapshotTree(Sandbox sandbox, Snapshot snapshot) {
+			super();
+
+			this.snapshot = snapshot;
+			this.children = build(sandbox, snapshot);
+		}
+
+		/**
+		 * Build the snapshot tree.
+		 * 
+		 * @param sandbox  The sandbox.
+		 * @param snapshot The snapshot to return the children.
+		 * @return The snapshot children.
+		 * @since 17
+		 */
+		private List<SnapshotTree> build(Sandbox sandbox, Snapshot snapshot) {
+			List<SnapshotTree> tree = new ArrayList<>();
+
+			for (SnapshotConfiguration derived : snapshot.getConfiguration().getDerived())
+				tree.add(new SnapshotTree(sandbox, new Snapshot(derived, sandbox)));
+
+			return tree;
+		}
+
+		/**
+		 * Returns the snapshot.
+		 *
+		 * @return The snapshot.
+		 * @since 17
+		 */
+		public Snapshot getSnapshot() {
+			return snapshot;
+		}
+
+		/**
+		 * Returns the children.
+		 *
+		 * @return The children.
+		 * @since 17
+		 */
+		public List<SnapshotTree> getChildren() {
+			return children;
+		}
+
+	}
 }

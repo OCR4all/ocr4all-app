@@ -8,6 +8,7 @@
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.request.BasicRequest;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.HistoryResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.MetsResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SandboxResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
@@ -156,6 +158,39 @@ public class SandboxApiController extends CoreApiController {
 				sandboxes.add(new SandboxResponse(sandbox));
 
 			return ResponseEntity.ok().body(sandboxes);
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the snapshot tree in the response body.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param id        The sandbox id. This is the folder name.
+	 * @return The snapshot tree in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the snapshot tree in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Snapshot Tree", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = SnapshotTreeResponse.class)) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(treeRequestMapping + projectPathVariable)
+	public ResponseEntity<SnapshotTreeResponse> snapshotTree(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @RequestParam String id) {
+		Authorization authorization = authorizationFactory.authorize(projectId, id);
+		try {
+			SandboxService.SnapshotTree tree = service.getSnapshotTree(authorization.project, authorization.sandbox);
+
+			return tree == null ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+					: ResponseEntity.ok().body(new SnapshotTreeResponse(tree));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -483,4 +518,99 @@ public class SandboxApiController extends CoreApiController {
 
 	}
 
+	/**
+	 * Defines snapshot tree responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public class SnapshotTreeResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The snapshot.
+		 */
+		private SnapshotResponse snapshot;
+
+		/**
+		 * The children.
+		 */
+		private List<SnapshotTreeResponse> children;
+
+		/**
+		 * Default constructor for a snapshot tree response for the api.
+		 * 
+		 * @since 17
+		 */
+		public SnapshotTreeResponse() {
+			super();
+
+		}
+
+		/**
+		 * Creates a snapshot tree response for the api.
+		 * 
+		 * @param tree The snapshot tree.
+		 * @since 17
+		 */
+		public SnapshotTreeResponse(SandboxService.SnapshotTree tree) {
+			super();
+
+			if (tree.getSnapshot() == null) {
+				this.snapshot = null;
+				this.children = null;
+			} else {
+				this.snapshot = new SnapshotResponse(tree.getSnapshot());
+
+				this.children = new ArrayList<>();
+				for (SandboxService.SnapshotTree child : tree.getChildren())
+					this.children.add(new SnapshotTreeResponse(child));
+			}
+		}
+
+		/**
+		 * Returns the snapshot.
+		 *
+		 * @return The snapshot.
+		 * @since 17
+		 */
+		public SnapshotResponse getSnapshot() {
+			return snapshot;
+		}
+
+		/**
+		 * Set the snapshot.
+		 *
+		 * @param snapshot The snapshot to set.
+		 * @since 17
+		 */
+		public void setSnapshot(SnapshotResponse snapshot) {
+			this.snapshot = snapshot;
+		}
+
+		/**
+		 * Returns the children.
+		 *
+		 * @return The children.
+		 * @since 17
+		 */
+		public List<SnapshotTreeResponse> getChildren() {
+			return children;
+		}
+
+		/**
+		 * Set the children.
+		 *
+		 * @param children The children to set.
+		 * @since 17
+		 */
+		public void setChildren(List<SnapshotTreeResponse> children) {
+			this.children = children;
+		}
+
+	}
 }
