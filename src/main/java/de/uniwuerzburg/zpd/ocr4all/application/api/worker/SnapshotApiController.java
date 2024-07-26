@@ -802,6 +802,10 @@ public class SnapshotApiController extends CoreApiController {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
 					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
 
+			// TODO: Create methode download
+			// TODO: normalize file names if desired -> String name = s.replaceAll("\\W+", "_");
+			// TODO: collect all images in path if desired (meths)
+			
 			OCR4allUtils.zip(sandbox, true, response.getOutputStream(), null,
 					getZipMetadataFilenameMappingTSV(authorization.project));
 		} catch (IllegalArgumentException ex) {
