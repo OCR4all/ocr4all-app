@@ -7,6 +7,7 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.worker;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -21,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -43,6 +46,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -802,12 +806,177 @@ public class SnapshotApiController extends CoreApiController {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
 					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
 
-			// TODO: Create methode download
-			// TODO: normalize file names if desired -> String name = s.replaceAll("\\W+", "_");
-			// TODO: collect all images in path if desired (meths)
-			
 			OCR4allUtils.zip(sandbox, true, response.getOutputStream(), null,
 					getZipMetadataFilenameMappingTSV(authorization.project));
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Maps the file name using the given mapping.
+	 * 
+	 * @param mappings The mapping.
+	 * @param filename The file name.
+	 * @return The mapped file name.
+	 * @since 17
+	 */
+	private String mapFilename(Hashtable<String, String> mappings, String filename) {
+
+		// TODO: remove ocr4all prefix before split!
+
+		String[] split = filename.split("\\.", 2);
+		if (split.length == 2) {
+			String map = mappings.get(split[0]);
+
+			if (map != null)
+				return map + "." + split[1];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Collect the images in the snapshot track.
+	 * 
+	 * @param project The project.
+	 * @param sandbox The sandbox.
+	 * @param track   The track.
+	 * @return The images in the snapshot track.
+	 * @since 17
+	 */
+	private List<Path> collectImages(Project project, Sandbox sandbox, List<Integer> track) {
+		// TODO: require parameter with imported files in snapshot
+		final List<Path> files = new ArrayList<>();
+
+		final Path metsPath = sandbox.getConfiguration().getSnapshots().getFolder()
+				.resolve(project.getConfiguration().getSandboxesConfiguration().getMetsFileName());
+		final MetsParser.Root root;
+
+		if (Files.exists(metsPath))
+			try {
+				root = (new MetsParser()).deserialise(metsPath.toFile());
+			} catch (Exception e) {
+				logger.warn("could not parse the mets file - " + e.getMessage());
+
+				return files;
+			}
+		else {
+			logger.warn("the mets file is not available.");
+
+			return files;
+		}
+
+		MetsUtils.FileGroup metsFileGroup = MetsUtils
+				.getFileGroup(project.getConfiguration().getSandboxesConfiguration().getMetsGroup());
+
+		// search for snapshot file group
+		String snapshotFileGroup = metsFileGroup.getFileGroup(track);
+
+		MetsParser.Root.FileGroup rootFileGroup = null;
+		for (MetsParser.Root.FileGroup fileGroup : root.getFileGroups())
+			if (snapshotFileGroup.equals(fileGroup.getId())) {
+				rootFileGroup = fileGroup;
+
+				break;
+			}
+
+		if (rootFileGroup == null) {
+			logger.warn("the required mets input file group '" + snapshotFileGroup + "' is not available.");
+
+			return files;
+		}
+
+		// TODO: collect all previous images not imported in track (see LAREXLauncher)
+
+		return files;
+	}
+
+	/**
+	 * Downloads the files in the sandbox of the leaf snapshot in the track of the
+	 * request in a zip file. Normalizes and collect the images if desired.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot download request.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "downloads the files in the sandbox of the leaf snapshot in the track of the request in a zip file - normalizes and collect the images if desired")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Download Leaf Track Snapshot"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(downloadRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void download(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotDownloadRequest request, HttpServletResponse response) throws IOException {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			Path sandbox = authorization.sandbox.getSnapshot(request.getTrack()).getConfiguration().getSandbox()
+					.getFolder();
+
+			// Get the normalized and unique file names
+			Set<String> filenames = new HashSet<String>();
+			Hashtable<String, String> mappings = new Hashtable<>();
+			for (Folio folio : authorization.project.getFolios()) {
+				String filename = request.isNormalizeFilenames() ? folio.getName().replaceAll("\\W+", "_")
+						: folio.getName();
+
+				// rename the file name if it is not unique
+				if (!filenames.add(filename.toLowerCase())) {
+					int index = 0;
+					String unique;
+
+					do {
+						unique = filename + "_" + ++index;
+					} while (!filenames.add(unique.toLowerCase()));
+
+					filename = unique;
+				}
+
+				mappings.put(folio.getId(), filename);
+			}
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
+
+			try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());) {
+				for (File file : sandbox.toFile().listFiles()) {
+					zipOutputStream.putNextEntry(new ZipEntry(mapFilename(mappings, file.getName())));
+
+					if (Files.isReadable(file.toPath()))
+						Files.copy(file.toPath(), zipOutputStream);
+
+					zipOutputStream.closeEntry();
+				}
+
+				// collect the images if desired
+				if (request.isCollectImages())
+					for (Path file : collectImages(authorization.project, authorization.sandbox, request.getTrack())) {
+						zipOutputStream
+								.putNextEntry(new ZipEntry(mapFilename(mappings, file.getFileName().toString())));
+
+						if (Files.isReadable(file))
+							Files.copy(file, zipOutputStream);
+
+						zipOutputStream.closeEntry();
+					}
+
+				response.getOutputStream().flush();
+			}
 		} catch (IllegalArgumentException ex) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		} catch (ResponseStatusException ex) {
@@ -1158,4 +1327,72 @@ public class SnapshotApiController extends CoreApiController {
 
 	}
 
+	/**
+	 * Defines snapshot download requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public class SnapshotDownloadRequest extends SnapshotRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * True if normalize file names.
+		 */
+		@JsonProperty("normalize-filenames")
+		private boolean isNormalizeFilenames;
+
+		/**
+		 * True if collect images.
+		 */
+		@JsonProperty("collect-images")
+		private boolean isCollectImages;
+
+		/**
+		 * Returns true if normalize file names.
+		 *
+		 * @return True if normalize file names.
+		 * @since 17
+		 */
+		@JsonGetter("normalize-filenames")
+		public boolean isNormalizeFilenames() {
+			return isNormalizeFilenames;
+		}
+
+		/**
+		 * Set to true if normalize file names.
+		 *
+		 * @param isNormalizeFilenames The normalize flag to set.
+		 * @since 17
+		 */
+		public void setNormalizeFilenames(boolean isNormalizeFilenames) {
+			this.isNormalizeFilenames = isNormalizeFilenames;
+		}
+
+		/**
+		 * Returns true if collect images.
+		 *
+		 * @return True if collect images.
+		 * @since 17
+		 */
+		@JsonGetter("collect-images")
+		public boolean isCollectImages() {
+			return isCollectImages;
+		}
+
+		/**
+		 * Set to true if collect images.
+		 *
+		 * @param isCollectImages The collect flag to set.
+		 * @since 17
+		 */
+		public void setCollectImages(boolean isCollectImages) {
+			this.isCollectImages = isCollectImages;
+		}
+
+	}
 }
