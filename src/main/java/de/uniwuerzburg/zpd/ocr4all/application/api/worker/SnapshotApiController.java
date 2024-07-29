@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -43,6 +45,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.SnapshotRespo
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
+import de.uniwuerzburg.zpd.ocr4all.application.core.project.Project;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.ProjectService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Sandbox;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.SandboxService;
@@ -816,6 +819,300 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the file descriptions in the snapshot track.
+	 * 
+	 * @param project The project.
+	 * @param sandbox The sandbox.
+	 * @param track   The track.
+	 * @return The file descriptions in the snapshot track.
+	 * @since 17
+	 */
+	private List<FileDescription> getFileDescriptions(Project project, Sandbox sandbox, List<Integer> track) {
+		final List<FileDescription> fileDescriptions = new ArrayList<>();
+
+		final Path workspaceSnapshots = sandbox.getConfiguration().getSnapshots().getFolder();
+		final Path metsPath = workspaceSnapshots
+				.resolve(project.getConfiguration().getSandboxesConfiguration().getMetsFileName());
+		final MetsParser.Root root;
+
+		if (Files.exists(metsPath))
+			try {
+				root = (new MetsParser()).deserialise(metsPath.toFile());
+			} catch (Exception e) {
+				logger.warn("could not parse the mets file '" + metsPath.toString() + "' - " + e.getMessage());
+
+				return fileDescriptions;
+			}
+		else {
+			logger.warn("the mets file '" + metsPath.toString() + "' is not available.");
+
+			return fileDescriptions;
+		}
+
+		// search for snapshot file group
+		MetsUtils.FileGroup metsFileGroup = MetsUtils
+				.getFileGroup(project.getConfiguration().getSandboxesConfiguration().getMetsGroup());
+		String snapshotFileGroup = metsFileGroup.getFileGroup(track);
+
+		MetsParser.Root.FileGroup fileGroup = null;
+		for (MetsParser.Root.FileGroup group : root.getFileGroups())
+			if (snapshotFileGroup.equals(group.getId())) {
+				fileGroup = group;
+
+				break;
+			}
+
+		if (fileGroup == null) {
+			logger.warn("the required mets file group '" + snapshotFileGroup + "' of mets file '" + metsPath.toString()
+					+ "' is not available.");
+
+			return fileDescriptions;
+		}
+
+		// mets file ids to folios ids
+		final Hashtable<String, String> fileFolioMappings = new Hashtable<>();
+		final MetsUtils.Page metsPageUtils = MetsUtils.getPage(sandbox.getConfiguration().getMetsGroup());
+		for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap().getPhysicalSequence()
+				.getPages())
+			try {
+				final String folioId = metsPageUtils.getGroupId(page.getId());
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+					fileFolioMappings.put(fieldId.getId(), folioId);
+			} catch (Exception e) {
+				// Ignore malformed mets page
+			}
+
+		// load the track
+		for (MetsParser.Root.FileGroup.File file : fileGroup.getFiles()) {
+			final String id = fileFolioMappings.get(file.getId());
+
+			if (id == null) {
+				logger.warn("unknown folio id mapping for file id '" + file.getId() + "' of mets file '"
+						+ metsPath.toString() + "'.");
+
+				continue;
+			}
+
+			final Path path = workspaceSnapshots.resolve(file.getLocation().getPath());
+
+			// Build file suffix
+			final String target = path.getFileName().toString();
+			int index = target.indexOf(id);
+
+			fileDescriptions
+					.add(new FileDescription(id, index < 0 ? null : target.substring(index + id.length()), path));
+		}
+
+		return fileDescriptions;
+	}
+
+	/**
+	 * Exports the files in the sandbox of the leaf snapshot in the track of the
+	 * request in a zip file. Normalizes and returns the source images if desired.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot export request.
+	 * @param response  The HTTP-specific functionality in sending a response to the
+	 *                  client.
+	 * @throws IOException Signals that an I/O exception of some sort has occurred.
+	 * @since 1.8
+	 */
+	@Operation(summary = "exports the files in the sandbox of the leaf snapshot in the track of the request in a zip file - normalizes and returns the source images if desired")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Exports Leaf Track Snapshot"),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(exportRequestMapping + projectPathVariable + sandboxPathVariable)
+	public void export(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotExportRequest request, HttpServletResponse response) throws IOException {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+		try {
+			// Get the normalized and unique file names
+			Set<String> filenames = new HashSet<String>();
+			Hashtable<String, String> mappings = new Hashtable<>();
+			Hashtable<String, Folio> folios = new Hashtable<>();
+			for (Folio folio : authorization.project.getFolios()) {
+				String filename = request.isNormalizeFilenames() ? folio.getName().replaceAll("\\W+", "_")
+						: folio.getName();
+
+				// rename the file name if it is not unique
+				if (!filenames.add(filename.toLowerCase())) {
+					int index = 0;
+					String unique;
+
+					do {
+						unique = filename + "_" + ++index;
+					} while (!filenames.add(unique.toLowerCase()));
+
+					filename = unique;
+				}
+
+				mappings.put(folio.getId(), filename);
+				folios.put(folio.getId(), folio);
+			}
+
+			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+					+ authorization.project.getName() + "_" + authorization.sandbox.getName() + "_snapshot.zip\"");
+
+			try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());) {
+				final List<FileDescription> fileDescriptions = getFileDescriptions(authorization.project,
+						authorization.sandbox, request.getTrack());
+
+				final Set<String> zipFilenames = new HashSet<String>();
+				for (FileDescription fileDescription : fileDescriptions)
+					if (Files.isReadable(fileDescription.getPath())) {
+						String filename = mappings.get(fileDescription.getId());
+						if (filename == null)
+							filename = fileDescription.getId();
+
+						String unique = filename + (fileDescription.isSuffixSet() ? fileDescription.getSuffix() : "");
+						if (!zipFilenames.add(unique)) {
+							int index = 0;
+
+							do {
+								unique = filename + "_" + ++index;
+							} while (!filenames.add(unique.toLowerCase()));
+
+							filename = unique;
+						}
+
+						zipOutputStream.putNextEntry(new ZipEntry(
+								filename + (fileDescription.isSuffixSet() ? fileDescription.getSuffix() : "")));
+
+						Files.copy(fileDescription.getPath(), zipOutputStream);
+
+						zipOutputStream.closeEntry();
+					}
+
+				// adds the source images
+				if (request.isSourceImages()) {
+					final String sourceFolder = "source/";
+					zipOutputStream.putNextEntry(new ZipEntry(sourceFolder));
+					zipOutputStream.closeEntry();
+
+					final Path foliosPath = authorization.project.getConfiguration().getImages().getFolios();
+					Set<String> folioIds = new HashSet<>();
+					for (FileDescription fileDescription : fileDescriptions)
+						if (folioIds.add(fileDescription.getId()) && folios.containsKey(fileDescription.getId())) {
+							final String suffix = folios.get(fileDescription.getId()).getFormat().name();
+							final Path folio = foliosPath.resolve(fileDescription.getId() + "." + suffix);
+							if (Files.isReadable(folio)) {
+								String filename = mappings.get(fileDescription.getId());
+								if (filename == null)
+									filename = fileDescription.getId();
+
+								zipOutputStream.putNextEntry(new ZipEntry(sourceFolder + filename + "." + suffix));
+
+								Files.copy(folio, zipOutputStream);
+
+								zipOutputStream.closeEntry();
+							}
+						}
+				}
+
+				response.getOutputStream().flush();
+			}
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * FileDescription is an immutable class that defines file descriptions.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	private static class FileDescription {
+		/**
+		 * The id.
+		 */
+		private final String id;
+
+		/**
+		 * The suffix.
+		 */
+		private final String suffix;
+
+		/**
+		 * The path.
+		 */
+		private final Path path;
+
+		/**
+		 * Creates a file description.
+		 * 
+		 * @param id     The id.
+		 * @param suffix The suffix.
+		 * @param path   The path.
+		 * @since 17
+		 */
+		public FileDescription(String id, String suffix, Path path) {
+			super();
+
+			this.id = id;
+			this.suffix = suffix == null || suffix.isBlank() ? null : suffix.trim();
+			this.path = path;
+
+			System.out.println("HB: filename " + this.path.getFileName().toString() + " -> suffix " + this.suffix);
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 17
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Returns true if the suffix is set.
+		 *
+		 * @return True if the suffix is set.
+		 * @since 17
+		 */
+		public boolean isSuffixSet() {
+			return suffix != null;
+		}
+
+		/**
+		 * Returns the suffix.
+		 *
+		 * @return The suffix.
+		 * @since 17
+		 */
+		public String getSuffix() {
+			return suffix;
+		}
+
+		/**
+		 * Returns the path.
+		 *
+		 * @return The path.
+		 * @since 17
+		 */
+		public Path getPath() {
+			return path;
+		}
+
+	}
+
+	/**
 	 * Defines snapshot configuration requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -1154,4 +1451,72 @@ public class SnapshotApiController extends CoreApiController {
 
 	}
 
+	/**
+	 * Defines snapshot export requests for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class SnapshotExportRequest extends SnapshotRequest {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * True if normalize file names.
+		 */
+		@JsonProperty("normalize-filenames")
+		private boolean isNormalizeFilenames;
+
+		/**
+		 * True if download source images.
+		 */
+		@JsonProperty("source-images")
+		private boolean isSourceImages;
+
+		/**
+		 * Returns true if normalize file names.
+		 *
+		 * @return True if normalize file names.
+		 * @since 17
+		 */
+		@JsonGetter("normalize-filenames")
+		public boolean isNormalizeFilenames() {
+			return isNormalizeFilenames;
+		}
+
+		/**
+		 * Set to true if normalize file names.
+		 *
+		 * @param isNormalizeFilenames The normalize flag to set.
+		 * @since 17
+		 */
+		public void setNormalizeFilenames(boolean isNormalizeFilenames) {
+			this.isNormalizeFilenames = isNormalizeFilenames;
+		}
+
+		/**
+		 * Returns true if download source images.
+		 *
+		 * @return True if download source images.
+		 * @since 17
+		 */
+		@JsonGetter("source-images")
+		public boolean isSourceImages() {
+			return isSourceImages;
+		}
+
+		/**
+		 * Set to true if download source images.
+		 *
+		 * @param isSourceImages The download flag to set.
+		 * @since 17
+		 */
+		public void setSourceImages(boolean isSourceImages) {
+			this.isSourceImages = isSourceImages;
+		}
+
+	}
 }

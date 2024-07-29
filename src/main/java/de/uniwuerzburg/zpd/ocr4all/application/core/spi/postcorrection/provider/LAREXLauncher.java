@@ -1033,7 +1033,8 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * @since 1.8
 			 */
 			public String getTargetFileID() {
-				return targetFileCoreID + "_" + type.name() + (targetIndex > 0 ? "-" + targetIndex : "");
+				return targetFileCoreID + (ContainerType.xml.equals(type) ? ""
+						: "_" + type.name() + (targetIndex > 0 ? "-" + targetIndex : ""));
 			}
 
 			/**

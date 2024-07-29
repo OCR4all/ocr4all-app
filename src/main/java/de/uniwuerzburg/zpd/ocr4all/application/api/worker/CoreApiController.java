@@ -180,6 +180,11 @@ public class CoreApiController {
 	public static final String uploadRequestMapping = "/upload";
 
 	/**
+	 * The export request mapping.
+	 */
+	public static final String exportRequestMapping = "/export";
+
+	/**
 	 * The import request mapping.
 	 */
 	public static final String importRequestMapping = "/import";
