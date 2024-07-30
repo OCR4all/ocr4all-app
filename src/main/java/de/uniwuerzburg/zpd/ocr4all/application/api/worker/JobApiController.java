@@ -301,7 +301,7 @@ public class JobApiController extends CoreApiController {
 		try {
 			Job job = getJob(id);
 
-			return service.removeDone(id) ? ResponseEntity.ok().body(new JobResponse(job))
+			return service.removeDone(id) ? ResponseEntity.ok().body(new JobResponse(false, job))
 					: ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		} catch (ResponseStatusException ex) {
 			throw ex;
@@ -328,7 +328,33 @@ public class JobApiController extends CoreApiController {
 	@GetMapping(entityRequestMapping + idPathVariable)
 	public ResponseEntity<JobResponse> entity(@Parameter(description = "the job id") @PathVariable int id) {
 		try {
-			return ResponseEntity.ok().body(new JobResponse(getJob(id)));
+			return ResponseEntity.ok().body(new JobResponse(false, getJob(id)));
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the job summary in the response body.
+	 *
+	 * @param id The job id.
+	 * @return The job summary in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the job summary in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Job Summary", content = {
+			@Content(mediaType = CoreApiController.applicationJson, schema = @Schema(implementation = JobSummaryResponse.class)) }),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(summaryRequestMapping + idPathVariable)
+	public ResponseEntity<JobSummaryResponse> summary(@Parameter(description = "the job id") @PathVariable int id) {
+		try {
+			return ResponseEntity.ok().body(new JobSummaryResponse(getJob(id)));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {
@@ -589,6 +615,109 @@ public class JobApiController extends CoreApiController {
 	}
 
 	/**
+	 * Defines job summary responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class JobSummaryResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The id.
+		 */
+		private int id;
+
+		/**
+		 * The state.
+		 */
+		private Job.State state;
+
+		/**
+		 * The expected progress taking into account all journal steps.
+		 */
+		private float progress;
+
+		/**
+		 * Creates a job summary response for the api.
+		 * 
+		 * @param job The job.
+		 * @since 1.8
+		 */
+		public JobSummaryResponse(Job job) {
+			super();
+
+			id = job.getId();
+			state = job.getState();
+			progress = job.getJournal().getProgress();
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 17
+		 */
+		public int getId() {
+			return id;
+		}
+
+		/**
+		 * Set the id.
+		 *
+		 * @param id The id to set.
+		 * @since 17
+		 */
+		public void setId(int id) {
+			this.id = id;
+		}
+
+		/**
+		 * Returns the state.
+		 *
+		 * @return The state.
+		 * @since 17
+		 */
+		public Job.State getState() {
+			return state;
+		}
+
+		/**
+		 * Set the state.
+		 *
+		 * @param state The state to set.
+		 * @since 17
+		 */
+		public void setState(Job.State state) {
+			this.state = state;
+		}
+
+		/**
+		 * Returns the expected progress taking into account all journal steps.
+		 *
+		 * @return The expected progress.
+		 * @since 1.8
+		 */
+		public float getProgress() {
+			return progress;
+		}
+
+		/**
+		 * Set the expected progress taking into account all journal steps.
+		 *
+		 * @param progress The expected progress to set.
+		 * @since 1.8
+		 */
+		public void setProgress(float progress) {
+			this.progress = progress;
+		}
+	}
+
+	/**
 	 * Defines scheduler information responses for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -771,7 +900,7 @@ public class JobApiController extends CoreApiController {
 			List<JobResponse> response = new ArrayList<>();
 
 			for (Job job : jobs)
-				response.add(new JobResponse(job));
+				response.add(new JobResponse(true, job));
 
 			return response;
 		}
