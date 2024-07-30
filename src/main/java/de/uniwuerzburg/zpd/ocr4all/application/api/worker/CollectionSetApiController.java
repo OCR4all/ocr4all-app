@@ -672,7 +672,6 @@ public class CollectionSetApiController extends CoreApiController {
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(codecRequestMapping)
 	public ResponseEntity<CodecResponse> codec(@RequestBody @Valid CodecRequest request) {
-
 		try {
 			Hashtable<String, Integer> codec = new Hashtable<String, Integer>();
 			List<CodecResponse.Collection> collections = new ArrayList<>();
@@ -956,18 +955,6 @@ public class CollectionSetApiController extends CoreApiController {
 		private List<Dataset> datasets;
 
 		/**
-		 * The PageXML level.
-		 */
-		@NotNull
-		private PageXMLLevel level;
-
-		/**
-		 * The PageXML index.
-		 */
-		@NotNull
-		private int index;
-
-		/**
 		 * The normalizer. If null, do not normalize.
 		 */
 		private Normalizer.Form normalizer;
@@ -990,46 +977,6 @@ public class CollectionSetApiController extends CoreApiController {
 		 */
 		public void setDatasets(List<Dataset> datasets) {
 			this.datasets = datasets;
-		}
-
-		/**
-		 * Returns the PageXML level.
-		 *
-		 * @return The PageXML level.
-		 * @since 17
-		 */
-		public PageXMLLevel getLevel() {
-			return level;
-		}
-
-		/**
-		 * Set the PageXML level.
-		 *
-		 * @param level The PageXML level to set.
-		 * @since 17
-		 */
-		public void setLevel(PageXMLLevel level) {
-			this.level = level;
-		}
-
-		/**
-		 * Returns the PageXML index.
-		 *
-		 * @return The PageXML index.
-		 * @since 17
-		 */
-		public int getIndex() {
-			return index;
-		}
-
-		/**
-		 * Set the PageXML index.
-		 *
-		 * @param index The PageXML index to set.
-		 * @since 17
-		 */
-		public void setIndex(int index) {
-			this.index = index;
 		}
 
 		/**
