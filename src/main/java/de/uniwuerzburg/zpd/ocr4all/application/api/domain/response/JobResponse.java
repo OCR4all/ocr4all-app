@@ -114,10 +114,11 @@ public class JobResponse implements Serializable {
 	/**
 	 * Creates a job response for the api.
 	 * 
-	 * @param job The job.
+	 * @param isOverview True if produces overview journal response for the api.
+	 * @param job        The job.
 	 * @since 1.8
 	 */
-	public JobResponse(Job job) {
+	public JobResponse(boolean isOverview, Job job) {
 		super();
 
 		id = job.getId();
@@ -127,7 +128,7 @@ public class JobResponse implements Serializable {
 		start = job.getStart();
 		end = job.getEnd();
 		state = job.getState();
-		journal = new JournalResponse(job.getJournal());
+		journal = new JournalResponse(isOverview, job.getJournal());
 		description = job.getShortDescription();
 
 		process = job instanceof de.uniwuerzburg.zpd.ocr4all.application.core.job.Process p ? new ProcessResponse(p)
@@ -677,6 +678,7 @@ public class JobResponse implements Serializable {
 		/**
 		 * The steps.
 		 */
+		@JsonInclude(JsonInclude.Include.NON_NULL)
 		private List<StepResponse> steps;
 
 		/**
@@ -692,18 +694,24 @@ public class JobResponse implements Serializable {
 		/**
 		 * Creates a journal response for the api.
 		 * 
-		 * @param journal The journal.
+		 * @param isOverview True if produces overview journal response for the api.
+		 * @param journal    The journal.
 		 * @since 1.8
 		 */
-		public JournalResponse(Job.Journal journal) {
+		public JournalResponse(boolean isOverview, Job.Journal journal) {
 			super();
 
 			index = journal.getIndex() < 0 ? null : journal.getIndex();
 
-			steps = new ArrayList<>();
-			for (Job.Journal.Step step : journal.getSteps())
-				steps.add(new StepResponse(step));
-			size = steps.size();
+			if (isOverview)
+				steps = null;
+			else {
+				steps = new ArrayList<>();
+				for (Job.Journal.Step step : journal.getSteps())
+					steps.add(new StepResponse(step));
+			}
+
+			size = journal.getSteps().size();
 
 			progress = journal.getProgress();
 		}

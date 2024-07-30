@@ -177,7 +177,7 @@ public class ContainerFolioApiController extends CoreApiController {
 			final Work work = service.upload(container, job, files);
 
 			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new JobResponse(work));
+					: ResponseEntity.ok().body(new JobResponse(false, work));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -215,7 +215,7 @@ public class ContainerFolioApiController extends CoreApiController {
 			final Work work = service.exchangeImport(container, job, new ContainerService.FileSet(datasets));
 
 			return work == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new JobResponse(work));
+					: ResponseEntity.ok().body(new JobResponse(false, work));
 		} catch (Exception ex) {
 			log(ex);
 
