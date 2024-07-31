@@ -110,6 +110,11 @@ public class SetResponse extends de.uniwuerzburg.zpd.ocr4all.application.persist
 		private String contentType;
 
 		/**
+		 * The extension.
+		 */
+		private String extension;
+
+		/**
 		 * The sub type.
 		 */
 		@JsonProperty("sub-type")
@@ -133,12 +138,15 @@ public class SetResponse extends de.uniwuerzburg.zpd.ocr4all.application.persist
 
 			String[] split = name.split("\\.", 2);
 			if (split.length == 2 && !split[0].isEmpty() && !split[1].isEmpty()) {
+				extension = split[1];
 				subType = OCR4allUtils.getNameWithoutExtension(split[1]);
 
 				if (split[1].equals(subType))
 					subType = null;
-			} else
+			} else {
+				extension = null;
 				subType = null;
+			}
 		}
 
 		/**
@@ -179,6 +187,26 @@ public class SetResponse extends de.uniwuerzburg.zpd.ocr4all.application.persist
 		 */
 		public void setContentType(String contentType) {
 			this.contentType = contentType;
+		}
+
+		/**
+		 * Returns the extension.
+		 *
+		 * @return The extension.
+		 * @since 17
+		 */
+		public String getExtension() {
+			return extension;
+		}
+
+		/**
+		 * Set the extension.
+		 *
+		 * @param extension The extension to set.
+		 * @since 17
+		 */
+		public void setExtension(String extension) {
+			this.extension = extension;
 		}
 
 		/**
