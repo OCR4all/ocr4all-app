@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.JobJsonResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
@@ -180,7 +182,7 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 			if (provider == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-			Dataset dataset = authorizeRead(request.getDatset());
+			Dataset dataset = authorizeRead(request.getDataset());
 			if (dataset == null || dataset.getCollections().isEmpty())
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -223,32 +225,33 @@ public class TrainingServiceProviderApiController extends CoreServiceProviderApi
 		 * The data set.
 		 */
 		@NotNull
-		private Dataset datset;
+		private Dataset dataset;
 
 		/**
 		 * The assemble model.
 		 */
 		@NotNull
+		@JsonProperty("assemble-model")
 		private AssembleModel assembleModel;
 
 		/**
-		 * Returns the datset.
+		 * Returns the data set.
 		 *
-		 * @return The datset.
+		 * @return The data set.
 		 * @since 17
 		 */
-		public Dataset getDatset() {
-			return datset;
+		public Dataset getDataset() {
+			return dataset;
 		}
 
 		/**
-		 * Set the datset.
+		 * Set the data set.
 		 *
-		 * @param datset The datset to set.
+		 * @param dataset The data set to set.
 		 * @since 17
 		 */
-		public void setDatset(Dataset datset) {
-			this.datset = datset;
+		public void setDataset(Dataset dataset) {
+			this.dataset = dataset;
 		}
 
 		/**
