@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.CoreServiceProviderApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
@@ -44,6 +46,12 @@ public class ServiceProviderResponse implements Serializable {
 	 * The type.
 	 */
 	private CoreServiceProviderApiController.Type type;
+
+	/**
+	 * The type label.
+	 */
+	@JsonProperty("type-label")
+	private String typeLabel;
 
 	/**
 	 * The id.
@@ -124,6 +132,8 @@ public class ServiceProviderResponse implements Serializable {
 			language = locale.getLanguage();
 
 			this.type = type;
+			typeLabel = type.getLabel();
+
 			this.id = id;
 			provider = serviceProvider.getProvider();
 
@@ -201,6 +211,26 @@ public class ServiceProviderResponse implements Serializable {
 	 */
 	public void setType(CoreServiceProviderApiController.Type type) {
 		this.type = type;
+	}
+
+	/**
+	 * Returns the type label.
+	 *
+	 * @return The type label.
+	 * @since 17
+	 */
+	public String getTypeLabel() {
+		return typeLabel;
+	}
+
+	/**
+	 * Set the type label.
+	 *
+	 * @param typeLabel The label to set.
+	 * @since 17
+	 */
+	public void setTypeLabel(String typeLabel) {
+		this.typeLabel = typeLabel;
 	}
 
 	/**
