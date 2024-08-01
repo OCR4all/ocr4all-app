@@ -47,41 +47,66 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	 */
 	public enum Type {
 		/**
-		 * The imp type.
+		 * The import type.
 		 */
-		imp,
+		imp("Import"),
 		/**
 		 * The launcher type.
 		 */
-		launcher,
+		launcher("Launcher"),
 		/**
 		 * The preprocessing type.
 		 */
-		preprocessing,
+		preprocessing("Preprocessing"),
 		/**
 		 * The olr type.
 		 */
-		olr,
+		olr("Layout Analysis"),
 		/**
 		 * The ocr type.
 		 */
-		ocr,
+		ocr("Text Recognition"),
 		/**
 		 * The postcorrection type.
 		 */
-		postcorrection,
+		postcorrection("Postcorrection"),
 		/**
 		 * The tool type.
 		 */
-		tool,
+		tool("Format Conversion"),
 		/**
 		 * The export type.
 		 */
-		export,
+		export("Export"),
 		/**
 		 * The training type.
 		 */
-		training;
+		training("Training");
+
+		/**
+		 * The label.
+		 */
+		private final String label;
+
+		/**
+		 * Creates a type.
+		 * 
+		 * @param label The label.
+		 * @since 17
+		 */
+		private Type(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * Returns the label.
+		 *
+		 * @return The label.
+		 * @since 17
+		 */
+		public String getLabel() {
+			return label;
+		}
 
 		/**
 		 * Returns the respective persistence snapshot type.
