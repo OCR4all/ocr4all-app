@@ -10,6 +10,9 @@ package de.uniwuerzburg.zpd.ocr4all.application.api.domain.response;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import de.uniwuerzburg.zpd.ocr4all.application.api.worker.spi.CoreServiceProviderApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.core.project.sandbox.Snapshot;
 
 /**
@@ -215,6 +218,12 @@ public class SnapshotResponse implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		/**
+		 * The type label.
+		 */
+		@JsonProperty("type-label")
+		private String typeLabel;
+
+		/**
 		 * Default constructor for a snapshot configuration response for the api.
 		 * 
 		 * @since 1.8
@@ -234,7 +243,53 @@ public class SnapshotResponse implements Serializable {
 			super(snapshot.getType(), snapshot.getLabel(), snapshot.getDescription(), snapshot.getServiceProvider(),
 					snapshot.getInstance(), snapshot.getDate(), snapshot.getUpdated(), snapshot.getUser(),
 					snapshot.getLock());
+
+			CoreServiceProviderApiController.Type type;
+			switch (snapshot.getType()) {
+			case launcher:
+				typeLabel = CoreServiceProviderApiController.Type.launcher.getLabel();
+				break;
+			case ocr:
+				typeLabel = CoreServiceProviderApiController.Type.ocr.getLabel();
+				break;
+			case olr:
+				typeLabel = CoreServiceProviderApiController.Type.olr.getLabel();
+				break;
+			case postcorrection:
+				typeLabel = CoreServiceProviderApiController.Type.postcorrection.getLabel();
+				break;
+			case preprocessing:
+				typeLabel = CoreServiceProviderApiController.Type.preprocessing.getLabel();
+				break;
+			case tool:
+				typeLabel = CoreServiceProviderApiController.Type.tool.getLabel();
+				break;
+			default:
+				typeLabel = null;
+				break;
+			}
 		}
+
+		/**
+		 * Returns the typeLabel.
+		 *
+		 * @return The typeLabel.
+		 * @since 17
+		 */
+		public String getTypeLabel() {
+			return typeLabel;
+		}
+
+		/**
+		 * Set the typeLabel.
+		 *
+		 * @param typeLabel The typeLabel to set.
+		 * @since 17
+		 */
+		public void setTypeLabel(String typeLabel) {
+			this.typeLabel = typeLabel;
+		}
+
 	}
 
 	/**
