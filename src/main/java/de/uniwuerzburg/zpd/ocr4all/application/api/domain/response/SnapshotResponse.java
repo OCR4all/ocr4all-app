@@ -244,7 +244,6 @@ public class SnapshotResponse implements Serializable {
 					snapshot.getInstance(), snapshot.getDate(), snapshot.getUpdated(), snapshot.getUser(),
 					snapshot.getLock());
 
-			CoreServiceProviderApiController.Type type;
 			switch (snapshot.getType()) {
 			case launcher:
 				typeLabel = CoreServiceProviderApiController.Type.launcher.getLabel();

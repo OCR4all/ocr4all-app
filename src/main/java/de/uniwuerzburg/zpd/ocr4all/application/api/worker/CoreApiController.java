@@ -250,6 +250,11 @@ public class CoreApiController {
 	public static final String fileRequestMapping = "/file";
 
 	/**
+	 * The mets request mapping.
+	 */
+	public static final String metsRequestMapping = "/mets";
+
+	/**
 	 * The initialize request mapping.
 	 */
 	public static final String initializeRequestMapping = "/initialize";

@@ -446,6 +446,262 @@ public class SnapshotApiController extends CoreApiController {
 	}
 
 	/**
+	 * Returns the mets file groups in the sandbox of the leaf snapshot in the track
+	 * of the request in the response body. If the track is null or empty, then the
+	 * sandbox belongs to the root snapshot.
+	 * 
+	 * @param projectId The project id. This is the folder name.
+	 * @param sandboxId The sandbox id. This is the folder name.
+	 * @param request   The snapshot request.
+	 * @return The files in the sandbox of the snapshot.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the mets file groups in the sandbox of the leaf snapshot in the track of the request in the response body - if the track is null or empty, then the sandbox belongs to the root snapshot")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Mets File Groups", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = MetsFileGroupResponse.class))) }),
+			@ApiResponse(responseCode = "204", description = "No Content", content = @Content),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@PostMapping(metsRequestMapping + fileRequestMapping + projectPathVariable + sandboxPathVariable)
+	public ResponseEntity<List<MetsFileGroupResponse>> metsFileGroups(
+			@Parameter(description = "the project id - this is the folder name") @PathVariable String projectId,
+			@Parameter(description = "the sandbox id - this is the folder name") @PathVariable String sandboxId,
+			@RequestBody @Valid SnapshotRequest request) {
+		Authorization authorization = authorizationFactory.authorizeSnapshot(projectId, sandboxId);
+
+		Snapshot snapshot;
+		try {
+			snapshot = authorization.sandbox.getSnapshot(request.getTrack());
+		} catch (IllegalArgumentException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		}
+
+		if (!snapshot.getConfiguration().getConfiguration().getMainConfiguration().getServiceProvider().getId()
+				.equals(LAREXLauncher.class.getName()))
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+
+		final String snapshotsFolder = authorization.sandbox.getConfiguration().getSnapshots().getRoot().getFolder()
+				.toString();
+		Path mets = Paths.get(snapshotsFolder, authorization.sandbox.getConfiguration().getMetsFileName());
+		if (Files.exists(mets))
+			try {
+				final MetsParser.Root root = (new MetsParser()).deserialise(mets.toFile());
+				final String metsGroup = authorization.sandbox.getConfiguration().getMetsGroup();
+
+				// search mets file group
+				final String fileGroupID = MetsUtils.getFileGroup(metsGroup)
+						.getFileGroup(snapshot.getConfiguration().getTrack());
+				MetsParser.Root.FileGroup fileGroup = null;
+
+				for (MetsParser.Root.FileGroup group : root.getFileGroups())
+					if (fileGroupID.equals(group.getId()))
+						fileGroup = group;
+
+				if (fileGroup == null)
+					throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED);
+
+				// mets pages
+				final Hashtable<String, String> metsFieldId2ocr4allId = new Hashtable<>();
+
+				final MetsUtils.Page metsPageUtils = MetsUtils.getPage(metsGroup);
+				for (MetsParser.Root.StructureMap.PhysicalSequence.Page page : root.getStructureMap()
+						.getPhysicalSequence().getPages())
+					try {
+						String ocr4allId = metsPageUtils.getGroupId(page.getId());
+						for (MetsParser.Root.StructureMap.PhysicalSequence.Page.FileId fieldId : page.getFileIds())
+							metsFieldId2ocr4allId.put(fieldId.getId(), ocr4allId);
+					} catch (Exception e) {
+						// Ignore malformed mets page
+					}
+
+				Hashtable<String, MetsFileGroupResponse> metsFileGroups = new Hashtable<>();
+				for (MetsParser.Root.FileGroup.File file : fileGroup.getFiles()) {
+					String ocr4allId = metsFieldId2ocr4allId.get(file.getId());
+
+					MetsFileGroupResponse group = metsFileGroups.get(ocr4allId);
+					if (group == null) {
+						group = new MetsFileGroupResponse(ocr4allId);
+
+						metsFileGroups.put(ocr4allId, group);
+					}
+
+					group.getFiles().add(new MetsFileGroupResponse.File(file));
+				}
+
+				return ResponseEntity.ok().body(new ArrayList<>(metsFileGroups.values()));
+
+			} catch (ResponseStatusException ex) {
+				throw ex;
+			} catch (Exception ex) {
+				log(ex);
+
+				throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+			}
+		else
+			return ResponseEntity.ok().body(new ArrayList<>());
+
+	}
+
+	/**
+	 * Defines mets file group responses for the api.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class MetsFileGroupResponse implements Serializable {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The id.
+		 */
+		private String id;
+
+		/**
+		 * The files.
+		 */
+		private List<SnapshotApiController.MetsFileGroupResponse.File> files;
+
+		/**
+		 * Creates a mets file group responses for the api.
+		 * 
+		 * @param id The id.
+		 * @since 1.8
+		 */
+		public MetsFileGroupResponse(String id) {
+			super();
+
+			this.id = id;
+			files = new ArrayList<>();
+		}
+
+		/**
+		 * Returns the id.
+		 *
+		 * @return The id.
+		 * @since 17
+		 */
+		public String getId() {
+			return id;
+		}
+
+		/**
+		 * Set the id.
+		 *
+		 * @param id The id to set.
+		 * @since 17
+		 */
+		public void setId(String id) {
+			this.id = id;
+		}
+
+		/**
+		 * Returns the files.
+		 *
+		 * @return The files.
+		 * @since 17
+		 */
+		public List<SnapshotApiController.MetsFileGroupResponse.File> getFiles() {
+			return files;
+		}
+
+		/**
+		 * Set the files.
+		 *
+		 * @param files The files to set.
+		 * @since 17
+		 */
+		public void setFiles(List<SnapshotApiController.MetsFileGroupResponse.File> files) {
+			this.files = files;
+		}
+
+		/**
+		 * Defines files.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 17
+		 */
+		public static class File implements Serializable {
+			/**
+			 * The serial version UID.
+			 */
+			private static final long serialVersionUID = 1L;
+
+			/**
+			 * The mime type.
+			 */
+			@JsonProperty("mime-type")
+			private String mimeType;
+
+			/**
+			 * The path.
+			 */
+			private String path;
+
+			/**
+			 * Creates a file.
+			 * 
+			 * @since 17
+			 */
+			public File(MetsParser.Root.FileGroup.File file) {
+				super();
+
+				mimeType = file.getMimeType();
+				path = file.getLocation().getPath();
+			}
+
+			/**
+			 * Returns the mime type.
+			 *
+			 * @return The mime type.
+			 * @since 17
+			 */
+			public String getMimeType() {
+				return mimeType;
+			}
+
+			/**
+			 * Set the mime type.
+			 *
+			 * @param mimeType The mime type to set.
+			 * @since 17
+			 */
+			public void setMimeType(String mimeType) {
+				this.mimeType = mimeType;
+			}
+
+			/**
+			 * Returns the path.
+			 *
+			 * @return The path.
+			 * @since 17
+			 */
+			public String getPath() {
+				return path;
+			}
+
+			/**
+			 * Set the path.
+			 *
+			 * @param path The path to set.
+			 * @since 17
+			 */
+			public void setPath(String path) {
+				this.path = path;
+			}
+
+		}
+
+	}
+
+	/**
 	 * Adds the snapshot files to the collection as set.
 	 * 
 	 * @param isAllSets True if all all snapshot sets. Otherwise, adds the desired
