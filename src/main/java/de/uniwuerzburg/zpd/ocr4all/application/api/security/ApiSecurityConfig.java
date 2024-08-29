@@ -7,6 +7,8 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.api.security;
 
+import java.util.Arrays;
+
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,10 +37,18 @@ public class ApiSecurityConfig extends SecurityConfig {
 		config.addAllowedHeader("*");
 		config.addAllowedMethod("*");
 
+		/*
+		 * When allowPrivateNetwork is true, allowedOrigins cannot contain the special
+		 * value "*" as it is not recommended from a security perspective. To allow
+		 * private network access to a set of origins, list them explicitly or consider
+		 * using "allowedOriginPatterns" instead.
+		 */
+		config.setAllowedOriginPatterns(Arrays.asList("http://localhost:[*]"));
+
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration(patternMatchZeroMoreDirectories, config);
 
 		return source;
 	}
-	
+
 }
