@@ -971,9 +971,9 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			private final int targetIndex;
 
 			/**
-			 * The target file name.
+			 * The file extension.
 			 */
-			private final String targetFilename;
+			private final String fileExtension;
 
 			/**
 			 * Creates a container.
@@ -1000,10 +1000,17 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 								? sourceFile.getId().substring(inputFileGroup.length())
 								: "_" + fileIndex);
 
-				final String sourceFilename = Paths.get(sourceFile.getLocation().getPath()).getFileName().toString();
-				targetFilename = sourceFilename.startsWith(inputFileGroup)
-						? outputFileGroup + sourceFilename.substring(inputFileGroup.length())
-						: sourceFilename;
+				if (ContainerType.xml.equals(type))
+					fileExtension = "xml";
+				else {
+					final String sourceFilename = Paths.get(sourceFile.getLocation().getPath()).getFileName()
+							.toString();
+					String[] split = sourceFilename.split("\\.", 2);
+
+					fileExtension = split.length == 0 ? "" : split[1];
+
+				}
+
 			}
 
 			/**
@@ -1044,7 +1051,8 @@ public class LAREXLauncher extends CoreServiceProviderWorker implements Postcorr
 			 * @since 1.8
 			 */
 			public String getTargetFilename() {
-				return targetFilename;
+				return targetFileCoreID + (ContainerType.xml.equals(type) ? ""
+						: "." + type.name() + (targetIndex > 0 ? "-" + targetIndex : "")) + "." + fileExtension;
 			}
 		}
 	}
