@@ -7,6 +7,9 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Api;
 
 /**
@@ -17,6 +20,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property.Api;
  * @since 1.8
  */
 public class ApiConfiguration {
+	/**
+	 * The allowed origins patterns. Null if no origin pattern is allowed.
+	 */
+	private final List<String> allowedOriginPatterns;
+
 	/**
 	 * The JWT configuration.
 	 */
@@ -36,8 +44,26 @@ public class ApiConfiguration {
 	public ApiConfiguration(Api properties) {
 		super();
 
-		jwt = new JWT(properties.getJwt());
+		jwt = new JWT(properties.getSecurity().getJwt());
 		documentation = new Documentation(properties.getDocumentation());
+
+		List<String> originPatterns = new ArrayList<>();
+		if (properties.getSecurity().getOriginPatterns() != null)
+			for (String pattern : properties.getSecurity().getOriginPatterns())
+				if (pattern != null && !pattern.isBlank())
+					originPatterns.add(pattern.trim());
+
+		allowedOriginPatterns = originPatterns.isEmpty() ? null : originPatterns;
+	}
+
+	/**
+	 * Returns the allowed origins patterns.
+	 *
+	 * @return The allowed origins patterns. Null if no origin pattern is allowed.
+	 * @since 17
+	 */
+	public List<String> getAllowedOriginPatterns() {
+		return allowedOriginPatterns;
 	}
 
 	/**

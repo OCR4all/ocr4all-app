@@ -7,6 +7,8 @@
  */
 package de.uniwuerzburg.zpd.ocr4all.application.core.configuration.property;
 
+import java.util.List;
+
 import jakarta.validation.constraints.Min;
 
 /**
@@ -18,9 +20,9 @@ import jakarta.validation.constraints.Min;
  */
 public class Api {
 	/**
-	 * The JWT properties.
+	 * The security.
 	 */
-	private JWT jwt = new JWT();
+	private Security security = new Security();
 
 	/**
 	 * The documentation properties.
@@ -28,23 +30,23 @@ public class Api {
 	private Documentation documentation = new Documentation();
 
 	/**
-	 * Returns the JWT properties.
+	 * Returns the security.
 	 *
-	 * @return The JWT properties.
-	 * @since 1.8
+	 * @return The security.
+	 * @since 17
 	 */
-	public JWT getJwt() {
-		return jwt;
+	public Security getSecurity() {
+		return security;
 	}
 
 	/**
-	 * Set the JWT properties.
+	 * Set the security.
 	 *
-	 * @param jwt The JWT properties to set.
-	 * @since 1.8
+	 * @param security The security to set.
+	 * @since 17
 	 */
-	public void setJwt(JWT jwt) {
-		this.jwt = jwt;
+	public void setSecurity(Security security) {
+		this.security = security;
 	}
 
 	/**
@@ -65,6 +67,66 @@ public class Api {
 	 */
 	public void setDocumentation(Documentation documentation) {
 		this.documentation = documentation;
+	}
+
+	/**
+	 * Defines security properties.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class Security {
+		/**
+		 * The allowed origins patterns. The default pattern is 'null'."
+		 */
+		private List<String> originPatterns = null;
+
+		/**
+		 * The JWT properties.
+		 */
+		private JWT jwt = new JWT();
+
+		/**
+		 * Returns the allowed origins patterns.
+		 *
+		 * @return The allowed origins patterns. Null if not set.
+		 * @since 17
+		 */
+		public List<String> getOriginPatterns() {
+			return originPatterns;
+		}
+
+		/**
+		 * Set the allowed origins patterns.
+		 *
+		 * @param originPatterns The allowed origins patterns to set.
+		 * @since 17
+		 */
+		public void setOriginPatterns(List<String> originPatterns) {
+			this.originPatterns = originPatterns;
+		}
+
+		/**
+		 * Returns the JWT properties.
+		 *
+		 * @return The JWT properties.
+		 * @since 1.8
+		 */
+		public JWT getJwt() {
+			return jwt;
+		}
+
+		/**
+		 * Set the JWT properties.
+		 *
+		 * @param jwt The JWT properties to set.
+		 * @since 1.8
+		 */
+		public void setJwt(JWT jwt) {
+			this.jwt = jwt;
+		}
+
 	}
 
 	/**
