@@ -825,35 +825,70 @@ public class CollectionService extends CoreService {
 	}
 
 	/**
+	 * Returns the PageXML text equivalence that matches the index.
+	 * 
+	 * @param textEquivalenceCore The text equivalence core class.
+	 * @param index               The PageXML index.
+	 * @return The PageXML text equivalence that matches the index. Null if not
+	 *         available.
+	 * @since 17
+	 */
+	private PageXMLParser.Root.Page.TextEquivalenceCore.TextEquivalence getTextEquivalence(
+			PageXMLParser.Root.Page.TextEquivalenceCore textEquivalenceCore, int index) {
+		if (textEquivalenceCore.getTextEquivalences() != null)
+			for (PageXMLParser.Root.Page.TextEquivalenceCore.TextEquivalence textEquivalence : textEquivalenceCore
+					.getTextEquivalences())
+				if (textEquivalence.getIndex() != null && textEquivalence.getIndex().intValue() == index)
+					return textEquivalence;
+
+		return null;
+	}
+
+	/**
 	 * Returns true if the PageXML text equivalence unicode matches the index.
 	 * 
 	 * @param textEquivalence The text equivalence.
-	 * @param index           The PageXML index.
-	 * @return The PageXML text equivalence unicode. Empty if the index does not
-	 *         matches.
+	 * @return True if the PageXML text equivalence unicode matches the index.
 	 * @since 17
 	 */
-	private boolean isTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
-		return textEquivalence.getTextEquivalence() != null && textEquivalence.getTextEquivalence().getIndex() != null
-				&& textEquivalence.getTextEquivalence().getIndex().intValue() == index
-				&& textEquivalence.getTextEquivalence().getUnicode() != null
-				&& textEquivalence.getTextEquivalence().getUnicode().getText() != null;
+	private boolean isTextEquivalenceUnicode(
+			PageXMLParser.Root.Page.TextEquivalenceCore.TextEquivalence textEquivalence) {
+		return textEquivalence != null && textEquivalence.getUnicode() != null
+				&& textEquivalence.getUnicode().getText() != null;
+	}
 
+	/**
+	 * Returns true if a PageXML text equivalence unicode matches the index.
+	 * 
+	 * @param textEquivalenceCore The text equivalence core class.
+	 * @param index               The PageXML index.
+	 * @return True if a PageXML text equivalence unicode matches the index.
+	 * @since 17
+	 */
+	private boolean isTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalenceCore,
+			int index) {
+		PageXMLParser.Root.Page.TextEquivalenceCore.TextEquivalence textEquivalence = getTextEquivalence(
+				textEquivalenceCore, index);
+
+		return isTextEquivalenceUnicode(textEquivalence);
 	}
 
 	/**
 	 * Returns the PageXML text equivalence unicode if the index matches. All
 	 * whitespaces and non-visible characters are removed from text.
 	 * 
-	 * @param textEquivalence The text equivalence.
-	 * @param index           The PageXML index.
+	 * @param textEquivalenceCore The text equivalence core class.
+	 * @param index               The PageXML index.
 	 * @return The PageXML text equivalence unicode. Empty if the index does not
 	 *         matches.
 	 * @since 17
 	 */
-	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalence, int index) {
-		return isTextEquivalenceUnicode(textEquivalence, index)
-				? textEquivalence.getTextEquivalence().getUnicode().getText().replaceAll("\\s+", "")
+	private String getTextEquivalenceUnicode(PageXMLParser.Root.Page.TextEquivalenceCore textEquivalenceCore,
+			int index) {
+		PageXMLParser.Root.Page.TextEquivalenceCore.TextEquivalence textEquivalence = getTextEquivalence(
+				textEquivalenceCore, index);
+
+		return isTextEquivalenceUnicode(textEquivalence) ? textEquivalence.getUnicode().getText().replaceAll("\\s+", "")
 				: "";
 
 	}
