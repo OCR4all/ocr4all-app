@@ -606,14 +606,19 @@
 			"description": "ocr4all prefix for temporary files/directories names; the default value is 'ocr4all-'."
 		},
 		{
-			"name": "ocr4all.api.jwt.issuer",
-			"type": "java.lang.String",
-			"description": "ocr4all api JWT access token issuer. The default issuer is 'ocr4all.org'."
+			"name": "ocr4all.api.security.origin-patterns",
+			"type": "java.util.List<java.lang.String>",
+			"description": "ocr4all api security allowed origins patterns. The default pattern is 'null'."
 		},
 		{
-			"name": "ocr4all.api.jwt.validity",
+			"name": "ocr4all.api.security.jwt.issuer",
+			"type": "java.lang.String",
+			"description": "ocr4all api security JWT access token issuer. The default issuer is 'ocr4all.org'."
+		},
+		{
+			"name": "ocr4all.api.security.jwt.validity",
 			"type": "java.lang.Long",
-			"description": "ocr4all api JWT access token validity time in milliseconds. The default value is one week (7 × 24 × 60 × 60 × 1000 = 604800000)."
+			"description": "ocr4all api security JWT access token validity time in milliseconds. The default value is one week (7 × 24 × 60 × 60 × 1000 = 604800000)."
 		},
 		{
 			"name": "ocr4all.api.documentation.source",

@@ -15,6 +15,7 @@ spring:
       - logging-debug
       - server
       - api
+      - api-localhost
       - documentation
       - development
   servlet.multipart:
@@ -259,9 +260,11 @@ ocr4all:
     folder: ${user.home}/ocr4all/tmp
     prefix: ocr4all-
   api:
-    jwt:
-      issuer: ocr4all.org
-      validity: 604800000
+    security:
+      origin-patterns: null
+      jwt:
+        issuer: ocr4all.org
+        validity: 604800000
     documentation:
       source: de.uniwuerzburg.zpd.ocr4all.application.api
       title: OCR4all RESTful web API
@@ -304,6 +307,13 @@ server.error.include-stacktrace: always
 logging.level:
   "[org.springframework.security]": INFO
   "[de.uniwuerzburg.zpd.ocr4all.application]": DEBUG
+
+---
+spring:
+    config.activate.on-profile: api-localhost
+
+ocr4all.api.security.origin-patterns:
+  - http://localhost:[*]
 
 ---
 spring:

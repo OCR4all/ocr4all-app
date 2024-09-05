@@ -14,6 +14,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
+
 /**
  * Disables Spring Security for desktop profiles and defines CORS filters.
  * Authentication and any security protections like XSS are disabled.
@@ -25,6 +27,17 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @Profile("api & desktop")
 @Configuration
 public class ApiSecurityDesktopConfig extends ApiSecurityConfig {
+
+	/**
+	 * Creates a security configuration for an api desktop profile.
+	 * 
+	 * @param configurationService The configuration service.
+	 * @since 17
+	 */
+	public ApiSecurityDesktopConfig(ConfigurationService configurationService) {
+		super(configurationService);
+	}
+
 	/**
 	 * Configures the {@code FilterChainProxy}.
 	 * 

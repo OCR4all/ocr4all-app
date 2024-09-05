@@ -32,6 +32,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.api.worker.InstanceApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.JobApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.ProjectSecurityApiController;
+import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.AccountService;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -63,12 +64,14 @@ public class ApiSecurityServerConfig extends ApiSecurityConfig {
 	/**
 	 * Creates a security configuration for an api server profile.
 	 * 
-	 * @param accountService The account service.
-	 * @param jwtTokenFilter The JWT access token filter.
+	 * @param configurationService The configuration service.
+	 * @param accountService       The account service.
+	 * @param jwtTokenFilter       The JWT access token filter.
 	 * @since 17
 	 */
-	public ApiSecurityServerConfig(AccountService accountService, JwtTokenFilter jwtTokenFilter) {
-		super();
+	public ApiSecurityServerConfig(ConfigurationService configurationService, AccountService accountService,
+			JwtTokenFilter jwtTokenFilter) {
+		super(configurationService);
 
 		this.accountService = accountService;
 		this.jwtTokenFilter = jwtTokenFilter;
