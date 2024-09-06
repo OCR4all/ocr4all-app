@@ -13,6 +13,7 @@ spring:
   profiles:
     active:
       - logging-debug
+      - create_administrator
       - server
       - api
       - api-localhost
@@ -317,6 +318,12 @@ ocr4all.api.security.origin-patterns:
 
 ---
 spring:
+    config.activate.on-profile: create_administrator
+
+ocr4all.application.security.administrator.create: true
+
+---
+spring:
     config.activate.on-profile: docker
 
 server:
@@ -386,7 +393,6 @@ server:
   port: 9090
 
 ocr4all:
-  application.security.administrator.create: true
   exchange.folder: ${user.home}/ocr4all/dev/exchange
   repository.folder: ${user.home}/ocr4all/dev/repository
   data.folder: ${user.home}/ocr4all/dev/data
