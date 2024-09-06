@@ -47,6 +47,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @Profile("api & server")
 public class ApiSecurityServerConfig extends ApiSecurityConfig {
 	/**
+	 * The error context path.
+	 */
+	private static final String errorContextPath = "/error";
+
+	/**
 	 * The logger.
 	 */
 	private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ApiSecurityServerConfig.class);
@@ -131,6 +136,9 @@ public class ApiSecurityServerConfig extends ApiSecurityConfig {
 				/*
 				 * The public end points
 				 */
+				// Spring Boot 3.0 applies security to error dispatches
+				.requestMatchers(errorContextPath).permitAll()
+
 				// instance
 				.requestMatchers(HttpMethod.GET, InstanceApiController.contextPath).permitAll()
 
