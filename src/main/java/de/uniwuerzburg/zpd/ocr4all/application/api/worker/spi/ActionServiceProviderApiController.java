@@ -36,7 +36,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.action.ActionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.SPIUtils;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Dataset;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -169,16 +168,19 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		final ActionServiceProvider provider = service.getActiveProvider(request.getId());
 
-		if (provider == null)
+		if (provider == null || request.getDataset().getCollections() == null
+				|| request.getDataset().getCollections().isEmpty())
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-		Dataset dataset = authorizeRead(request.getDataset());
-		if (dataset == null || dataset.getCollections().isEmpty())
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+		for (EvaluationService.Dataset.Collection collection : request.getDataset().getCollections())
+			if (collection == null || collection.getId() == null || collection.getId().isBlank())
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			else
+				authorizeCollectionRead(collection.getId());
 
 		try {
 			EvaluationMeasure evaluation = evaluationService.evaluateCalamari(provider,
-					SPIUtils.getModelArgument(request), dataset);
+					SPIUtils.getModelArgument(request), request.getDataset());
 
 			if (evaluation == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -217,28 +219,28 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * The data set.
+		 * The dataset.
 		 */
 		@NotNull
-		private Dataset dataset;
+		private EvaluationService.Dataset dataset;
 
 		/**
-		 * Returns the data set.
+		 * Returns the dataset.
 		 *
-		 * @return The data set.
+		 * @return The dataset.
 		 * @since 17
 		 */
-		public Dataset getDataset() {
+		public EvaluationService.Dataset getDataset() {
 			return dataset;
 		}
 
 		/**
-		 * Set the data set.
+		 * Set the dataset.
 		 *
-		 * @param dataset The data set to set.
+		 * @param dataset The dataset to set.
 		 * @since 17
 		 */
-		public void setDataset(Dataset dataset) {
+		public void setDataset(EvaluationService.Dataset dataset) {
 			this.dataset = dataset;
 		}
 

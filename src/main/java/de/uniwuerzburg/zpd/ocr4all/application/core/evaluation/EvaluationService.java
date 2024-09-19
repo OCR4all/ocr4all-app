@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
@@ -25,7 +26,6 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.WorkerServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Database;
-import de.uniwuerzburg.zpd.ocr4all.application.spi.env.Dataset;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.model.argument.ModelArgument;
 
 /**
@@ -98,7 +98,7 @@ public class EvaluationService extends CoreService {
 	public EvaluationMeasure evaluateCalamari(ActionServiceProvider provider, ModelArgument modelArgument,
 			Dataset dataset) {
 		if (provider == null || !calamariEvaluationProvider.equals(provider.getProvider()) || modelArgument == null
-				|| dataset == null)
+				|| dataset == null || dataset.getCollections() == null || dataset.getCollections().isEmpty())
 			return null;
 
 		Path temporaryDirectory = null;
@@ -107,19 +107,27 @@ public class EvaluationService extends CoreService {
 
 			// copy data to temporary directory
 			boolean isEmptyDataset = true;
-			for (Dataset.Collection collection : dataset.getCollections()) {
-				Path path = collectionService.getCollection(collection.getId()).getConfiguration().getFolder();
+			for (Dataset.Collection collection : dataset.getCollections())
+				if (collection == null || collection.getId() == null || collection.getId().isBlank())
+					return null;
+				else if (collection.getSets() != null && !collection.getSets().isEmpty()) {
+					CollectionService.Collection collectionEntity = collectionService.getCollection(collection.getId());
+					if (collectionEntity == null)
+						return null;
 
-				for (Dataset.Collection.Set set : collection.getSets()) {
-					Path source = path.resolve(set.getId() + "." + set.getXml());
-					if (Files.isRegularFile(source)) {
-						Files.copy(source, temporaryDirectory.resolve(source.getFileName()),
-								StandardCopyOption.REPLACE_EXISTING);
+					Path path = collectionEntity.getConfiguration().getFolder();
 
-						isEmptyDataset = false;
-					}
+					for (String set : collection.getSets())
+						if (set != null && !set.isBlank()) {
+							Path source = path.resolve(set.trim() + ".xml");
+							if (Files.isRegularFile(source)) {
+								Files.copy(source, temporaryDirectory.resolve(source.getFileName()),
+										StandardCopyOption.REPLACE_EXISTING);
+
+								isEmptyDataset = false;
+							}
+						}
 				}
-			}
 
 			if (isEmptyDataset)
 				return null;
@@ -141,4 +149,117 @@ public class EvaluationService extends CoreService {
 			deleteRecursively(temporaryDirectory);
 		}
 	}
+
+	/**
+	 * Defines data sets.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	public class Dataset {
+		/**
+		 * The collections.
+		 */
+		private List<Collection> collections;
+
+		/**
+		 * Default constructor for a data set.
+		 * 
+		 * @since 17
+		 */
+		public Dataset() {
+			super();
+		}
+
+		/**
+		 * Returns the collections.
+		 *
+		 * @return The collections.
+		 * @since 17
+		 */
+		public List<Collection> getCollections() {
+			return collections;
+		}
+
+		/**
+		 * Set the collections.
+		 *
+		 * @param collections The collections to set.
+		 * @since 17
+		 */
+		public void setCollections(List<Collection> collections) {
+			this.collections = collections;
+		}
+
+		/**
+		 * Defines collections for data sets.
+		 *
+		 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+		 * @version 1.0
+		 * @since 1.8
+		 */
+		public static class Collection {
+			/**
+			 * The id.
+			 */
+			private String id;
+
+			/**
+			 * The sets.
+			 */
+			private List<String> sets;
+
+			/**
+			 * Default constructor for a collection.
+			 * 
+			 * @since 17
+			 */
+			public Collection() {
+				super();
+			}
+
+			/**
+			 * Returns the id.
+			 *
+			 * @return The id.
+			 * @since 17
+			 */
+			public String getId() {
+				return id;
+			}
+
+			/**
+			 * Set the id.
+			 *
+			 * @param id The id to set.
+			 * @since 17
+			 */
+			public void setId(String id) {
+				this.id = id;
+			}
+
+			/**
+			 * Returns the sets.
+			 *
+			 * @return The sets.
+			 * @since 17
+			 */
+			public List<String> getSets() {
+				return sets;
+			}
+
+			/**
+			 * Set the sets.
+			 *
+			 * @param sets The sets to set.
+			 * @since 17
+			 */
+			public void setSets(List<String> sets) {
+				this.sets = sets;
+			}
+
+		}
+	}
+
 }
