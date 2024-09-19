@@ -30,6 +30,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationS
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.action.ActionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
@@ -83,6 +84,11 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	private static final String trainingRequestMapping = "/training";
 
 	/**
+	 * The action service.
+	 */
+	private final ActionService actionService;
+
+	/**
 	 * The import service.
 	 */
 	private final ImportService importService;
@@ -134,6 +140,7 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 * @param securityService       The security service.
 	 * @param collectionService     The collection service.
 	 * @param modelService          The model service.
+	 * @param actionService         The action service.
 	 * @param importService         The import service.
 	 * @param launcherService       The launcher service.
 	 * @param preprocessingService  The preprocessing service.
@@ -147,13 +154,14 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	 */
 	public OverviewServiceProviderApiController(ConfigurationService configurationService,
 			SecurityService securityService, CollectionService collectionService, ModelService modelService,
-			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
-			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
-			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
-			TrainingService trainingService) {
+			ActionService actionService, ImportService importService, LauncherService launcherService,
+			PreprocessingService preprocessingService, OpticalLayoutRecognitionService olrService,
+			OpticalCharacterRecognitionService ocrService, PostcorrectionService postcorrectionService,
+			ToolService toolService, ExportService exportService, TrainingService trainingService) {
 		super(OverviewServiceProviderApiController.class, configurationService, securityService, collectionService,
 				modelService);
 
+		this.actionService = actionService;
 		this.importService = importService;
 		this.launcherService = launcherService;
 		this.preprocessingService = preprocessingService;
@@ -224,9 +232,10 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 	@GetMapping(listRequestMapping)
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(@RequestParam(required = false) String lang) {
 		try {
-			final List<ServiceProviderResponse> providers = serviceProviders(CoreServiceProviderApiController.Type.imp,
-					importService, lang);
+			final List<ServiceProviderResponse> providers = serviceProviders(
+					CoreServiceProviderApiController.Type.action, actionService, lang);
 
+			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.imp, importService, lang));
 			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.launcher, launcherService, lang));
 			providers.addAll(
 					serviceProviders(CoreServiceProviderApiController.Type.preprocessing, preprocessingService, lang));
@@ -240,6 +249,32 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 			providers.addAll(serviceProviders(CoreServiceProviderApiController.Type.training, trainingService, lang));
 
 			return ResponseEntity.ok().body(providers);
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log(ex);
+
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	/**
+	 * Returns the action service providers in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The action service providers in the response body.
+	 * @since 1.8
+	 */
+	@Operation(summary = "returns the action service providers in the response body")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Action Service Providers", content = {
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Action Service Unavailable", content = @Content) })
+	@GetMapping(listRequestMapping + actionRequestMapping)
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersAction(
+			@RequestParam(required = false) String lang) {
+		try {
+			return ResponseEntity.ok()
+					.body(serviceProviders(CoreServiceProviderApiController.Type.action, actionService, lang));
 		} catch (ResponseStatusException ex) {
 			throw ex;
 		} catch (Exception ex) {
@@ -370,6 +405,11 @@ public class OverviewServiceProviderApiController extends CoreApiController {
 		spiId = spiId.trim();
 
 		try {
+			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.action,
+					actionService, lang))
+				if (spiId.equals(provider.getId()))
+					return ResponseEntity.ok().body(provider);
+
 			for (ServiceProviderResponse provider : serviceProviders(CoreServiceProviderApiController.Type.imp,
 					importService, lang))
 				if (spiId.equals(provider.getId()))

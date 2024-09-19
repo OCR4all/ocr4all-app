@@ -62,7 +62,7 @@ import jakarta.validation.constraints.NotNull;
  * @since 17
  */
 @Profile("api")
-@Tag(name = "SPI tool", description = "the tool service provider API")
+@Tag(name = "SPI training", description = "the training service provider API")
 @RestController
 @RequestMapping(path = TrainingServiceProviderApiController.contextPath, produces = CoreApiController.applicationJson)
 public class TrainingServiceProviderApiController extends CoreServiceProviderApiController<TrainingService> {

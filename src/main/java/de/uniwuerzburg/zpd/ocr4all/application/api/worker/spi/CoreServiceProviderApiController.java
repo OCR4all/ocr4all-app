@@ -47,6 +47,10 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 	 */
 	public enum Type {
 		/**
+		 * The action type.
+		 */
+		action("Action"),
+		/**
 		 * The import type.
 		 */
 		imp("Import"),
@@ -128,6 +132,7 @@ public class CoreServiceProviderApiController<S extends CoreServiceProvider<? ex
 				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.postcorrection;
 			case tool:
 				return de.uniwuerzburg.zpd.ocr4all.application.persistence.project.sandbox.Snapshot.Type.tool;
+			case action:
 			case imp:
 			case export:
 			case training:

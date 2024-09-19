@@ -44,6 +44,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.WorkspaceConfi
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
+import de.uniwuerzburg.zpd.ocr4all.application.core.spi.action.ActionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.export.ExportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.imp.ImportService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.launcher.LauncherService;
@@ -53,6 +54,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.spi.postcorrection.Postcorre
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.preprocessing.PreprocessingService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.tool.ToolService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.training.TrainingService;
+import de.uniwuerzburg.zpd.ocr4all.application.spi.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ExportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ImportServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.LauncherServiceProvider;
@@ -110,6 +112,11 @@ public class AdministrationApiController extends CoreApiController {
 	 * The communication service.
 	 */
 	private final CommunicationService communicationService;
+
+	/**
+	 * The registered action service providers sorted by name.
+	 */
+	private final List<CoreServiceProvider<ActionServiceProvider>.Provider> actionProviders;
 
 	/**
 	 * The registered import service providers sorted by name.
@@ -170,6 +177,7 @@ public class AdministrationApiController extends CoreApiController {
 	 * @param securityService       The security service.
 	 * @param collectionService     The collection service.
 	 * @param modelService          The model service.
+	 * @param actionService         The action service.
 	 * @param importService         The import service.
 	 * @param launcherService       The launcher service.
 	 * @param preprocessingService  The preprocessing service.
@@ -183,8 +191,8 @@ public class AdministrationApiController extends CoreApiController {
 	 * @since 1.8
 	 */
 	public AdministrationApiController(ConfigurationService configurationService, SecurityService securityService,
-			CollectionService collectionService, ModelService modelService, ImportService importService,
-			LauncherService launcherService, PreprocessingService preprocessingService,
+			CollectionService collectionService, ModelService modelService, ActionService actionService,
+			ImportService importService, LauncherService launcherService, PreprocessingService preprocessingService,
 			OpticalLayoutRecognitionService olrService, OpticalCharacterRecognitionService ocrService,
 			PostcorrectionService postcorrectionService, ToolService toolService, ExportService exportService,
 			TrainingService trainingService, CommunicationService communicationService) {
@@ -193,6 +201,7 @@ public class AdministrationApiController extends CoreApiController {
 
 		this.communicationService = communicationService;
 
+		actionProviders = actionService.getProviders();
 		importProviders = importService.getProviders();
 		launcherProviders = launcherService.getProviders();
 		preprocessingProviders = preprocessingService.getProviders();
@@ -202,6 +211,9 @@ public class AdministrationApiController extends CoreApiController {
 		toolProviders = toolService.getProviders();
 		exportProviders = exportService.getProviders();
 		trainingProviders = trainingService.getProviders();
+
+		for (CoreServiceProvider<?>.Provider provider : actionProviders)
+			providers.put(provider.getId(), provider);
 
 		for (CoreServiceProvider<?>.Provider provider : importProviders)
 			providers.put(provider.getId(), provider);
@@ -1928,6 +1940,11 @@ public class AdministrationApiController extends CoreApiController {
 		private static final long serialVersionUID = 1L;
 
 		/**
+		 * The registered action service providers sorted by name.
+		 */
+		private List<ProviderResponse> action;
+
+		/**
 		 * The registered import service providers sorted by name.
 		 */
 		@JsonProperty("import")
@@ -1994,6 +2011,10 @@ public class AdministrationApiController extends CoreApiController {
 		public ProviderContainerResponse(Locale locale) {
 			super();
 
+			action = new ArrayList<>();
+			for (CoreServiceProvider<ActionServiceProvider>.Provider provider : actionProviders)
+				action.add(new ProviderResponse(locale, provider));
+
 			imp = new ArrayList<>();
 			for (CoreServiceProvider<ImportServiceProvider>.Provider provider : importProviders)
 				imp.add(new ProviderResponse(locale, provider));
@@ -2029,6 +2050,26 @@ public class AdministrationApiController extends CoreApiController {
 			training = new ArrayList<>();
 			for (CoreServiceProvider<TrainingServiceProvider>.Provider provider : trainingProviders)
 				training.add(new ProviderResponse(locale, provider));
+		}
+
+		/**
+		 * Returns the action.
+		 *
+		 * @return The action.
+		 * @since 17
+		 */
+		public List<ProviderResponse> getAction() {
+			return action;
+		}
+
+		/**
+		 * Set the action.
+		 *
+		 * @param action The action to set.
+		 * @since 17
+		 */
+		public void setAction(List<ProviderResponse> action) {
+			this.action = action;
 		}
 
 		/**
