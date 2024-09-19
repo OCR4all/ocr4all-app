@@ -313,7 +313,7 @@ public class ContainerService extends CoreService {
 	 * Delete the supplied Path — for directories, recursively delete any nested
 	 * directories or files as well.
 	 * 
-	 * @param path the root Path to delete
+	 * @param path The root Path to delete.
 	 * @since 1.8
 	 */
 	private void deleteRecursively(Path path) {

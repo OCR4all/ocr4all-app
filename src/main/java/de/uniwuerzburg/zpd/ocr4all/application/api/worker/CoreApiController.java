@@ -140,6 +140,11 @@ public class CoreApiController {
 	public static final String scheduleRequestMapping = "/schedule";
 
 	/**
+	 * The evaluate request mapping.
+	 */
+	public static final String evaluateRequestMapping = "/evaluate";
+
+	/**
 	 * The push request mapping.
 	 */
 	public static final String pushRequestMapping = "/push";
