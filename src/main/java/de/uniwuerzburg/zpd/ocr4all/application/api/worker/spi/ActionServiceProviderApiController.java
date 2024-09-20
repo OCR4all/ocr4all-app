@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderResponse;
+import de.uniwuerzburg.zpd.ocr4all.application.api.domain.response.spi.ServiceProviderTaskResponse;
 import de.uniwuerzburg.zpd.ocr4all.application.api.worker.CoreApiController;
 import de.uniwuerzburg.zpd.ocr4all.application.communication.action.EvaluationMeasure;
 import de.uniwuerzburg.zpd.ocr4all.application.core.assemble.ModelService;
@@ -34,6 +35,7 @@ import de.uniwuerzburg.zpd.ocr4all.application.core.security.SecurityService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.CoreServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.core.spi.action.ActionService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.util.SPIUtils;
+import de.uniwuerzburg.zpd.ocr4all.application.core.util.ServiceProviderException;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.ActionServiceProvider;
 import de.uniwuerzburg.zpd.ocr4all.application.spi.core.ServiceProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,6 +72,17 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	public static final String calamariRequestMapping = "/calamari";
 
 	/**
+	 * Defines filters for action service providers.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 17
+	 */
+	private enum Filter {
+		all, calamariEvaluation
+	}
+
+	/**
 	 * The evaluation service.
 	 */
 	protected final EvaluationService evaluationService;
@@ -95,6 +108,62 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	}
 
 	/**
+	 * Returns the service providers.
+	 * 
+	 * @param lang   The language. if null, then use the application preferred
+	 *               locale.
+	 * @param filter The filter for action service providers.
+	 * @return The service providers.
+	 * @throws ServiceProviderException Throws on service provider exceptions.
+	 * @since 17
+	 */
+	public List<ServiceProviderResponse> getServiceProviders(String lang, Filter filter)
+			throws ServiceProviderException {
+		final Locale locale = getLocale(lang);
+
+		final List<ServiceProviderResponse> providers = new ArrayList<>();
+		for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders()) {
+			boolean isProvider;
+			switch (filter) {
+			case calamariEvaluation:
+				isProvider = EvaluationService
+						.isCalamariEvaluationProvider((ActionServiceProvider) (provider.getServiceProvider()));
+				break;
+			case all:
+			default:
+				isProvider = true;
+				break;
+			}
+
+			if (isProvider)
+				providers.add(new ServiceProviderResponse(locale, type, provider.getId(), provider.getServiceProvider(),
+						null));
+		}
+
+		Collections.sort(providers, new Comparator<ServiceProviderResponse>() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+			 */
+			@Override
+			public int compare(ServiceProviderResponse o1, ServiceProviderResponse o2) {
+				if (o1.getIndex() != o2.getIndex())
+					return o1.getIndex() - o2.getIndex();
+				else {
+					int compare = o1.getName().compareToIgnoreCase(o2.getName());
+					if (compare != 0)
+						return compare;
+					else
+						return o1.getVersion() <= o2.getVersion() ? -1 : 1;
+				}
+			}
+		});
+
+		return providers;
+	}
+
+	/**
 	 * Returns the service providers in the response body.
 	 * 
 	 * @param lang The language. if null, then use the application preferred locale.
@@ -109,34 +178,32 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	public ResponseEntity<List<ServiceProviderResponse>> serviceProviders(
 			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
 		try {
-			final Locale locale = getLocale(lang);
+			return ResponseEntity.ok().body(getServiceProviders(lang, Filter.all));
+		} catch (Exception ex) {
+			log(ex);
 
-			final List<ServiceProviderResponse> providers = new ArrayList<>();
-			for (CoreServiceProvider<? extends ServiceProvider>.Provider provider : service.getActiveProviders())
-				providers.add(new ServiceProviderResponse(locale, type, provider.getId(), provider.getServiceProvider(),
-						null));
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+		}
 
-			Collections.sort(providers, new Comparator<ServiceProviderResponse>() {
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-				 */
-				@Override
-				public int compare(ServiceProviderResponse o1, ServiceProviderResponse o2) {
-					if (o1.getIndex() != o2.getIndex())
-						return o1.getIndex() - o2.getIndex();
-					else {
-						int compare = o1.getName().compareToIgnoreCase(o2.getName());
-						if (compare != 0)
-							return compare;
-						else
-							return o1.getVersion() <= o2.getVersion() ? -1 : 1;
-					}
-				}
-			});
+	}
 
-			return ResponseEntity.ok().body(providers);
+	/**
+	 * Returns the calamari evaluation service providers in the response body.
+	 * 
+	 * @param lang The language. if null, then use the application preferred locale.
+	 * @return The calamari evaluation service providers in the response body.
+	 * @since 17
+	 */
+	@Operation(summary = "returns the calamari evaluation service providers in the response body")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Calamari Evaluation Service Providers", content = {
+					@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ServiceProviderResponse.class))) }),
+			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
+	@GetMapping(providersRequestMapping + evaluateRequestMapping + calamariRequestMapping)
+	public ResponseEntity<List<ServiceProviderResponse>> serviceProvidersCalamariEvaluation(
+			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
+		try {
+			return ResponseEntity.ok().body(getServiceProviders(lang, Filter.calamariEvaluation));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -166,21 +233,19 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	@PostMapping(evaluateRequestMapping + calamariRequestMapping)
 	public ResponseEntity<EvaluationResponse> evaluateCalamari(@RequestBody @Valid EvaluationRequest request,
 			@Parameter(description = "the language") @RequestParam(required = false) String lang) {
-		final ActionServiceProvider provider = service.getActiveProvider(request.getId());
-
-		if (provider == null || request.getDataset().getCollections() == null
-				|| request.getDataset().getCollections().isEmpty())
+		if (request.getDataset().getCollections() == null)
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-
-		for (EvaluationService.Dataset.Collection collection : request.getDataset().getCollections())
-			if (collection == null || collection.getId() == null || collection.getId().isBlank())
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-			else
-				authorizeCollectionRead(collection.getId());
+		else
+			for (EvaluationService.Dataset.Collection collection : request.getDataset().getCollections())
+				if (collection == null)
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+				else
+					authorizeCollectionRead(collection.getId());
 
 		try {
-			EvaluationMeasure evaluation = evaluationService.evaluateCalamari(provider,
-					SPIUtils.getModelArgument(request), request.getDataset());
+			EvaluationMeasure evaluation = evaluationService.evaluateCalamari(
+					service.getActiveProvider(request.getId()), SPIUtils.getModelArgument(request),
+					request.getDataset());
 
 			if (evaluation == null)
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -201,7 +266,8 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 		} catch (Exception ex) {
 			log(ex);
 
-			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+					.body(new EvaluationResponse(new EvaluationMeasure(EvaluationMeasure.State.interrupted, ex)));
 		}
 	}
 
@@ -212,7 +278,8 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class EvaluationRequest extends ServiceProviderRequest {
+	public static class EvaluationRequest
+			extends de.uniwuerzburg.zpd.ocr4all.application.persistence.spi.ServiceProvider {
 		/**
 		 * The serial version UID.
 		 */
@@ -253,11 +320,21 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class EvaluationResponse extends EvaluationMeasure {
+	public static class EvaluationResponse extends ServiceProviderTaskResponse {
 		/**
 		 * The serial version UID.
 		 */
 		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The summary.
+		 */
+		private final EvaluationMeasure.Summary summary;
+
+		/**
+		 * The details.
+		 */
+		private final List<EvaluationMeasure.Detail> details;
 
 		/**
 		 * Creates an evaluation response for the api.
@@ -266,16 +343,30 @@ public class ActionServiceProviderApiController extends CoreServiceProviderApiCo
 		 * @since 17
 		 */
 		public EvaluationResponse(EvaluationMeasure evaluation) {
-			super();
+			super(evaluation);
 
-			setState(evaluation.getState());
-			setMessage(evaluation.getMessage());
+			summary = evaluation.getSummary();
+			details = evaluation.getDetails();
+		}
 
-			setStandardOutput(evaluation.getStandardOutput());
-			setStandardError(evaluation.getStandardError());
+		/**
+		 * Returns the summary.
+		 *
+		 * @return The summary.
+		 * @since 17
+		 */
+		public EvaluationMeasure.Summary getSummary() {
+			return summary;
+		}
 
-			setSummary(evaluation.getSummary());
-			setDetails(evaluation.getDetails());
+		/**
+		 * Returns the details.
+		 *
+		 * @return The details.
+		 * @since 17
+		 */
+		public List<EvaluationMeasure.Detail> getDetails() {
+			return details;
 		}
 
 	}

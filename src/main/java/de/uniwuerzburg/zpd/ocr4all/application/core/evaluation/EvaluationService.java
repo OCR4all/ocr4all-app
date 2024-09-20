@@ -16,10 +16,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import de.uniwuerzburg.zpd.ocr4all.application.communication.action.EvaluationMeasure;
+import de.uniwuerzburg.zpd.ocr4all.application.communication.spi.ServiceProviderTask;
 import de.uniwuerzburg.zpd.ocr4all.application.core.CoreService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.configuration.ConfigurationService;
 import de.uniwuerzburg.zpd.ocr4all.application.core.data.CollectionService;
@@ -40,15 +38,7 @@ public class EvaluationService extends CoreService {
 	/**
 	 * The calamari evaluation provider.
 	 */
-	private static final String calamariEvaluationProvider = "calamari/evaluation";
-
-	/**
-	 * The JSON object mapper.
-	 */
-	protected final ObjectMapper objectMapper = new ObjectMapper();
-	{
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-	}
+	public static final String calamariEvaluationProvider = "calamari/evaluation";
 
 	/**
 	 * The collection service.
@@ -86,6 +76,17 @@ public class EvaluationService extends CoreService {
 	}
 
 	/**
+	 * Returns true if the provider is of Calamari evaluation type.
+	 * 
+	 * @param provider The provider.
+	 * @return True if the provider is of Calamari evaluation type.
+	 * @since 17
+	 */
+	public static boolean isCalamariEvaluationProvider(ActionServiceProvider provider) {
+		return provider != null && calamariEvaluationProvider.equals(provider.getProvider());
+	}
+
+	/**
 	 * Returns the evaluation measure of the dataset using a Calamari evaluation
 	 * provider.
 	 * 
@@ -97,8 +98,8 @@ public class EvaluationService extends CoreService {
 	 */
 	public EvaluationMeasure evaluateCalamari(ActionServiceProvider provider, ModelArgument modelArgument,
 			Dataset dataset) {
-		if (provider == null || !calamariEvaluationProvider.equals(provider.getProvider()) || modelArgument == null
-				|| dataset == null || dataset.getCollections() == null || dataset.getCollections().isEmpty())
+		if (!isCalamariEvaluationProvider(provider) || modelArgument == null || dataset == null
+				|| dataset.getCollections() == null || dataset.getCollections().isEmpty())
 			return null;
 
 		Path temporaryDirectory = null;
@@ -130,21 +131,28 @@ public class EvaluationService extends CoreService {
 				}
 
 			if (isEmptyDataset)
-				return null;
+				return new EvaluationMeasure(EvaluationMeasure.State.inconsistent, "evaluation: empty dataset");
 
 			WorkerServiceProvider.Worker<Database> worker = provider.newAgent();
 			if (worker == null)
-				return null;
+				return new EvaluationMeasure(EvaluationMeasure.State.interrupted, "evaluation: no worker available");
 
-			String evaluation = worker.execute(
+			ServiceProviderTask task = worker.execute(
 					new Database(temporaryDirectory.getParent(), temporaryDirectory.getFileName().toString()),
 					modelArgument);
 
-			return evaluation == null ? null : objectMapper.readValue(evaluation, EvaluationMeasure.class);
+			if (task == null)
+				return new EvaluationMeasure(EvaluationMeasure.State.interrupted,
+						"evaluation: no evaluation available");
+			if (task instanceof EvaluationMeasure evaluation)
+				return evaluation;
+			else
+				return new EvaluationMeasure(EvaluationMeasure.State.interrupted, "evaluation: wrong worker type");
+
 		} catch (Exception e) {
 			logger.warn("cannot evaluate - " + e.getMessage() + ".");
 
-			return null;
+			return new EvaluationMeasure(EvaluationMeasure.State.interrupted, e);
 		} finally {
 			deleteRecursively(temporaryDirectory);
 		}
@@ -157,7 +165,7 @@ public class EvaluationService extends CoreService {
 	 * @version 1.0
 	 * @since 17
 	 */
-	public class Dataset {
+	public static class Dataset {
 		/**
 		 * The collections.
 		 */
