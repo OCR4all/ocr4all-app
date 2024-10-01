@@ -916,25 +916,31 @@ public class CollectionService extends CoreService {
 				if (root.getPage() != null) {
 					StringBuffer buffer = new StringBuffer();
 
-					for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
-						if (PageXMLLevel.TextRegion.equals(level))
-							buffer.append(getTextEquivalenceUnicode(region, index));
-						else {
-							for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
-								if (PageXMLLevel.TextLine.equals(level))
-									buffer.append(getTextEquivalenceUnicode(line, index));
-								else {
-									for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line.getWords())
-										if (PageXMLLevel.Word.equals(level))
-											buffer.append(getTextEquivalenceUnicode(word, index));
+					if (root.getPage().getTextRegions() != null)
+						for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
+							if (PageXMLLevel.TextRegion.equals(level))
+								buffer.append(getTextEquivalenceUnicode(region, index));
+							else {
+								if (region.getTextLines() != null)
+									for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
+										if (PageXMLLevel.TextLine.equals(level))
+											buffer.append(getTextEquivalenceUnicode(line, index));
 										else {
-											for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
-													.getGlyphs())
-												if (PageXMLLevel.Glyph.equals(level))
-													buffer.append(getTextEquivalenceUnicode(glyph, index));
+											if (line.getWords() != null)
+												for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line
+														.getWords())
+													if (PageXMLLevel.Word.equals(level))
+														buffer.append(getTextEquivalenceUnicode(word, index));
+													else {
+														if (word.getGlyphs() != null)
+															for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
+																	.getGlyphs())
+																if (PageXMLLevel.Glyph.equals(level))
+																	buffer.append(
+																			getTextEquivalenceUnicode(glyph, index));
+													}
 										}
-								}
-						}
+							}
 
 					Hashtable<String, Integer> codec = new Hashtable<>();
 					if (buffer.length() > 0) {
@@ -1010,52 +1016,53 @@ public class CollectionService extends CoreService {
 
 						boolean isFound = false;
 						if (root.getPage() != null) {
-							for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
-								if (PageXMLLevel.TextRegion.equals(level)) {
-									if (isTextEquivalenceUnicode(region, index)) {
-										isFound = true;
+							if (root.getPage().getTextRegions() != null)
+								for (PageXMLParser.Root.Page.TextRegion region : root.getPage().getTextRegions())
+									if (PageXMLLevel.TextRegion.equals(level)) {
+										if (isTextEquivalenceUnicode(region, index)) {
+											isFound = true;
 
-										break;
-									}
-								} else {
-									for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
-										if (PageXMLLevel.TextLine.equals(level)) {
-											if (isTextEquivalenceUnicode(line, index)) {
-												isFound = true;
+											break;
+										}
+									} else if (region.getTextLines() != null) {
+										for (PageXMLParser.Root.Page.TextRegion.TextLine line : region.getTextLines())
+											if (PageXMLLevel.TextLine.equals(level)) {
+												if (isTextEquivalenceUnicode(line, index)) {
+													isFound = true;
 
-												break;
-											}
-										} else {
-											for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line
-													.getWords())
+													break;
+												}
+											} else if (line.getWords() != null) {
+												for (PageXMLParser.Root.Page.TextRegion.TextLine.Word word : line
+														.getWords())
 
-												if (PageXMLLevel.Word.equals(level)) {
-													if (isTextEquivalenceUnicode(word, index)) {
-														isFound = true;
-
-														break;
-													}
-												} else {
-													for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
-															.getGlyphs())
-														if (PageXMLLevel.Glyph.equals(level)
-																&& isTextEquivalenceUnicode(glyph, index)) {
+													if (PageXMLLevel.Word.equals(level)) {
+														if (isTextEquivalenceUnicode(word, index)) {
 															isFound = true;
 
 															break;
 														}
+													} else if (word.getGlyphs() != null) {
+														for (PageXMLParser.Root.Page.TextRegion.TextLine.Word.Glyph glyph : word
+																.getGlyphs())
+															if (PageXMLLevel.Glyph.equals(level)
+																	&& isTextEquivalenceUnicode(glyph, index)) {
+																isFound = true;
 
-													if (isFound)
-														break;
-												}
+																break;
+															}
 
-											if (isFound)
-												break;
-										}
+														if (isFound)
+															break;
+													}
 
-									if (isFound)
-										break;
-								}
+												if (isFound)
+													break;
+											}
+
+										if (isFound)
+											break;
+									}
 						}
 
 						if (isFound) {
