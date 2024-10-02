@@ -748,7 +748,15 @@ public class AccountService extends CoreService implements UserDetailsService {
 		if (!isUpdated)
 			buffer.append(item + System.lineSeparator());
 
-		// Save the file
+		// Persist the file
+		try {
+			Files.createDirectories(file.getParent());
+		} catch (IOException ioe) {
+			logger.warn("Cannot create directory '" + file.getParent() + "' - " + ioe.getMessage());
+
+			return false;
+		}		
+		
 		try (BufferedWriter writer = Files.newBufferedWriter(file,
 				configurationService.getApplication().getCharset())) {
 			writer.write(buffer.toString());

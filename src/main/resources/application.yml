@@ -13,7 +13,7 @@ spring:
   profiles:
     active:
       - logging-debug
-      - create_administrator
+      - create-administrator
       - server
       - api
       - api-localhost
@@ -24,7 +24,7 @@ spring:
     max-request-size: 2GB
     enabled: true
     location: ${java.io.tmpdir}
-    
+
 #
 # server configuration
 #
@@ -318,7 +318,7 @@ ocr4all.api.security.origin-patterns:
 
 ---
 spring:
-    config.activate.on-profile: create_administrator
+    config.activate.on-profile: create-administrator
 
 ocr4all.application.security.administrator.create: true
 
