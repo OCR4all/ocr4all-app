@@ -945,16 +945,19 @@ public class ModelApiController extends CoreApiController {
 		/**
 		 * The minimum version.
 		 */
+		@JsonProperty("minimum-version")
 		private String minimumVersion;
 
 		/**
 		 * The maximum version.
 		 */
+		@JsonProperty("maximum-version")
 		private String maximumVersion;
 
 		/**
 		 * The suffix for the model file names to return.
 		 */
+		@JsonProperty("suffix")
 		private String filenameSuffix;
 
 		/**
