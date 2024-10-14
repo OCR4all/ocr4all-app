@@ -44,6 +44,11 @@ import de.uniwuerzburg.zpd.ocr4all.application.persistence.security.SecurityGran
 @Service
 public class ModelService extends CoreService {
 	/**
+	 * The Calamari model file name suffix.
+	 */
+	private final static String calamariModelFilenameSuffix = ".ckpt.json";
+
+	/**
 	 * The security service.
 	 */
 	private final SecurityService securityService;
@@ -64,7 +69,7 @@ public class ModelService extends CoreService {
 	 * @param configurationService The configuration service.
 	 * @param securityService      The security service.
 	 * @param dataService          The data service.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ModelService(ConfigurationService configurationService, SecurityService securityService,
 			AssembleService dataService) {
@@ -81,7 +86,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param configuration The model configuration.
 	 * @return The model.
-	 * @since 1.8
+	 * @since 17
 	 */
 	private Model getModel(ModelConfiguration configuration) {
 		return new Model(dataService.isAdministrator() ? SecurityGrantRWS.Right.maximal
@@ -95,7 +100,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param uuid The model uuid.
 	 * @return The model folder. If the uuid is invalid, null is returned.
-	 * @since 1.8
+	 * @since 17
 	 */
 	private Path getPath(String uuid) {
 		if (uuid == null || uuid.isBlank())
@@ -114,7 +119,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param path The model path.
 	 * @return The model.
-	 * @since 1.8
+	 * @since 17
 	 */
 	private Model getModel(Path path) {
 		return getModel(new ModelConfiguration(configurationService.getAssemble().getModel(), path));
@@ -124,7 +129,7 @@ public class ModelService extends CoreService {
 	 * Returns true if a model can be created.
 	 * 
 	 * @return True if a model can be created.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public boolean isCreate() {
 		return dataService.isCreateModel();
@@ -137,7 +142,7 @@ public class ModelService extends CoreService {
 	 * @param description The description.
 	 * @param keywords    The keywords.
 	 * @return The model configuration. Null if the model can not be created.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model create(String name, String description, Set<String> keywords) {
 		if (isCreate()) {
@@ -167,7 +172,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param uuid The model uuid.
 	 * @return The model. Null if unknown.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model getModel(String uuid) {
 		Path path = getPath(uuid);
@@ -180,7 +185,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param uuid The model uuid.
 	 * @return The model with files names. Null if unknown.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public ModelFile getModelFiles(String uuid) {
 		Path path = getPath(uuid);
@@ -213,7 +218,7 @@ public class ModelService extends CoreService {
 	 * Returns the models sorted by name.
 	 * 
 	 * @return The models.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public List<Model> getModels() {
 		List<Model> models = new ArrayList<>();
@@ -238,45 +243,33 @@ public class ModelService extends CoreService {
 	 * Returns the available models sorted by name, this means, the models for which
 	 * the user has read rights.
 	 * 
-	 * @param filter         The filter. If null, no filter is applied.
-	 * @param filenameSuffix The suffix for the model file names to return. If
-	 *                       empty, do not return them.
-	 * @return The models with the desired file names.
-	 * @since 1.8
+	 * @param filter The filter.
+	 * @return The models with the desired file names. An empty list if the filter
+	 *         or the type field is null.
+	 * @since 17
 	 */
-	public List<ModelFile> getAvailableModels(ModelFilter filter, String filenameSuffix) {
+	public List<ModelFile> getAvailableModels(ModelFilter filter) {
 		List<ModelFile> modelFiles = new ArrayList<>();
 
-		// The suffix for the model file names
-		final String sufix = filenameSuffix == null || filenameSuffix.isBlank() ? null : filenameSuffix.trim();
+		if (filter != null && filter.isTypeSet()) {
+			// The version filter
+			ComparableVersion minimumVersion = null, maximumVersion = null;
+			if (filter.isMinimumVersionSet())
+				minimumVersion = new ComparableVersion(filter.getMinimumVersion());
 
-		// The version filter
-		ComparableVersion minimumVersion = null, maximumVersion = null;
-		if (filter != null) {
-			if (!filter.isTypeSet() && !filter.isStatesSet() && !filter.isMinimumVersionSet()
-					&& !filter.isMaximumVersionSet())
-				filter = null;
-			else {
-				if (filter.isMinimumVersionSet())
-					minimumVersion = new ComparableVersion(filter.getMinimumVersion());
+			if (filter.isMaximumVersionSet())
+				maximumVersion = new ComparableVersion(filter.getMaximumVersion());
 
-				if (filter.isMaximumVersionSet())
-					maximumVersion = new ComparableVersion(filter.getMaximumVersion());
-
-			}
-
-		}
-
-		// Select the models
-		for (Model model : getModels())
-			if (model.getRight().isReadFulfilled()) {
-				if (filter != null) {
+			// Select the models
+			boolean isLogWarningMessage = false;
+			for (Model model : getModels())
+				if (model.getRight().isReadFulfilled()) {
 					if (!model.getConfiguration().getConfiguration().isEngineConfigurationAvailable())
 						break;
 
 					Engine engine = model.getConfiguration().getConfiguration().getEngineConfiguration();
 
-					if (filter.isTypeSet() && !filter.getType().equals(engine.getType()))
+					if (!filter.getType().equals(engine.getType()))
 						break;
 
 					if (filter.isStatesSet() && !filter.getStates().contains(engine.getState()))
@@ -294,25 +287,43 @@ public class ModelService extends CoreService {
 						if (maximumVersion != null && maximumVersion.compareTo(version) < 0)
 							break;
 					}
-				}
 
-				List<String> filenames = new ArrayList<>();
-				if (sufix != null)
-					try {
-						Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile).forEach(path -> {
-							String filename = path.getFileName().toString();
+					List<String> filenames = new ArrayList<>();
+					switch (filter.getType()) {
+					case Calamari:
+						try {
+							Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile)
+									.forEach(path -> {
+										String filename = path.getFileName().toString();
 
-							// Ignore file names beginning with a dot and not ending with desired filename
-							// suffix
-							if (!filename.startsWith(".") && filename.endsWith(sufix))
-								filenames.add(filename);
-						});
-					} catch (IOException e) {
-						logger.warn("Cannot not read model files - " + e.getMessage());
+										// Ignore file names beginning with a dot and not ending with desired filename
+										// suffix
+										if (!filename.startsWith(".")
+												&& filename.length() > calamariModelFilenameSuffix.length()
+												&& filename.endsWith(calamariModelFilenameSuffix))
+											filenames.add(filename.substring(0,
+													filename.length() - calamariModelFilenameSuffix.length()));
+									});
+						} catch (IOException e) {
+							logger.warn("Cannot not read model files - " + e.getMessage());
+						}
+						break;
+					case Kraken:
+					case Tesseract:
+						if (!isLogWarningMessage) {
+							logger.warn("model file names need to be implemented for type " + filter.getType().name()
+									+ ".");
+							isLogWarningMessage = true;
+						}
+						break;
+					case undefined:
+					default:
+						break;
 					}
 
-				modelFiles.add(new ModelFile(model, filenames));
-			}
+					modelFiles.add(new ModelFile(model, filenames));
+				}
+		}
 
 		return modelFiles;
 	}
@@ -322,7 +333,7 @@ public class ModelService extends CoreService {
 	 * 
 	 * @param uuid The model uuid.
 	 * @return True if the model could be removed.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public boolean remove(String uuid) {
 		Path path = getPath(uuid);
@@ -358,7 +369,7 @@ public class ModelService extends CoreService {
 	 * @param description The description.
 	 * @param keywords    The keywords.
 	 * @return The model. Null if the model can not be updated.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model update(String uuid, String name, String description, Set<String> keywords) {
 		Path path = getPath(uuid);
@@ -381,7 +392,7 @@ public class ModelService extends CoreService {
 	 * @param uuid     The model uuid.
 	 * @param security The model security.
 	 * @return The updated model. Null if it can not be updated.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model update(String uuid, SecurityGrantRWS security) {
 		Path path = getPath(uuid);
@@ -403,7 +414,7 @@ public class ModelService extends CoreService {
 	 * @param uuid   The model uuid.
 	 * @param engine The engine.
 	 * @return The updated model. Null if it can not be updated.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model update(String uuid, ModelConfiguration.Configuration.EngineInformation engine) {
 		Path path = getPath(uuid);
@@ -426,7 +437,7 @@ public class ModelService extends CoreService {
 	 * @param files The models.
 	 * @return The model. Null if the model is unknown or the write right is not
 	 *         fulfilled or the engine state is not uploading.
-	 * @since 1.8
+	 * @since 17
 	 */
 	public Model store(String uuid, MultipartFile[] files) throws IOException {
 		Path path = getPath(uuid);
@@ -469,7 +480,7 @@ public class ModelService extends CoreService {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class Model {
 		/**
@@ -487,7 +498,7 @@ public class ModelService extends CoreService {
 		 * 
 		 * @param right         The right.
 		 * @param configuration The configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public Model(SecurityGrantRWS.Right right, ModelConfiguration configuration) {
 			super();
@@ -500,7 +511,7 @@ public class ModelService extends CoreService {
 		 * Returns the right.
 		 *
 		 * @return The right.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public SecurityGrantRWS.Right getRight() {
 			return right;
@@ -510,7 +521,7 @@ public class ModelService extends CoreService {
 		 * Returns the configuration.
 		 *
 		 * @return The configuration.
-		 * @since 1.8
+		 * @since 17
 		 */
 		public ModelConfiguration getConfiguration() {
 			return configuration;
@@ -523,7 +534,7 @@ public class ModelService extends CoreService {
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
-	 * @since 1.8
+	 * @since 17
 	 */
 	public static class ModelFile extends Model {
 		/**

@@ -142,27 +142,22 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the available models sorted by name with desired files in the
-	 * response body.
+	 * Returns the available models sorted by name in the response body.
 	 *
 	 * @param request The available model request.
-	 * @return The available models sorted by name with desired files in the
-	 *         response body.
+	 * @return The available models sorted by name in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the available models sorted by name with desired files in the response body")
+	@Operation(summary = "returns the available models sorted by name in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Available Models", content = {
 			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ModelFileResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(availableRequestMapping)
-	public ResponseEntity<List<ModelFileResponse>> available(@RequestBody AvailableModelRequest request) {
+	public ResponseEntity<List<ModelFileResponse>> available(@RequestBody @Valid AvailableModelRequest request) {
 		try {
 			List<ModelFileResponse> modelFiles = new ArrayList<>();
-			for (ModelService.ModelFile modelFile : modelService.getAvailableModels(
-					request == null ? null
-							: new ModelService.ModelFilter(request.getType(), request.getStates(),
-									request.getMinimumVersion(), request.getMaximumVersion()),
-					request == null ? null : request.getFilenameSuffix()))
+			for (ModelService.ModelFile modelFile : modelService.getAvailableModels(new ModelService.ModelFilter(
+					request.getType(), request.getStates(), request.getMinimumVersion(), request.getMaximumVersion())))
 				modelFiles.add(new ModelFileResponse(modelFile));
 
 			return ResponseEntity.ok().body(modelFiles);
@@ -935,6 +930,7 @@ public class ModelApiController extends CoreApiController {
 		/**
 		 * The engine type.
 		 */
+		@NotNull
 		private Engine.Type type;
 
 		/**
@@ -953,12 +949,6 @@ public class ModelApiController extends CoreApiController {
 		 */
 		@JsonProperty("maximum-version")
 		private String maximumVersion;
-
-		/**
-		 * The suffix for the model file names to return.
-		 */
-		@JsonProperty("suffix")
-		private String filenameSuffix;
 
 		/**
 		 * Returns the engine type.
@@ -1038,26 +1028,6 @@ public class ModelApiController extends CoreApiController {
 		 */
 		public void setMaximumVersion(String maximumVersion) {
 			this.maximumVersion = maximumVersion;
-		}
-
-		/**
-		 * Returns the suffix for the model file names to return.
-		 *
-		 * @return The suffix for the model file names to return.
-		 * @since 17
-		 */
-		public String getFilenameSuffix() {
-			return filenameSuffix;
-		}
-
-		/**
-		 * Set the suffix for the model file names to return.
-		 *
-		 * @param filenameSuffix The suffix to set.
-		 * @since 17
-		 */
-		public void setFilenameSuffix(String filenameSuffix) {
-			this.filenameSuffix = filenameSuffix;
 		}
 
 	}
