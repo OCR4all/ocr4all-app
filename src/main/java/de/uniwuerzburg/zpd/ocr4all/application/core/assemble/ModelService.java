@@ -187,7 +187,7 @@ public class ModelService extends CoreService {
 	 * @return The model with files names. Null if unknown.
 	 * @since 17
 	 */
-	public ModelFile getModelFiles(String uuid) {
+	public ModelBatch getModelFiles(String uuid) {
 		Path path = getPath(uuid);
 
 		if (path != null) {
@@ -207,7 +207,7 @@ public class ModelService extends CoreService {
 					logger.warn("Cannot not read model files - " + e.getMessage());
 				}
 
-				return new ModelFile(model, filenames);
+				return new ModelBatch(model, filenames);
 			}
 		}
 
@@ -248,84 +248,95 @@ public class ModelService extends CoreService {
 	 *         or the type field is null.
 	 * @since 17
 	 */
-	public List<ModelFile> getAvailableModels(ModelFilter filter) {
-		List<ModelFile> modelFiles = new ArrayList<>();
+	public List<ModelBatch> getAvailableModels(ModelFilter filter) {
+		List<ModelBatch> models = new ArrayList<>();
 
-		if (filter != null && filter.isTypeSet()) {
-			// The version filter
-			ComparableVersion minimumVersion = null, maximumVersion = null;
-			if (filter.isMinimumVersionSet())
-				minimumVersion = new ComparableVersion(filter.getMinimumVersion());
+		// The version filter
+		ComparableVersion minimumVersion = null, maximumVersion = null;
+		if (filter != null) {
+			if (!filter.isTypeSet() && !filter.isStatesSet() && !filter.isMinimumVersionSet()
+					&& !filter.isMaximumVersionSet())
+				filter = null;
+			else {
+				if (filter.isMinimumVersionSet())
+					minimumVersion = new ComparableVersion(filter.getMinimumVersion());
 
-			if (filter.isMaximumVersionSet())
-				maximumVersion = new ComparableVersion(filter.getMaximumVersion());
-
-			// Select the models
-			boolean isLogWarningMessage = false;
-			for (Model model : getModels())
-				if (model.getRight().isReadFulfilled()) {
-					if (!model.getConfiguration().getConfiguration().isEngineConfigurationAvailable())
-						break;
-
-					Engine engine = model.getConfiguration().getConfiguration().getEngineConfiguration();
-
-					if (!filter.getType().equals(engine.getType()))
-						break;
-
-					if (filter.isStatesSet() && !filter.getStates().contains(engine.getState()))
-						break;
-
-					if (filter.isMinimumVersionSet() || filter.isMaximumVersionSet()) {
-						if (engine.getVersion() == null || engine.getVersion().isBlank())
-							break;
-
-						ComparableVersion version = new ComparableVersion(engine.getVersion().trim());
-
-						if (minimumVersion != null && minimumVersion.compareTo(version) > 0)
-							break;
-
-						if (maximumVersion != null && maximumVersion.compareTo(version) < 0)
-							break;
-					}
-
-					List<String> filenames = new ArrayList<>();
-					switch (filter.getType()) {
-					case Calamari:
-						try {
-							Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile)
-									.forEach(path -> {
-										String filename = path.getFileName().toString();
-
-										// Ignore file names beginning with a dot and not ending with desired filename
-										// suffix
-										if (!filename.startsWith(".")
-												&& filename.length() > calamariModelFilenameSuffix.length()
-												&& filename.endsWith(calamariModelFilenameSuffix))
-											filenames.add(filename.substring(0,
-													filename.length() - calamariModelFilenameSuffix.length()));
-									});
-						} catch (IOException e) {
-							logger.warn("Cannot not read model files - " + e.getMessage());
-						}
-						break;
-					case Kraken:
-					case Tesseract:
-						if (!isLogWarningMessage) {
-							logger.warn("model file names need to be implemented for type " + filter.getType().name()
-									+ ".");
-							isLogWarningMessage = true;
-						}
-						break;
-					case undefined:
-					default:
-						break;
-					}
-
-					modelFiles.add(new ModelFile(model, filenames));
-				}
+				if (filter.isMaximumVersionSet())
+					maximumVersion = new ComparableVersion(filter.getMaximumVersion());
+			}
 		}
 
-		return modelFiles;
+		// Select the models
+		for (Model model : getModels())
+			if (model.getRight().isReadFulfilled()) {
+				List<String> batch = new ArrayList<>();
+				Engine engine = model.getConfiguration().getConfiguration().isEngineConfigurationAvailable()
+						? model.getConfiguration().getConfiguration().getEngineConfiguration()
+						: null;
+
+				if (engine != null) {
+					// apply filter
+					if (filter != null) {
+						if (filter.isTypeSet() && !filter.getType().equals(engine.getType()))
+							break;
+
+						if (filter.isStatesSet() && !filter.getStates().contains(engine.getState()))
+							break;
+
+						if (filter.isMinimumVersionSet() || filter.isMaximumVersionSet()) {
+							if (engine.getVersion() == null || engine.getVersion().isBlank())
+								break;
+
+							ComparableVersion version = new ComparableVersion(engine.getVersion().trim());
+
+							if (minimumVersion != null && minimumVersion.compareTo(version) > 0)
+								break;
+
+							if (maximumVersion != null && maximumVersion.compareTo(version) < 0)
+								break;
+						}
+					}
+
+					// load the model names
+					if (engine.getType() != null)
+						switch (engine.getType()) {
+						case Calamari:
+							try {
+								Files.list(model.getConfiguration().getFolder()).filter(Files::isRegularFile)
+										.forEach(path -> {
+											String filename = path.getFileName().toString();
+
+											// Ignore file names beginning with a dot and not ending with desired
+											// filename
+											// suffix
+											if (!filename.startsWith(".")
+													&& filename.length() > calamariModelFilenameSuffix.length()
+													&& filename.endsWith(calamariModelFilenameSuffix))
+												batch.add(filename.substring(0,
+														filename.length() - calamariModelFilenameSuffix.length()));
+										});
+							} catch (IOException e) {
+								logger.warn("Cannot not read models for engine type '" + engine.getType().name()
+										+ "' - " + e.getMessage());
+							}
+
+							break;
+						case Kraken:
+						case Tesseract:
+							logger.warn("Not implemented models for engine type '" + engine.getType().name() + "'.");
+							
+							break;
+						case undefined:
+						default:
+
+							break;
+						}
+				}
+
+				models.add(new ModelBatch(model, batch));
+			}
+
+		return models;
 	}
 
 	/**
@@ -530,39 +541,39 @@ public class ModelService extends CoreService {
 	}
 
 	/**
-	 * ModelFile is an immutable class that defines models with file names.
+	 * ModelFile is an immutable class that defines models with batches.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class ModelFile extends Model {
+	public static class ModelBatch extends Model {
 		/**
-		 * The file names.
+		 * The batch.
 		 */
-		private final List<String> filenames;
+		private final List<String> batch;
 
 		/**
-		 * Creates a model with file names.
+		 * Creates a model with batch.
 		 * 
-		 * @param model     The model.
-		 * @param filenames The file names.
+		 * @param model The model.
+		 * @param batch The batch.
 		 * @since 17
 		 */
-		public ModelFile(Model model, List<String> filenames) {
+		public ModelBatch(Model model, List<String> batch) {
 			super(model.getRight(), model.getConfiguration());
 
-			this.filenames = filenames;
+			this.batch = batch;
 		}
 
 		/**
-		 * Returns the file names.
+		 * Returns the batch.
 		 *
-		 * @return The file names.
+		 * @return The batch.
 		 * @since 17
 		 */
-		public List<String> getFilenames() {
-			return filenames;
+		public List<String> getBatch() {
+			return batch;
 		}
 
 	}
