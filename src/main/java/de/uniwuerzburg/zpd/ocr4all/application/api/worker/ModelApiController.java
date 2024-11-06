@@ -142,30 +142,26 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
-	 * Returns the available models sorted by name with desired files in the
-	 * response body.
+	 * Returns the available models sorted by name in the response body.
 	 *
-	 * @param request The available model request.
-	 * @return The available models sorted by name with desired files in the
-	 *         response body.
+	 * @param request The model filter request.
+	 * @return The available models sorted by name in the response body.
 	 * @since 1.8
 	 */
-	@Operation(summary = "returns the available models sorted by name with desired files in the response body")
+	@Operation(summary = "returns the available models sorted by name in the response body")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Available Models", content = {
-			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ModelFileResponse.class))) }),
+			@Content(mediaType = CoreApiController.applicationJson, array = @ArraySchema(schema = @Schema(implementation = ModelConfigurationResponse.class))) }),
 			@ApiResponse(responseCode = "503", description = "Service Unavailable", content = @Content) })
 	@PostMapping(availableRequestMapping)
-	public ResponseEntity<List<ModelFileResponse>> available(@RequestBody AvailableModelRequest request) {
+	public ResponseEntity<List<ModelConfigurationResponse>> available(@RequestBody ModelFilterRequest request) {
 		try {
-			List<ModelFileResponse> modelFiles = new ArrayList<>();
-			for (ModelService.ModelFile modelFile : modelService.getAvailableModels(
-					request == null ? null
-							: new ModelService.ModelFilter(request.getType(), request.getStates(),
-									request.getMinimumVersion(), request.getMaximumVersion()),
-					request == null ? null : request.getFilenameSuffix()))
-				modelFiles.add(new ModelFileResponse(modelFile));
+			List<ModelConfigurationResponse> models = new ArrayList<>();
+			for (ModelService.ModelBatch batch : modelService.getAvailableModels(request == null ? null
+					: new ModelService.ModelFilter(request.getType(), request.getStates(), request.getMinimumVersion(),
+							request.getMaximumVersion())))
+				models.add(new ModelConfigurationResponse(batch));
 
-			return ResponseEntity.ok().body(modelFiles);
+			return ResponseEntity.ok().body(models);
 		} catch (Exception ex) {
 			log(ex);
 
@@ -447,10 +443,10 @@ public class ModelApiController extends CoreApiController {
 		authorizeRead(modelId);
 
 		try {
-			ModelService.ModelFile modelFile = modelService.getModelFiles(modelId);
+			ModelService.ModelBatch model = modelService.getModelFiles(modelId);
 
-			return modelFile == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-					: ResponseEntity.ok().body(new ModelFileResponse(modelFile));
+			return model == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+					: ResponseEntity.ok().body(new ModelFileResponse(model));
 		} catch (Exception ex) {
 			log(ex);
 
@@ -920,13 +916,13 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines available model requests for the api.
+	 * Defines model filter requests for the api.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
 	 * @version 1.0
 	 * @since 17
 	 */
-	public static class AvailableModelRequest implements Serializable {
+	public static class ModelFilterRequest implements Serializable {
 		/**
 		 * The serial version UID.
 		 */
@@ -953,12 +949,6 @@ public class ModelApiController extends CoreApiController {
 		 */
 		@JsonProperty("maximum-version")
 		private String maximumVersion;
-
-		/**
-		 * The suffix for the model file names to return.
-		 */
-		@JsonProperty("suffix")
-		private String filenameSuffix;
 
 		/**
 		 * Returns the engine type.
@@ -1038,26 +1028,6 @@ public class ModelApiController extends CoreApiController {
 		 */
 		public void setMaximumVersion(String maximumVersion) {
 			this.maximumVersion = maximumVersion;
-		}
-
-		/**
-		 * Returns the suffix for the model file names to return.
-		 *
-		 * @return The suffix for the model file names to return.
-		 * @since 17
-		 */
-		public String getFilenameSuffix() {
-			return filenameSuffix;
-		}
-
-		/**
-		 * Set the suffix for the model file names to return.
-		 *
-		 * @param filenameSuffix The suffix to set.
-		 * @since 17
-		 */
-		public void setFilenameSuffix(String filenameSuffix) {
-			this.filenameSuffix = filenameSuffix;
 		}
 
 	}
@@ -1564,49 +1534,6 @@ public class ModelApiController extends CoreApiController {
 	}
 
 	/**
-	 * Defines available model with right responses for the api without security.
-	 *
-	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
-	 * @version 1.0
-	 * @since 1.8
-	 */
-	public static class ModelFileResponse extends ModelRightResponse {
-		/**
-		 * The serial version UID.
-		 */
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * The file names.
-		 */
-		@JsonProperty("file-names")
-		private final List<String> filenames;
-
-		/**
-		 * Creates an available model with right response for the api without security.
-		 *
-		 * @param modelFile The model file.
-		 * @since 1.8
-		 */
-		public ModelFileResponse(ModelService.ModelFile modelFile) {
-			super(modelFile);
-
-			filenames = modelFile.getFilenames();
-		}
-
-		/**
-		 * Returns the filenames.
-		 *
-		 * @return The filenames.
-		 * @since 17
-		 */
-		public List<String> getFilenames() {
-			return filenames;
-		}
-
-	}
-
-	/**
 	 * Defines model with security responses for the api without security.
 	 *
 	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
@@ -1654,6 +1581,91 @@ public class ModelApiController extends CoreApiController {
 		 */
 		public void setSecurity(SecurityGrantRWS security) {
 			this.security = security;
+		}
+
+	}
+
+	/**
+	 * Defines model responses for the api with files.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ModelFileResponse extends ModelResponse {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The file names.
+		 */
+		@JsonProperty("file-names")
+		private final List<String> filenames;
+
+		/**
+		 * Creates a model response for the api with files.
+		 *
+		 * @param model The model.
+		 * @since 1.8
+		 */
+		public ModelFileResponse(ModelService.ModelBatch model) {
+			super(model);
+
+			filenames = model.getBatch();
+		}
+
+		/**
+		 * Returns the filenames.
+		 *
+		 * @return The filenames.
+		 * @since 17
+		 */
+		public List<String> getFilenames() {
+			return filenames;
+		}
+
+	}
+
+	/**
+	 * Defines model responses for the api with configuration.
+	 *
+	 * @author <a href="mailto:herbert.baier@uni-wuerzburg.de">Herbert Baier</a>
+	 * @version 1.0
+	 * @since 1.8
+	 */
+	public static class ModelConfigurationResponse extends ModelResponse {
+		/**
+		 * The serial version UID.
+		 */
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * The models.
+		 */
+		private final List<String> models;
+
+		/**
+		 * Creates a model response for the api with configuration.
+		 *
+		 * @param model The model.
+		 * @since 1.8
+		 */
+		public ModelConfigurationResponse(ModelService.ModelBatch model) {
+			super(model);
+
+			models = model.getBatch();
+		}
+
+		/**
+		 * Returns the models.
+		 *
+		 * @return The models.
+		 * @since 17
+		 */
+		public List<String> getModels() {
+			return models;
 		}
 
 	}
